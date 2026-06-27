@@ -1,0 +1,257 @@
+<%- include('../layouts/base', {
+  title: 'Mijozlar — DESCO CRM',
+  activePage: 'clients',
+  user: user,
+  body: `
+<div class="page-header">
+  <div>
+    <h1>Mijozlar</h1>
+    <p>Mijozlar bazasi</p>
+  </div>
+  <div class="page-header-actions">
+    <button class="btn btn-primary" onclick="openClientModal()">
+      <i class="fas fa-plus"></i> Yangi mijoz
+    </button>
+  </div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+  <i class="fas fa-search" style="color:var(--text-tertiary);font-size:13px"></i>
+  <input type="text" id="clientSearch" class="form-control" style="flex:1;max-width:300px" placeholder="Ism, kompaniya, telefon...">
+  <button class="btn btn-ghost btn-sm" onclick="clearSearch()"><i class="fas fa-times"></i></button>
+</div>
+
+<!-- STATS ROW -->
+<div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px" id="clientStats">
+  <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-users"></i></div><div class="stat-info"><div class="stat-label">Jami mijozlar</div><div class="stat-value" id="statTotal">—</div></div></div>
+  <div class="stat-card"><div class="stat-icon green"><i class="fas fa-handshake"></i></div><div class="stat-info"><div class="stat-label">Aktiv sdelkalar</div><div class="stat-value" id="statDeals">—</div></div></div>
+  <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-building"></i></div><div class="stat-info"><div class="stat-label">Kompaniyalar</div><div class="stat-value" id="statCompanies">—</div></div></div>
+</div>
+
+<!-- CLIENT GRID -->
+<div class="client-grid" id="clientGrid">
+  <div style="grid-column:1/-1;text-align:center;padding:40px"><div class="spinner"></div></div>
+</div>
+
+<!-- CREATE/EDIT MODAL -->
+<div class="modal-overlay hidden" id="clientModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="clientModalTitle">Yangi mijoz</h2>
+      <button class="modal-close" onclick="closeClientModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="clientId">
+      <div class="form-grid form-grid-2">
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Ism-familiya *</label>
+          <input type="text" id="c-name" class="form-control" placeholder="To'liq ism">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Telefon</label>
+          <input type="text" id="c-phone" class="form-control" placeholder="+998 90 000 00 00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" id="c-email" class="form-control" placeholder="email@example.com">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Kompaniya</label>
+          <input type="text" id="c-company" class="form-control" placeholder="Kompaniya nomi">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Izoh</label>
+          <textarea id="c-notes" class="form-control" rows="2" placeholder="Qo'shimcha ma'lumot..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeClientModal()">Bekor qilish</button>
+      <button class="btn btn-primary" id="clientSaveBtn" onclick="saveClient()">
+        <i class="fas fa-save"></i> Saqlash
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+let allClients = [];
+
+async function loadClients() {
+  const q = document.getElementById('clientSearch').value;
+  const params = q ? '?q=' + encodeURIComponent(q) : '';
+  try {
+    const fetchFn = (typeof fetchWithTimeout === 'function') ? fetchWithTimeout : fetch;
+    const r = await fetchFn('/api/clients' + params);
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.message || 'Server xatosi: ' + r.status);
+    allClients = Array.isArray(data) ? data : [];
+    renderClients();
+    updateStats();
+  } catch(e) {
+    allClients = [];
+    _safeToast("Ma'lumotlarni yuklashda xatolik" + (e && e.message && !e.isTimeout ? ': ' + e.message : ''), 'error');
+    document.getElementById('clientGrid').innerHTML = \`<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon"><i class="fas fa-exclamation-triangle"></i></div><h3>Yuklashda xato</h3><p>Sahifani yangilang yoki qayta urinib ko'ring</p><button class="btn btn-primary" style="margin-top:14px" onclick="loadClients()"><i class="fas fa-redo"></i> Qayta yuklash</button></div>\`;
+    updateStats();
+  }
+}
+
+// Toast that doesn't depend on main.js having loaded yet (defense in
+// depth — init() below is already DOMContentLoaded-gated so main.js
+// will be ready, but this keeps loadClients() safe even if called earlier).
+function _safeToast(msg, type) {
+  if (typeof showToast === 'function') showToast(msg, type);
+  else console.warn('[Clients]', msg);
+}
+
+function updateStats() {
+  document.getElementById('statTotal').textContent = allClients.length;
+  const totalDeals = allClients.reduce((s, c) => s + (c.deals?.length || 0), 0);
+  document.getElementById('statDeals').textContent = totalDeals;
+  const companies = new Set(allClients.filter(c => c.company).map(c => c.company)).size;
+  document.getElementById('statCompanies').textContent = companies;
+}
+
+function avatarColors(name) {
+  const colors = ['#007AFF','#34C759','#FF9500','#FF3B30','#5856D6','#00C7BE','#FF2D55'];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return colors[Math.abs(hash) % colors.length];
+}
+
+function renderClients() {
+  const grid = document.getElementById('clientGrid');
+  if (!allClients.length) {
+    grid.innerHTML = \`<div class="empty-state" style="grid-column:1/-1">
+      <div class="empty-state-icon"><i class="fas fa-users"></i></div>
+      <h3>Mijozlar yo'q</h3>
+      <p>Birinchi mijozni qo'shing</p>
+      <button class="btn btn-primary" style="margin-top:14px" onclick="openClientModal()"><i class="fas fa-plus"></i> Qo'shish</button>
+    </div>\`;
+    return;
+  }
+  grid.innerHTML = allClients.map(c => {
+    const initials = c.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+    const color = avatarColors(c.name);
+    const deals = c.deals || [];
+    const totalAmount = deals.reduce((s, d) => s + (d.amount || 0), 0);
+    return \`
+      <div class="client-card" onclick="openClientModal(true, \${c.id})">
+        <div class="client-card-header">
+          <div class="avatar" style="background:linear-gradient(135deg,\${color},\${color}99)">\${initials}</div>
+          <div class="client-card-info">
+            <h4>\${escHtml(c.name)}</h4>
+            <p>\${c.company ? escHtml(c.company) : (c.phone || c.email || '—')}</p>
+          </div>
+          <div style="margin-left:auto;display:flex;gap:4px">
+            <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();openClientModal(false,\${c.id})" title="Tahrirlash"><i class="fas fa-edit"></i></button>
+            <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="event.stopPropagation();deleteClient(\${c.id})" title="O'chirish"><i class="fas fa-trash"></i></button>
+          </div>
+        </div>
+        <div class="client-card-stats">
+          \${c.phone ? \`<div class="client-stat"><i class="fas fa-phone" style="color:var(--accent);font-size:11px"></i> \${escHtml(c.phone)}</div>\` : ''}
+          \${c.email ? \`<div class="client-stat"><i class="fas fa-envelope" style="color:var(--accent);font-size:11px"></i> \${escHtml(c.email)}</div>\` : ''}
+          <div class="client-stat"><i class="fas fa-handshake" style="color:var(--success);font-size:11px"></i> \${deals.length} sdelka</div>
+          \${totalAmount > 0 ? \`<div class="client-stat"><i class="fas fa-coins" style="color:var(--warning);font-size:11px"></i> \${fmtShort(totalAmount)}</div>\` : ''}
+        </div>
+      </div>
+    \`;
+  }).join('');
+}
+
+async function openClientModal(viewOnly, id) {
+  document.getElementById('clientId').value = id || '';
+  document.getElementById('c-name').value = '';
+  document.getElementById('c-phone').value = '';
+  document.getElementById('c-email').value = '';
+  document.getElementById('c-company').value = '';
+  document.getElementById('c-notes').value = '';
+  document.getElementById('clientModalTitle').textContent = id ? 'Mijozni tahrirlash' : 'Yangi mijoz';
+
+  if (id) {
+    try {
+      const c = await fetch('/api/clients/' + id).then(r => r.json());
+      document.getElementById('c-name').value = c.name || '';
+      document.getElementById('c-phone').value = c.phone || '';
+      document.getElementById('c-email').value = c.email || '';
+      document.getElementById('c-company').value = c.company || '';
+      document.getElementById('c-notes').value = c.notes || '';
+    } catch(e) {}
+  }
+  document.getElementById('clientModal').classList.remove('hidden');
+}
+
+function closeClientModal() {
+  document.getElementById('clientModal').classList.add('hidden');
+}
+
+async function saveClient() {
+  const id = document.getElementById('clientId').value;
+  const name = document.getElementById('c-name').value.trim();
+  if (!name) { showToast('Ism majburiy', 'error'); return; }
+
+  const btn = document.getElementById('clientSaveBtn');
+  btn.disabled = true;
+
+  const body = {
+    name,
+    phone: document.getElementById('c-phone').value || null,
+    email: document.getElementById('c-email').value || null,
+    company: document.getElementById('c-company').value || null,
+    notes: document.getElementById('c-notes').value || null
+  };
+
+  try {
+    const url = id ? '/api/clients/' + id : '/api/clients';
+    const r = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!r.ok) throw new Error((await r.json()).message);
+    showToast(id ? 'Mijoz yangilandi' : 'Mijoz qo\\'shildi', 'success');
+    closeClientModal();
+    await loadClients();
+  } catch(e) {
+    showToast(e.message || 'Xato', 'error');
+  } finally { btn.disabled = false; }
+}
+
+async function deleteClient(id) {
+  if (!confirm('Mijozni o\\'chirishni tasdiqlaysizmi?')) return;
+  try {
+    const r = await fetch('/api/clients/' + id, { method: 'DELETE' });
+    if (!r.ok) throw new Error((await r.json()).message);
+    showToast('Mijoz o\\'chirildi', 'success');
+    await loadClients();
+  } catch(e) { showToast(e.message || 'O\\'chirishda xato', 'error'); }
+}
+
+function clearSearch() {
+  document.getElementById('clientSearch').value = '';
+  loadClients();
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+// IMPORTANT: do NOT call loadClients()/debounce() at the top level of this
+// script. This inline <script> runs while the browser is still parsing the
+// page body, which is BEFORE the later <script src="/js/main.js"> tag (in
+// the shared layout) has loaded — so main.js functions like debounce() are
+// not defined yet. Calling debounce() directly here threw "ReferenceError:
+// debounce is not defined", which aborted the rest of this script before
+// loadClients() ever ran — leaving the static loading spinner in
+// #clientGrid frozen forever. Deferring to DOMContentLoaded guarantees
+// main.js has already executed by the time this code runs.
+function init() {
+  const searchEl = document.getElementById('clientSearch');
+  const debounceFn = (typeof debounce === 'function') ? debounce : (fn, delay) => {
+    let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn.apply(null, args), delay); };
+  };
+  searchEl.addEventListener('input', debounceFn(loadClients, 400));
+  loadClients();
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+`
+}) %>

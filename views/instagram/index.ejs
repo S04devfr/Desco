@@ -1,0 +1,45 @@
+<%- include('../layouts/base', {
+  title: 'Instagram Integratsiyasi — DESCO CRM',
+  activePage: 'instagram',
+  user: user,
+  body: `
+<div class="page-header">
+  <div>
+    <h1>Instagram Integratsiyasi</h1>
+    <p>Instagram Direct xabarlarini boshqarish va ulanish</p>
+  </div>
+</div>
+
+<div class="card" style="max-width: 600px; margin: 0 auto; margin-top: 40px;">
+  <div class="card-header">
+    <h3>Instagram ulash</h3>
+  </div>
+  <div class="card-body" style="text-align: center; padding: 40px 20px;">
+    <i class="fab fa-instagram" style="font-size: 64px; color: #E1306C; margin-bottom: 20px;"></i>
+    <h2 style="margin-bottom: 10px;">Instagram bilan sinxronlash</h2>
+    <p style="color: var(--text-secondary); margin-bottom: 30px;">
+      CRM tizimi orqali Instagram Direct xabarlarini qabul qilish va javob berish uchun akkauntingizni ulang.
+      (Eslatma: Bu funksiya Meta App va Webhook sozlamalarini talab qiladi)
+    </p>
+    <button class="btn btn-primary btn-lg" onclick="connectInstagram()">
+      <i class="fab fa-instagram"></i> Ulanish (Tez kunda)
+    </button>
+  </div>
+</div>
+
+<script>
+function connectInstagram() {
+  _toast('Instagram integratsiyasi tayyorgarlik bosqichida!', 'info');
+}
+
+// Ensure _toast fallback exists
+function _toast(msg, type) {
+  if (typeof showToast === 'function') {
+    showToast(msg, type);
+  } else {
+    alert(msg);
+  }
+}
+</script>
+`
+}) %>

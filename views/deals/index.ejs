@@ -1,0 +1,1922 @@
+<%- include('../layouts/base', { title: (typeof activePage !== 'undefined' && activePage === 'nasiya' ? 'Nasiya' : 'Sdelkalar') + ' — DESCO CRM', activePage: (typeof activePage !== 'undefined' ? activePage : 'deals'), user: user, body: ` <style>
+  /* ═══════════════════════════════════════════
+  DEALS PAGE — amoCRM style
+  ═══════════════════════════════════════════ */
+  .deals-page { display:flex; flex-direction:column; height:calc(100vh - 110px); overflow:hidden; }
+
+  /* ── Top bar ── */
+  .deals-topbar {
+  display:flex; align-items:center; gap:10px; padding:0 0 12px 0;
+  flex-shrink:0; flex-wrap:wrap;
+  }
+  .pipeline-name-btn {
+  display:flex; align-items:center; gap:6px;
+  font-size:18px; font-weight:700; color:var(--text-primary);
+  background:none; border:none; cursor:pointer; padding:4px 6px;
+  border-radius:6px; transition:background 0.15s;
+  }
+  .pipeline-name-btn:hover { background:var(--bg-secondary); }
+  .pipeline-name-btn i { font-size:12px; color:var(--text-tertiary); }
+
+  .deals-topbar-right { display:flex; align-items:center; gap:8px; margin-left:auto; }
+  .view-toggle { display:flex; background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:8px;
+  overflow:hidden; }
+  .vtbtn {
+  padding:6px 14px; font-size:12.5px; font-weight:500; border:none;
+  background:none; color:var(--text-secondary); cursor:pointer; transition:all 0.14s;
+  display:flex; align-items:center; gap:5px;
+  }
+  .vtbtn.active { background:var(--accent); color:#fff; }
+  .vtbtn:hover:not(.active) { background:var(--bg-secondary); color:var(--text-primary); }
+
+  /* ── Pipeline dropdown ── */
+  .pipeline-dropdown {
+  position:absolute; top:calc(100% + 6px); left:0; z-index:300;
+  background:var(--bg-primary); border:1px solid var(--glass-border);
+  border-radius:10px; box-shadow:0 8px 32px rgba(0,0,0,0.18);
+  min-width:220px; padding:6px; display:none;
+  }
+  .pipeline-dropdown.open { display:block; }
+  .pdrop-item {
+  display:flex; align-items:center; gap:8px; padding:8px 10px;
+  border-radius:7px; cursor:pointer; font-size:13px;
+  color:var(--text-primary); transition:background 0.12s;
+  }
+  .pdrop-item:hover { background:var(--bg-secondary); }
+  .pdrop-item.active { background:var(--accent-soft); color:var(--accent); font-weight:600; }
+  .pdrop-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+  .pdrop-divider { height:1px; background:var(--glass-border); margin:4px 0; }
+  .pdrop-action {
+  display:flex; align-items:center; gap:7px; padding:7px 10px;
+  border-radius:7px; cursor:pointer; font-size:12.5px;
+  color:var(--text-secondary); transition:background 0.12s;
+  }
+  .pdrop-action:hover { background:var(--bg-secondary); color:var(--accent); }
+
+  /* ── Filter bar ── */
+  .deals-filter {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+  }
+  .filter-search-wrap {
+  position: relative; display: flex; align-items: center;
+  }
+  .filter-search-wrap i {
+  position: absolute; left: 14px; color: var(--text-tertiary); font-size: 13px;
+  }
+  .filter-search-wrap input {
+  padding-left: 36px;
+  border-radius: 20px;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+  transition: all 0.2s ease;
+  font-size: 13px; height: 36px;
+  }
+  .filter-search-wrap input:hover { border-color: var(--border-med); box-shadow: 0 4px 10px rgba(0,0,0,0.04); }
+  .filter-search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); outline:
+  none; }
+
+  .filter-select {
+  appearance: none;
+  background-image:
+  url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23999999%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 10px auto;
+  padding-right: 32px; padding-left: 14px;
+  border-radius: 20px;
+  font-size: 13px; font-weight: 500; color: var(--text-secondary);
+  background-color: var(--bg-primary);
+  border: 1px solid var(--glass-border);
+  cursor: pointer; height: 36px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+  transition: all 0.2s ease;
+  }
+  .filter-select:hover { border-color: var(--border-med); box-shadow: 0 4px 10px rgba(0,0,0,0.04); color:
+  var(--text-primary); }
+  .filter-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); outline: none; }
+
+  .filter-clear-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--bg-primary); border: 1px solid var(--glass-border);
+  color: var(--text-tertiary); display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+  }
+  .filter-clear-btn:hover { background: var(--bg-secondary); color: var(--danger); border-color: var(--border-med);
+  transform: scale(1.05); }
+
+  /* ── Kanban board ── */
+  .kanban-wrap { flex:1; overflow:hidden; display:flex; flex-direction:column; }
+  .kb-board {
+  display:flex; gap:10px; overflow-x:auto; overflow-y:hidden;
+  flex:1; align-items:flex-start; padding-bottom:8px; width: 100%;
+  }
+  .kb-board::-webkit-scrollbar { height:5px; }
+  .kb-board::-webkit-scrollbar-thumb { background:var(--border-med); border-radius:8px; }
+
+  .kb-col {
+  flex-shrink:0; width:260px; display:flex; flex-direction:column;
+  max-height:100%; border-radius:10px;
+  background:var(--glass-bg); border:1px solid var(--glass-border); overflow:hidden;
+  }
+  .kb-col-hdr {
+  padding:10px 12px 8px; flex-shrink:0;
+  border-top:3px solid var(--_sc, var(--accent));
+  border-bottom:1px solid var(--glass-border);
+  cursor:default;
+  }
+  .kb-col-title { display:flex; align-items:center; gap:7px; font-size:13px; font-weight:600; margin-bottom:3px; }
+  .kb-col-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .kb-col-meta { font-size:11px; color:var(--text-tertiary); }
+  .kb-col-meta span { color:var(--text-secondary); font-weight:600; }
+
+  .kb-cards { flex:1; overflow-y:auto; padding:6px; min-height:120px; transition:background 0.12s; }
+  .kb-cards::-webkit-scrollbar { width:3px; }
+  .kb-cards::-webkit-scrollbar-thumb { background:var(--border-med); border-radius:4px; }
+  .kb-cards.drag-over { background:rgba(0,122,255,0.08); }
+
+  .kb-empty { padding:20px; text-align:center; color:var(--text-tertiary); font-size:12px; font-style:italic; }
+
+  .kb-addbtn-wrap { padding:5px 6px 7px; flex-shrink:0; border-top:1px solid var(--glass-border); }
+  .kb-addbtn {
+  width:100%; background:none; border:1px dashed var(--border-med); border-radius:7px;
+  padding:6px; font-size:12px; color:var(--text-tertiary); cursor:pointer;
+  transition:all 0.14s; display:flex; align-items:center; justify-content:center; gap:5px;
+  }
+  .kb-addbtn:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
+
+  /* ── Deal card ── */
+  .dcard {
+  background:var(--bg-secondary); border:1px solid var(--glass-border);
+  border-radius:12px; padding:16px; margin-bottom:12px;
+  cursor:pointer; user-select:none;
+  transition:all 0.2s cubic-bezier(0.16,1,0.3,1);
+  position:relative;
+  display: flex; flex-direction: column; gap: 8px;
+  box-shadow: var(--glass-shadow);
+  }
+  .dcard:hover { box-shadow:var(--glass-shadow-hover); transform:translateY(-3px); border-color:var(--border-med); }
+  .dcard.dragging { opacity:0.4; transform:rotate(2deg) scale(1.04); box-shadow:0 20px 40px rgba(0,0,0,0.1); }
+  .dcard-badge { display:inline-block; padding:4px 8px; border-radius:6px; font-size:10px; font-weight:700;
+  text-transform:uppercase; letter-spacing:0.5px; }
+  .dcard-header { display:flex; justify-content:space-between; align-items: center; margin-bottom:0px; }
+  .dcard-company { font-size:12px; color:var(--text-secondary); margin-bottom:0; display:flex; align-items:center; gap:
+  4px; }
+  .dcard-name { font-size:15px; font-weight:600; color:var(--text-primary); margin-bottom:2px; line-height:1.4;
+  padding-right:16px; }
+  .dcard-footer { display:flex; align-items:center; justify-content:space-between; gap:6px; margin-top:4px; }
+  .dcard-amount { font-size:14px; font-weight:700; color:var(--text-primary); }
+  .dcard-right { display:flex; align-items:center; gap:6px; }
+  .dcard-date { font-size:11px; color:var(--text-tertiary); font-weight:500; }
+  .dcard-date.overdue { color:var(--danger); }
+  .dcard-av { width:24px; height:24px; border-radius:50%; background:var(--bg-tertiary); color:var(--text-secondary);
+  border: 1px solid var(--border); font-size:10px; font-weight:700; display:flex; align-items:center;
+  justify-content:center; flex-shrink:0; }
+  .dcard-progress { height:4px; background:var(--bg-tertiary); border-radius:4px; margin-top:6px; overflow:hidden; }
+  .dcard-progress-fill { height:100%; background:var(--accent); border-radius:4px; transition:width 0.3s; }
+  .dcard-contact { font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;
+  background: var(--bg-primary); padding: 4px 8px; border-radius: 6px; width: fit-content; }
+  .dcard-contact i { color: var(--text-tertiary); font-size: 11px; }
+  .dcard-notes { font-size: 12px; color: var(--text-tertiary); font-style: normal; white-space: nowrap; overflow:
+  hidden; text-overflow: ellipsis; max-width: 100%; padding-top: 4px;}
+  .dcard-edit-btn { position:absolute; right:12px; top:12px; color:var(--text-tertiary); background:var(--bg-primary);
+  border:1px solid var(--border); border-radius:6px; padding:4px 6px; cursor:pointer; opacity:0; transition:all 0.2s; }
+  .dcard:hover .dcard-edit-btn { opacity:1; }
+  .dcard-edit-btn:hover { color:var(--accent); border-color:var(--accent); }
+  /* ── Table view ── */
+  .table-wrap { flex:1; overflow:auto; }
+  .deals-tbl { width:100%; border-collapse:collapse; }
+  .deals-tbl th {
+  position:sticky; top:0; background:var(--bg-secondary);
+  padding:9px 12px; text-align:left; font-size:11px; font-weight:700;
+  text-transform:uppercase; letter-spacing:0.5px; color:var(--text-tertiary);
+  border-bottom:1px solid var(--glass-border); white-space:nowrap; z-index:2;
+  }
+  .deals-tbl td { padding:10px 12px; border-bottom:1px solid var(--glass-border); font-size:13px; vertical-align:middle;
+  }
+  .deals-tbl tr:hover td { background:var(--glass-bg); }
+  .deals-tbl tr { cursor:pointer; }
+
+  /* ── Filter bar ── */
+  .deals-filter { display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap; flex-shrink:0; }
+  .deals-filter .form-control { height:33px; font-size:13px; }
+  .filter-search-wrap { position:relative; }
+  .filter-search-wrap .fas { position:absolute; left:9px; top:50%; transform:translateY(-50%);
+  color:var(--text-tertiary); font-size:12px; }
+  .filter-search-wrap input { padding-left:28px; }
+
+  /* ── States ── */
+  .kb-state { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:40px;
+  flex:1; color:var(--text-tertiary); text-align:center; }
+  .kb-state i { font-size:40px; }
+
+  /* ── Mock-stage fallback banner ── */
+  .kb-mock-banner {
+  display:flex; align-items:center; gap:9px; flex-shrink:0;
+  background:rgba(255,149,0,0.1); border:1px solid rgba(255,149,0,0.35);
+  border-radius:8px; padding:8px 12px; margin-bottom:10px; font-size:12.5px;
+  color:var(--text-primary);
+  }
+  .kb-mock-banner i { color:#FF9500; font-size:14px; flex-shrink:0; }
+  .kb-mock-banner span { flex:1; }
+  .kb-state h3 { margin:0; color:var(--text-secondary); }
+  .kb-state p { margin:0; font-size:13px; }
+
+  /* ── Pipeline Manager ── */
+  .pmgr-pitem {
+  display:flex; align-items:center; gap:8px; padding:8px 10px;
+  border-radius:7px; cursor:pointer; transition:background 0.12s; margin-bottom:2px;
+  }
+  .pmgr-pitem:hover { background:var(--bg-secondary); }
+  .pmgr-pitem.active { background:var(--accent-soft); }
+  .pmgr-sitem {
+  display:flex; align-items:center; gap:8px; padding:7px 10px;
+  border-radius:7px; border:1px solid var(--glass-border);
+  background:var(--glass-bg); margin-bottom:5px;
+  }
+  .pmgr-sitem .sitem-actions { margin-left:auto; display:flex; gap:4px; opacity:0; transition:opacity 0.1s; }
+  .pmgr-sitem:hover .sitem-actions { opacity:1; }
+
+  /* ── Status badge ── */
+  .status-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px; }
+  .status-new { background:#007AFF; }
+  .status-negotiation{ background:#FF9500; }
+  .status-proposal { background:#5856D6; }
+  .status-won { background:#34C759; }
+  .status-lost { background:#FF3B30; }
+
+  /* ── Quick Add (Быстрое добавление) ── */
+  .kb-qadd-toggle {
+  width:100%; background:var(--accent-soft); border:1px solid transparent; border-radius:7px;
+  padding:7px; font-size:12px; font-weight:600; color:var(--accent); cursor:pointer;
+  transition:all 0.14s; display:flex; align-items:center; justify-content:center; gap:5px; margin-bottom:6px;
+  }
+  .kb-qadd-toggle:hover { background:var(--accent); color:#fff; }
+  .kb-qadd-panel {
+  background:var(--bg-secondary); border:1px solid var(--glass-border); border-radius:8px;
+  padding:9px; margin:0 6px 8px; display:none; flex-direction:column; gap:6px;
+  }
+  .kb-qadd-panel.open { display:flex; }
+  .kb-qadd-panel input {
+  width:100%; height:28px; font-size:12px; padding:0 8px; border-radius:6px;
+  border:1px solid var(--glass-border); background:var(--bg-primary); color:var(--text-primary);
+  }
+  .kb-qadd-panel .kb-qadd-row { display:flex; gap:6px; }
+  .kb-qadd-panel .kb-qadd-actions { display:flex; gap:6px; margin-top:2px; }
+  .kb-qadd-panel .kb-qadd-actions button { flex:1; font-size:11px; padding:6px; }
+  .kb-qadd-label { font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px;
+  color:var(--text-tertiary); margin:2px 0 -2px; }
+
+  /* ── Settings / Edit Mode ── */
+  .kb-settings-btn { display:flex; align-items:center; gap:6px; }
+  .kb-settings-btn.active { background:var(--accent); color:#fff; }
+  .kb-editmode-banner {
+  display:flex; align-items:center; gap:9px; flex-shrink:0;
+  background:rgba(0,122,255,0.08); border:1px solid rgba(0,122,255,0.3);
+  border-radius:8px; padding:8px 12px; margin-bottom:10px; font-size:12.5px;
+  }
+  .kb-editmode-banner i { color:var(--accent); }
+  .kb-col.editing { border:1.5px dashed var(--accent); cursor:grab; }
+  .kb-col.col-dragging { opacity:0.4; }
+  .kb-col.col-drag-over { box-shadow:inset 0 0 0 2px var(--accent); }
+  .kb-col-hdr-edit { display:flex; align-items:center; gap:6px; }
+  .kb-col-hdr-edit i.fa-grip-vertical { color:var(--text-tertiary); cursor:grab; flex-shrink:0; }
+  .kb-col-rename {
+  flex:1; height:26px; font-size:12.5px; font-weight:600; padding:0 6px;
+  border:1px solid var(--glass-border); border-radius:5px; background:var(--bg-primary); color:var(--text-primary);
+  }
+  .kb-col-del { color:var(--text-tertiary); cursor:pointer; flex-shrink:0; padding:2px 4px; }
+  .kb-col-del:hover { color:var(--danger); }
+  .kb-addcol {
+  flex-shrink:0; width:180px; align-self:flex-start; border:1.5px dashed var(--border-med);
+  border-radius:10px; background:none; color:var(--text-tertiary); cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+  padding:20px 10px; font-size:12.5px; transition:all 0.14s; min-height:70px;
+  }
+  .kb-addcol:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
+
+  /* ── Drop placeholder ── */
+  .kb-drop-placeholder {
+  border:2px dashed var(--accent); border-radius:7px; background:rgba(0,122,255,0.07);
+  height:54px; margin-bottom:5px; flex-shrink:0; pointer-events:none;
+  }
+
+  /* ── Won/Lost bottom drop zones ── */
+  .kb-resultzones { display:flex; gap:10px; flex-shrink:0; margin-top:8px; }
+  .kb-rzone {
+  flex:1; border:2px dashed transparent; border-radius:10px; padding:10px 14px;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  font-size:13px; font-weight:600; transition:all 0.15s; min-height:44px;
+  }
+  .kb-rzone i { font-size:15px; }
+  .kb-rzone-lost { background:rgba(255,59,48,0.08); border-color:rgba(255,59,48,0.35); color:#FF3B30; }
+  .kb-rzone-won { background:rgba(52,199,89,0.08); border-color:rgba(52,199,89,0.35); color:#34C759; }
+  .kb-rzone.rzone-over.kb-rzone-lost { background:rgba(255,59,48,0.22); border-color:#FF3B30; transform:scale(1.02); }
+  .kb-rzone.rzone-over.kb-rzone-won { background:rgba(52,199,89,0.22); border-color:#34C759; transform:scale(1.02); }
+  </style>
+
+  <div class="deals-page">
+
+    <!-- Top bar -->
+    <div class="deals-topbar">
+      <div style="position:relative;">
+        <button class="pipeline-name-btn" id="pipelineNameBtn" onclick="togglePipelineDropdown()">
+          <span id="pipelineNameText">Yuklanmoqda…</span>
+          <i class="fas fa-chevron-down"></i>
+        </button>
+        <div class="pipeline-dropdown" id="pipelineDropdown">
+          <div id="pdropList"></div>
+          <div class="pdrop-divider"></div>
+          ${(user && user.role === 'admin') ? '<div class="pdrop-action" onclick="closePipelineDropdown();openPipelineMgr()"><i class="fas fa-cog"></i> Voronkalarni boshqarish</div>' : ''}
+        </div>
+      </div>
+
+      <div class="deals-topbar-right">
+        <div class="view-toggle">
+          <button class="vtbtn active" id="btnKanban" onclick="setView('kanban')">
+            <i class="fas fa-columns"></i> Kanban
+          </button>
+          <button class="vtbtn" id="btnTable" onclick="setView('table')">
+            <i class="fas fa-list"></i> Jadval
+          </button>
+        </div>
+        ${(user && user.role === 'admin') ? '<button class="btn btn-ghost btn-sm kb-settings-btn" id="btnEditMode" onclick="toggleEditMode()" title="Bosqichlarni tahrirlash"><i class="fas fa-cog"></i> Sozlash</button>' : ''}
+        <button class="btn btn-primary btn-sm" onclick="openDealModal()">
+          <i class="fas fa-plus"></i> Yangi sdelka
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="deals-filter">
+      <div class="filter-search-wrap">
+        <i class="fas fa-search"></i>
+        <input type="text" id="filterSearch" placeholder="Qidirish…" style="width:220px">
+      </div>
+      <select id="filterStage" class="filter-select" style="width:160px">
+        <option value="">Barcha bosqich</option>
+      </select>
+      <select id="filterManager" class="filter-select" style="width:160px">
+        <option value="">Barcha manager</option>
+      </select>
+      <button class="filter-clear-btn" onclick="clearFilters()" title="Filtrni tozalash">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Kanban wrapper -->
+    <div class="kanban-wrap" id="kanbanWrap">
+      <div class="kb-mock-banner" id="kbMockBanner" style="display:none">
+        <i class="fas fa-info-circle"></i>
+        <span>Bu namuna bosqichlar — hali haqiqiy voronka sozlanmagan. Sdelkalarni bu bosqichlarga ko'chirib bo'lmaydi,
+          avval voronkani sozlang.</span>
+        <button class="btn btn-primary btn-sm" onclick="openPipelineMgr()"><i class="fas fa-cog"></i> Sozlash</button>
+      </div>
+      <div class="kb-editmode-banner hidden" id="kbEditBanner">
+        <i class="fas fa-pen"></i>
+        <span><strong>Tahrirlash rejimi:</strong> ustun nomini bosib o'zgartiring, sarlavhadagi <i
+            class="fas fa-grip-vertical"></i> belgisidan tutib tartibni o'zgartiring yoki o'ngdagi "+" orqali yangi
+          bosqich qo'shing.</span>
+        <button class="btn btn-secondary btn-sm" onclick="toggleEditMode()">Tayyor</button>
+      </div>
+      <div class="kb-board" id="kanbanBoard">
+        <div class="kb-state">
+          <div class="spinner" style="width:36px;height:36px;border-width:3px"></div>
+          <p>Yuklanmoqda…</p>
+        </div>
+      </div>
+      <div class="kb-resultzones" id="kbResultZones">
+        <div class="kb-rzone kb-rzone-lost" id="rzoneLost" ondragover="onZoneDragOver(event)"
+          ondragleave="onZoneDragLeave(event)" ondrop="onZoneDrop(event,'lost')">
+          <i class="fas fa-times-circle"></i> Real emas (Не реализована)
+        </div>
+        <div class="kb-rzone kb-rzone-won" id="rzoneWon" ondragover="onZoneDragOver(event)"
+          ondragleave="onZoneDragLeave(event)" ondrop="onZoneDrop(event,'won')">
+          <i class="fas fa-check-circle"></i> Muvaffaqiyatli yopildi
+        </div>
+      </div>
+    </div>
+
+    <!-- Table view (hidden by default) -->
+    <div class="table-wrap hidden" id="tableView">
+      <table class="deals-tbl">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Sdelka nomi</th>
+            <th>Mijoz</th>
+            <th>Bosqich</th>
+            <th>Summa</th>
+            <th>To'landi</th>
+            <th>Muddat</th>
+            <th>Manager</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="dealsTableBody"></tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- ════════════ DEAL MODAL ════════════ -->
+  <div class="modal-overlay hidden" id="dealModal" style="z-index: 1050;">
+    <div class="modal-box" style="max-width:500px">
+      <div class="modal-header">
+        <h2 id="dealModalTitle">Yangi sdelka</h2>
+        <button class="modal-close" onclick="closeDealModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="f-id">
+
+        <div style="background:var(--bg-secondary); padding:16px; border-radius:10px; margin-bottom:16px; border:1px solid var(--glass-border)">
+          <div style="font-size:12px; font-weight:600; color:var(--text-tertiary); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px">Mijoz Ma'lumotlari</div>
+          <div class="form-group">
+            <label class="form-label">Mijoz ismi <span style="color:var(--danger)">*</span></label>
+            <input type="text" id="f-contactName" class="form-control" placeholder="Mijozning ism-familiyasi">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Telefon raqami <span style="color:var(--danger)">*</span></label>
+              <input type="text" id="f-contactPhone" class="form-control" placeholder="+998 90 123 45 67">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Shahri</label>
+              <input type="text" id="f-city" class="form-control" placeholder="Masalan: Toshkent">
+            </div>
+          </div>
+        </div>
+
+        <div style="background:var(--bg-secondary); padding:16px; border-radius:10px; margin-bottom:16px; border:1px solid var(--glass-border)">
+          <div style="font-size:12px; font-weight:600; color:var(--text-tertiary); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px">Sdelka Tafsilotlari</div>
+          <div class="form-group">
+            <label class="form-label">Mahsulot nomi <span style="color:var(--danger)">*</span></label>
+            <input type="text" id="f-name" class="form-control" placeholder="Mahsulot yoki xizmat nomi">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Summa (UZS)</label>
+              <input type="number" id="f-amount" class="form-control" placeholder="0" min="0" step="1000">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">To'langan (UZS)</label>
+              <input type="number" id="f-paidAmount" class="form-control" placeholder="0" min="0" step="1000">
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="form-group">
+            <label class="form-label">Bosqich</label>
+            <select id="f-stageId" class="form-control">
+              <option value="">— Bosqich —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Mijoz (baza) <span
+                style="font-size:10px;font-weight:normal;color:#999">(ixtiyoriy)</span></label>
+            <select id="f-clientId" class="form-control">
+              <option value="">— Yangi mijoz —</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Izoh</label>
+          <textarea id="f-notes" class="form-control" rows="2" placeholder="Qo'shimcha ma'lumot…"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeDealModal()">Bekor</button>
+        <button class="btn btn-primary" id="dealSaveBtn" onclick="saveDeal()">
+          <i class="fas fa-save"></i> Saqlash
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════ DETAIL MODAL ════════════ -->
+  <div class="modal-overlay hidden" id="detailModal">
+    <div class="modal-box" style="max-width:680px;max-height:90vh;overflow-y:auto">
+      <div class="modal-header">
+        <h2 id="detailTitle">Sdelka</h2>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn btn-ghost btn-sm btn-icon" onclick="editCurrentDeal()" title="Tahrirlash"><i
+              class="fas fa-edit"></i></button>
+          <button class="btn btn-ghost btn-sm btn-icon text-danger" onclick="deleteCurrentDeal()" title="O'chirish"><i
+              class="fas fa-trash"></i></button>
+          <button class="modal-close" onclick="closeDetail()">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body" id="detailBody">
+        <div class="kb-state">
+          <div class="spinner"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════ PIPELINE MANAGER ════════════ -->
+  <div class="modal-overlay hidden" id="pmgrModal" style="z-index:1100">
+    <div class="modal-box" style="max-width:760px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden">
+      <div class="modal-header">
+        <h2><i class="fas fa-filter" style="color:var(--accent);margin-right:8px"></i>Voronkalarni boshqarish</h2>
+        <button class="modal-close" onclick="closePipelineMgr()">&times;</button>
+      </div>
+      <div style="display:grid;grid-template-columns:240px 1fr;gap:0;flex:1;overflow:hidden;min-height:0">
+        <!-- Left: pipeline list -->
+        <div
+          style="border-right:1px solid var(--glass-border);padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:6px">
+          <div
+            style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-tertiary);margin-bottom:4px">
+            Voronkalar</div>
+          <div id="pmgrPipelineList"></div>
+          <div id="pmgrPipelineForm" class="hidden"
+            style="background:var(--bg-secondary);border-radius:8px;padding:10px;border:1px solid var(--glass-border);margin-top:4px">
+            <input type="hidden" id="pmgr-pId">
+            <input type="text" id="pmgr-pName" class="form-control" placeholder="Voronka nomi"
+              style="height:32px;font-size:12px;margin-bottom:6px">
+            <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
+              <label style="font-size:11px;color:var(--text-secondary)">Rang:</label>
+              <input type="color" id="pmgr-pColor" value="#007AFF"
+                style="width:32px;height:28px;border:none;border-radius:4px;cursor:pointer">
+            </div>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-primary btn-sm" style="flex:1;font-size:11px" onclick="pmgrSavePipeline()"><i
+                  class="fas fa-save"></i> Saqlash</button>
+              <button class="btn btn-ghost btn-sm" style="font-size:11px"
+                onclick="pmgrHidePipelineForm()">Bekor</button>
+            </div>
+          </div>
+          <button class="btn btn-ghost btn-sm" style="border:1px dashed var(--border-med);margin-top:2px"
+            onclick="pmgrNewPipeline()">
+            <i class="fas fa-plus" style="font-size:10px"></i> Yangi voronka
+          </button>
+        </div>
+        <!-- Right: stage list -->
+        <div style="padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:6px">
+          <div id="pmgrStageTitle"
+            style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-tertiary);margin-bottom:4px">
+            Bosqich tanlanmagan</div>
+          <div id="pmgrStageList"></div>
+          <div id="pmgrStageForm" class="hidden"
+            style="background:var(--bg-secondary);border-radius:8px;padding:10px;border:1px solid var(--glass-border);margin-top:4px">
+            <input type="hidden" id="pmgr-sId">
+            <input type="text" id="pmgr-sName" class="form-control" placeholder="Bosqich nomi"
+              style="height:32px;font-size:12px;margin-bottom:6px">
+            <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
+              <label style="font-size:11px;color:var(--text-secondary)">Rang:</label>
+              <input type="color" id="pmgr-sColor" value="#007AFF"
+                style="width:32px;height:28px;border:none;border-radius:4px;cursor:pointer">
+            </div>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-primary btn-sm" style="flex:1;font-size:11px" onclick="pmgrSaveStage()"><i
+                  class="fas fa-save"></i> Saqlash</button>
+              <button class="btn btn-ghost btn-sm" style="font-size:11px" onclick="pmgrHideStageForm()">Bekor</button>
+            </div>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="pmgrAddStageBtn"
+            style="border:1px dashed var(--border-med);margin-top:2px;display:none" onclick="pmgrNewStage()">
+            <i class="fas fa-plus" style="font-size:10px"></i> Bosqich qo'shish
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closePipelineMgr()">Yopish</button>
+        <button class="btn btn-primary" onclick="closePipelineMgr();loadAll()"><i class="fas fa-check"></i>
+          Qo'llash</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ════════════════════════════════════════════════════════════════
+    //  DESCO CRM — Sdelkalar v4 (self-contained, amoCRM uslubida)
+    //  Barcha helper funksiyalar INLINE — main.js ga bog'liq EMAS
+    // ════════════════════════════════════════════════════════════════
+
+    // ── Inline helpers (main.js ga bog'liq emas) ──────────────────
+    function _esc(s) {
+      if (s == null) return '';
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function _fmt(v, short) {
+      const n = Number(v) || 0;
+      if (!short) return n.toLocaleString('uz-UZ') + " so'm";
+      if (n >= 1e9) return (n / 1e9).toFixed(1).replace('.0', '') + " mlrd";
+      if (n >= 1e6) return (n / 1e6).toFixed(1).replace('.0', '') + " mln";
+      if (n >= 1e3) return (n / 1e3).toFixed(0) + " ming";
+      return String(n);
+    }
+
+    function _date(d) {
+      if (!d) return '';
+      const dt = new Date(d);
+      if (isNaN(dt)) return '';
+      return dt.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    }
+
+    function _toast(msg, type) {
+      // Use main.js showToast if available, otherwise fallback
+      if (typeof showToast === 'function') {
+        showToast(msg, type);
+        return;
+      }
+      const c = document.getElementById('toastContainer');
+      if (!c) return;
+      const t = document.createElement('div');
+      t.className = 'toast toast-' + (type || 'info');
+      t.innerHTML = '<span>' + _esc(msg) + '</span>';
+      t.style.cssText = 'margin-top:8px;padding:10px 16px;border-radius:8px;font-size:13px;color:#fff;background:' +
+        (type === 'error' ? '#FF3B30' : type === 'success' ? '#34C759' : '#007AFF');
+      c.appendChild(t);
+      setTimeout(() => t.remove(), 3500);
+    }
+
+    // ── Globals ────────────────────────────────────────────────────
+    const USER_ROLE = '${user && user.role ? user.role : "manager"}';
+    const CURRENT_USER_ID = parseInt('${user ? user.id : 0}');
+
+    // ── State ──────────────────────────────────────────────────────
+    let _pipelines = [];
+    let _stages = [];   // active pipeline stages
+    let _deals = [];
+    let _managers = [];
+    let _clients = [];
+    let _activePid = null;
+    let _view = 'kanban';
+    let _detailId = null;
+    let _dragId = null;
+    let _pmgrPid = null;   // pipeline manager selected pipeline
+    let _searchTimer = null;
+    let _usingMockStages = false;  // true when rendering the local fallback grid below
+    let _editMode = false;  // Settings gear → board-wide column edit mode
+    let _qaddOpen = false;  // Quick Add panel open/closed (first column)
+    let _colDragId = null;   // stageId currently being dragged (column reorder)
+    let _dropPlaceholderStageId = null;  // which column currently shows the drop placeholder
+
+    // Local fallback stages — used ONLY for rendering when the active pipeline
+    // has no real stages yet (empty DB, freshly created pipeline, deleted
+    // stages, etc). These have negative ids so they can never collide with a
+    // real PipelineStage row, and the backend's own id<=0 validation in
+    // PATCH /api/deals/:id/stage will reject any attempt to persist a deal
+    // into one — onDrop()/moveDeal() also short-circuit before even trying,
+    // so the user always sees a working grid instead of a dead "Bosqichlar
+    // yo'q" screen, but can never silently lose a drag-drop into a stage
+    // that doesn't really exist in the database.
+    const DEFAULT_MOCK_STAGES = [
+      { id: -1, name: 'Yangi', color: '#1565C0', order: 1, __mock: true },
+      { id: -2, name: 'Muzokaralar', color: '#F57F17', order: 2, __mock: true },
+      { id: -3, name: 'Taklif', color: '#512DA8', order: 3, __mock: true },
+      { id: -4, name: 'Yutilgan', color: '#2E7D32', order: 4, __mock: true },
+      { id: -5, name: "Yo'qotilgan", color: '#C62828', order: 5, __mock: true },
+    ];
+
+    // ── Init (called AFTER window.load = main.js guaranteed ready) ─
+    async function init() {
+      try {
+        await loadAll();
+        initWebSocket();
+        
+        const params = new URLSearchParams(window.location.search);
+        const openId = params.get('openDealId');
+        if (openId) {
+          openDetail(Number(openId));
+        }
+      } catch (e) {
+        console.error('[init]', e);
+        showError('Yuklanishda xato: ' + e.message);
+      }
+    }
+    
+    function initWebSocket() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const ws = new WebSocket(protocol + '//' + window.location.host);
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data && (data.type === 'deal_updated' || data.type === 'deal_deleted')) {
+            // Re-fetch only deals, no need to reload pipelines/managers
+            loadDeals();
+          }
+        } catch(e) {}
+      };
+      ws.onerror = (e) => console.error('WebSocket xatosi', e);
+    }
+
+    async function loadAll() {
+      showLoading();
+      try {
+        await Promise.all([loadPipelines(), loadManagers(), loadClients()]);
+        await loadDeals();
+      } catch (e) {
+        console.error('[loadAll]', e);
+        showError(e.message);
+      }
+    }
+
+    // ── API helpers ────────────────────────────────────────────────
+    async function apiFetch(url, opts) {
+      const fetchFn = (typeof fetchWithTimeout === 'function') ? fetchWithTimeout : fetch;
+      let r;
+      try {
+        r = await fetchFn(url, opts);
+      } catch (err) {
+        throw new Error("Tarmoq xatosi yoki server ishlamayapti.");
+      }
+      let data;
+      try { data = await r.json(); } catch { data = {}; }
+      if (!r.ok) {
+        if (typeof _toast === 'function') _toast(data.message || 'Server xatosi: ' + r.status, 'error');
+        throw new Error(data.message || 'Server xatosi: ' + r.status);
+      }
+      return data;
+    }
+
+    // ── Pipelines ──────────────────────────────────────────────────
+    async function loadPipelines() {
+      const data = await apiFetch('/api/pipelines');
+      let allPipelines = Array.isArray(data) ? data : [];
+      
+      const isNasiyaPage = window.location.pathname.includes('/nasiya');
+      if (isNasiyaPage) {
+        _pipelines = allPipelines.filter(p => p.name.toLowerCase().includes('nasiya'));
+      } else {
+        _pipelines = allPipelines.filter(p => !p.name.toLowerCase().includes('nasiya'));
+      }
+
+      if (_pipelines.length && !_activePid) {
+        _activePid = (_pipelines.find(p => p.isDefault) || _pipelines[0]).id;
+      } else if (_pipelines.length && !_pipelines.find(p => p.id === _activePid)) {
+        _activePid = _pipelines[0].id;
+      }
+      updateActiveStages();
+      renderPipelineUI();
+    }
+
+    function updateActiveStages() {
+      const p = _pipelines.find(x => x.id === _activePid);
+      const real = p ? (p.stages || []) : [];
+      if (real.length) {
+        _stages = real;
+        _usingMockStages = false;
+      } else {
+        // No real stages to show (no pipeline at all, or pipeline has 0
+        // stages) — fall back to a local mock grid so the Kanban view never
+        // shows an empty/broken board.
+        _stages = DEFAULT_MOCK_STAGES;
+        _usingMockStages = true;
+      }
+    }
+
+    function setActivePipeline(id) {
+      _activePid = id;
+      updateActiveStages();
+      renderPipelineUI();
+      closePipelineDropdown();
+      loadDeals();
+    }
+
+    function renderPipelineUI() {
+      // Button text
+      const p = _pipelines.find(x => x.id === _activePid);
+      document.getElementById('pipelineNameText').textContent = p ? p.name : (_pipelines.length ? _pipelines[0].name : 'Voronka yo\\'q');
+
+      // Dropdown list
+      const list = document.getElementById('pdropList');
+      if (!_pipelines.length) {
+        list.innerHTML = '<div style="padding:10px;font-size:13px;color:var(--text-tertiary)">Voronka yo\\'q</div > ';
+      } else {
+        list.innerHTML = _pipelines.map(p => \`
+      <div class="pdrop-item\${p.id===_activePid?' active':''}" onclick="setActivePipeline(\${p.id})">
+        <div class="pdrop-dot" style="background:\${p.color||'#007AFF'}"></div>
+        \${_esc(p.name)}
+        \${p.isDefault ? '<span style="font-size:10px;color:var(--text-tertiary);margin-left:auto">default</span>' : ''}
+      </div>
+    \`).join('');
+  }
+
+  // Stage filter / deal-form selects must always be kept in sync with
+  // _usingMockStages, regardless of whether _pipelines is empty — this
+  // branch must NOT early-return before reaching the code below, or the
+  // deal-form stage select stays enabled with stale options while the
+  // board is showing the local mock fallback grid.
+  // Stage filter / deal-form selects must only ever offer REAL, persistable
+  // stage ids. When the board is showing the local mock fallback grid,
+  // these stay empty — selecting a mock id here would let a deal get
+  // created/filtered against a stage that doesn't exist in the database.
+  const selectableStages = _usingMockStages ? [] : _stages;
+
+  // Stage filter dropdown
+  const sel = document.getElementById('filterStage');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Barcha bosqich</option>' +
+    selectableStages.map(s => \`<option value="\${s.id}">\${_esc(s.name)}</option>\`).join('');
+  if (cur) sel.value = cur;
+
+  // Deal form stage select
+  const fsel = document.getElementById('f-stageId');
+  const fcur = fsel.value;
+  fsel.disabled = _usingMockStages;
+  fsel.innerHTML = (_usingMockStages
+    ? '<option value="">— Avval voronka bosqichlarini sozlang —</option>'
+    : '<option value="">— Bosqich —</option>' + selectableStages.map(s => \`<option value="\${s.id}">\${_esc(s.name)}</option>\`).join('')
+  );
+  if (fcur) fsel.value = fcur;
+}
+
+function togglePipelineDropdown() {
+  document.getElementById('pipelineDropdown').classList.toggle('open');
+}
+
+function closePipelineDropdown() {
+  document.getElementById('pipelineDropdown').classList.remove('open');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('#pipelineNameBtn') && !e.target.closest('#pipelineDropdown')) {
+    closePipelineDropdown();
+  }
+});
+
+// ── Managers ───────────────────────────────────────────────────
+async function loadManagers() {
+  try {
+    const data = await apiFetch('/api/settings/users');
+    _managers = Array.isArray(data) ? data : [];
+    const sel = document.getElementById('filterManager');
+    sel.innerHTML = '<option value="">Barcha manager</option>' +
+      _managers.map(u => \`<option value="\${u.id}">\${_esc(u.fullName||u.email)}</option>\`).join('');
+  } catch(e) { /* managers not critical */ }
+}
+
+// ── Clients ────────────────────────────────────────────────────
+async function loadClients() {
+  try {
+    const data = await apiFetch('/api/clients');
+    _clients = Array.isArray(data) ? data : [];
+    const sel = document.getElementById('f-clientId');
+    sel.innerHTML = '<option value="">— Mijoz tanlang —</option>' +
+      _clients.map(c => \`<option value="\${c.id}">\${_esc(c.name)}\${c.company?' — '+_esc(c.company):''}</option>\`).join('');
+  } catch(e) { /* clients not critical */ }
+}
+
+// ── Deals ──────────────────────────────────────────────────────
+async function loadDeals() {
+  const q    = (document.getElementById('filterSearch').value||'').trim();
+  const sid  = document.getElementById('filterStage').value;
+  const mid  = document.getElementById('filterManager').value;
+  const params = new URLSearchParams();
+  if (q)   params.set('q', q);
+  if (sid)  params.set('stageId', sid);
+  if (mid)  params.set('managerId', mid);
+  if (_activePid) params.set('pipelineId', _activePid);
+
+  try {
+    _deals = await apiFetch('/api/deals?' + params);
+    if (!Array.isArray(_deals)) _deals = [];
+  } catch(e) {
+    _toast('Sdelkalar yuklanmadi: ' + e.message, 'error');
+    _deals = [];
+  }
+
+  if (_view === 'kanban') renderKanban();
+  else renderTable();
+}
+
+// ── Loading / error states ─────────────────────────────────────
+function showLoading() {
+  document.getElementById('kanbanBoard').innerHTML =
+    '<div class="kb-state"><div class="spinner" style="width:36px;height:36px;border-width:3px"></div><p>Yuklanmoqda…</p></div>';
+}
+
+function showError(msg) {
+  document.getElementById('kanbanBoard').innerHTML = \`
+    <div class="kb-state">
+      <i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i>
+      <h3>Xatolik</h3>
+      <p>\${_esc(msg)}</p>
+      <button class="btn btn-primary btn-sm" onclick="loadAll()"><i class="fas fa-redo"></i> Qayta urinish</button>
+    </div>
+  \`;
+}
+
+// ── Kanban ─────────────────────────────────────────────────────
+function renderKanban() {
+  const board = document.getElementById('kanbanBoard');
+  const banner = document.getElementById('kbMockBanner');
+  if (banner) banner.style.display = _usingMockStages ? 'flex' : 'none';
+
+  // Defensive fallback only — updateActiveStages() always guarantees
+  // _stages is non-empty (real stages, or DEFAULT_MOCK_STAGES). This
+  // branch should be unreachable, but if it's ever hit, never leave the
+  // board permanently blank/frozen.
+  if (!_stages.length) {
+    board.innerHTML = `
+      <div class="kb-state">
+        <i class="fas fa-layer-group"></i>
+        <h3>Bosqichlar yo'q</h3>
+        <p>⚙️ tugmasini bosib voronkaga bosqich qo'shing</p>
+        <button class="btn btn-primary btn-sm" onclick="openPipelineMgr()">
+          <i class="fas fa-cog"></i> Voronkani boshqarish
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  const unassigned = _deals.filter(d => !d.stageId);
+
+  board.innerHTML = _stages.map((s, idx) => {
+    const sDeals = _deals.filter(d => d.stageId === s.id);
+    const total  = sDeals.reduce((a, d) => a + (Number(d.amount)||0), 0);
+    const isFirst = idx === 0;
+    const editable = _editMode && !s.__mock;
+
+    const hdrHtml = editable ? `
+      <div class="kb-col-hdr-edit">
+        <i class="fas fa-grip-vertical" title="Tartibni o'zgartirish uchun tutib torting"></i>
+        <input type="text" class="kb-col-rename" value="${_esc(s.name)}"
+          onclick="event.stopPropagation()"
+          onchange="renameStage(${s.id}, this.value)" onkeydown="if(event.key==='Enter') this.blur()">
+        <span class="kb-col-del" title="Bosqichni o'chirish" onclick="event.stopPropagation();deleteStageQuick(${s.id})">
+          <i class="fas fa-trash" style="font-size:11px"></i>
+        </span>
+      </div>
+      <div class="kb-col-meta" style="margin-top:4px"><span>${sDeals.length}</span> sdelka · <span>${_fmt(total,true)}</span></div>
+    ` : `
+      <div class="kb-col-title">
+        <div class="kb-col-dot" style="background:${s.color||'#007AFF'}"></div>
+        ${_esc(s.name)}
+      </div>
+      <div class="kb-col-meta">
+        <span>${sDeals.length}</span> sdelka · <span>${_fmt(total,true)}</span>
+      </div>
+    `;
+
+    const quickAddHtml = isFirst ? `
+      <div style="padding:0 6px 6px">
+        <button class="kb-qadd-toggle" onclick="toggleQuickAdd()">
+          <i class="fas fa-bolt" style="font-size:10px"></i> ${_qaddOpen ? 'Yopish' : "Tezkor qo'shish"}
+        </button>
+      </div>
+      <div class="kb-qadd-panel${_qaddOpen ? ' open' : ''}" id="qaddPanel">
+        <div class="kb-qadd-label">Yangi Buyurtma</div>
+        <input type="text" id="qa-contactName" placeholder="Mijoz ismi *">
+        <input type="text" id="qa-contactPhone" placeholder="Telefon raqami *">
+        <input type="text" id="qa-name" placeholder="Mahsulot nomi *">
+        <input type="text" id="qa-city" placeholder="Shahri">
+        <input type="text" id="qa-notes" placeholder="Izoh">
+        <div class="kb-qadd-actions">
+          <button class="btn btn-primary btn-sm" id="qaSaveBtn" onclick="submitQuickAdd()"><i class="fas fa-save"></i> Qo'shish</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleQuickAdd()">Bekor</button>
+        </div>
+      </div>
+    ` : '';
+
+    return `
+      <div class="kb-col${editable ? ' editing' : ''}" style="--_sc:${s.color||'#007AFF'}">
+        <div class="kb-col-hdr"
+          ${editable ? `draggable="true" ondragstart="onColDragStart(event,${s.id})" ondragend="onColDragEnd(event)" ondragover="onColDragOver(event)" ondragleave="onColDragLeave(event)" ondrop="onColDrop(event,${s.id})"` : ''}>${hdrHtml}</div>
+        ${quickAddHtml}
+        <div class="kb-cards" id="col-${s.id}"
+          ondragover="onDragOver(event)" ondragleave="onDragLeave(event)"
+          ondrop="onDrop(event,${s.id})">
+          ${sDeals.length ? sDeals.map(d => dcardHtml(d)).join('') : '<div class="kb-empty">Sdelka yo\'q</div>'}
+        </div>
+        <div class="kb-addbtn-wrap">
+          <button class="kb-addbtn" onclick="openDealModal(${s.id})">
+            <i class="fas fa-plus"></i> Add Card
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('') + (unassigned.length ? `
+    <div class="kb-col" style="--_sc:var(--text-tertiary)">
+      <div class="kb-col-hdr">
+        <div class="kb-col-title">
+          <div class="kb-col-dot" style="background:var(--text-tertiary)"></div>
+          Bosqichsiz
+        </div>
+        <div class="kb-col-meta"><span>${unassigned.length}</span> sdelka</div>
+      </div>
+      <div class="kb-cards" id="col-null"
+        ondragover="onDragOver(event)" ondragleave="onDragLeave(event)"
+        ondrop="onDrop(event,null)">
+        ${unassigned.map(d => dcardHtml(d)).join('')}
+      </div>
+    </div>
+  ` : '') + (_editMode && !_usingMockStages && window.USER_ROLE === 'admin' ? `
+    <button class="kb-addcol" onclick="addStageQuick()">
+      <i class="fas fa-plus" style="font-size:18px"></i>
+      <span>Yangi bosqich</span>
+    </button>
+  ` : '');
+}
+
+function dcardHtml(d) {
+  const paid = d.amount > 0 ? Math.round(((d.paidAmount||0)/d.amount)*100) : 0;
+  const ov   = d.deadline && new Date(d.deadline) < new Date() && !['won','lost'].includes(d.status);
+  const init = ((d.manager?.fullName || d.manager?.email || '?').charAt(0)).toUpperCase();
+  const statusColors = { new:'#007AFF', negotiation:'#FF9500', proposal:'#5856D6', won:'#34C759', lost:'#FF3B30' };
+  const statusLabels = { new:'Yangi', negotiation:'Muzokaralar', proposal:'Taklif', won:'Yutilgan', lost:"Yo'qotilgan" };
+  const sc = statusColors[d.status] || '#8E8E93';
+  const sl = statusLabels[d.status] || 'Boma’lum';
+  
+  const clientHtml = d.client ? '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;display:flex;align-items:center;gap:6px"><i class="fas fa-user" style="color:var(--text-tertiary);"></i>' + _esc(d.client.name) + (d.client.company ? ' · ' + _esc(d.client.company) : '') + '</div>' : '<div style="height:4px"></div>';
+  const phoneHtml = (d.client && d.client.phone) ? '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;display:flex;align-items:center;gap:6px"><i class="fas fa-phone-alt" style="color:var(--text-tertiary);"></i>' + _esc(d.client.phone) + '</div>' : '';
+  const notesHtml = d.notes ? '<div style="font-size:11px;color:var(--text-tertiary);margin-bottom:12px;padding-left:8px;border-left:2px solid var(--border-med);font-style:italic">' + _esc(d.notes) + '</div>' : '';
+  const progressHtml = d.amount > 0 ? '<div class="dcard-progress" style="margin-top:12px"><div class="dcard-progress-fill" style="width:' + paid + '%"></div></div>' : '';
+  
+  return `
+    <div class="dcard" draggable="true" data-id="${d.id}"
+      ondragstart="onDragStart(event,${d.id})" ondragend="onDragEnd(event)"
+      onclick="openDetail(${d.id})" style="padding:14px; box-shadow:0 2px 8px rgba(0,0,0,0.04); border:1px solid var(--glass-border); border-radius:10px; transition:transform 0.2s, box-shadow 0.2s;">
+      
+      <div class="dcard-header" style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:flex-start;">
+        <div style="font-weight:600; font-size:14px; color:var(--text-primary); line-height:1.3; padding-right:8px">${_esc(d.productName||d.name)}</div>
+        <span class="dcard-badge" style="background:${sc}1A; color:${sc}; border:1px solid ${sc}33; padding:3px 6px; font-size:10px; border-radius:4px; font-weight:600; white-space:nowrap">${sl}</span>
+      </div>
+      
+      ${clientHtml}
+      ${phoneHtml}
+      ${notesHtml}
+      
+      <div class="dcard-financials" style="background:var(--bg-secondary); border-radius:8px; padding:10px; margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+          <span style="font-size:11px; color:var(--text-tertiary)">Jami:</span>
+          <span style="font-size:12px; font-weight:600; color:var(--text-primary)">\${_fmt(d.amount||0,true)}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+          <span style="font-size:11px; color:var(--text-tertiary)">To'landi:</span>
+          <span style="font-size:12px; font-weight:600; color:var(--success)">\${_fmt(d.paidAmount||0,true)}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; border-top:1px dashed var(--glass-border); padding-top:6px;">
+          <span style="font-size:11px; color:var(--text-tertiary)">Qarz:</span>
+          <span style="font-size:12px; font-weight:700; color:var(--danger)">\${_fmt((d.amount||0) - (d.paidAmount||0),true)}</span>
+        </div>
+      </div>
+      
+      <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:var(--text-tertiary);">
+        <div class="\${ov ? 'overdue' : ''}" style="\${ov ? 'color:var(--danger);font-weight:600' : ''}"><i class="far fa-calendar-alt"></i> \${_date(d.createdAt)}</div>
+        <div class="dcard-av" title="\${_esc(d.manager?.fullName||'?')}" style="width:20px;height:20px;font-size:10px">\${init}</div>
+      </div>
+      
+      \${progressHtml}
+    </div>
+  \`;
+}
+
+// ── Table view ─────────────────────────────────────────────────
+function renderTable() {
+  const tbody = document.getElementById('dealsTableBody');
+  const statusLabels = { new:'Yangi', negotiation:'Muzokaralar', proposal:'Taklif', won:'Yutilgan', lost:"Yo'qotilgan" };
+  const statusColors = { new:'#007AFF', negotiation:'#FF9500', proposal:'#5856D6', won:'#34C759', lost:'#FF3B30' };
+  if (!_deals.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-tertiary)"><i class="fas fa-handshake" style="font-size:28px;display:block;margin-bottom:8px"></i>Sdelkalar yo\\'q</td></tr>';
+    return;
+  }
+  const ov = d => d.deadline && new Date(d.deadline) < new Date();
+  tbody.innerHTML = _deals.map(d => {
+    const stage = d.stage || _stages.find(s => s.id === d.stageId);
+    const sc = statusColors[d.status]||'#8E8E93';
+    return \`<tr onclick="openDetail(\${d.id})">
+      <td style="color:var(--text-tertiary);font-size:12px">#\${d.id}</td>
+      <td><strong>\${_esc(d.productName||d.name)}</strong></td>
+      <td>\${d.client ? _esc(d.client.name) : '<span style="color:var(--text-tertiary)">—</span>'}</td>
+      <td>\${stage ? \`<span class="badge" style="background:\${stage.color}22;color:\${stage.color}">\${_esc(stage.name)}</span>\` : '—'}</td>
+      <td style="font-weight:700">\${_fmt(d.amount)}</td>
+      <td style="color:var(--success)">\${_fmt(d.paidAmount)}</td>
+      <td class="\${ov(d)?'text-danger':''}">\${d.deadline?_date(d.deadline):'—'}</td>
+      <td>\${d.manager?_esc(d.manager.fullName||d.manager.email):'—'}</td>
+      <td onclick="event.stopPropagation()">
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-ghost btn-icon btn-sm" onclick="openDetail(\${d.id})"><i class="fas fa-eye"></i></button>
+          <button class="btn btn-ghost btn-icon btn-sm" onclick="openDealModal(null,\${d.id})"><i class="fas fa-edit"></i></button>
+          <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="deleteDeal(\${d.id})"><i class="fas fa-trash"></i></button>
+        </div>
+      </td>
+    </tr>\`;
+  }).join('');
+}
+
+// ── View toggle ────────────────────────────────────────────────
+function setView(v) {
+  _view = v;
+  document.getElementById('kanbanWrap').classList.toggle('hidden', v !== 'kanban');
+  document.getElementById('tableView').classList.toggle('hidden', v === 'kanban');
+  document.getElementById('btnKanban').classList.toggle('active', v === 'kanban');
+  document.getElementById('btnTable').classList.toggle('active', v !== 'kanban');
+  if (v === 'kanban') renderKanban(); else renderTable();
+}
+
+// ── Filters ────────────────────────────────────────────────────
+function clearFilters() {
+  document.getElementById('filterSearch').value = '';
+  document.getElementById('filterStage').value = '';
+  document.getElementById('filterManager').value = '';
+  loadDeals();
+}
+
+// ── Drag & drop ────────────────────────────────────────────────
+function onDragStart(e, id) {
+  _dragId = id;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+function onDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  const ph = document.getElementById('kbDropPlaceholder');
+  if (ph) ph.remove();
+}
+
+// Finds the card the cursor is currently hovering above, so the drop
+// placeholder bounding box can be inserted at the exact intended position
+// within the column rather than always at the end.
+function _dragAfterElement(container, y) {
+  const cards = [...container.querySelectorAll('.dcard:not(.dragging)')];
+  return cards.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    if (offset < 0 && offset > closest.offset) return { offset, element: child };
+    return closest;
+  }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
+}
+
+function _ensureDropPlaceholder() {
+  let ph = document.getElementById('kbDropPlaceholder');
+  if (!ph) {
+    ph = document.createElement('div');
+    ph.id = 'kbDropPlaceholder';
+    ph.className = 'kb-drop-placeholder';
+  }
+  return ph;
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+  const container = e.currentTarget;
+  const ph = _ensureDropPlaceholder();
+  const afterEl = _dragAfterElement(container, e.clientY);
+  if (afterEl) container.insertBefore(ph, afterEl);
+  else container.appendChild(ph);
+}
+function onDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+  // Only drop the placeholder once the cursor truly leaves this column
+  // (not just moving over a child card inside it).
+  if (!e.relatedTarget || !e.currentTarget.contains(e.relatedTarget)) {
+    const ph = document.getElementById('kbDropPlaceholder');
+    if (ph) ph.remove();
+  }
+}
+async function onDrop(e, stageId) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const ph = document.getElementById('kbDropPlaceholder');
+  if (ph) ph.remove();
+  if (!_dragId) return;
+  const dealId = _dragId;
+  _dragId = null;
+
+  const deal = _deals.find(d => d.id === dealId);
+  if (!deal) return;
+  const newStageId = stageId || null;
+  if (deal.stageId === newStageId) return;
+
+  // Mock columns (negative ids) are a rendering-only placeholder — there
+  // is no real PipelineStage row to move into, so block the drop before
+  // ever touching local state or the network.
+  if (_usingMockStages && newStageId !== null && newStageId < 0) {
+    _toast("Bu namuna bosqich — avval voronkani sozlang", 'error');
+    return;
+  }
+
+  // ── Optimistic UI update ──────────────────────────────────────
+  // Move the card and recalc column counts/totals INSTANTLY, before
+  // the network call even starts. Persist to the DB in the background;
+  // if it fails, move the card back and show a toast — no full board
+  // re-fetch needed in either path.
+  const previousStageId = deal.stageId;
+  deal.stageId = newStageId;
+  renderKanban();
+
+  try {
+    const updated = await apiFetch('/api/deals/' + dealId + '/stage', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stageId: newStageId })
+    });
+    // Merge server-confirmed fields (stage relation, updatedAt, etc.)
+    // into the local deal object without re-fetching the whole board.
+    Object.assign(deal, updated);
+    _toast('Bosqich o\\'zgartirildi', 'success');
+  } catch (err) {
+    // Roll back to the previous stage and re-render.
+    deal.stageId = previousStageId;
+    renderKanban();
+    _toast(err.message, 'error');
+  }
+}
+
+// ── Won / Lost bottom drop zones ────────────────────────────────
+function onZoneDragOver(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add('rzone-over');
+}
+function onZoneDragLeave(e) {
+  e.currentTarget.classList.remove('rzone-over');
+}
+async function onZoneDrop(e, outcome) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('rzone-over');
+  if (!_dragId) return;
+  const dealId = _dragId;
+  _dragId = null;
+
+  const deal = _deals.find(d => d.id === dealId);
+  if (!deal) return;
+
+  // If a real stage matching this outcome exists in the active pipeline
+  // (e.g. "Yutilgan" / "Yo'qotilgan"), move the card there too — otherwise
+  // just clear the stage. Either way the source column's count/total
+  // recompute immediately since the card leaves it.
+  const matchNames = outcome === 'won'
+    ? ['yutilgan', "g'olib", 'won', 'muvaffaqiyat']
+    : ["yo'qotilgan", 'yoqotilgan', 'lost', 'real emas'];
+  const targetStage = (!_usingMockStages ? _stages : [])
+    .find(s => matchNames.some(n => (s.name || '').toLowerCase().includes(n)));
+  const newStageId = targetStage ? targetStage.id : null;
+
+  const previousStageId = deal.stageId;
+  const previousStatus = deal.status;
+  deal.status = outcome;
+  deal.stageId = newStageId;
+  renderKanban();
+
+  try {
+    const updated = await apiFetch('/api/deals/' + dealId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: outcome, stageId: newStageId })
+    });
+    Object.assign(deal, updated);
+    _toast(outcome === 'won' ? 'Sdelka muvaffaqiyatli yopildi' : 'Sdelka real emas deb belgilandi', 'success');
+  } catch (err) {
+    deal.stageId = previousStageId;
+    deal.status = previousStatus;
+    renderKanban();
+    _toast(err.message, 'error');
+  }
+}
+
+// ── Settings gear → board-wide column Edit Mode ─────────────────
+function toggleEditMode() {
+  _editMode = !_editMode;
+  document.getElementById('btnEditMode').classList.toggle('active', _editMode);
+  document.getElementById('kbEditBanner').classList.toggle('hidden', !_editMode);
+  renderKanban();
+}
+
+async function renameStage(stageId, name) {
+  name = (name || '').trim();
+  const stage = _stages.find(s => s.id === stageId);
+  if (!name || _usingMockStages) { renderKanban(); return; }
+  if (stage && stage.name === name) return;
+  try {
+    await apiFetch('/api/pipelines/' + _activePid + '/stages/' + stageId, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+    if (stage) stage.name = name;
+    _toast('Nom yangilandi', 'success');
+    await loadPipelines();
+    renderKanban();
+  } catch (e) { _toast(e.message, 'error'); renderKanban(); }
+}
+
+async function deleteStageQuick(stageId) {
+  if (_usingMockStages) { _toast('Avval voronkani sozlang', 'error'); return; }
+  if (!confirm("Bosqichni o'chirishni tasdiqlaysizmi?")) return;
+  try {
+    await apiFetch('/api/pipelines/' + _activePid + '/stages/' + stageId, { method: 'DELETE' });
+    _toast("O'chirildi", 'success');
+    await loadPipelines();
+    await loadDeals();
+  } catch (e) { _toast(e.message, 'error'); }
+}
+
+async function addStageQuick() {
+  if (_usingMockStages) { _toast('Avval voronkani sozlang', 'error'); return; }
+  const name = prompt('Yangi bosqich nomi:');
+  if (!name || !name.trim()) return;
+  try {
+    await apiFetch('/api/pipelines/' + _activePid + '/stages', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name.trim() })
+    });
+    _toast("Bosqich qo'shildi", 'success');
+    await loadPipelines();
+    renderKanban();
+  } catch (e) { _toast(e.message, 'error'); }
+}
+
+// ── Column drag-and-drop reordering (Edit Mode only) ─────────────
+function onColDragStart(e, stageId) {
+  if (!_editMode) return;
+  _colDragId = stageId;
+  e.stopPropagation();
+  e.currentTarget.classList.add('col-dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+function onColDragEnd(e) {
+  e.currentTarget.classList.remove('col-dragging');
+}
+function onColDragOver(e) {
+  if (!_editMode || _colDragId == null) return;
+  e.preventDefault();
+  e.stopPropagation();
+  e.currentTarget.classList.add('col-drag-over');
+}
+function onColDragLeave(e) {
+  e.currentTarget.classList.remove('col-drag-over');
+}
+async function onColDrop(e, targetStageId) {
+  if (!_editMode) return;
+  e.preventDefault();
+  e.stopPropagation();
+  e.currentTarget.classList.remove('col-drag-over');
+  const dragId = _colDragId;
+  _colDragId = null;
+  if (dragId == null || dragId === targetStageId || _usingMockStages) return;
+
+  const ids = _stages.map(s => s.id);
+  const fromIdx = ids.indexOf(dragId);
+  const toIdx = ids.indexOf(targetStageId);
+  if (fromIdx === -1 || toIdx === -1) return;
+  ids.splice(fromIdx, 1);
+  ids.splice(toIdx, 0, dragId);
+
+  // Optimistic reorder
+  _stages = ids.map(id => _stages.find(s => s.id === id)).filter(Boolean);
+  renderKanban();
+
+  try {
+    await apiFetch('/api/pipelines/' + _activePid + '/stages/reorder', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids })
+    });
+    await loadPipelines();
+    renderKanban();
+  } catch (err) {
+    _toast(err.message, 'error');
+    await loadPipelines();
+    renderKanban();
+  }
+}
+
+// ── Quick Add (Быстрое добавление) — first Kanban column ────────
+function toggleQuickAdd() {
+  _qaddOpen = !_qaddOpen;
+  renderKanban();
+  if (_qaddOpen) setTimeout(() => { const el = document.getElementById('qa-name'); if (el) el.focus(); }, 50);
+}
+
+async function submitQuickAdd() {
+  const contactName    = document.getElementById('qa-contactName').value.trim();
+  const contactPhone   = document.getElementById('qa-contactPhone').value.trim();
+  const nameEl         = document.getElementById('qa-name');
+  const name           = nameEl ? nameEl.value.trim() : '';
+  const city           = document.getElementById('qa-city').value.trim();
+  const notes          = document.getElementById('qa-notes').value.trim();
+
+  if (!contactName) { _toast('Mijoz ismi majburiy', 'error'); document.getElementById('qa-contactName').focus(); return; }
+  if (!contactPhone) { _toast('Telefon raqami majburiy', 'error'); document.getElementById('qa-contactPhone').focus(); return; }
+  if (!name) { _toast('Mahsulot nomi majburiy', 'error'); if (nameEl) nameEl.focus(); return; }
+
+  const firstStage = (!_usingMockStages && _stages.length) ? _stages[0].id : null;
+
+  const btn = document.getElementById('qaSaveBtn');
+  if (btn) btn.disabled = true;
+  try {
+    await apiFetch('/api/deals', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        productName: name,
+        amount: 0,
+        stageId: firstStage,
+        pipelineId: _activePid,
+        contactName: contactName,
+        contactPhone: contactPhone,
+        city: city || null,
+        notes: notes || null
+      })
+    });
+    _toast("Sdelka qo'shildi", 'success');
+    _qaddOpen = false;
+    await loadDeals();
+  } catch (e) { _toast(e.message, 'error'); }
+  finally { if (btn) btn.disabled = false; }
+}
+
+function callbackRedirect(dealId, dealTitle, clientId) {
+  const params = new URLSearchParams();
+  if (dealId) params.set('dealId', dealId);
+  if (dealTitle) params.set('dealTitle', dealTitle);
+  if (clientId) params.set('clientId', clientId);
+  window.location.href = '/tasks?' + params.toString();
+}
+
+// ── Deal modal ─────────────────────────────────────────────────
+function openDealModal(defaultStageId, editId) {
+  const modal = document.getElementById('dealModal');
+  document.getElementById('f-id').value = editId || '';
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-amount').value = '';
+  document.getElementById('f-paidAmount').value = '';
+  document.getElementById('f-clientId').value = '';
+  document.getElementById('f-deadline').value = '';
+  document.getElementById('f-notes').value = '';
+  document.getElementById('dealModalTitle').textContent = editId ? 'Sdelkani tahrirlash' : 'Yangi sdelka';
+
+  if (defaultStageId && !_usingMockStages) {
+    document.getElementById('f-stageId').value = defaultStageId;
+  } else if (!editId && _stages.length && !_usingMockStages) {
+    document.getElementById('f-stageId').value = _stages[0].id;
+  } else {
+    document.getElementById('f-stageId').value = '';
+  }
+
+  if (editId) {
+    const deal = _deals.find(d => d.id === editId);
+    if (deal) {
+      document.getElementById('f-name').value = deal.productName || deal.name || '';
+      document.getElementById('f-contactName').value = deal.client?.name || '';
+      document.getElementById('f-contactPhone').value = deal.client?.phone || '';
+      document.getElementById('f-city').value = deal.client?.city || '';
+      document.getElementById('f-amount').value = deal.amount || '';
+      document.getElementById('f-paidAmount').value = deal.paidAmount || '';
+      document.getElementById('f-clientId').value = deal.clientId || '';
+      document.getElementById('f-stageId').value = deal.stageId || '';
+      document.getElementById('f-notes').value = deal.notes || '';
+    }
+  } else {
+      document.getElementById('f-name').value = '';
+      document.getElementById('f-contactName').value = '';
+      document.getElementById('f-contactPhone').value = '';
+      document.getElementById('f-city').value = '';
+      document.getElementById('f-amount').value = '';
+      document.getElementById('f-paidAmount').value = '';
+      document.getElementById('f-clientId').value = '';
+      document.getElementById('f-notes').value = '';
+  }
+
+  modal.classList.remove('hidden');
+  setTimeout(() => document.getElementById('f-name').focus(), 100);
+}
+
+function closeDealModal() {
+  document.getElementById('dealModal').classList.add('hidden');
+}
+
+async function saveDeal() {
+  const id    = document.getElementById('f-id').value;
+  const name  = document.getElementById('f-name').value.trim();
+  if (!name) { _toast('Sdelka nomi majburiy', 'error'); document.getElementById('f-name').focus(); return; }
+
+  // Belt-and-suspenders: never send a negative (mock/local-only) stage id
+  // to the API, even if some UI path slipped one into the form.
+  let rawStageId = document.getElementById('f-stageId').value ? Number(document.getElementById('f-stageId').value) : null;
+  if (rawStageId !== null && rawStageId <= 0) rawStageId = null;
+
+  const body = {
+    productName: name,
+    contactName: document.getElementById('f-contactName').value.trim() || null,
+    contactPhone: document.getElementById('f-contactPhone').value.trim() || null,
+    city:        document.getElementById('f-city').value.trim() || null,
+    amount:      Number(document.getElementById('f-amount').value) || 0,
+    paidAmount:  Number(document.getElementById('f-paidAmount').value) || 0,
+    clientId:    document.getElementById('f-clientId').value ? Number(document.getElementById('f-clientId').value) : null,
+    stageId:     rawStageId,
+    notes:       document.getElementById('f-notes').value.trim() || null,
+  };
+
+  const btn = document.getElementById('dealSaveBtn');
+  btn.disabled = true;
+  try {
+    if (id) {
+      await apiFetch('/api/deals/' + id, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      _toast('Yangilandi', 'success');
+    } else {
+      await apiFetch('/api/deals', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      _toast("Qo'shildi", 'success');
+    }
+    closeDealModal();
+    await loadDeals();
+  } catch(e) { _toast(e.message, 'error'); }
+  finally { btn.disabled = false; }
+}
+
+// ── Detail modal ───────────────────────────────────────────────
+async function openDetail(id) {
+  _detailId = id;
+  document.getElementById('detailModal').classList.remove('hidden');
+  document.getElementById('detailTitle').textContent = 'Sdelka #' + id;
+  document.getElementById('detailBody').innerHTML = '<div class="kb-state"><div class="spinner"></div></div>';
+
+  try {
+    const deal = await apiFetch('/api/deals/' + id);
+    const stage = deal.stage || _stages.find(s => s.id === deal.stageId);
+    const statusLabels = { new:'Yangi', negotiation:'Muzokaralar', proposal:'Taklif', won:'Yutilgan', lost:"Yo'qotilgan" };
+    const statusColors = { new:'#007AFF', negotiation:'#FF9500', proposal:'#5856D6', won:'#34C759', lost:'#FF3B30' };
+    const paid = deal.amount > 0 ? Math.round(((deal.paidAmount||0)/deal.amount)*100) : 0;
+    document.getElementById('detailTitle').textContent = _esc(deal.productName||deal.name);
+    document.getElementById('detailBody').innerHTML = \`
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
+        <div>
+          <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:2px">Summa</div>
+          <div style="font-size:20px;font-weight:700;color:var(--accent)">\${_fmt(deal.amount)}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:2px">To'langan</div>
+          <div style="font-size:20px;font-weight:700;color:var(--success)">\${_fmt(deal.paidAmount)}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:2px">Qarz</div>
+          <div style="font-size:20px;font-weight:700;color:var(--danger)">\${_fmt(Math.max(0, (deal.amount||0) - (deal.paidAmount||0)))}</div>
+        </div>
+      </div>
+      <div class="dcard-progress" style="height:6px;margin-bottom:16px">
+        <div class="dcard-progress-fill" style="width:\${paid}%"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div>
+          <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:3px">Bosqich</div>
+          <div>\${stage ? \`<span class="badge" style="background:\${stage.color}22;color:\${stage.color}">\${_esc(stage.name)}</span>\` : '—'}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:3px">Status</div>
+          <div><span class="badge" style="background:\${statusColors[deal.status]||'#8E8E93'}22;color:\${statusColors[deal.status]||'#8E8E93'}">\${statusLabels[deal.status]||deal.status}</span></div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:3px">Mijoz</div>
+          <div style="font-size:13px">\${deal.client ? _esc(deal.client.name) : '—'}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:3px">Manager</div>
+          <div style="font-size:13px">\${deal.manager ? _esc(deal.manager.fullName||deal.manager.email) : '—'}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:3px">Muddat</div>
+          <div style="font-size:13px\${deal.deadline&&new Date(deal.deadline)<new Date()?';color:var(--danger)':''}">\${deal.deadline ? _date(deal.deadline) : '—'}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:3px">Yaratilgan</div>
+          <div style="font-size:13px">\${_date(deal.createdAt)}</div>
+        </div>
+      </div>
+      \${deal.notes ? \`<div style="margin-bottom:16px"><div style="font-size:11px;color:var(--text-tertiary);margin-bottom:4px">Izoh</div><div style="font-size:13px;padding:10px;background:var(--bg-secondary);border-radius:8px">\${_esc(deal.notes)}</div></div>\` : ''}
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        \${_stages.map(s => \`<button class="btn btn-sm \${s.id===deal.stageId?'btn-primary':'btn-ghost'}" onclick="moveDeal(\${deal.id},\${s.id})">\${_esc(s.name)}</button>\`).join('')}
+      </div>
+      <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items:center">
+        <button class="btn btn-primary btn-sm" onclick="createTaskForDeal(\${deal.id}, '\${_esc(deal.productName || deal.name).replace(/'/g, "\\\\'")}')">
+          <i class="fas fa-check-circle"></i> Vazifa qilib belgilash
+        </button>
+      </div>
+
+      <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--glass-border)">
+        <h4 style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:12px; display:flex; align-items:center; gap:6px"><i class="fas fa-comments" style="color:var(--text-tertiary)"></i> Izohlar va Tarix</h4>
+        <div style="display:flex; gap:8px; margin-bottom:16px">
+          <input type="text" id="newCommentInput" class="form-control" placeholder="Izoh yozing..." style="flex:1; font-size:13px">
+          <button class="btn btn-primary btn-sm" onclick="addComment(\${deal.id})"><i class="fas fa-paper-plane"></i></button>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px; max-height:200px; overflow-y:auto; padding-right:4px">
+          \${deal.activities && deal.activities.length ? deal.activities.map(a => 
+            '<div style="background:var(--bg-secondary); border-radius:8px; padding:10px; font-size:12px">' +
+              '<div style="display:flex; justify-content:space-between; margin-bottom:4px">' +
+                '<span style="font-weight:600; color:' + (a.action==='Izoh qoldirildi'?'var(--accent)':'var(--text-primary)') + '">' + _esc(a.action) + '</span>' +
+                '<span style="color:var(--text-tertiary); font-size:10px">' + _date(a.createdAt) + ' ' + new Date(a.createdAt).toLocaleTimeString('uz-UZ', {hour:'2-digit',minute:'2-digit'}) + '</span>' +
+              '</div>' +
+              '<div style="color:var(--text-secondary); line-height:1.4">' + _esc(a.details||'') + '</div>' +
+              '<div style="color:var(--text-tertiary); font-size:10px; margin-top:6px; text-align:right">' + (a.user ? _esc(a.user.fullName||a.user.email) : 'Tizim') + '</div>' +
+            '</div>'
+          ).join('') : '<div style="color:var(--text-tertiary); font-size:12px; text-align:center; padding:10px">Hali hech qanday o\\'zgarish yo\\'q</div>'}
+        </div>
+      </div>
+    \`;
+  } catch(e) {
+    document.getElementById('detailBody').innerHTML = '<div class="kb-state"><i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i><p>' + _esc(e.message) + '</p></div>';
+  }
+}
+
+function closeDetail() {
+  document.getElementById('detailModal').classList.add('hidden');
+  _detailId = null;
+}
+
+async function createTaskForDeal(dealId, dealTitle) {
+  try {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    await apiFetch('/api/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: dealTitle + ' bo\\'yicha qayta aloqa',
+        description: 'Mijoz bilan sdelka bo\\'yicha bog\\'lanish kerak',
+        dueDate: tomorrow.toISOString().substring(0,10),
+        dealId: dealId
+      })
+    });
+    _toast('Vazifa muvaffaqiyatli yaratildi', 'success');
+  } catch(e) {
+    _toast(e.message, 'error');
+  }
+}
+
+async function addComment(dealId) {
+  const input = document.getElementById('newCommentInput');
+  const text = input ? input.value.trim() : '';
+  if (!text) return;
+
+  try {
+    const btn = input.nextElementSibling;
+    btn.disabled = true;
+    await apiFetch('/api/deals/' + dealId + '/comments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    input.value = '';
+    // Reload detail to show the new comment
+    await openDetail(dealId);
+  } catch(e) {
+    _toast(e.message, 'error');
+  }
+}
+
+function editCurrentDeal() {
+  if (!_detailId) return;
+  closeDetail();
+  openDealModal(null, _detailId);
+}
+
+function editDealDirectly(id) {
+  openDealModal(null, id);
+}
+
+async function deleteCurrentDeal() {
+  if (!_detailId) return;
+  if (!confirm("Sdelkani o'chirishni tasdiqlaysizmi?")) return;
+  try {
+    await apiFetch('/api/deals/' + _detailId, { method:'DELETE' });
+    _toast("O'chirildi", 'success');
+    closeDetail();
+    await loadDeals();
+  } catch(e) { _toast(e.message, 'error'); }
+}
+
+async function deleteDeal(id) {
+  if (!confirm("Sdelkani o'chirishni tasdiqlaysizmi?")) return;
+  try {
+    await apiFetch('/api/deals/' + id, { method:'DELETE' });
+    _toast("O'chirildi", 'success');
+    await loadDeals();
+  } catch(e) { _toast(e.message, 'error'); }
+}
+
+async function moveDeal(dealId, stageId) {
+  if (_usingMockStages && stageId !== null && stageId !== undefined && Number(stageId) < 0) {
+    _toast("Bu namuna bosqich — avval voronkani sozlang", 'error');
+    return;
+  }
+  try {
+    await apiFetch('/api/deals/' + dealId + '/stage', {
+      method:'PATCH', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ stageId })
+    });
+    _toast('Bosqich o\\'zgartirildi', 'success');
+    closeDetail();
+    await loadDeals();
+  } catch(e) { _toast(e.message, 'error'); }
+}
+
+// ── Pipeline Manager ───────────────────────────────────────────
+function openPipelineMgr() {
+  document.getElementById('pmgrModal').classList.remove('hidden');
+  _pmgrPid = _activePid;
+  renderPmgrPipelines();
+  renderPmgrStages();
+}
+
+function closePipelineMgr() {
+  document.getElementById('pmgrModal').classList.add('hidden');
+  pmgrHidePipelineForm();
+  pmgrHideStageForm();
+}
+
+function renderPmgrPipelines() {
+  const list = document.getElementById('pmgrPipelineList');
+  list.innerHTML = _pipelines.map(p => \`
+    <div class="pmgr-pitem\${p.id===_pmgrPid?' active':''}" onclick="pmgrSelectPipeline(\${p.id})">
+      <div style="width:9px;height:9px;border-radius:50%;background:\${p.color||'#007AFF'};flex-shrink:0"></div>
+      <span style="flex:1;font-size:13px">\${_esc(p.name)}\${p.isDefault?' <small style=\\"color:var(--text-tertiary)\\">default</small>':''}</span>
+      <div style="display:flex;gap:3px">
+        <button class="btn btn-ghost btn-icon" style="padding:2px 5px;font-size:11px" onclick="event.stopPropagation();pmgrEditPipeline(\${p.id})"><i class="fas fa-edit"></i></button>
+        <button class="btn btn-ghost btn-icon text-danger" style="padding:2px 5px;font-size:11px" onclick="event.stopPropagation();pmgrDeletePipeline(\${p.id})"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>
+  \`).join('') || '<div style="color:var(--text-tertiary);font-size:13px;padding:8px">Voronka yo\\'q</div>';
+}
+
+function renderPmgrStages() {
+  const p = _pipelines.find(x => x.id === _pmgrPid);
+  const stages = p ? (p.stages||[]) : [];
+  document.getElementById('pmgrStageTitle').textContent = p ? p.name + ' — bosqichlar' : 'Voronka tanlanmagan';
+  document.getElementById('pmgrAddStageBtn').style.display = p ? '' : 'none';
+  document.getElementById('pmgrStageList').innerHTML = stages.map(s => \`
+    <div class="pmgr-sitem">
+      <div style="width:9px;height:9px;border-radius:50%;background:\${s.color||'#007AFF'}"></div>
+      <span style="font-size:13px">\${_esc(s.name)}</span>
+      <div class="sitem-actions">
+        <button class="btn btn-ghost btn-icon btn-sm" onclick="pmgrEditStage(\${s.id},'\${_esc(s.name)}','\${s.color||'#007AFF'}')"><i class="fas fa-edit"></i></button>
+        <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="pmgrDeleteStage(\${s.id})"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>
+  \`).join('') || '<div style="color:var(--text-tertiary);font-size:13px;padding:8px">Bosqich yo\\'q</div>';
+}
+
+function pmgrSelectPipeline(id) {
+  _pmgrPid = id;
+  pmgrHideStageForm();
+  renderPmgrPipelines();
+  renderPmgrStages();
+}
+
+function pmgrNewPipeline() {
+  document.getElementById('pmgr-pId').value = '';
+  document.getElementById('pmgr-pName').value = '';
+  document.getElementById('pmgr-pColor').value = '#007AFF';
+  document.getElementById('pmgrPipelineForm').classList.remove('hidden');
+  setTimeout(() => document.getElementById('pmgr-pName').focus(), 50);
+}
+
+function pmgrEditPipeline(id) {
+  const p = _pipelines.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('pmgr-pId').value = id;
+  document.getElementById('pmgr-pName').value = p.name;
+  document.getElementById('pmgr-pColor').value = p.color || '#007AFF';
+  document.getElementById('pmgrPipelineForm').classList.remove('hidden');
+  setTimeout(() => document.getElementById('pmgr-pName').focus(), 50);
+}
+
+function pmgrHidePipelineForm() {
+  document.getElementById('pmgrPipelineForm').classList.add('hidden');
+}
+
+async function pmgrSavePipeline() {
+  const id    = document.getElementById('pmgr-pId').value;
+  let name  = document.getElementById('pmgr-pName').value.trim();
+  const color = document.getElementById('pmgr-pColor').value;
+  if (!name) { _toast('Nom majburiy','error'); return; }
+  
+  const isNasiyaPage = window.location.pathname.includes('/nasiya');
+  if (!id && isNasiyaPage && !name.toLowerCase().includes('nasiya')) {
+    name = "Nasiya - " + name;
+  }
+  try {
+    const data = await apiFetch(id ? '/api/pipelines/'+id : '/api/pipelines', {
+      method: id ? 'PATCH' : 'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ name, color })
+    });
+    _toast(id ? 'Yangilandi' : "Qo'shildi", 'success');
+    pmgrHidePipelineForm();
+    await loadPipelines();
+    if (!id && data.id) { _pmgrPid = data.id; }
+    renderPmgrPipelines();
+    renderPmgrStages();
+  } catch(e) { _toast(e.message,'error'); }
+}
+
+async function pmgrDeletePipeline(id) {
+  if (!confirm("Voronkani o'chirishni tasdiqlaysizmi? Barcha bosqichlar ham o'chadi.")) return;
+  try {
+    await apiFetch('/api/pipelines/' + id, { method:'DELETE' });
+    _toast("O'chirildi",'success');
+    await loadPipelines();
+    if (_pmgrPid === id) _pmgrPid = _pipelines[0]?.id || null;
+    if (_activePid === id) { _activePid = _pipelines[0]?.id || null; updateActiveStages(); }
+    renderPmgrPipelines();
+    renderPmgrStages();
+  } catch(e) { _toast(e.message,'error'); }
+}
+
+function pmgrNewStage() {
+  if (!_pmgrPid) { _toast('Avval voronka tanlang','error'); return; }
+  document.getElementById('pmgr-sId').value = '';
+  document.getElementById('pmgr-sName').value = '';
+  document.getElementById('pmgr-sColor').value = '#007AFF';
+  document.getElementById('pmgrStageForm').classList.remove('hidden');
+  setTimeout(() => document.getElementById('pmgr-sName').focus(), 50);
+}
+
+function pmgrEditStage(id, name, color) {
+  document.getElementById('pmgr-sId').value = id;
+  document.getElementById('pmgr-sName').value = name;
+  document.getElementById('pmgr-sColor').value = color;
+  document.getElementById('pmgrStageForm').classList.remove('hidden');
+  setTimeout(() => document.getElementById('pmgr-sName').focus(), 50);
+}
+
+function pmgrHideStageForm() {
+  document.getElementById('pmgrStageForm').classList.add('hidden');
+}
+
+async function pmgrSaveStage() {
+  const sid   = document.getElementById('pmgr-sId').value;
+  const name  = document.getElementById('pmgr-sName').value.trim();
+  const color = document.getElementById('pmgr-sColor').value;
+  if (!name) { _toast('Nom majburiy','error'); return; }
+  if (!_pmgrPid) { _toast('Voronka tanlanmagan','error'); return; }
+  try {
+    const url = sid
+      ? '/api/pipelines/' + _pmgrPid + '/stages/' + sid
+      : '/api/pipelines/' + _pmgrPid + '/stages';
+    await apiFetch(url, {
+      method: sid ? 'PATCH' : 'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ name, color })
+    });
+    _toast(sid ? 'Yangilandi' : "Qo'shildi",'success');
+    pmgrHideStageForm();
+    await loadPipelines();
+    renderPmgrPipelines();
+    renderPmgrStages();
+  } catch(e) { _toast(e.message,'error'); }
+}
+
+async function pmgrDeleteStage(id) {
+  if (!confirm("Bosqichni o'chirishni tasdiqlaysizmi?")) return;
+  try {
+    await apiFetch('/api/pipelines/' + _pmgrPid + '/stages/' + id, { method:'DELETE' });
+    _toast("O'chirildi",'success');
+    await loadPipelines();
+    renderPmgrPipelines();
+    renderPmgrStages();
+    await loadDeals();
+  } catch(e) { _toast(e.message,'error'); }
+}
+
+// ── Keyboard shortcuts ─────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closePipelineDropdown();
+    closeDealModal();
+    closeDetail();
+    closePipelineMgr();
+    if (_editMode) toggleEditMode();
+    if (_qaddOpen) { _qaddOpen = false; renderKanban(); }
+  }
+});
+
+// ── Search with inline debounce (no main.js dependency) ────────
+document.getElementById('filterSearch').addEventListener('input', () => {
+  clearTimeout(_searchTimer);
+  _searchTimer = setTimeout(loadDeals, 350);
+});
+document.getElementById('filterStage').addEventListener('change', loadDeals);
+document.getElementById('filterManager').addEventListener('change', loadDeals);
+
+// ── bfcache fix ────────────────────────────────────────────────
+window.addEventListener('pageshow', e => { if (e.persisted) loadAll(); });
+
+// ══════════════════════════════════════════════════════════════
+//  START — run immediately. This <script> executes after all the
+//  HTML above it (inputs, selects, kanban board) is already parsed
+//  into the DOM, so there is no need to wait for window 'load'.
+//  IMPORTANT: do NOT gate this on window.addEventListener('load', ...) —
+//  'load' only fires once EVERY page resource finishes (including the
+//  external Font Awesome / Chart.js CDN <link>/<script> tags in the
+//  layout's <head>). If either CDN is slow, blocked, or unreachable,
+//  'load' can be delayed indefinitely or never fire at all, which
+//  permanently freezes the Kanban board on the static "Yuklanmoqda…"
+//  placeholder — this was the actual root cause of the infinite
+//  loading bug. _toast() already falls back gracefully if main.js's
+//  showToast() isn't defined yet, so there's no real dependency on
+//  any other script having finished loading first.
+// ══════════════════════════════════════════════════════════════
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+  </script>
+  `
+  }) %>

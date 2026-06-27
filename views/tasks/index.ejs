@@ -1,0 +1,341 @@
+<%- include('../layouts/base', {
+  title: 'Vazifalar — DESCO CRM',
+  activePage: 'tasks',
+  user: user,
+  body: `
+<div class="page-header">
+  <div>
+    <h1>Vazifalar</h1>
+    <p>Barcha vazifalar va eslatmalar</p>
+  </div>
+  <div class="page-header-actions">
+    <button class="btn btn-primary" onclick="openTaskModal()">
+      <i class="fas fa-plus"></i> Yangi vazifa
+    </button>
+  </div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+  <div style="display:flex;gap:4px;background:var(--bg-primary);padding:3px;border-radius:var(--radius-sm)">
+    <button class="btn btn-sm active" id="fAll" onclick="setFilter('all')" style="background:var(--glass-bg);color:var(--text-primary);border:none">Barchasi</button>
+    <button class="btn btn-ghost btn-sm" id="fToday" onclick="setFilter('today')">Bugun</button>
+    <button class="btn btn-ghost btn-sm" id="fOverdue" onclick="setFilter('overdue')">Muddati o'tgan</button>
+    <button class="btn btn-ghost btn-sm" id="fDone" onclick="setFilter('done')">Bajarilgan</button>
+  </div>
+  <select id="filterPriority" class="form-control" style="width:140px">
+    <option value="">Barcha priority</option>
+    <option value="high">🔴 Yuqori</option>
+    <option value="medium">🟡 O'rta</option>
+    <option value="low">🟢 Past</option>
+  </select>
+  <input type="text" id="taskSearch" class="form-control" style="flex:1;max-width:220px" placeholder="Qidirish...">
+</div>
+
+<!-- TASK LIST -->
+<div class="card">
+  <div class="card-header" id="taskListHeader">
+    <h3 id="taskListTitle">Barcha vazifalar</h3>
+    <span id="taskCount" class="badge badge-blue">0</span>
+  </div>
+  <div id="taskList">
+    <div style="padding:40px;text-align:center"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<!-- CREATE/EDIT MODAL -->
+<div class="modal-overlay hidden" id="taskModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="taskModalTitle">Yangi vazifa</h2>
+      <button class="modal-close" onclick="closeTaskModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="taskId">
+      <input type="hidden" id="t-dealId">
+      <input type="hidden" id="t-clientId">
+      <div class="form-group">
+        <label class="form-label">Sarlavha *</label>
+        <input type="text" id="t-title" class="form-control" placeholder="Vazifa sarlavhasi">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tavsif</label>
+        <textarea id="t-description" class="form-control" rows="2" placeholder="Batafsil ma'lumot..."></textarea>
+      </div>
+      <div class="form-grid form-grid-2">
+        <div class="form-group">
+          <label class="form-label">Sana</label>
+          <input type="date" id="t-dueDate" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Vaqt</label>
+          <input type="time" id="t-dueTime" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Muhimlik</label>
+          <select id="t-priority" class="form-control">
+            <option value="low">🟢 Past</option>
+            <option value="medium" selected>🟡 O'rta</option>
+            <option value="high">🔴 Yuqori</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mas'ul</label>
+          <select id="t-assignedTo" class="form-control">
+            <option value="">— O'zim —</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeTaskModal()">Bekor qilish</button>
+      <button class="btn btn-primary" id="taskSaveBtn" onclick="saveTask()">
+        <i class="fas fa-save"></i> Saqlash
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+let allTasks = [], currentFilter = 'all';
+
+async function loadTasks() {
+  try {
+    const fetchFn = (typeof fetchWithTimeout === 'function') ? fetchWithTimeout : fetch;
+    const r = await fetchFn('/api/tasks');
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.message || 'Server xatosi: ' + r.status);
+    allTasks = Array.isArray(data) ? data : [];
+    renderTasks();
+  } catch(e) {
+    allTasks = [];
+    _safeToast("Ma'lumotlarni yuklashda xatolik" + (e && e.message && !e.isTimeout ? ': ' + e.message : ''), 'error');
+    renderTasks();
+  }
+}
+
+// Toast that doesn't depend on main.js having loaded yet (defense in
+// depth — init() below is already DOMContentLoaded-gated so main.js
+// will be ready, but this keeps loadTasks() safe even if called earlier).
+function _safeToast(msg, type) {
+  if (typeof showToast === 'function') showToast(msg, type);
+  else console.warn('[Tasks]', msg);
+}
+
+async function loadUsers() {
+  try {
+    const users = await fetch('/api/settings/users').then(r => r.json()).catch(() => []);
+    const sel = document.getElementById('t-assignedTo');
+    sel.innerHTML = '<option value="">— O\\'zim —</option>' +
+      (Array.isArray(users) ? users : []).map(u => \`<option value="\${u.id}">\${escHtml(u.fullName||u.email)}</option>\`).join('');
+  } catch(e) {}
+}
+
+function setFilter(f) {
+  currentFilter = f;
+  ['fAll','fToday','fOverdue','fDone'].forEach(id => {
+    const el = document.getElementById(id);
+    el.className = 'btn btn-sm' + (id === 'f' + f.charAt(0).toUpperCase() + f.slice(1) ? '' : '');
+    el.style.background = id === 'f' + f.charAt(0).toUpperCase() + f.slice(1) ? 'var(--glass-bg)' : 'transparent';
+    el.style.color = id === 'f' + f.charAt(0).toUpperCase() + f.slice(1) ? 'var(--text-primary)' : 'var(--text-secondary)';
+    el.style.border = 'none';
+  });
+  renderTasks();
+}
+
+function getFilteredTasks() {
+  const priority = document.getElementById('filterPriority').value;
+  const q = document.getElementById('taskSearch').value.toLowerCase();
+  const today = new Date(); today.setHours(0,0,0,0);
+  const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+
+  return allTasks.filter(t => {
+    if (priority && t.priority !== priority) return false;
+    if (q && !t.title.toLowerCase().includes(q)) return false;
+    const due = t.dueDate ? new Date(t.dueDate) : null;
+    if (currentFilter === 'today') return due && due >= today && due < tomorrow && !t.completed;
+    if (currentFilter === 'overdue') return due && due < today && !t.completed;
+    if (currentFilter === 'done') return t.completed;
+    return true;
+  });
+}
+
+function renderTasks() {
+  const tasks = getFilteredTasks();
+  const el = document.getElementById('taskList');
+  document.getElementById('taskCount').textContent = tasks.length;
+
+  const titles = { all: 'Barcha vazifalar', today: 'Bugungi vazifalar', overdue: "Muddati o'tgan", done: 'Bajarilgan vazifalar' };
+  document.getElementById('taskListTitle').textContent = titles[currentFilter] || 'Vazifalar';
+
+  if (!tasks.length) {
+    el.innerHTML = \`<div class="empty-state">
+      <div class="empty-state-icon"><i class="fas fa-check-circle"></i></div>
+      <h3>Vazifalar yo'q</h3>
+      <p>Yangi vazifa qo'shing</p>
+    </div>\`;
+    return;
+  }
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+
+  el.innerHTML = tasks.map(t => {
+    const due = t.dueDate ? new Date(t.dueDate) : null;
+    const isOverdue = due && due < today && !t.completed;
+    const isToday = due && due >= today && due < tomorrow;
+    const dueClass = isOverdue ? 'overdue' : isToday ? 'today' : '';
+    const pLabel = { high: '🔴 Yuqori', medium: '🟡 O\\'rta', low: '🟢 Past' };
+
+    return \`
+      <div class="task-item" id="task-\${t.id}">
+        <div class="task-check \${t.completed ? 'done' : ''}" onclick="toggleTask(\${t.id}, this)" title="\${t.completed ? 'Bajarilmagan' : 'Bajarildi'}">
+          \${t.completed ? '<i class="fas fa-check" style="font-size:9px"></i>' : ''}
+        </div>
+        <div class="task-info">
+          <div class="task-title \${t.completed ? 'done' : ''}">\${escHtml(t.title)}</div>
+          <div class="task-meta">
+            <div class="priority-dot \${t.priority}"></div>
+            <span class="fs-12" style="color:var(--text-tertiary)">\${pLabel[t.priority]||''}</span>
+            \${due ? \`<span class="task-due \${dueClass}"><i class="fas fa-clock"></i> \${fmtDate(t.dueDate)}\${t.dueTime ? ' '+t.dueTime : ''}</span>\` : ''}
+            \${t.assignedTo ? \`<span class="badge badge-gray">\${escHtml(t.assignedTo.fullName||t.assignedTo.email)}</span>\` : ''}
+          </div>
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          <button class="btn btn-ghost btn-icon btn-sm" onclick="openTaskModal(\${t.id})" title="Tahrirlash"><i class="fas fa-edit"></i></button>
+          <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="deleteTask(\${t.id})" title="O'chirish"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+    \`;
+  }).join('');
+}
+
+async function toggleTask(id, el) {
+  const completed = !el.classList.contains('done');
+  try {
+    await fetch('/api/tasks/' + id, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ completed })
+    });
+    await loadTasks();
+  } catch(e) { showToast('Xato', 'error'); }
+}
+
+async function openTaskModal(id, dealId, clientId, dealTitle) {
+  await loadUsers();
+  document.getElementById('taskId').value = id || '';
+  document.getElementById('t-dealId').value = dealId || '';
+  document.getElementById('t-clientId').value = clientId || '';
+  document.getElementById('t-title').value = '';
+  document.getElementById('t-description').value = '';
+  document.getElementById('t-dueDate').value = '';
+  document.getElementById('t-dueTime').value = '';
+  document.getElementById('t-priority').value = 'medium';
+  document.getElementById('t-assignedTo').value = '';
+  document.getElementById('taskModalTitle').textContent = id ? 'Vazifani tahrirlash' : 'Yangi vazifa';
+
+  if (id) {
+    try {
+      const t = await fetch('/api/tasks/' + id).then(r => r.json());
+      document.getElementById('t-title').value = t.title || '';
+      document.getElementById('t-description').value = t.description || '';
+      document.getElementById('t-dueDate').value = t.dueDate ? t.dueDate.slice(0,10) : '';
+      document.getElementById('t-dueTime').value = t.dueTime || '';
+      document.getElementById('t-priority').value = t.priority || 'medium';
+      document.getElementById('t-assignedTo').value = t.assignedToId || '';
+      document.getElementById('t-dealId').value = t.dealId || '';
+      document.getElementById('t-clientId').value = t.clientId || '';
+    } catch(e) {}
+  } else if (dealTitle) {
+    document.getElementById('t-title').value = dealTitle + ' bo\\'yicha qayta aloqa';
+    document.getElementById('t-description').value = 'Mijoz bilan sdelka bo\\'yicha qayta aloqaga chiqish kerak';
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('t-dueDate').value = tomorrow.toISOString().slice(0, 10);
+    document.getElementById('t-dueTime').value = '10:00';
+  }
+  document.getElementById('taskModal').classList.remove('hidden');
+}
+
+function closeTaskModal() {
+  document.getElementById('taskModal').classList.add('hidden');
+}
+
+async function saveTask() {
+  const id = document.getElementById('taskId').value;
+  const title = document.getElementById('t-title').value.trim();
+  if (!title) { showToast('Sarlavha majburiy', 'error'); return; }
+
+  const btn = document.getElementById('taskSaveBtn');
+  btn.disabled = true;
+
+  const body = {
+    title,
+    description: document.getElementById('t-description').value || null,
+    dueDate: document.getElementById('t-dueDate').value || null,
+    dueTime: document.getElementById('t-dueTime').value || null,
+    priority: document.getElementById('t-priority').value,
+    assignedToId: document.getElementById('t-assignedTo').value || null,
+    dealId: document.getElementById('t-dealId').value ? Number(document.getElementById('t-dealId').value) : null,
+    clientId: document.getElementById('t-clientId').value ? Number(document.getElementById('t-clientId').value) : null
+  };
+
+  try {
+    const url = id ? '/api/tasks/' + id : '/api/tasks';
+    const r = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!r.ok) throw new Error((await r.json()).message);
+    showToast(id ? 'Vazifa yangilandi' : 'Vazifa qo\'shildi', 'success');
+    closeTaskModal();
+    await loadTasks();
+  } catch(e) {
+    showToast(e.message || 'Xato', 'error');
+  } finally { btn.disabled = false; }
+}
+
+async function deleteTask(id) {
+  if (!confirm('Vazifani o\\'chirishni tasdiqlaysizmi?')) return;
+  try {
+    const r = await fetch('/api/tasks/' + id, { method: 'DELETE' });
+    if (!r.ok) throw new Error();
+    showToast('Vazifa o\\'chirildi', 'success');
+    await loadTasks();
+  } catch(e) { showToast('O\\'chirishda xato', 'error'); }
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+// IMPORTANT: do NOT call loadTasks()/debounce() at the top level of this
+// script. This inline <script> runs while the browser is still parsing
+// the page body, which is BEFORE the later <script src="/js/main.js">
+// tag (in the shared layout) has loaded — so main.js functions like
+// debounce() are not defined yet. Calling debounce() directly here threw
+// "ReferenceError: debounce is not defined", which aborted the rest of
+// this script before loadTasks() ever ran — leaving the static
+// "Yuklanmoqda…" spinner in #taskList frozen forever. Deferring to
+// DOMContentLoaded guarantees main.js has already executed by the time
+// this code runs (DOMContentLoaded only fires after the whole document,
+// including earlier synchronous <script> tags, has been parsed).
+function init() {
+  document.getElementById('filterPriority').addEventListener('change', renderTasks);
+  const searchEl = document.getElementById('taskSearch');
+  const debounceFn = (typeof debounce === 'function') ? debounce : (fn, delay) => {
+    let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn.apply(null, args), delay); };
+  };
+  searchEl.addEventListener('input', debounceFn(renderTasks, 300));
+  loadTasks();
+
+  const params = new URLSearchParams(window.location.search);
+  const dealId = params.get('dealId');
+  const clientId = params.get('clientId');
+  const dealTitle = params.get('dealTitle');
+  if (dealId || clientId || dealTitle) {
+    openTaskModal(null, dealId, clientId, dealTitle);
+  }
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+`
+}) %>

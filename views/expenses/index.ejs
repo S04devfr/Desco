@@ -1,0 +1,257 @@
+<%- include('../layouts/base', {
+  title: 'Xarajatlar — DESCO CRM',
+  activePage: 'expenses',
+  user: user,
+  body: `
+<div class="page-header">
+  <div>
+    <h1>Xarajatlar</h1>
+    <p>Moliyaviy xarajatlar hisobi</p>
+  </div>
+  <div class="page-header-actions">
+    <button class="btn btn-primary" onclick="openExpenseModal()">
+      <i class="fas fa-plus"></i> Xarajat qo'shish
+    </button>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
+  <div class="stat-card">
+    <div class="stat-icon red"><i class="fas fa-receipt"></i></div>
+    <div class="stat-info">
+      <div class="stat-label">Jami xarajat</div>
+      <div class="stat-value" id="statTotal">—</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon orange"><i class="fas fa-calendar-alt"></i></div>
+    <div class="stat-info">
+      <div class="stat-label">Bu oyda</div>
+      <div class="stat-value" id="statMonth">—</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="fas fa-list"></i></div>
+    <div class="stat-info">
+      <div class="stat-label">Jami yozuvlar</div>
+      <div class="stat-value" id="statCount">—</div>
+    </div>
+  </div>
+</div>
+
+<!-- FILTER -->
+<div class="filter-bar">
+  <select id="filterCategory" class="form-control" style="width:160px">
+    <option value="">Barcha kategoriya</option>
+    <option value="salary">Maosh</option>
+    <option value="transport">Transport</option>
+    <option value="office">Ofis</option>
+    <option value="marketing">Marketing</option>
+    <option value="other">Boshqa</option>
+  </select>
+  <input type="date" id="filterFrom" class="form-control" style="width:150px">
+  <input type="date" id="filterTo" class="form-control" style="width:150px">
+  <button class="btn btn-secondary btn-sm" onclick="loadExpenses()"><i class="fas fa-filter"></i></button>
+  <button class="btn btn-ghost btn-sm" onclick="clearFilters()"><i class="fas fa-times"></i></button>
+</div>
+
+<!-- TABLE -->
+<div class="card">
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Tavsif</th>
+          <th>Kategoriya</th>
+          <th>Summa</th>
+          <th>Sana</th>
+          <th>Qo'shgan</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="expensesBody">
+        <tr><td colspan="7"><div style="padding:40px;text-align:center"><div class="spinner"></div></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay hidden" id="expenseModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="expModalTitle">Yangi xarajat</h2>
+      <button class="modal-close" onclick="closeExpenseModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="expenseId">
+      <div class="form-group">
+        <label class="form-label">Tavsif *</label>
+        <input type="text" id="e-description" class="form-control" placeholder="Xarajat tavsifi">
+      </div>
+      <div class="form-grid form-grid-2">
+        <div class="form-group">
+          <label class="form-label">Summa *</label>
+          <input type="number" id="e-amount" class="form-control" placeholder="0" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kategoriya</label>
+          <select id="e-category" class="form-control">
+            <option value="other">Boshqa</option>
+            <option value="salary">Maosh</option>
+            <option value="transport">Transport</option>
+            <option value="office">Ofis</option>
+            <option value="marketing">Marketing</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Sana</label>
+          <input type="date" id="e-date" class="form-control">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeExpenseModal()">Bekor qilish</button>
+      <button class="btn btn-primary" id="expSaveBtn" onclick="saveExpense()">
+        <i class="fas fa-save"></i> Saqlash
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+let allExpenses = [];
+const catLabels = { salary:'Maosh', transport:'Transport', office:'Ofis', marketing:'Marketing', other:'Boshqa' };
+const catColors = { salary:'badge-blue', transport:'badge-orange', office:'badge-purple', marketing:'badge-green', other:'badge-gray' };
+
+async function loadExpenses() {
+  const cat = document.getElementById('filterCategory').value;
+  const from = document.getElementById('filterFrom').value;
+  const to = document.getElementById('filterTo').value;
+  const params = new URLSearchParams();
+  if (cat) params.set('category', cat);
+  if (from) params.set('from', from);
+  if (to) params.set('to', to);
+  try {
+    const fetchFn = (typeof fetchWithTimeout === 'function') ? fetchWithTimeout : fetch;
+    const r = await fetchFn('/api/expenses?' + params);
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.message || 'Server xatosi: ' + r.status);
+    allExpenses = Array.isArray(data) ? data : [];
+    renderExpenses();
+    updateStats();
+  } catch(e) {
+    allExpenses = [];
+    showToast("Ma'lumotlarni yuklashda xatolik" + (e && e.message && !e.isTimeout ? ': ' + e.message : ''), 'error');
+    renderExpenses();
+    updateStats();
+  }
+}
+
+function updateStats() {
+  const total = allExpenses.reduce((s, e) => s + e.amount, 0);
+  document.getElementById('statTotal').textContent = fmtMoney(total);
+  document.getElementById('statCount').textContent = allExpenses.length;
+  const now = new Date();
+  const monthTotal = allExpenses.filter(e => {
+    const d = new Date(e.date||e.createdAt);
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  }).reduce((s, e) => s + e.amount, 0);
+  document.getElementById('statMonth').textContent = fmtMoney(monthTotal);
+}
+
+function renderExpenses() {
+  const tbody = document.getElementById('expensesBody');
+  if (!allExpenses.length) {
+    tbody.innerHTML = \`<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon"><i class="fas fa-receipt"></i></div><h3>Xarajatlar yo'q</h3></div></td></tr>\`;
+    return;
+  }
+  tbody.innerHTML = allExpenses.map((e, i) => \`
+    <tr>
+      <td style="color:var(--text-tertiary);font-size:12px">\${i+1}</td>
+      <td><strong style="font-weight:500">\${escHtml(e.description)}</strong></td>
+      <td><span class="badge \${catColors[e.category]||'badge-gray'}">\${catLabels[e.category]||e.category}</span></td>
+      <td style="font-weight:700;color:var(--danger)">\${fmtMoney(e.amount)}</td>
+      <td>\${fmtDateShort(e.date||e.createdAt)}</td>
+      <td>\${e.createdBy ? escHtml(e.createdBy.fullName||e.createdBy.email) : '—'}</td>
+      <td>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-ghost btn-icon btn-sm" onclick="openExpenseModal(\${e.id})" title="Tahrirlash"><i class="fas fa-edit"></i></button>
+          <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="deleteExpense(\${e.id})" title="O'chirish"><i class="fas fa-trash"></i></button>
+        </div>
+      </td>
+    </tr>
+  \`).join('');
+}
+
+async function openExpenseModal(id) {
+  document.getElementById('expenseId').value = id || '';
+  document.getElementById('e-description').value = '';
+  document.getElementById('e-amount').value = '';
+  document.getElementById('e-category').value = 'other';
+  document.getElementById('e-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('expModalTitle').textContent = id ? 'Xarajatni tahrirlash' : 'Yangi xarajat';
+
+  if (id) {
+    try {
+      const exp = allExpenses.find(e => e.id === id);
+      if (exp) {
+        document.getElementById('e-description').value = exp.description || '';
+        document.getElementById('e-amount').value = exp.amount || '';
+        document.getElementById('e-category').value = exp.category || 'other';
+        document.getElementById('e-date').value = (exp.date||exp.createdAt||'').slice(0,10);
+      }
+    } catch(e) {}
+  }
+  document.getElementById('expenseModal').classList.remove('hidden');
+}
+
+function closeExpenseModal() {
+  document.getElementById('expenseModal').classList.add('hidden');
+}
+
+async function saveExpense() {
+  const id = document.getElementById('expenseId').value;
+  const description = document.getElementById('e-description').value.trim();
+  const amount = Number(document.getElementById('e-amount').value);
+  if (!description) { showToast('Tavsif majburiy', 'error'); return; }
+  if (!amount) { showToast('Summa majburiy', 'error'); return; }
+
+  const btn = document.getElementById('expSaveBtn');
+  btn.disabled = true;
+  const body = { description, amount, category: document.getElementById('e-category').value, date: document.getElementById('e-date').value || null };
+
+  try {
+    const url = id ? '/api/expenses/' + id : '/api/expenses';
+    const r = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!r.ok) throw new Error((await r.json()).message);
+    showToast(id ? 'Yangilandi' : "Xarajat qo'shildi", 'success');
+    closeExpenseModal();
+    await loadExpenses();
+  } catch(e) { showToast(e.message||'Xato', 'error'); }
+  finally { btn.disabled = false; }
+}
+
+async function deleteExpense(id) {
+  if (!confirm("O'chirishni tasdiqlaysizmi?")) return;
+  try {
+    const r = await fetch('/api/expenses/' + id, { method: 'DELETE' });
+    if (!r.ok) throw new Error();
+    showToast("O'chirildi", 'success');
+    await loadExpenses();
+  } catch(e) { showToast("O'chirishda xato", 'error'); }
+}
+
+function clearFilters() {
+  document.getElementById('filterCategory').value = '';
+  document.getElementById('filterFrom').value = '';
+  document.getElementById('filterTo').value = '';
+  loadExpenses();
+}
+
+loadExpenses();
+</script>
+`
+}) %>
