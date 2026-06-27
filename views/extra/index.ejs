@@ -1,8 +1,8 @@
-<%- include('../layouts/base', {
-  title: 'Qo\\'shimcha Bo\\'lim — DESCO CRM',
+<%- include('../layouts/header', {
+  title: "Qo'shimcha Bo'lim — DESCO CRM",
   activePage: 'extra-' + subPage,
-  user: user,
-  body: `
+  user: user}) %>
+
 <style>
 /* spreadsheet styles */
 .spreadsheet-input {
@@ -219,5 +219,4 @@ function escHtml(s) {
 
 document.addEventListener('DOMContentLoaded', loadExtraList);
 </script>
-`
-}) %>
+<%- include('../layouts/footer') %>

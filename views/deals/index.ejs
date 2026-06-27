@@ -1,4 +1,5 @@
-<%- include('../layouts/base', { title: (typeof activePage !== 'undefined' && activePage === 'nasiya' ? 'Nasiya' : 'Sdelkalar') + ' — DESCO CRM', activePage: (typeof activePage !== 'undefined' ? activePage : 'deals'), user: user, body: ` <style>
+<%- include('../layouts/header', { title: (typeof activePage !== 'undefined' && activePage === 'nasiya' ? 'Nasiya' : 'Sdelkalar') + ' — DESCO CRM', activePage: (typeof activePage !== 'undefined' ? activePage : 'deals'), user: user}) %>
+ <style>
   /* ═══════════════════════════════════════════
   DEALS PAGE — amoCRM style
   ═══════════════════════════════════════════ */
@@ -1923,6 +1924,46 @@ if (document.readyState === 'loading') {
 } else {
   init();
 }
+
+// ── Real-Time Lead Routing (WebSocket) ─────────────────────────
+const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+const ws = new WebSocket(protocol + '//' + window.location.host);
+ws.onmessage = async (event) => {
+  try {
+    const data = JSON.parse(event.data);
+    const myId = <%= typeof user !== 'undefined' && user ? user.id : 'null' %>;
+    
+    if (data.type === 'deal_updated' && data.dealId) {
+      const res = await fetch('/api/deals/' + data.dealId);
+      if (res.ok) {
+        const updatedDeal = await res.json();
+        // Agar sdelka o'zlashtirilgan bo'lsa va u meniki bo'lmasa -> Ekrandan o'chiramiz!
+        if (updatedDeal.managerId && updatedDeal.managerId !== myId) {
+          _deals = _deals.filter(d => d.id !== updatedDeal.id);
+        } else {
+          // Aks holda uni yangilaymiz yoki qo'shamiz
+          const idx = _deals.findIndex(d => d.id === updatedDeal.id);
+          if (idx >= 0) _deals[idx] = updatedDeal;
+          else _deals.push(updatedDeal);
+        }
+        
+        if (document.getElementById('viewKanban').classList.contains('active')) {
+          renderKanban();
+        } else {
+          renderTable();
+        }
+      }
+    }
+    
+    if (data.type === 'deal_deleted' && data.dealId) {
+      _deals = _deals.filter(d => d.id !== data.dealId);
+      if (document.getElementById('viewKanban').classList.contains('active')) renderKanban();
+      else renderTable();
+    }
+  } catch (e) {
+    console.error('Socket error:', e);
+  }
+};
+// ───────────────────────────────────────────────────────────────
   </script>
-  `
-  }) %>
+  <%- include('../layouts/footer') %>

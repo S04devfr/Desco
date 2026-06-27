@@ -27,11 +27,11 @@ const swatchHtml = colorSwatches.map(c =>
     onclick="pickColor('${c}',this)"></div>`
 ).join('');
 %>
-<%- include('../layouts/base', {
+<%- include('../layouts/header', {
   title: 'Sozlamalar — DESCO CRM',
   activePage: 'settings',
-  user: user,
-  body: `
+  user: user}) %>
+
 <style>
 .pipeline-card {
   border:1px solid var(--glass-border); border-radius:10px; margin-bottom:12px;
@@ -595,5 +595,4 @@ async function deleteUser(id) {
   } catch(e) { showToast(e.message || "O'chirishda xato", 'error'); }
 }
 </script>
-`
-}) %>
+<%- include('../layouts/footer') %>

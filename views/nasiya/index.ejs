@@ -1,8 +1,8 @@
-<%- include('../layouts/base', {
-  title: 'Nasiya Bo\\'limi — DESCO CRM',
+<%- include('../layouts/header', {
+  title: "Nasiya Bo'limi — DESCO CRM",
   activePage: 'nasiya-' + subPage,
-  user: user,
-  body: `
+  user: user}) %>
+
 <div class="page-header">
   <div>
     <h1 id="nasiyaTitle">Nasiya</h1>
@@ -120,5 +120,4 @@ function fmtMoney(v) {
 
 document.addEventListener('DOMContentLoaded', loadNasiyaDeals);
 </script>
-`
-}) %>
+<%- include('../layouts/footer') %>

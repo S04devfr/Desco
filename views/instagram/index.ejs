@@ -1,8 +1,8 @@
-<%- include('../layouts/base', {
+<%- include('../layouts/header', {
   title: 'Instagram Integratsiyasi — DESCO CRM',
   activePage: 'instagram',
-  user: user,
-  body: `
+  user: user}) %>
+
 <div class="page-header">
   <div>
     <h1>Instagram Integratsiyasi</h1>
@@ -41,5 +41,4 @@ function _toast(msg, type) {
   }
 }
 </script>
-`
-}) %>
+<%- include('../layouts/footer') %>

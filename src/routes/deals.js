@@ -68,6 +68,16 @@ router.get('/:id', async (req, res, next) => {
       }
     })
     if (!deal) return res.status(404).json({ message: 'Sdelka topilmadi' })
+    if (!deal.managerId) {
+      await prisma.deal.update({
+        where: { id: deal.id },
+        data: { managerId: req.userId }
+      });
+      deal.managerId = req.userId;
+      const broadcast = req.app.get('broadcast');
+      if (broadcast) broadcast({ type: 'deal_updated', dealId: deal.id, managerId: req.userId });
+    }
+
     if (!deal.activities) deal.activities = []
     res.json(deal)
   } catch (error) { next(error) }
@@ -249,9 +259,14 @@ router.patch('/:id/stage', async (req, res, next) => {
         }
       }
 
+      let finalManagerId = existing.managerId;
+      if (!finalManagerId) {
+        finalManagerId = req.userId;
+      }
+
       const updated = await tx.deal.update({
         where: { id },
-        data: { stageId: finalStageId, pipelineId: finalPipelineId },
+        data: { stageId: finalStageId, pipelineId: finalPipelineId, managerId: finalManagerId },
         include: {
           client: { select: { id: true, name: true, company: true, phone: true, city: true } },
           manager: managerSelect,

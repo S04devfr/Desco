@@ -1,8 +1,8 @@
-<%- include('../layouts/base', {
+<%- include('../layouts/header', {
   title: 'Desco AI — DESCO CRM',
   activePage: 'ai',
-  user: user,
-  body: `
+  user: user}) %>
+
 <style>
 /* ═══════════════════════════════════════════
    AI CHAT PAGE — Minimalist Design
@@ -350,5 +350,4 @@ async function sendMessage() {
   }
 }
 </script>
-`
-}) %>
+<%- include('../layouts/footer') %>

@@ -1,8 +1,8 @@
-<%- include('../layouts/base', {
+<%- include('../layouts/header', {
   title: 'Vazifalar — DESCO CRM',
   activePage: 'tasks',
-  user: user,
-  body: `
+  user: user}) %>
+
 <div class="page-header">
   <div>
     <h1>Vazifalar</h1>
@@ -337,5 +337,4 @@ if (document.readyState === 'loading') {
   init();
 }
 </script>
-`
-}) %>
+<%- include('../layouts/footer') %>

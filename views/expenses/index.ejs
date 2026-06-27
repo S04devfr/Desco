@@ -1,8 +1,8 @@
-<%- include('../layouts/base', {
+<%- include('../layouts/header', {
   title: 'Xarajatlar — DESCO CRM',
   activePage: 'expenses',
-  user: user,
-  body: `
+  user: user}) %>
+
 <div class="page-header">
   <div>
     <h1>Xarajatlar</h1>
@@ -253,5 +253,4 @@ function clearFilters() {
 
 loadExpenses();
 </script>
-`
-}) %>
+<%- include('../layouts/footer') %>

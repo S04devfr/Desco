@@ -1,8 +1,8 @@
-<%- include('../layouts/base', {
+<%- include('../layouts/header', {
   title: 'Tahlil — DESCO CRM',
   activePage: 'dashboard',
-  user: user,
-  body: `
+  user: user}) %>
+
 <style>
 /* Stats card enhancements */
 .stat-card.clickable {
@@ -853,5 +853,4 @@ async function saveClientDebt(id, inputEl) {
 // Start
 loadDashboard();
 </script>
-`
-}) %>
+<%- include('../layouts/footer') %>
