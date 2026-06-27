@@ -6,21 +6,6 @@ const companyCurrency = (typeof company !== 'undefined' && company && company.cu
 const usersList = (typeof users !== 'undefined' && Array.isArray(users)) ? users : [];
 const pipelinesList = (typeof pipelines !== 'undefined' && Array.isArray(pipelines)) ? pipelines : [];
 
-let usersRowsHtml = '';
-if (usersList.length) {
-  usersRowsHtml = usersList.map(u => `
-    <tr>
-      <td><strong>${escHtml(u.fullName||'—')}</strong></td>
-      <td>${escHtml(u.email)}</td>
-      <td><span class="badge ${u.role==='admin'?'badge-purple':'badge-blue'}">${u.role==='admin'?'Admin':'Manager'}</span></td>
-      <td style="color:var(--text-tertiary);font-size:12px">${new Date(u.createdAt).toLocaleDateString('uz-UZ')}</td>
-      <td><button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="deleteUser(${u.id})"><i class="fas fa-trash"></i></button></td>
-    </tr>
-  `).join('');
-} else {
-  usersRowsHtml = `<tr><td colspan="5"><div class="empty-state" style="padding:24px"><h3>Foydalanuvchilar yo'q</h3></div></td></tr>`;
-}
-
 const colorSwatches = ['#007AFF','#34C759','#FF9500','#FF3B30','#5856D6','#00C7BE','#FF2D55','#1565C0','#2E7D32','#C62828'];
 const swatchHtml = colorSwatches.map(c =>
   `<div style="width:22px;height:22px;border-radius:50%;background:${c};cursor:pointer;border:2px solid transparent;flex-shrink:0"
@@ -98,7 +83,7 @@ const swatchHtml = colorSwatches.map(c =>
     <div class="settings-tab active" onclick="switchTab('profile', this)"><i class="fas fa-user"></i> Mening profilim</div>
     <div class="settings-tab" onclick="switchTab('company', this)"><i class="fas fa-building"></i> Kompaniya</div>
     <div class="settings-tab" onclick="switchTab('pipelines', this)"><i class="fas fa-filter"></i> Voronkalar</div>
-    ${isAdmin ? `<div class="settings-tab" onclick="switchTab('users', this)"><i class="fas fa-users"></i> Jamoa va rollar</div>` : ''}
+    <% if (isAdmin) { %><div class="settings-tab" onclick="switchTab('users', this)"><i class="fas fa-users"></i> Jamoa va rollar</div><% } %>
     <div class="settings-tab" onclick="switchTab('integrations', this)"><i class="fas fa-plug"></i> Integratsiyalar</div>
   </div>
 
@@ -116,11 +101,11 @@ const swatchHtml = colorSwatches.map(c =>
           <div class="form-grid form-grid-2">
             <div class="form-group">
               <label class="form-label">To'liq ismingiz</label>
-              <input type="text" id="prof-fullName" class="form-control" value="${escHtml(user.fullName)}">
+              <input type="text" id="prof-fullName" class="form-control" value="<%= escHtml(user.fullName) %>">
             </div>
             <div class="form-group">
               <label class="form-label">Email manzilingiz</label>
-              <input type="email" id="prof-email" class="form-control" value="${escHtml(user.email)}">
+              <input type="email" id="prof-email" class="form-control" value="<%= escHtml(user.email) %>">
             </div>
           </div>
           <div style="height: 1px; background: var(--glass-border); margin: 20px 0;"></div>
@@ -151,14 +136,14 @@ const swatchHtml = colorSwatches.map(c =>
           <div class="form-grid form-grid-2">
             <div class="form-group">
               <label class="form-label">Kompaniya nomi</label>
-              <input type="text" id="s-companyName" class="form-control" value="${escHtml(companyName)}">
+              <input type="text" id="s-companyName" class="form-control" value="<%= escHtml(companyName) %>">
             </div>
             <div class="form-group">
               <label class="form-label">Valyuta</label>
               <select id="s-currency" class="form-control">
-                <option value="UZS" ${companyCurrency==='UZS'?'selected':''}>UZS — So'm</option>
-                <option value="USD" ${companyCurrency==='USD'?'selected':''}>USD — Dollar</option>
-                <option value="EUR" ${companyCurrency==='EUR'?'selected':''}>EUR — Euro</option>
+                <option value="UZS" <%= companyCurrency==='UZS' ? 'selected' : '' %>>UZS — So'm</option>
+                <option value="USD" <%= companyCurrency==='USD' ? 'selected' : '' %>>USD — Dollar</option>
+                <option value="EUR" <%= companyCurrency==='EUR' ? 'selected' : '' %>>EUR — Euro</option>
               </select>
             </div>
           </div>
@@ -178,42 +163,50 @@ const swatchHtml = colorSwatches.map(c =>
           </button>
         </div>
         <div class="settings-section-body" id="pipelineList">
-          ${pipelinesList.length ? pipelinesList.map(p => `
-            <div class="pipeline-card" id="pc-${p.id}">
-              <div class="pipeline-card-hdr" onclick="togglePipeline(${p.id})">
-                <div class="p-dot" style="background:${p.color}"></div>
-                <div class="pipeline-card-title">${escHtml(p.name)} ${p.isDefault?'<span class="badge badge-blue" style="font-size:9px;padding:1px 6px">Default</span>':''}</div>
-                <div class="pipeline-card-meta">${(p.stages||[]).length} bosqich</div>
+          <% if (pipelinesList.length) { %>
+            <% pipelinesList.forEach(p => { %>
+            <div class="pipeline-card" id="pc-<%= p.id %>">
+              <div class="pipeline-card-hdr" onclick="togglePipeline(<%= p.id %>)">
+                <div class="p-dot" style="background:<%= p.color %>"></div>
+                <div class="pipeline-card-title"><%= escHtml(p.name) %> <%- p.isDefault?'<span class="badge badge-blue" style="font-size:9px;padding:1px 6px">Default</span>':'' %></div>
+                <div class="pipeline-card-meta"><%= (p.stages||[]).length %> bosqich</div>
                 <div style="display:flex;gap:4px">
-                  <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();openPipelineModal(${p.id})" title="Tahrirlash"><i class="fas fa-edit"></i></button>
-                  <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="event.stopPropagation();deletePipeline(${p.id})" title="O'chirish"><i class="fas fa-trash"></i></button>
+                  <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();openPipelineModal(<%= p.id %>)" title="Tahrirlash"><i class="fas fa-edit"></i></button>
+                  <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="event.stopPropagation();deletePipeline(<%= p.id %>)" title="O'chirish"><i class="fas fa-trash"></i></button>
                 </div>
-                <i class="fas fa-chevron-down" id="pch-${p.id}" style="font-size:11px;color:var(--text-tertiary);transition:transform 0.2s"></i>
+                <i class="fas fa-chevron-down" id="pch-<%= p.id %>" style="font-size:11px;color:var(--text-tertiary);transition:transform 0.2s"></i>
               </div>
-              <div class="pipeline-card-body" id="pb-${p.id}">
-                ${(p.stages||[]).length ? (p.stages||[]).map(s => `
-                  <div class="stage-row" id="sr-${s.id}">
-                    <div class="stage-color" style="background:${s.color}"></div>
-                    <div class="stage-name-txt">${escHtml(s.name)}</div>
-                    <div class="stage-order">#${s.order}</div>
+              <div class="pipeline-card-body" id="pb-<%= p.id %>">
+                <% if ((p.stages||[]).length) { %>
+                  <% p.stages.forEach(s => { %>
+                  <div class="stage-row" id="sr-<%= s.id %>">
+                    <div class="stage-color" style="background:<%= s.color %>"></div>
+                    <div class="stage-name-txt"><%= escHtml(s.name) %></div>
+                    <div class="stage-order">#<%= s.order %></div>
                     <div style="display:flex;gap:3px">
-                      <button class="btn btn-ghost btn-icon btn-sm" onclick="openStageModal(${p.id},${s.id},'${escHtml(s.name)}','${s.color}')" title="Tahrirlash"><i class="fas fa-edit"></i></button>
-                      <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="deleteStage(${p.id},${s.id})" title="O'chirish"><i class="fas fa-trash"></i></button>
+                      <button class="btn btn-ghost btn-icon btn-sm" onclick="openStageModal(<%= p.id %>,<%= s.id %>,'<%= escHtml(s.name) %>','<%= s.color %>')" title="Tahrirlash"><i class="fas fa-edit"></i></button>
+                      <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="deleteStage(<%= p.id %>,<%= s.id %>)" title="O'chirish"><i class="fas fa-trash"></i></button>
                     </div>
                   </div>
-                `).join('') : '<div style="color:var(--text-tertiary);font-size:13px;padding:8px 0">Hech qanday bosqich topilmadi</div>'}
-                <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="openStageModal(${p.id})">
+                  <% }) %>
+                <% } else { %>
+                  <div style="color:var(--text-tertiary);font-size:13px;padding:8px 0">Hech qanday bosqich topilmadi</div>
+                <% } %>
+                <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="openStageModal(<%= p.id %>)">
                   <i class="fas fa-plus"></i> Bosqich qo'shish
                 </button>
               </div>
             </div>
-          `).join('') : '<div class="empty-state" style="padding:40px"><div class="empty-state-icon"><i class="fas fa-filter"></i></div><h3>Hech qanday voronka topilmadi</h3><p>Yangi voronka yarating</p></div>'}
+            <% }) %>
+          <% } else { %>
+            <div class="empty-state" style="padding:40px"><div class="empty-state-icon"><i class="fas fa-filter"></i></div><h3>Hech qanday voronka topilmadi</h3><p>Yangi voronka yarating</p></div>
+          <% } %>
         </div>
       </div>
     </div>
 
     <!-- 4. USERS -->
-    ${isAdmin ? `
+    <% if (isAdmin) { %>
     <div class="settings-pane" id="pane-users">
       <div class="settings-section">
         <div class="settings-section-header">
@@ -225,13 +218,27 @@ const swatchHtml = colorSwatches.map(c =>
           <div class="table-wrapper">
             <table class="data-table">
               <thead><tr><th>Ism</th><th>Email</th><th>Rol</th><th>Qo'shilgan</th><th></th></tr></thead>
-              <tbody>${usersRowsHtml}</tbody>
+              <tbody>
+                <% if (usersList.length) { %>
+                  <% usersList.forEach(u => { %>
+                  <tr>
+                    <td><strong><%= escHtml(u.fullName||'—') %></strong></td>
+                    <td><%= escHtml(u.email) %></td>
+                    <td><span class="badge <%= u.role==='admin'?'badge-purple':'badge-blue' %>"><%= u.role==='admin'?'Admin':'Manager' %></span></td>
+                    <td style="color:var(--text-tertiary);font-size:12px"><%= new Date(u.createdAt).toLocaleDateString('uz-UZ') %></td>
+                    <td><button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="deleteUser(<%= u.id %>)"><i class="fas fa-trash"></i></button></td>
+                  </tr>
+                  <% }) %>
+                <% } else { %>
+                  <tr><td colspan="5"><div class="empty-state" style="padding:24px"><h3>Foydalanuvchilar yo'q</h3></div></td></tr>
+                <% } %>
+              </tbody>
             </table>
           </div>
         </div>
       </div>
     </div>
-    ` : ''}
+    <% } %>
 
     <!-- 5. INTEGRATIONS -->
     <div class="settings-pane" id="pane-integrations">
@@ -287,7 +294,7 @@ const swatchHtml = colorSwatches.map(c =>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <input type="color" id="p-color" value="#007AFF"
             style="width:44px;height:36px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;padding:2px">
-          <div style="display:flex;gap:6px;flex-wrap:wrap">${swatchHtml.replace(/pickColor/g,'pickPipelineColor')}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap"><%- swatchHtml.replace(/pickColor/g,'pickPipelineColor') %></div>
         </div>
       </div>
       <div class="form-group">
@@ -326,7 +333,7 @@ const swatchHtml = colorSwatches.map(c =>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <input type="color" id="st-color" value="#007AFF"
             style="width:44px;height:36px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;padding:2px">
-          <div style="display:flex;gap:6px;flex-wrap:wrap">${swatchHtml}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap"><%- swatchHtml %></div>
         </div>
       </div>
     </div>

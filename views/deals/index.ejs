@@ -328,7 +328,7 @@
         <div class="pipeline-dropdown" id="pipelineDropdown">
           <div id="pdropList"></div>
           <div class="pdrop-divider"></div>
-          ${(user && user.role === 'admin') ? '<div class="pdrop-action" onclick="closePipelineDropdown();openPipelineMgr()"><i class="fas fa-cog"></i> Voronkalarni boshqarish</div>' : ''}
+          <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %><div class="pdrop-action" onclick="closePipelineDropdown();openPipelineMgr()"><i class="fas fa-cog"></i> Voronkalarni boshqarish</div><% } %>
         </div>
       </div>
 
@@ -341,7 +341,7 @@
             <i class="fas fa-list"></i> Jadval
           </button>
         </div>
-        ${(user && user.role === 'admin') ? '<button class="btn btn-ghost btn-sm kb-settings-btn" id="btnEditMode" onclick="toggleEditMode()" title="Bosqichlarni tahrirlash"><i class="fas fa-cog"></i> Sozlash</button>' : ''}
+        <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %><button class="btn btn-ghost btn-sm kb-settings-btn" id="btnEditMode" onclick="toggleEditMode()" title="Bosqichlarni tahrirlash"><i class="fas fa-cog"></i> Sozlash</button><% } %>
         <button class="btn btn-primary btn-sm" onclick="openDealModal()">
           <i class="fas fa-plus"></i> Yangi sdelka
         </button>
@@ -1018,57 +1018,35 @@ function renderKanban() {
 }
 
 function dcardHtml(d) {
-  const paid = d.amount > 0 ? Math.round(((d.paidAmount||0)/d.amount)*100) : 0;
-  const ov   = d.deadline && new Date(d.deadline) < new Date() && !['won','lost'].includes(d.status);
   const init = ((d.manager?.fullName || d.manager?.email || '?').charAt(0)).toUpperCase();
   const statusColors = { new:'#007AFF', negotiation:'#FF9500', proposal:'#5856D6', won:'#34C759', lost:'#FF3B30' };
   const statusLabels = { new:'Yangi', negotiation:'Muzokaralar', proposal:'Taklif', won:'Yutilgan', lost:"Yo'qotilgan" };
   const sc = statusColors[d.status] || '#8E8E93';
-  const sl = statusLabels[d.status] || 'Boma’lum';
+  const sl = statusLabels[d.status] || 'Noma’lum';
   
-  const clientHtml = d.client ? '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;display:flex;align-items:center;gap:6px"><i class="fas fa-user" style="color:var(--text-tertiary);"></i>' + _esc(d.client.name) + (d.client.company ? ' · ' + _esc(d.client.company) : '') + '</div>' : '<div style="height:4px"></div>';
-  const phoneHtml = (d.client && d.client.phone) ? '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;display:flex;align-items:center;gap:6px"><i class="fas fa-phone-alt" style="color:var(--text-tertiary);"></i>' + _esc(d.client.phone) + '</div>' : '';
-  const notesHtml = d.notes ? '<div style="font-size:11px;color:var(--text-tertiary);margin-bottom:12px;padding-left:8px;border-left:2px solid var(--border-med);font-style:italic">' + _esc(d.notes) + '</div>' : '';
-  const progressHtml = d.amount > 0 ? '<div class="dcard-progress" style="margin-top:12px"><div class="dcard-progress-fill" style="width:' + paid + '%"></div></div>' : '';
+  const clientHtml = d.client ? '<div style="font-size:12.5px;color:var(--text-secondary);margin-bottom:6px;display:flex;align-items:center;gap:6px"><i class="fas fa-user" style="color:var(--text-tertiary);"></i><span style="font-weight:500">' + _esc(d.client.name) + '</span></div>' : '';
+  const phoneHtml = (d.client && d.client.phone) ? '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px;display:flex;align-items:center;gap:6px"><i class="fas fa-phone-alt" style="color:var(--text-tertiary);"></i>' + _esc(d.client.phone) + '</div>' : '';
   
   return `
     <div class="dcard" draggable="true" data-id="${d.id}"
       ondragstart="onDragStart(event,${d.id})" ondragend="onDragEnd(event)"
-      onclick="openDetail(${d.id})" style="padding:14px; box-shadow:0 2px 8px rgba(0,0,0,0.04); border:1px solid var(--glass-border); border-radius:10px; transition:transform 0.2s, box-shadow 0.2s;">
+      onclick="openDetail(${d.id})" style="position:relative; padding:12px 14px; box-shadow:0 2px 8px rgba(0,0,0,0.03); border:1px solid var(--glass-border); border-radius:10px; transition:all 0.2s; background:var(--bg-secondary); cursor:pointer; margin-bottom: 10px;">
       
-      <div class="dcard-header" style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:flex-start;">
-        <div style="font-weight:600; font-size:14px; color:var(--text-primary); line-height:1.3; padding-right:8px">${_esc(d.productName||d.name)}</div>
-        <span class="dcard-badge" style="background:${sc}1A; color:${sc}; border:1px solid ${sc}33; padding:3px 6px; font-size:10px; border-radius:4px; font-weight:600; white-space:nowrap">${sl}</span>
+      <!-- Tahrirlash tugmasi -->
+      <div onclick="event.stopPropagation(); openDealModal(${d.id})" style="position:absolute; top:10px; right:12px; color:var(--text-tertiary); cursor:pointer; padding: 4px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='var(--glass-bg)'; this.style.color='var(--accent)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-tertiary)'">
+        <i class="fas fa-edit"></i>
+      </div>
+
+      <div class="dcard-header" style="margin-bottom:8px; display:flex; flex-direction:column; align-items:flex-start; padding-right:24px;">
+        <span class="dcard-badge" style="background:${sc}1A; color:${sc}; padding:2px 6px; font-size:9.5px; border-radius:4px; font-weight:700; text-transform:uppercase; margin-bottom: 6px;">${sl}</span>
+        <div style="font-weight:600; font-size:14px; color:var(--text-primary); line-height:1.3">${_esc(d.productName||d.name)}</div>
       </div>
       
       ${clientHtml}
       ${phoneHtml}
-      ${notesHtml}
       
-      <div class="dcard-financials" style="background:var(--bg-secondary); border-radius:8px; padding:10px; margin-bottom:12px;">
-        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-          <span style="font-size:11px; color:var(--text-tertiary)">To'liq summa:</span>
-          <span style="font-size:12px; font-weight:600; color:var(--text-primary)">${_fmt(d.amount||0,true)}</span>
-        </div>
-        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-          <span style="font-size:11px; color:var(--text-tertiary)">Qancha berdi:</span>
-          <span style="font-size:12px; font-weight:600; color:var(--success)">${_fmt(d.paidAmount||0,true)}</span>
-        </div>
-        <div style="display:flex; justify-content:space-between; border-top:1px dashed var(--glass-border); padding-top:6px;">
-          <span style="font-size:11px; color:var(--text-tertiary)">Qolgan qarz:</span>
-          <span style="font-size:12px; font-weight:700; color:var(--danger)">${_fmt((d.amount||0) - (d.paidAmount||0),true)}</span>
-        </div>
-      </div>
-      
-      <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:var(--text-tertiary);">
-        <div class="${ov ? 'overdue' : ''}" style="${ov ? 'color:var(--danger);font-weight:600' : ''}"><i class="far fa-calendar-alt"></i> ${_date(d.createdAt)}</div>
-        <div class="dcard-av" title="${_esc(d.manager?.fullName||'?')}" style="width:20px;height:20px;font-size:10px">${init}</div>
-      </div>
-      
-      ${progressHtml}
-
-      <div style="margin-top:10px;">
-        <button class="btn btn-secondary btn-sm" style="width:100%;font-size:11px" onclick="event.stopPropagation(); callbackRedirect(${d.id}, '${_esc(d.productName||d.name)}', ${d.clientId})">
+      <div style="margin-top:10px; display:flex; gap:6px;">
+        <button class="btn btn-secondary btn-sm" style="flex:1; font-size:11.5px; padding: 6px 0;" onclick="event.stopPropagation(); callbackRedirect(${d.id}, '${_esc(d.productName||d.name)}', ${d.clientId})">
           <i class="fas fa-headset"></i> Qayta aloqa
         </button>
       </div>
@@ -1508,6 +1486,7 @@ async function saveDeal() {
     paidAmount:  Number(document.getElementById('f-paidAmount').value) || 0,
     clientId:    document.getElementById('f-clientId').value ? Number(document.getElementById('f-clientId').value) : null,
     stageId:     rawStageId,
+    pipelineId:  _activePid,
     notes:       document.getElementById('f-notes').value.trim() || null,
   };
 
