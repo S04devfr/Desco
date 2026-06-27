@@ -88,8 +88,8 @@ const titlesMap = {
   'branches': 'Ishonch Filiallari'
 };
 
-document.getElementById('extraTitle').textContent = titlesMap[activeType] || 'Qo\\'shimcha';
-document.getElementById('tableHeader').textContent = (titlesMap[activeType] || 'Ro\\'yxat') + ' jadvali';
+document.getElementById('extraTitle').textContent = titlesMap[activeType] || 'Qo\'shimcha';
+document.getElementById('tableHeader').textContent = (titlesMap[activeType] || 'Ro\'yxat') + ' jadvali';
 
 async function loadExtraList() {
   try {
@@ -104,50 +104,50 @@ async function loadExtraList() {
     document.getElementById('rowCount').textContent = list.length;
 
     if (!list.length) {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:40px; color:var(--text-tertiary)"><i class="fas fa-list" style="font-size:28px; display:block; margin-bottom:8px;"></i>Jadvalda ma\\'lumot yo\\'q. "Yangi qator qo\\'shish" tugmasini bosing.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:40px; color:var(--text-tertiary)"><i class="fas fa-list" style="font-size:28px; display:block; margin-bottom:8px;"></i>Jadvalda ma\'lumot yo\'q. "Yangi qator qo\'shish" tugmasini bosing.</td></tr>';
       return;
     }
 
-    tbody.innerHTML = list.map(item => \`
-      <tr id="row-\${item.id}">
-        <td style="padding:10px 12px !important; color:var(--text-tertiary); font-size:12.5px;">#\${item.id}</td>
+    tbody.innerHTML = list.map(item => `
+      <tr id="row-${item.id}">
+        <td style="padding:10px 12px !important; color:var(--text-tertiary); font-size:12.5px;">#${item.id}</td>
         <td>
-          <input type="text" class="spreadsheet-input" value="\${escHtml(item.name)}" 
-                 onchange="updateExtraField(\${item.id}, 'name', this.value, this)" 
+          <input type="text" class="spreadsheet-input" value="${escHtml(item.name)}" 
+                 onchange="updateExtraField(${item.id}, 'name', this.value, this)" 
                  onkeydown="if(event.key==='Enter') this.blur()">
         </td>
         <td>
-          <input type="text" class="spreadsheet-input" value="\${escHtml(item.phone || '')}" 
-                 onchange="updateExtraField(\${item.id}, 'phone', this.value, this)" 
+          <input type="text" class="spreadsheet-input" value="${escHtml(item.phone || '')}" 
+                 onchange="updateExtraField(${item.id}, 'phone', this.value, this)" 
                  onkeydown="if(event.key==='Enter') this.blur()" placeholder="Telefon...">
         </td>
         <td>
-          <input type="text" class="spreadsheet-input" value="\${escHtml(item.region || '')}" 
-                 onchange="updateExtraField(\${item.id}, 'region', this.value, this)" 
+          <input type="text" class="spreadsheet-input" value="${escHtml(item.region || '')}" 
+                 onchange="updateExtraField(${item.id}, 'region', this.value, this)" 
                  onkeydown="if(event.key==='Enter') this.blur()" placeholder="Viloyat...">
         </td>
         <td>
-          <input type="number" class="spreadsheet-input" value="\${item.price || 0}" 
-                 onchange="updateExtraField(\${item.id}, 'price', this.value, this)" 
+          <input type="number" class="spreadsheet-input" value="${item.price || 0}" 
+                 onchange="updateExtraField(${item.id}, 'price', this.value, this)" 
                  onkeydown="if(event.key==='Enter') this.blur()">
         </td>
         <td>
-          <input type="number" class="spreadsheet-input" value="\${item.travelCost || 0}" 
-                 onchange="updateExtraField(\${item.id}, 'travelCost', this.value, this)" 
+          <input type="number" class="spreadsheet-input" value="${item.travelCost || 0}" 
+                 onchange="updateExtraField(${item.id}, 'travelCost', this.value, this)" 
                  onkeydown="if(event.key==='Enter') this.blur()">
         </td>
         <td>
-          <input type="text" class="spreadsheet-input" value="\${escHtml(item.notes || '')}" 
-                 onchange="updateExtraField(\${item.id}, 'notes', this.value, this)" 
+          <input type="text" class="spreadsheet-input" value="${escHtml(item.notes || '')}" 
+                 onchange="updateExtraField(${item.id}, 'notes', this.value, this)" 
                  onkeydown="if(event.key==='Enter') this.blur()" placeholder="Izoh...">
         </td>
         <td style="text-align:center;">
-          <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="deleteExtraRow(\${item.id})" style="padding:4px 8px;" title="Qatorni o\\'chirish">
+          <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="deleteExtraRow(${item.id})" style="padding:4px 8px;" title="Qatorni o\'chirish">
             <i class="fas fa-trash"></i>
           </button>
         </td>
       </tr>
-    \`).join('');
+    `).join('');
   } catch(e) {
     document.getElementById('extraTableBody').innerHTML = '<tr><td colspan="8" style="text-align:center; padding:40px; color:var(--danger)"><i class="fas fa-exclamation-triangle" style="font-size:28px; display:block; margin-bottom:8px;"></i>Yuklashda xato: ' + escHtml(e.message) + '</td></tr>';
   }
@@ -159,19 +159,19 @@ async function addExtraRow() {
     const res = await r.json();
     if (!r.ok) throw new Error(res.message);
     
-    if (typeof showToast === 'function') showToast('Qator qo\\'shildi', 'success');
+    if (typeof showToast === 'function') showToast('Qator qo\'shildi', 'success');
     await loadExtraList();
     
     // Focus the first input of the new row
     setTimeout(() => {
-      const input = document.querySelector(\`#row-\${res.id} input\`);
+      const input = document.querySelector(`#row-${res.id} input`);
       if (input) {
         input.focus();
         input.select();
       }
     }, 100);
   } catch(e) {
-    if (typeof showToast === 'function') showToast('Qator qo\\'shishda xato', 'error');
+    if (typeof showToast === 'function') showToast('Qator qo\'shishda xato', 'error');
   }
 }
 
@@ -200,15 +200,15 @@ async function updateExtraField(id, field, value, inputEl) {
 }
 
 async function deleteExtraRow(id) {
-  if (!confirm('Qatorni o\\'chirishni tasdiqlaysizmi?')) return;
+  if (!confirm('Qatorni o\'chirishni tasdiqlaysizmi?')) return;
   try {
     const r = await fetch(apiEndpoint + '/' + id, { method: 'DELETE' });
     if (!r.ok) throw new Error();
     
-    if (typeof showToast === 'function') showToast('O\\'chirildi', 'success');
+    if (typeof showToast === 'function') showToast('O\'chirildi', 'success');
     loadExtraList();
   } catch(e) {
-    if (typeof showToast === 'function') showToast('O\\'chirishda xato', 'error');
+    if (typeof showToast === 'function') showToast('O\'chirishda xato', 'error');
   }
 }
 

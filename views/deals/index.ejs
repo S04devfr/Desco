@@ -782,20 +782,20 @@
     function renderPipelineUI() {
       // Button text
       const p = _pipelines.find(x => x.id === _activePid);
-      document.getElementById('pipelineNameText').textContent = p ? p.name : (_pipelines.length ? _pipelines[0].name : 'Voronka yo\\'q');
+      document.getElementById('pipelineNameText').textContent = p ? p.name : (_pipelines.length ? _pipelines[0].name : 'Voronka yo\'q');
 
       // Dropdown list
       const list = document.getElementById('pdropList');
       if (!_pipelines.length) {
-        list.innerHTML = '<div style="padding:10px;font-size:13px;color:var(--text-tertiary)">Voronka yo\\'q</div > ';
+        list.innerHTML = '<div style="padding:10px;font-size:13px;color:var(--text-tertiary)">Voronka yo\'q</div > ';
       } else {
-        list.innerHTML = _pipelines.map(p => \`
-      <div class="pdrop-item\${p.id===_activePid?' active':''}" onclick="setActivePipeline(\${p.id})">
-        <div class="pdrop-dot" style="background:\${p.color||'#007AFF'}"></div>
-        \${_esc(p.name)}
-        \${p.isDefault ? '<span style="font-size:10px;color:var(--text-tertiary);margin-left:auto">default</span>' : ''}
+        list.innerHTML = _pipelines.map(p => `
+      <div class="pdrop-item${p.id===_activePid?' active':''}" onclick="setActivePipeline(${p.id})">
+        <div class="pdrop-dot" style="background:${p.color||'#007AFF'}"></div>
+        ${_esc(p.name)}
+        ${p.isDefault ? '<span style="font-size:10px;color:var(--text-tertiary);margin-left:auto">default</span>' : ''}
       </div>
-    \`).join('');
+    `).join('');
   }
 
   // Stage filter / deal-form selects must always be kept in sync with
@@ -813,7 +813,7 @@
   const sel = document.getElementById('filterStage');
   const cur = sel.value;
   sel.innerHTML = '<option value="">Barcha bosqich</option>' +
-    selectableStages.map(s => \`<option value="\${s.id}">\${_esc(s.name)}</option>\`).join('');
+    selectableStages.map(s => `<option value="${s.id}">${_esc(s.name)}</option>`).join('');
   if (cur) sel.value = cur;
 
   // Deal form stage select
@@ -822,7 +822,7 @@
   fsel.disabled = _usingMockStages;
   fsel.innerHTML = (_usingMockStages
     ? '<option value="">— Avval voronka bosqichlarini sozlang —</option>'
-    : '<option value="">— Bosqich —</option>' + selectableStages.map(s => \`<option value="\${s.id}">\${_esc(s.name)}</option>\`).join('')
+    : '<option value="">— Bosqich —</option>' + selectableStages.map(s => `<option value="${s.id}">${_esc(s.name)}</option>`).join('')
   );
   if (fcur) fsel.value = fcur;
 }
@@ -849,7 +849,7 @@ async function loadManagers() {
     _managers = Array.isArray(data) ? data : [];
     const sel = document.getElementById('filterManager');
     sel.innerHTML = '<option value="">Barcha manager</option>' +
-      _managers.map(u => \`<option value="\${u.id}">\${_esc(u.fullName||u.email)}</option>\`).join('');
+      _managers.map(u => `<option value="${u.id}">${_esc(u.fullName||u.email)}</option>`).join('');
   } catch(e) { /* managers not critical */ }
 }
 
@@ -860,7 +860,7 @@ async function loadClients() {
     _clients = Array.isArray(data) ? data : [];
     const sel = document.getElementById('f-clientId');
     sel.innerHTML = '<option value="">— Mijoz tanlang —</option>' +
-      _clients.map(c => \`<option value="\${c.id}">\${_esc(c.name)}\${c.company?' — '+_esc(c.company):''}</option>\`).join('');
+      _clients.map(c => `<option value="${c.id}">${_esc(c.name)}${c.company?' — '+_esc(c.company):''}</option>`).join('');
   } catch(e) { /* clients not critical */ }
 }
 
@@ -894,14 +894,14 @@ function showLoading() {
 }
 
 function showError(msg) {
-  document.getElementById('kanbanBoard').innerHTML = \`
+  document.getElementById('kanbanBoard').innerHTML = `
     <div class="kb-state">
       <i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i>
       <h3>Xatolik</h3>
-      <p>\${_esc(msg)}</p>
+      <p>${_esc(msg)}</p>
       <button class="btn btn-primary btn-sm" onclick="loadAll()"><i class="fas fa-redo"></i> Qayta urinish</button>
     </div>
-  \`;
+  `;
 }
 
 // ── Kanban ─────────────────────────────────────────────────────
@@ -1048,32 +1048,32 @@ function dcardHtml(d) {
       <div class="dcard-financials" style="background:var(--bg-secondary); border-radius:8px; padding:10px; margin-bottom:12px;">
         <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
           <span style="font-size:11px; color:var(--text-tertiary)">To'liq summa:</span>
-          <span style="font-size:12px; font-weight:600; color:var(--text-primary)">\${_fmt(d.amount||0,true)}</span>
+          <span style="font-size:12px; font-weight:600; color:var(--text-primary)">${_fmt(d.amount||0,true)}</span>
         </div>
         <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
           <span style="font-size:11px; color:var(--text-tertiary)">Qancha berdi:</span>
-          <span style="font-size:12px; font-weight:600; color:var(--success)">\${_fmt(d.paidAmount||0,true)}</span>
+          <span style="font-size:12px; font-weight:600; color:var(--success)">${_fmt(d.paidAmount||0,true)}</span>
         </div>
         <div style="display:flex; justify-content:space-between; border-top:1px dashed var(--glass-border); padding-top:6px;">
           <span style="font-size:11px; color:var(--text-tertiary)">Qolgan qarz:</span>
-          <span style="font-size:12px; font-weight:700; color:var(--danger)">\${_fmt((d.amount||0) - (d.paidAmount||0),true)}</span>
+          <span style="font-size:12px; font-weight:700; color:var(--danger)">${_fmt((d.amount||0) - (d.paidAmount||0),true)}</span>
         </div>
       </div>
       
       <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:var(--text-tertiary);">
-        <div class="\${ov ? 'overdue' : ''}" style="\${ov ? 'color:var(--danger);font-weight:600' : ''}"><i class="far fa-calendar-alt"></i> \${_date(d.createdAt)}</div>
-        <div class="dcard-av" title="\${_esc(d.manager?.fullName||'?')}" style="width:20px;height:20px;font-size:10px">\${init}</div>
+        <div class="${ov ? 'overdue' : ''}" style="${ov ? 'color:var(--danger);font-weight:600' : ''}"><i class="far fa-calendar-alt"></i> ${_date(d.createdAt)}</div>
+        <div class="dcard-av" title="${_esc(d.manager?.fullName||'?')}" style="width:20px;height:20px;font-size:10px">${init}</div>
       </div>
       
-      \${progressHtml}
+      ${progressHtml}
 
       <div style="margin-top:10px;">
-        <button class="btn btn-secondary btn-sm" style="width:100%;font-size:11px" onclick="event.stopPropagation(); callbackRedirect(\${d.id}, '\${_esc(d.productName||d.name)}', \${d.clientId})">
+        <button class="btn btn-secondary btn-sm" style="width:100%;font-size:11px" onclick="event.stopPropagation(); callbackRedirect(${d.id}, '${_esc(d.productName||d.name)}', ${d.clientId})">
           <i class="fas fa-headset"></i> Qayta aloqa
         </button>
       </div>
     </div>
-  \`;
+  `;
 }
 
 // ── Table view ─────────────────────────────────────────────────
@@ -1082,30 +1082,30 @@ function renderTable() {
   const statusLabels = { new:'Yangi', negotiation:'Muzokaralar', proposal:'Taklif', won:'Yutilgan', lost:"Yo'qotilgan" };
   const statusColors = { new:'#007AFF', negotiation:'#FF9500', proposal:'#5856D6', won:'#34C759', lost:'#FF3B30' };
   if (!_deals.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-tertiary)"><i class="fas fa-handshake" style="font-size:28px;display:block;margin-bottom:8px"></i>Sdelkalar yo\\'q</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-tertiary)"><i class="fas fa-handshake" style="font-size:28px;display:block;margin-bottom:8px"></i>Sdelkalar yo\'q</td></tr>';
     return;
   }
   const ov = d => d.deadline && new Date(d.deadline) < new Date();
   tbody.innerHTML = _deals.map(d => {
     const stage = d.stage || _stages.find(s => s.id === d.stageId);
     const sc = statusColors[d.status]||'#8E8E93';
-    return \`<tr onclick="openDetail(\${d.id})">
-      <td style="color:var(--text-tertiary);font-size:12px">#\${d.id}</td>
-      <td><strong>\${_esc(d.productName||d.name)}</strong></td>
-      <td>\${d.client ? _esc(d.client.name) : '<span style="color:var(--text-tertiary)">—</span>'}</td>
-      <td>\${stage ? \`<span class="badge" style="background:\${stage.color}22;color:\${stage.color}">\${_esc(stage.name)}</span>\` : '—'}</td>
-      <td style="font-weight:700">\${_fmt(d.amount)}</td>
-      <td style="color:var(--success)">\${_fmt(d.paidAmount)}</td>
-      <td class="\${ov(d)?'text-danger':''}">\${d.deadline?_date(d.deadline):'—'}</td>
-      <td>\${d.manager?_esc(d.manager.fullName||d.manager.email):'—'}</td>
+    return `<tr onclick="openDetail(${d.id})">
+      <td style="color:var(--text-tertiary);font-size:12px">#${d.id}</td>
+      <td><strong>${_esc(d.productName||d.name)}</strong></td>
+      <td>${d.client ? _esc(d.client.name) : '<span style="color:var(--text-tertiary)">—</span>'}</td>
+      <td>${stage ? `<span class="badge" style="background:${stage.color}22;color:${stage.color}">${_esc(stage.name)}</span>` : '—'}</td>
+      <td style="font-weight:700">${_fmt(d.amount)}</td>
+      <td style="color:var(--success)">${_fmt(d.paidAmount)}</td>
+      <td class="${ov(d)?'text-danger':''}">${d.deadline?_date(d.deadline):'—'}</td>
+      <td>${d.manager?_esc(d.manager.fullName||d.manager.email):'—'}</td>
       <td onclick="event.stopPropagation()">
         <div style="display:flex;gap:4px">
-          <button class="btn btn-ghost btn-icon btn-sm" onclick="openDetail(\${d.id})"><i class="fas fa-eye"></i></button>
-          <button class="btn btn-ghost btn-icon btn-sm" onclick="openDealModal(null,\${d.id})"><i class="fas fa-edit"></i></button>
-          <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="deleteDeal(\${d.id})"><i class="fas fa-trash"></i></button>
+          <button class="btn btn-ghost btn-icon btn-sm" onclick="openDetail(${d.id})"><i class="fas fa-eye"></i></button>
+          <button class="btn btn-ghost btn-icon btn-sm" onclick="openDealModal(null,${d.id})"><i class="fas fa-edit"></i></button>
+          <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="deleteDeal(${d.id})"><i class="fas fa-trash"></i></button>
         </div>
       </td>
-    </tr>\`;
+    </tr>`;
   }).join('');
 }
 
@@ -1220,7 +1220,7 @@ async function onDrop(e, stageId) {
     // Merge server-confirmed fields (stage relation, updatedAt, etc.)
     // into the local deal object without re-fetching the whole board.
     Object.assign(deal, updated);
-    _toast('Bosqich o\\'zgartirildi', 'success');
+    _toast('Bosqich o\'zgartirildi', 'success');
   } catch (err) {
     // Roll back to the previous stage and re-render.
     deal.stageId = previousStageId;
@@ -1541,56 +1541,56 @@ async function openDetail(id) {
     const statusColors = { new:'#007AFF', negotiation:'#FF9500', proposal:'#5856D6', won:'#34C759', lost:'#FF3B30' };
     const paid = deal.amount > 0 ? Math.round(((deal.paidAmount||0)/deal.amount)*100) : 0;
     document.getElementById('detailTitle').textContent = _esc(deal.productName||deal.name);
-    document.getElementById('detailBody').innerHTML = \`
+    document.getElementById('detailBody').innerHTML = `
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
         <div>
           <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:2px">Summa</div>
-          <div style="font-size:20px;font-weight:700;color:var(--accent)">\${_fmt(deal.amount)}</div>
+          <div style="font-size:20px;font-weight:700;color:var(--accent)">${_fmt(deal.amount)}</div>
         </div>
         <div>
           <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:2px">To'langan</div>
-          <div style="font-size:20px;font-weight:700;color:var(--success)">\${_fmt(deal.paidAmount)}</div>
+          <div style="font-size:20px;font-weight:700;color:var(--success)">${_fmt(deal.paidAmount)}</div>
         </div>
         <div>
           <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:2px">Qarz</div>
-          <div style="font-size:20px;font-weight:700;color:var(--danger)">\${_fmt(Math.max(0, (deal.amount||0) - (deal.paidAmount||0)))}</div>
+          <div style="font-size:20px;font-weight:700;color:var(--danger)">${_fmt(Math.max(0, (deal.amount||0) - (deal.paidAmount||0)))}</div>
         </div>
       </div>
       <div class="dcard-progress" style="height:6px;margin-bottom:16px">
-        <div class="dcard-progress-fill" style="width:\${paid}%"></div>
+        <div class="dcard-progress-fill" style="width:${paid}%"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
         <div>
           <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:3px">Bosqich</div>
-          <div>\${stage ? \`<span class="badge" style="background:\${stage.color}22;color:\${stage.color}">\${_esc(stage.name)}</span>\` : '—'}</div>
+          <div>${stage ? `<span class="badge" style="background:${stage.color}22;color:${stage.color}">${_esc(stage.name)}</span>` : '—'}</div>
         </div>
         <div>
           <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:3px">Status</div>
-          <div><span class="badge" style="background:\${statusColors[deal.status]||'#8E8E93'}22;color:\${statusColors[deal.status]||'#8E8E93'}">\${statusLabels[deal.status]||deal.status}</span></div>
+          <div><span class="badge" style="background:${statusColors[deal.status]||'#8E8E93'}22;color:${statusColors[deal.status]||'#8E8E93'}">${statusLabels[deal.status]||deal.status}</span></div>
         </div>
         <div>
           <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:3px">Mijoz</div>
-          <div style="font-size:13px">\${deal.client ? _esc(deal.client.name) : '—'}</div>
+          <div style="font-size:13px">${deal.client ? _esc(deal.client.name) : '—'}</div>
         </div>
         <div>
           <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:3px">Manager</div>
-          <div style="font-size:13px">\${deal.manager ? _esc(deal.manager.fullName||deal.manager.email) : '—'}</div>
+          <div style="font-size:13px">${deal.manager ? _esc(deal.manager.fullName||deal.manager.email) : '—'}</div>
         </div>
         <div>
           <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:3px">Muddat</div>
-          <div style="font-size:13px\${deal.deadline&&new Date(deal.deadline)<new Date()?';color:var(--danger)':''}">\${deal.deadline ? _date(deal.deadline) : '—'}</div>
+          <div style="font-size:13px${deal.deadline&&new Date(deal.deadline)<new Date()?';color:var(--danger)':''}">${deal.deadline ? _date(deal.deadline) : '—'}</div>
         </div>
         <div>
           <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:3px">Yaratilgan</div>
-          <div style="font-size:13px">\${_date(deal.createdAt)}</div>
+          <div style="font-size:13px">${_date(deal.createdAt)}</div>
         </div>
       </div>
-      \${deal.notes ? \`<div style="margin-bottom:16px"><div style="font-size:11px;color:var(--text-tertiary);margin-bottom:4px">Izoh</div><div style="font-size:13px;padding:10px;background:var(--bg-secondary);border-radius:8px">\${_esc(deal.notes)}</div></div>\` : ''}
+      ${deal.notes ? `<div style="margin-bottom:16px"><div style="font-size:11px;color:var(--text-tertiary);margin-bottom:4px">Izoh</div><div style="font-size:13px;padding:10px;background:var(--bg-secondary);border-radius:8px">${_esc(deal.notes)}</div></div>` : ''}
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        \${_stages.map(s => \`<button class="btn btn-sm \${s.id===deal.stageId?'btn-primary':'btn-ghost'}" onclick="moveDeal(\${deal.id},\${s.id})">\${_esc(s.name)}</button>\`).join('')}
+        ${_stages.map(s => `<button class="btn btn-sm ${s.id===deal.stageId?'btn-primary':'btn-ghost'}" onclick="moveDeal(${deal.id},${s.id})">${_esc(s.name)}</button>`).join('')}
       </div>
       <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items:center">
-        <button class="btn btn-primary btn-sm" onclick="createTaskForDeal(\${deal.id}, '\${_esc(deal.productName || deal.name).replace(/'/g, "\\\\'")}')">
+        <button class="btn btn-primary btn-sm" onclick="createTaskForDeal(${deal.id}, '${_esc(deal.productName || deal.name).replace(/'/g, "\\\'")}')">
           <i class="fas fa-check-circle"></i> Vazifa qilib belgilash
         </button>
       </div>
@@ -1599,10 +1599,10 @@ async function openDetail(id) {
         <h4 style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:12px; display:flex; align-items:center; gap:6px"><i class="fas fa-comments" style="color:var(--text-tertiary)"></i> Izohlar va Tarix</h4>
         <div style="display:flex; gap:8px; margin-bottom:16px">
           <input type="text" id="newCommentInput" class="form-control" placeholder="Izoh yozing..." style="flex:1; font-size:13px">
-          <button class="btn btn-primary btn-sm" onclick="addComment(\${deal.id})"><i class="fas fa-paper-plane"></i></button>
+          <button class="btn btn-primary btn-sm" onclick="addComment(${deal.id})"><i class="fas fa-paper-plane"></i></button>
         </div>
         <div style="display:flex; flex-direction:column; gap:8px; max-height:200px; overflow-y:auto; padding-right:4px">
-          \${deal.activities && deal.activities.length ? deal.activities.map(a => 
+          ${deal.activities && deal.activities.length ? deal.activities.map(a => 
             '<div style="background:var(--bg-secondary); border-radius:8px; padding:10px; font-size:12px">' +
               '<div style="display:flex; justify-content:space-between; margin-bottom:4px">' +
                 '<span style="font-weight:600; color:' + (a.action==='Izoh qoldirildi'?'var(--accent)':'var(--text-primary)') + '">' + _esc(a.action) + '</span>' +
@@ -1611,10 +1611,10 @@ async function openDetail(id) {
               '<div style="color:var(--text-secondary); line-height:1.4">' + _esc(a.details||'') + '</div>' +
               '<div style="color:var(--text-tertiary); font-size:10px; margin-top:6px; text-align:right">' + (a.user ? _esc(a.user.fullName||a.user.email) : 'Tizim') + '</div>' +
             '</div>'
-          ).join('') : '<div style="color:var(--text-tertiary); font-size:12px; text-align:center; padding:10px">Hali hech qanday o\\'zgarish yo\\'q</div>'}
+          ).join('') : '<div style="color:var(--text-tertiary); font-size:12px; text-align:center; padding:10px">Hali hech qanday o\'zgarish yo\'q</div>'}
         </div>
       </div>
-    \`;
+    `;
   } catch(e) {
     document.getElementById('detailBody').innerHTML = '<div class="kb-state"><i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i><p>' + _esc(e.message) + '</p></div>';
   }
@@ -1634,8 +1634,8 @@ async function createTaskForDeal(dealId, dealTitle) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        title: dealTitle + ' bo\\'yicha qayta aloqa',
-        description: 'Mijoz bilan sdelka bo\\'yicha bog\\'lanish kerak',
+        title: dealTitle + ' bo\'yicha qayta aloqa',
+        description: 'Mijoz bilan sdelka bo\'yicha bog\'lanish kerak',
         dueDate: tomorrow.toISOString().substring(0,10),
         dealId: dealId
       })
@@ -1707,7 +1707,7 @@ async function moveDeal(dealId, stageId) {
       method:'PATCH', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ stageId })
     });
-    _toast('Bosqich o\\'zgartirildi', 'success');
+    _toast('Bosqich o\'zgartirildi', 'success');
     closeDetail();
     await loadDeals();
   } catch(e) { _toast(e.message, 'error'); }
@@ -1729,16 +1729,16 @@ function closePipelineMgr() {
 
 function renderPmgrPipelines() {
   const list = document.getElementById('pmgrPipelineList');
-  list.innerHTML = _pipelines.map(p => \`
-    <div class="pmgr-pitem\${p.id===_pmgrPid?' active':''}" onclick="pmgrSelectPipeline(\${p.id})">
-      <div style="width:9px;height:9px;border-radius:50%;background:\${p.color||'#007AFF'};flex-shrink:0"></div>
-      <span style="flex:1;font-size:13px">\${_esc(p.name)}\${p.isDefault?' <small style=\\"color:var(--text-tertiary)\\">default</small>':''}</span>
+  list.innerHTML = _pipelines.map(p => `
+    <div class="pmgr-pitem${p.id===_pmgrPid?' active':''}" onclick="pmgrSelectPipeline(${p.id})">
+      <div style="width:9px;height:9px;border-radius:50%;background:${p.color||'#007AFF'};flex-shrink:0"></div>
+      <span style="flex:1;font-size:13px">${_esc(p.name)}${p.isDefault?' <small style=\\"color:var(--text-tertiary)\\">default</small>':''}</span>
       <div style="display:flex;gap:3px">
-        <button class="btn btn-ghost btn-icon" style="padding:2px 5px;font-size:11px" onclick="event.stopPropagation();pmgrEditPipeline(\${p.id})"><i class="fas fa-edit"></i></button>
-        <button class="btn btn-ghost btn-icon text-danger" style="padding:2px 5px;font-size:11px" onclick="event.stopPropagation();pmgrDeletePipeline(\${p.id})"><i class="fas fa-trash"></i></button>
+        <button class="btn btn-ghost btn-icon" style="padding:2px 5px;font-size:11px" onclick="event.stopPropagation();pmgrEditPipeline(${p.id})"><i class="fas fa-edit"></i></button>
+        <button class="btn btn-ghost btn-icon text-danger" style="padding:2px 5px;font-size:11px" onclick="event.stopPropagation();pmgrDeletePipeline(${p.id})"><i class="fas fa-trash"></i></button>
       </div>
     </div>
-  \`).join('') || '<div style="color:var(--text-tertiary);font-size:13px;padding:8px">Voronka yo\\'q</div>';
+  `).join('') || '<div style="color:var(--text-tertiary);font-size:13px;padding:8px">Voronka yo\'q</div>';
 }
 
 function renderPmgrStages() {
@@ -1746,16 +1746,16 @@ function renderPmgrStages() {
   const stages = p ? (p.stages||[]) : [];
   document.getElementById('pmgrStageTitle').textContent = p ? p.name + ' — bosqichlar' : 'Voronka tanlanmagan';
   document.getElementById('pmgrAddStageBtn').style.display = p ? '' : 'none';
-  document.getElementById('pmgrStageList').innerHTML = stages.map(s => \`
+  document.getElementById('pmgrStageList').innerHTML = stages.map(s => `
     <div class="pmgr-sitem">
-      <div style="width:9px;height:9px;border-radius:50%;background:\${s.color||'#007AFF'}"></div>
-      <span style="font-size:13px">\${_esc(s.name)}</span>
+      <div style="width:9px;height:9px;border-radius:50%;background:${s.color||'#007AFF'}"></div>
+      <span style="font-size:13px">${_esc(s.name)}</span>
       <div class="sitem-actions">
-        <button class="btn btn-ghost btn-icon btn-sm" onclick="pmgrEditStage(\${s.id},'\${_esc(s.name)}','\${s.color||'#007AFF'}')"><i class="fas fa-edit"></i></button>
-        <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="pmgrDeleteStage(\${s.id})"><i class="fas fa-trash"></i></button>
+        <button class="btn btn-ghost btn-icon btn-sm" onclick="pmgrEditStage(${s.id},'${_esc(s.name)}','${s.color||'#007AFF'}')"><i class="fas fa-edit"></i></button>
+        <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="pmgrDeleteStage(${s.id})"><i class="fas fa-trash"></i></button>
       </div>
     </div>
-  \`).join('') || '<div style="color:var(--text-tertiary);font-size:13px;padding:8px">Bosqich yo\\'q</div>';
+  `).join('') || '<div style="color:var(--text-tertiary);font-size:13px;padding:8px">Bosqich yo\'q</div>';
 }
 
 function pmgrSelectPipeline(id) {

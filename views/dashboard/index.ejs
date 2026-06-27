@@ -342,58 +342,58 @@ async function loadDashboard() {
     ]);
 
     // KPI Cards rendering
-    document.getElementById('kpiCards').innerHTML = \`
+    document.getElementById('kpiCards').innerHTML = `
       <div class="stat-card clickable" onclick="openFinancialModal('installments')">
         <div class="stat-icon blue"><i class="fas fa-handshake"></i></div>
         <div class="stat-info">
           <div class="stat-label">Jami sdelkalar</div>
-          <div class="stat-value">\${kpis.totalOrders ?? 0}</div>
-          <div class="stat-sub">Yutilgan: \${kpis.won ?? 0} · Yo'qotilgan: \${kpis.lost ?? 0}</div>
+          <div class="stat-value">${kpis.totalOrders ?? 0}</div>
+          <div class="stat-sub">Yutilgan: ${kpis.won ?? 0} · Yo'qotilgan: ${kpis.lost ?? 0}</div>
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-icon green"><i class="fas fa-coins"></i></div>
         <div class="stat-info">
           <div class="stat-label">To'langan</div>
-          <div class="stat-value">\${fmtMoney(kpis.totalRevenue ?? 0)}</div>
+          <div class="stat-value">${fmtMoney(kpis.totalRevenue ?? 0)}</div>
         </div>
       </div>
       <div class="stat-card clickable" onclick="openFinancialModal('installments')">
         <div class="stat-icon orange"><i class="fas fa-clock"></i></div>
         <div class="stat-info">
           <div class="stat-label">Qarz</div>
-          <div class="stat-value">\${fmtMoney(kpis.totalDebt ?? 0)}</div>
+          <div class="stat-value">${fmtMoney(kpis.totalDebt ?? 0)}</div>
         </div>
       </div>
       <div class="stat-card clickable" onclick="openFinancialModal('client-debts')">
         <div class="stat-icon red"><i class="fas fa-users"></i></div>
         <div class="stat-info">
           <div class="stat-label">Klientlardan qarz</div>
-          <div class="stat-value">\${fmtMoney(kpis.totalClientDebt ?? 0)}</div>
+          <div class="stat-value">${fmtMoney(kpis.totalClientDebt ?? 0)}</div>
         </div>
       </div>
       <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')">
         <div class="stat-icon purple"><i class="fas fa-tags"></i></div>
         <div class="stat-info">
           <div class="stat-label">Tan narxi</div>
-          <div class="stat-value">\${fmtMoney(kpis.totalCostPrice ?? 0)}</div>
+          <div class="stat-value">${fmtMoney(kpis.totalCostPrice ?? 0)}</div>
         </div>
       </div>
       <div class="stat-card" style="cursor: pointer" onclick="window.location.href='/expenses'">
         <div class="stat-icon red"><i class="fas fa-minus-circle"></i></div>
         <div class="stat-info">
           <div class="stat-label">Xarajatlar</div>
-          <div class="stat-value">\${fmtMoney(kpis.totalExpenses ?? 0)}</div>
+          <div class="stat-value">${fmtMoney(kpis.totalExpenses ?? 0)}</div>
         </div>
       </div>
       <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')">
         <div class="stat-icon purple"><i class="fas fa-chart-line"></i></div>
         <div class="stat-info">
           <div class="stat-label">Sof foyda</div>
-          <div class="stat-value \${(kpis.netProfit ?? 0) >= 0 ? 'text-success' : 'text-danger'}">\${fmtMoney(kpis.netProfit ?? 0)}</div>
+          <div class="stat-value ${(kpis.netProfit ?? 0) >= 0 ? 'text-success' : 'text-danger'}">${fmtMoney(kpis.netProfit ?? 0)}</div>
         </div>
       </div>
-    \`;
+    `;
 
     // Charts rendering
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -440,37 +440,37 @@ async function loadDashboard() {
     // Today's tasks rendering
     const tasksEl = document.getElementById('todayTasks');
     if (!tasks.length) {
-      tasksEl.innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-state-icon"><i class="fas fa-check-circle"></i></div><h3>Bugungi vazifalar yo\\'q</h3></div>';
+      tasksEl.innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-state-icon"><i class="fas fa-check-circle"></i></div><h3>Bugungi vazifalar yo\'q</h3></div>';
     } else {
-      tasksEl.innerHTML = tasks.map(t => \`
+      tasksEl.innerHTML = tasks.map(t => `
         <div class="task-item">
-          <div class="task-check \${t.completed ? 'done' : ''}" onclick="toggleTask(\${t.id}, this)">
-            \${t.completed ? '<i class="fas fa-check" style="font-size:9px"></i>' : ''}
+          <div class="task-check ${t.completed ? 'done' : ''}" onclick="toggleTask(${t.id}, this)">
+            ${t.completed ? '<i class="fas fa-check" style="font-size:9px"></i>' : ''}
           </div>
           <div class="task-info">
-            <div class="task-title \${t.completed ? 'done' : ''}">\${escHtml(t.title)}</div>
+            <div class="task-title ${t.completed ? 'done' : ''}">${escHtml(t.title)}</div>
             <div class="task-meta">
-              <span class="priority-dot \${t.priority}"></span>
-              \${t.dueDate ? '<span class="task-due"><i class="fas fa-clock"></i> ' + fmtDate(t.dueDate) + '</span>' : ''}
+              <span class="priority-dot ${t.priority}"></span>
+              ${t.dueDate ? '<span class="task-due"><i class="fas fa-clock"></i> ' + fmtDate(t.dueDate) + '</span>' : ''}
             </div>
           </div>
         </div>
-      \`).join('');
+      `).join('');
     }
   } catch(e) {
     console.error('Dashboard yuk xatosi:', e);
     const kpiCards = document.getElementById('kpiCards');
     if (kpiCards) {
-      kpiCards.innerHTML = \`
+      kpiCards.innerHTML = `
         <div class="stat-card" style="grid-column:1/-1">
           <div class="stat-icon red"><i class="fas fa-exclamation-triangle"></i></div>
           <div class="stat-info">
             <div class="stat-label">Yuklashda xato</div>
-            <div class="stat-value" style="font-size:14px;font-weight:500">\${escHtml(e.message)}</div>
+            <div class="stat-value" style="font-size:14px;font-weight:500">${escHtml(e.message)}</div>
           </div>
           <button class="btn btn-secondary btn-sm" style="margin-left:auto" onclick="loadDashboard()"><i class="fas fa-redo"></i> Qayta urinish</button>
         </div>
-      \`;
+      `;
     }
   }
 }
@@ -550,18 +550,18 @@ function renderCostTable() {
     return;
   }
 
-  tbody.innerHTML = filtered.map(d => \`
+  tbody.innerHTML = filtered.map(d => `
     <tr>
-      <td style="padding:10px 12px; font-size:12.5px; color:var(--text-tertiary)">#\${d.id}</td>
-      <td style="padding:10px 12px; font-size:13px; font-weight:600">\${escHtml(d.productName)}</td>
-      <td style="padding:10px 12px; font-size:12.5px">\${escHtml(d.client?.name || 'Noma\\'lum')}</td>
-      <td style="padding:10px 12px; font-size:12.5px; font-weight:600">\${fmtMoney(d.amount)}</td>
+      <td style="padding:10px 12px; font-size:12.5px; color:var(--text-tertiary)">#${d.id}</td>
+      <td style="padding:10px 12px; font-size:13px; font-weight:600">${escHtml(d.productName)}</td>
+      <td style="padding:10px 12px; font-size:12.5px">${escHtml(d.client?.name || 'Noma\'lum')}</td>
+      <td style="padding:10px 12px; font-size:12.5px; font-weight:600">${fmtMoney(d.amount)}</td>
       <td style="padding:6px 12px;">
-        <input type="number" class="spreadsheet-input" value="\${d.costPrice || 0}"
-               onchange="saveDealCostPrice(\${d.id}, this)">
+        <input type="number" class="spreadsheet-input" value="${d.costPrice || 0}"
+               onchange="saveDealCostPrice(${d.id}, this)">
       </td>
     </tr>
-  \`).join('');
+  `).join('');
 }
 
 function filterCostTable() {
@@ -603,26 +603,26 @@ function renderInstallmentTab() {
   const debtorDeals = allDealsData.filter(d => d.amount > d.paidAmount);
   
   if (!debtorDeals.length) {
-    listEl.innerHTML = '<div style="color:var(--text-tertiary);font-size:12px;padding:10px;text-align:center;">Qarzdorlar yo\\'q</div>';
-    document.getElementById('installmentPlanEditor').innerHTML = \`
+    listEl.innerHTML = '<div style="color:var(--text-tertiary);font-size:12px;padding:10px;text-align:center;">Qarzdorlar yo\'q</div>';
+    document.getElementById('installmentPlanEditor').innerHTML = `
       <div class="empty-state" style="padding:60px 40px; text-align:center; margin:auto;">
         <i class="fas fa-check-circle" style="font-size:28px; color:var(--success); margin-bottom:10px"></i>
         <h4 style="margin:0; font-size:14px; color:var(--text-secondary)">Barcha qarzdorliklar yopilgan</h4>
       </div>
-    \`;
+    `;
     return;
   }
 
-  listEl.innerHTML = debtorDeals.map(d => \`
-    <div class="inst-deal-item \${selectedDealIdForInstallments === d.id ? 'active' : ''}" onclick="selectDealForInstallments(\${d.id})">
-      <div style="font-weight:600; color:var(--text-primary);">\${escHtml(d.client?.name || 'Mijoz #' + d.id)}</div>
-      <div style="font-size:11px; color:var(--text-secondary); margin-top:2px;">\${escHtml(d.productName)}</div>
+  listEl.innerHTML = debtorDeals.map(d => `
+    <div class="inst-deal-item ${selectedDealIdForInstallments === d.id ? 'active' : ''}" onclick="selectDealForInstallments(${d.id})">
+      <div style="font-weight:600; color:var(--text-primary);">${escHtml(d.client?.name || 'Mijoz #' + d.id)}</div>
+      <div style="font-size:11px; color:var(--text-secondary); margin-top:2px;">${escHtml(d.productName)}</div>
       <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:4px;">
         <span style="color:var(--text-tertiary)">Qarz:</span>
-        <span style="color:var(--danger); font-weight:700;">\${fmtMoney(d.amount - d.paidAmount)}</span>
+        <span style="color:var(--danger); font-weight:700;">${fmtMoney(d.amount - d.paidAmount)}</span>
       </div>
     </div>
-  \`).join('');
+  `).join('');
 
   if (selectedDealIdForInstallments) {
     renderInstallmentPlanEditor(selectedDealIdForInstallments);
@@ -641,15 +641,15 @@ async function renderInstallmentPlanEditor(dealId) {
 
   const remainingDebt = deal.amount - deal.paidAmount;
 
-  editorEl.innerHTML = \`
+  editorEl.innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed var(--glass-border); padding-bottom:10px; margin-bottom:12px;">
       <div>
-        <h3 style="font-size:14px; font-weight:700; margin:0;">\${escHtml(deal.client?.name)} · \${escHtml(deal.productName)}</h3>
-        <p style="font-size:11px; color:var(--text-tertiary); margin:0;">Sdelka #\${deal.id}</p>
+        <h3 style="font-size:14px; font-weight:700; margin:0;">${escHtml(deal.client?.name)} · ${escHtml(deal.productName)}</h3>
+        <p style="font-size:11px; color:var(--text-tertiary); margin:0;">Sdelka #${deal.id}</p>
       </div>
       <div style="text-align:right">
         <div style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase;">Qolgan Qarz</div>
-        <div style="font-size:16px; font-weight:800; color:var(--danger)">\${fmtMoney(remainingDebt)}</div>
+        <div style="font-size:16px; font-weight:800; color:var(--danger)">${fmtMoney(remainingDebt)}</div>
       </div>
     </div>
 
@@ -659,9 +659,9 @@ async function renderInstallmentPlanEditor(dealId) {
         <i class="fas fa-magic" style="color:var(--accent); margin-right:4px;"></i> Avto-Bo'lib to'lash plani
       </span>
       <div style="display:flex; gap:6px;">
-        <button class="btn btn-sm btn-ghost" onclick="autoGenerateInstallments(\${deal.id}, 3)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border-med)">3 oy</button>
-        <button class="btn btn-sm btn-ghost" onclick="autoGenerateInstallments(\${deal.id}, 6)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border-med)">6 oy</button>
-        <button class="btn btn-sm btn-ghost" onclick="autoGenerateInstallments(\${deal.id}, 12)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border-med)">12 oy</button>
+        <button class="btn btn-sm btn-ghost" onclick="autoGenerateInstallments(${deal.id}, 3)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border-med)">3 oy</button>
+        <button class="btn btn-sm btn-ghost" onclick="autoGenerateInstallments(${deal.id}, 6)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border-med)">6 oy</button>
+        <button class="btn btn-sm btn-ghost" onclick="autoGenerateInstallments(${deal.id}, 12)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border-med)">12 oy</button>
       </div>
     </div>
 
@@ -673,11 +673,11 @@ async function renderInstallmentPlanEditor(dealId) {
       <button class="btn btn-sm btn-ghost" onclick="addInstallmentRow()" style="border:1px dashed var(--border-med); font-size:12px;">
         <i class="fas fa-plus"></i> To'lov qo'shish
       </button>
-      <button class="btn btn-sm btn-primary" onclick="saveInstallmentPlan(\${deal.id})" id="saveInstPlanBtn">
+      <button class="btn btn-sm btn-primary" onclick="saveInstallmentPlan(${deal.id})" id="saveInstPlanBtn">
         <i class="fas fa-save"></i> Planni Saqlash
       </button>
     </div>
-  \`;
+  `;
 
   // Fetch current plan
   try {
@@ -695,21 +695,21 @@ async function renderInstallmentPlanEditor(dealId) {
 }
 
 function getInstallmentRowHtml(index, dateVal, amountVal, paidVal) {
-  return \`
+  return `
     <div class="installment-row" style="display:flex; align-items:center; gap:8px; background:var(--bg-secondary); border:1px solid var(--glass-border); padding:6px 8px; border-radius:6px;">
-      <span style="font-size:12px; color:var(--text-tertiary); width:20px; font-weight:600;">#\${index + 1}</span>
-      <input type="date" class="form-control inst-date" value="\${dateVal}" style="width:130px; height:28px; font-size:12px; padding:0 6px;">
-      <input type="number" class="form-control inst-amount" value="\${amountVal}" style="flex:1; height:28px; font-size:12px; padding:0 6px; font-weight:600;" placeholder="Summa">
+      <span style="font-size:12px; color:var(--text-tertiary); width:20px; font-weight:600;">#${index + 1}</span>
+      <input type="date" class="form-control inst-date" value="${dateVal}" style="width:130px; height:28px; font-size:12px; padding:0 6px;">
+      <input type="number" class="form-control inst-amount" value="${amountVal}" style="flex:1; height:28px; font-size:12px; padding:0 6px; font-weight:600;" placeholder="Summa">
       
       <label style="display:inline-flex; align-items:center; gap:4px; font-size:11.5px; color:var(--text-secondary); cursor:pointer; margin:0; user-select:none;">
-        <input type="checkbox" class="inst-paid" \${paidVal ? 'checked' : ''} style="cursor:pointer;"> To'landi
+        <input type="checkbox" class="inst-paid" ${paidVal ? 'checked' : ''} style="cursor:pointer;"> To'landi
       </label>
       
       <button class="btn btn-ghost btn-sm text-danger" onclick="this.parentElement.remove()" style="padding:2px 6px; font-size:11px;" title="Qatorni o'chirish">
         <i class="fas fa-trash"></i>
       </button>
     </div>
-  \`;
+  `;
 }
 
 function addInstallmentRow() {
@@ -780,7 +780,7 @@ async function saveInstallmentPlan(dealId) {
     });
     if (!r.ok) throw new Error();
     
-    if (typeof showToast === 'function') showToast('To\\'lov plani saqlandi', 'success');
+    if (typeof showToast === 'function') showToast('To\'lov plani saqlandi', 'success');
     loadFinancialData(); // Refresh metrics locally
   } catch(e) {
     if (typeof showToast === 'function') showToast('Saqlashda xatolik', 'error');
@@ -805,18 +805,18 @@ function renderClientDebtTable() {
     return;
   }
 
-  tbody.innerHTML = filtered.map(c => \`
+  tbody.innerHTML = filtered.map(c => `
     <tr>
-      <td style="padding:10px 12px; font-size:12.5px; color:var(--text-tertiary)">#\${c.id}</td>
-      <td style="padding:10px 12px; font-size:13px; font-weight:600">\${escHtml(c.name)}</td>
-      <td style="padding:10px 12px; font-size:12.5px">\${escHtml(c.phone || '—')}</td>
-      <td style="padding:10px 12px; font-size:12.5px">\${escHtml(c.company || '—')}</td>
+      <td style="padding:10px 12px; font-size:12.5px; color:var(--text-tertiary)">#${c.id}</td>
+      <td style="padding:10px 12px; font-size:13px; font-weight:600">${escHtml(c.name)}</td>
+      <td style="padding:10px 12px; font-size:12.5px">${escHtml(c.phone || '—')}</td>
+      <td style="padding:10px 12px; font-size:12.5px">${escHtml(c.company || '—')}</td>
       <td style="padding:6px 12px;">
-        <input type="number" class="spreadsheet-input" value="\${c.debt || 0}"
-               onchange="saveClientDebt(\${c.id}, this)">
+        <input type="number" class="spreadsheet-input" value="${c.debt || 0}"
+               onchange="saveClientDebt(${c.id}, this)">
       </td>
     </tr>
-  \`).join('');
+  `).join('');
 }
 
 function filterClientDebtTable() {

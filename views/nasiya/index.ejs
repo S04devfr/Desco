@@ -57,7 +57,7 @@ const titlesMap = {
 };
 
 document.getElementById('nasiyaTitle').textContent = titlesMap[activeStageKey] || 'Nasiya';
-document.getElementById('tableHeader').textContent = (titlesMap[activeStageKey] || 'Nasiya') + ' ro\\'yxati';
+document.getElementById('tableHeader').textContent = (titlesMap[activeStageKey] || 'Nasiya') + ' ro\'yxati';
 
 async function loadNasiyaDeals() {
   try {
@@ -72,7 +72,7 @@ async function loadNasiyaDeals() {
     document.getElementById('dealCount').textContent = deals.length;
 
     if (!deals.length) {
-      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:40px; color:var(--text-tertiary)"><i class="fas fa-wallet" style="font-size:28px; display:block; margin-bottom:8px;"></i>Bu bosqichda sdelkalar yo\\'q</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:40px; color:var(--text-tertiary)"><i class="fas fa-wallet" style="font-size:28px; display:block; margin-bottom:8px;"></i>Bu bosqichda sdelkalar yo\'q</td></tr>';
       return;
     }
 
@@ -83,26 +83,26 @@ async function loadNasiyaDeals() {
         hour: '2-digit', minute: '2-digit'
       });
 
-      return \`
+      return `
         <tr>
-          <td style="color:var(--text-tertiary); font-size:12px;">#\${d.id}</td>
-          <td><strong>\${escHtml(d.productName)}</strong></td>
-          <td>\${d.client ? escHtml(d.client.name) : '<span style="color:var(--text-tertiary)">—</span>'}</td>
-          <td>\${d.client && d.client.phone ? escHtml(d.client.phone) : '—'}</td>
-          <td style="font-weight:700;">\${fmtMoney(d.amount)}</td>
-          <td style="color:var(--success); font-weight:600;">\${fmtMoney(d.paidAmount)}</td>
-          <td style="color:var(--danger); font-weight:700;">\${fmtMoney(qolgan)}</td>
-          <td style="font-size:12px; color:var(--text-secondary); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="\${escHtml(d.notes || '')}">\${escHtml(d.notes || '—')}</td>
-          <td style="font-size:12px; color:var(--text-tertiary);">\${formattedDate}</td>
+          <td style="color:var(--text-tertiary); font-size:12px;">#${d.id}</td>
+          <td><strong>${escHtml(d.productName)}</strong></td>
+          <td>${d.client ? escHtml(d.client.name) : '<span style="color:var(--text-tertiary)">—</span>'}</td>
+          <td>${d.client && d.client.phone ? escHtml(d.client.phone) : '—'}</td>
+          <td style="font-weight:700;">${fmtMoney(d.amount)}</td>
+          <td style="color:var(--success); font-weight:600;">${fmtMoney(d.paidAmount)}</td>
+          <td style="color:var(--danger); font-weight:700;">${fmtMoney(qolgan)}</td>
+          <td style="font-size:12px; color:var(--text-secondary); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escHtml(d.notes || '')}">${escHtml(d.notes || '—')}</td>
+          <td style="font-size:12px; color:var(--text-tertiary);">${formattedDate}</td>
           <td>
             <div style="display:flex; gap:4px">
-              <a href="/deals?openDealId=\${d.id}" class="btn btn-ghost btn-icon btn-sm" title="Sdelkani ko\\'rish">
+              <a href="/deals?openDealId=${d.id}" class="btn btn-ghost btn-icon btn-sm" title="Sdelkani ko\'rish">
                 <i class="fas fa-eye" style="color:var(--accent)"></i>
               </a>
             </div>
           </td>
         </tr>
-      \`;
+      `;
     }).join('');
   } catch(e) {
     document.getElementById('nasiyaTableBody').innerHTML = '<tr><td colspan="10" style="text-align:center; padding:40px; color:var(--danger)"><i class="fas fa-exclamation-triangle" style="font-size:28px; display:block; margin-bottom:8px;"></i>Yuklashda xato: ' + escHtml(e.message) + '</td></tr>';

@@ -165,25 +165,25 @@ function updateStats() {
 function renderExpenses() {
   const tbody = document.getElementById('expensesBody');
   if (!allExpenses.length) {
-    tbody.innerHTML = \`<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon"><i class="fas fa-receipt"></i></div><h3>Xarajatlar yo'q</h3></div></td></tr>\`;
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon"><i class="fas fa-receipt"></i></div><h3>Xarajatlar yo'q</h3></div></td></tr>`;
     return;
   }
-  tbody.innerHTML = allExpenses.map((e, i) => \`
+  tbody.innerHTML = allExpenses.map((e, i) => `
     <tr>
-      <td style="color:var(--text-tertiary);font-size:12px">\${i+1}</td>
-      <td><strong style="font-weight:500">\${escHtml(e.description)}</strong></td>
-      <td><span class="badge \${catColors[e.category]||'badge-gray'}">\${catLabels[e.category]||e.category}</span></td>
-      <td style="font-weight:700;color:var(--danger)">\${fmtMoney(e.amount)}</td>
-      <td>\${fmtDateShort(e.date||e.createdAt)}</td>
-      <td>\${e.createdBy ? escHtml(e.createdBy.fullName||e.createdBy.email) : '—'}</td>
+      <td style="color:var(--text-tertiary);font-size:12px">${i+1}</td>
+      <td><strong style="font-weight:500">${escHtml(e.description)}</strong></td>
+      <td><span class="badge ${catColors[e.category]||'badge-gray'}">${catLabels[e.category]||e.category}</span></td>
+      <td style="font-weight:700;color:var(--danger)">${fmtMoney(e.amount)}</td>
+      <td>${fmtDateShort(e.date||e.createdAt)}</td>
+      <td>${e.createdBy ? escHtml(e.createdBy.fullName||e.createdBy.email) : '—'}</td>
       <td>
         <div style="display:flex;gap:4px">
-          <button class="btn btn-ghost btn-icon btn-sm" onclick="openExpenseModal(\${e.id})" title="Tahrirlash"><i class="fas fa-edit"></i></button>
-          <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="deleteExpense(\${e.id})" title="O'chirish"><i class="fas fa-trash"></i></button>
+          <button class="btn btn-ghost btn-icon btn-sm" onclick="openExpenseModal(${e.id})" title="Tahrirlash"><i class="fas fa-edit"></i></button>
+          <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="deleteExpense(${e.id})" title="O'chirish"><i class="fas fa-trash"></i></button>
         </div>
       </td>
     </tr>
-  \`).join('');
+  `).join('');
 }
 
 async function openExpenseModal(id) {
