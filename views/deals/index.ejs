@@ -1046,15 +1046,15 @@ function dcardHtml(d) {
       
       <div class="dcard-financials" style="background:var(--bg-secondary); border-radius:8px; padding:10px; margin-bottom:12px;">
         <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-          <span style="font-size:11px; color:var(--text-tertiary)">Jami:</span>
+          <span style="font-size:11px; color:var(--text-tertiary)">To'liq summa:</span>
           <span style="font-size:12px; font-weight:600; color:var(--text-primary)">\${_fmt(d.amount||0,true)}</span>
         </div>
         <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-          <span style="font-size:11px; color:var(--text-tertiary)">To'landi:</span>
+          <span style="font-size:11px; color:var(--text-tertiary)">Qancha berdi:</span>
           <span style="font-size:12px; font-weight:600; color:var(--success)">\${_fmt(d.paidAmount||0,true)}</span>
         </div>
         <div style="display:flex; justify-content:space-between; border-top:1px dashed var(--glass-border); padding-top:6px;">
-          <span style="font-size:11px; color:var(--text-tertiary)">Qarz:</span>
+          <span style="font-size:11px; color:var(--text-tertiary)">Qolgan qarz:</span>
           <span style="font-size:12px; font-weight:700; color:var(--danger)">\${_fmt((d.amount||0) - (d.paidAmount||0),true)}</span>
         </div>
       </div>
@@ -1065,6 +1065,12 @@ function dcardHtml(d) {
       </div>
       
       \${progressHtml}
+
+      <div style="margin-top:10px;">
+        <button class="btn btn-secondary btn-sm" style="width:100%;font-size:11px" onclick="event.stopPropagation(); callbackRedirect(\${d.id}, '\${_esc(d.productName||d.name)}', \${d.clientId})">
+          <i class="fas fa-headset"></i> Qayta aloqa
+        </button>
+      </div>
     </div>
   \`;
 }
