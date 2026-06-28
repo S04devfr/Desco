@@ -1418,49 +1418,50 @@ function callbackRedirect(dealId, dealTitle, clientId) {
 // ── Deal modal ─────────────────────────────────────────────────
 function openDealModal(defaultStageId, editId) {
   const modal = document.getElementById('dealModal');
-  document.getElementById('f-id').value = editId || '';
-  document.getElementById('f-name').value = '';
-  document.getElementById('f-amount').value = '';
-  document.getElementById('f-paidAmount').value = '';
-  document.getElementById('f-clientId').value = '';
-  document.getElementById('f-deadline').value = '';
-  document.getElementById('f-notes').value = '';
-  document.getElementById('dealModalTitle').textContent = editId ? 'Sdelkani tahrirlash' : 'Yangi sdelka';
+  const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val !== undefined && val !== null ? val : ''; };
 
-  if (defaultStageId && !_usingMockStages) {
-    document.getElementById('f-stageId').value = defaultStageId;
-  } else if (!editId && _stages.length && !_usingMockStages) {
-    document.getElementById('f-stageId').value = _stages[0].id;
-  } else {
-    document.getElementById('f-stageId').value = '';
+  setVal('f-id', editId || '');
+  setVal('f-name', '');
+  setVal('f-amount', '');
+  setVal('f-paidAmount', '');
+  setVal('f-clientId', '');
+  setVal('f-deadline', '');
+  setVal('f-notes', '');
+  setVal('f-contactName', '');
+  setVal('f-contactPhone', '');
+  setVal('f-city', '');
+  
+  const titleEl = document.getElementById('dealModalTitle');
+  if (titleEl) titleEl.textContent = editId ? 'Sdelkani tahrirlash' : 'Yangi sdelka';
+
+  const stageEl = document.getElementById('f-stageId');
+  if (stageEl) {
+    if (defaultStageId && !_usingMockStages) {
+      stageEl.value = defaultStageId;
+    } else if (!editId && _stages.length && !_usingMockStages) {
+      stageEl.value = _stages[0].id;
+    } else {
+      stageEl.value = '';
+    }
   }
 
   if (editId) {
-    const deal = _deals.find(d => d.id === editId);
+    const deal = _deals?.find(d => d?.id === editId);
     if (deal) {
-      document.getElementById('f-name').value = deal.productName || deal.name || '';
-      document.getElementById('f-contactName').value = deal.client?.name || '';
-      document.getElementById('f-contactPhone').value = deal.client?.phone || '';
-      document.getElementById('f-city').value = deal.client?.city || '';
-      document.getElementById('f-amount').value = deal.amount || '';
-      document.getElementById('f-paidAmount').value = deal.paidAmount || '';
-      document.getElementById('f-clientId').value = deal.clientId || '';
-      document.getElementById('f-stageId').value = deal.stageId || '';
-      document.getElementById('f-notes').value = deal.notes || '';
+      setVal('f-name', deal?.productName || deal?.name || '');
+      setVal('f-contactName', deal?.client?.name || '');
+      setVal('f-contactPhone', deal?.client?.phone || '');
+      setVal('f-city', deal?.client?.city || '');
+      setVal('f-amount', deal?.amount || '');
+      setVal('f-paidAmount', deal?.paidAmount || '');
+      setVal('f-clientId', deal?.clientId || '');
+      if (stageEl) stageEl.value = deal?.stageId || '';
+      setVal('f-notes', deal?.notes || '');
     }
-  } else {
-      document.getElementById('f-name').value = '';
-      document.getElementById('f-contactName').value = '';
-      document.getElementById('f-contactPhone').value = '';
-      document.getElementById('f-city').value = '';
-      document.getElementById('f-amount').value = '';
-      document.getElementById('f-paidAmount').value = '';
-      document.getElementById('f-clientId').value = '';
-      document.getElementById('f-notes').value = '';
   }
 
-  modal.classList.remove('hidden');
-  setTimeout(() => document.getElementById('f-name').focus(), 100);
+  if (modal) modal.classList.remove('hidden');
+  setTimeout(() => { const el = document.getElementById('f-name'); if (el) el.focus(); }, 100);
 }
 
 function closeDealModal() {
