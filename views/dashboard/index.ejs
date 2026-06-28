@@ -494,6 +494,19 @@ async function loadDashboard() {
         </div>
       `;
     }
+    // Clear chart spinners
+    const salesChartEl = document.getElementById('salesChart');
+    if (salesChartEl && salesChartEl.parentElement) {
+      salesChartEl.parentElement.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:13px;">Yuklashda xato (Ma\\'lumot yo\\'q)</div>';
+    }
+    const productChartEl = document.getElementById('productChart');
+    if (productChartEl && productChartEl.parentElement) {
+      productChartEl.parentElement.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:13px;">Yuklashda xato (Ma\\'lumot yo\\'q)</div>';
+    }
+    const tasksEl = document.getElementById('todayTasks');
+    if (tasksEl) {
+      tasksEl.innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-state-icon"><i class="fas fa-exclamation-circle"></i></div><h3>Yuklashda xato</h3></div>';
+    }
   }
 }
 

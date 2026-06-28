@@ -73,7 +73,8 @@ router.get('/kpis', async (req, res, next) => {
 
     res.json({ totalOrders, totalRevenue, totalDebt, totalExpenses, totalCostPrice, netProfit, totalClientDebt, won, lost })
   } catch (error) {
-    next(error)
+    console.error('KPI Error:', error);
+    return res.status(500).json({ error: 'Server xatosi: Ma\'lumot yuklanmadi', details: error.message });
   }
 })
 
@@ -89,7 +90,8 @@ router.get('/sales-by-manager', async (req, res, next) => {
     }
     res.json(Object.entries(totals).map(([manager, totalSales]) => ({ manager, totalSales })))
   } catch (error) {
-    next(error)
+    console.error('Sales Error:', error);
+    return res.status(500).json({ error: 'Server xatosi', details: error.message });
   }
 })
 
@@ -104,7 +106,8 @@ router.get('/product-popularity', async (req, res, next) => {
     }
     res.json(Object.entries(counts).map(([product, count]) => ({ product, count })))
   } catch (error) {
-    next(error)
+    console.error('Product Error:', error);
+    return res.status(500).json({ error: 'Server xatosi', details: error.message });
   }
 })
 
@@ -123,7 +126,8 @@ router.get('/today-tasks', async (req, res, next) => {
     const tasks = await prisma.task.findMany({ where, orderBy: { dueDate: 'asc' } })
     res.json(tasks)
   } catch (error) {
-    next(error)
+    console.error('Tasks Error:', error);
+    return res.status(500).json({ error: 'Server xatosi', details: error.message });
   }
 })
 

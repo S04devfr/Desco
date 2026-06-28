@@ -20,29 +20,25 @@
     <h3 id="tableHeader">Mijozlar to'lovlari (Excel-Grid)</h3>
     <div style="display:flex; gap:10px;">
       <span id="dealCount" class="badge badge-blue">0</span>
-      <button class="btn btn-outline btn-sm" onclick="openNasiyaModal()" style="border:1px dashed var(--border-med);">
+      <button class="btn btn-outline btn-sm" onclick="addEmptyRow()" style="border:1px dashed var(--border-med);">
         <i class="fas fa-plus"></i> Yangi qo'shish
-      </button>
-      <button class="btn btn-primary btn-sm" onclick="saveAllChanges()">
-        <i class="fas fa-save"></i> Barchasini Saqlash
       </button>
     </div>
   </div>
   <div class="table-wrap" style="overflow-x:auto;">
     <table class="deals-tbl" style="width:100%; border-collapse: collapse;">
       <thead>
-        <tr>
-          <th style="width:180px;">Mijoz / Telefon</th>
-          <th>Mahsulot</th>
-          <th style="width:100px;">Oy</th>
-          <th style="width:140px;">Narxi (Summa)</th>
-          <th>Izoh</th>
-          <th style="width:90px;">Holati</th>
+        <tr style="background:var(--bg-secondary)">
+          <th style="width:25%;">Mahsulot</th>
+          <th style="width:15%;">Oy</th>
+          <th style="width:20%;">Narxi</th>
+          <th style="width:25%;">Izoh</th>
+          <th style="width:15%; text-align:center;">Amal</th>
         </tr>
       </thead>
       <tbody id="nasiyaTableBody">
         <tr>
-          <td colspan="6" style="text-align:center; padding:40px;">
+          <td colspan="5" style="text-align:center; padding:40px;">
             <div class="spinner" style="margin:auto"></div>
           </td>
         </tr>
@@ -51,44 +47,12 @@
   </div>
 </div>
 
-<!-- Nasiya Qo'shish Modali -->
-<div class="modal-overlay hidden" id="addNasiyaModal" style="z-index:9999; display: flex; align-items: center; justify-content: center;">
-  <div class="modal-box" style="width:100%; max-width:400px; background:var(--bg-primary); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.2);">
-    <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
-      <h2 style="font-size: 16px; font-weight: 600; margin: 0;">Yangi Nasiya Qo'shish</h2>
-      <button class="modal-close" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-tertiary);" onclick="document.getElementById('addNasiyaModal').classList.add('hidden')">&times;</button>
-    </div>
-    <div class="modal-body" style="padding: 20px;">
-      <div class="form-group" style="margin-bottom:12px;">
-        <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:4px;">Mijoz Ismi</label>
-        <input type="text" id="n-clientName" class="form-control" placeholder="Ismni kiriting" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-light); border-radius: 6px; background: var(--bg-secondary); color: var(--text-primary);">
-      </div>
-      <div class="form-group" style="margin-bottom:12px;">
-        <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:4px;">Telefon Raqami</label>
-        <input type="text" id="n-clientPhone" class="form-control" placeholder="+998..." style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-light); border-radius: 6px; background: var(--bg-secondary); color: var(--text-primary);">
-      </div>
-      <div class="form-group" style="margin-bottom:12px;">
-        <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:4px;">Mahsulot Nomi</label>
-        <input type="text" id="n-productName" class="form-control" placeholder="Sotib olingan mahsulot" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-light); border-radius: 6px; background: var(--bg-secondary); color: var(--text-primary);">
-      </div>
-      <div class="form-group" style="margin-bottom:12px;">
-        <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:4px;">Jami Summasi</label>
-        <input type="number" id="n-amount" class="form-control" placeholder="100000" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-light); border-radius: 6px; background: var(--bg-secondary); color: var(--text-primary);">
-      </div>
-    </div>
-    <div class="modal-footer" style="padding: 16px 20px; border-top: 1px solid var(--border-light); display: flex; justify-content: flex-end; gap: 8px; background: var(--bg-secondary); border-radius: 0 0 12px 12px;">
-      <button class="btn btn-secondary" onclick="document.getElementById('addNasiyaModal').classList.add('hidden')">Bekor</button>
-      <button class="btn btn-primary" onclick="submitNewNasiya()">Saqlash</button>
-    </div>
-  </div>
-</div>
-
 <style>
 .excel-input {
   width: 100%;
   border: 1px solid transparent;
   background: transparent;
-  padding: 8px;
+  padding: 10px 8px;
   font-size: 13px;
   border-radius: 4px;
   transition: all 0.2s;
@@ -104,12 +68,13 @@
   box-shadow: 0 0 0 2px var(--accent-soft);
   outline: none;
 }
-.deal-group-header {
-  background: var(--bg-secondary);
-  font-weight: 600;
-  color: var(--text-secondary);
-  font-size: 12px;
-  text-transform: uppercase;
+.new-row {
+  background: var(--bg-primary);
+  animation: highlight 1s ease-out;
+}
+@keyframes highlight {
+  0% { background: var(--accent-soft); }
+  100% { background: transparent; }
 }
 </style>
 
@@ -123,205 +88,191 @@ const titlesMap = {
 };
 
 document.getElementById('nasiyaTitle').textContent = titlesMap[activeStageKey] || 'Nasiya';
-document.getElementById('tableHeader').textContent = (titlesMap[activeStageKey] || 'Nasiya') + ' ro\'yxati';
-
-let allDealsData = [];
+document.getElementById('tableHeader').textContent = (titlesMap[activeStageKey] || 'Nasiya') + ' jadvali';
 
 async function loadNasiyaDeals() {
+  const tbody = document.getElementById('nasiyaTableBody');
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px;"><div class="spinner" style="margin:auto"></div></td></tr>';
+
   try {
-    const tbody = document.getElementById('nasiyaTableBody');
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px;"><div class="spinner" style="margin:auto"></div></td></tr>';
-
     const r = await fetch('/api/nasiya/list-deals?stage=' + activeStageKey);
+    if (!r.ok) throw new Error('Xatolik');
     const deals = await r.json();
-    
-    if (!r.ok) throw new Error(deals.message || 'Xatolik');
 
-    allDealsData = deals;
-    document.getElementById('dealCount').textContent = deals.length + ' ta sdelka';
+    document.getElementById('dealCount').textContent = deals.length + ' ta yozuv';
 
     if (!deals.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--text-tertiary)"><i class="fas fa-wallet" style="font-size:28px; display:block; margin-bottom:8px;"></i>Bu bosqichda sdelkalar yo\'q</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-tertiary)"><i class="fas fa-table" style="font-size:28px; display:block; margin-bottom:8px;"></i>Hozircha hech narsa yo\\'q</td></tr>';
       return;
     }
 
     let html = '';
     deals.forEach(d => {
-      // Group header for the Deal
-      const clientName = d.client ? escHtml(d.client.name) : 'Noma\'lum';
-      const clientPhone = d.client && d.client.phone ? escHtml(d.client.phone) : '';
-      
-      let rowsHtml = '';
+      // Get month from first installment if exists, else default
+      let monthVal = '1 oy';
       if (d.installments && d.installments.length > 0) {
-        d.installments.forEach((inst, idx) => {
-          rowsHtml += `
-            <tr class="inst-row" data-deal-id="${d.id}" data-inst-id="${inst.id}">
-              <td style="font-size:12px; color:var(--text-secondary); border-right:1px solid var(--border-light);">
-                ${idx === 0 ? `<strong>${clientName}</strong><br><span style="font-size:11px;color:var(--text-tertiary)">${clientPhone}</span>` : ''}
-              </td>
-              <td style="padding:0; border-right:1px solid var(--border-light);">
-                <input type="text" class="excel-input f-product" value="${escHtml(inst.productName || d.productName)}" placeholder="Mahsulot">
-              </td>
-              <td style="padding:0; border-right:1px solid var(--border-light);">
-                <input type="text" class="excel-input f-month" value="${escHtml(inst.month || (idx+1 + '-oy'))}" placeholder="Oy">
-              </td>
-              <td style="padding:0; border-right:1px solid var(--border-light);">
-                <input type="number" class="excel-input f-amount" value="${inst.amount}" placeholder="Summa">
-              </td>
-              <td style="padding:0; border-right:1px solid var(--border-light);">
-                <input type="text" class="excel-input f-notes" value="${escHtml(inst.notes || '')}" placeholder="Izoh">
-              </td>
-              <td style="text-align:center;">
-                <label style="cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; font-size:12px;">
-                  <input type="checkbox" class="f-paid" ${inst.paid ? 'checked' : ''}> To'landi
-                </label>
-              </td>
-            </tr>
-          `;
-        });
-      } else {
-        // Empty row if no installments
-        rowsHtml += `
-            <tr class="inst-row" data-deal-id="${d.id}" data-inst-id="new">
-              <td style="font-size:12px; color:var(--text-secondary); border-right:1px solid var(--border-light);">
-                <strong>${clientName}</strong><br><span style="font-size:11px;color:var(--text-tertiary)">${clientPhone}</span>
-              </td>
-              <td style="padding:0; border-right:1px solid var(--border-light);">
-                <input type="text" class="excel-input f-product" value="${escHtml(d.productName)}" placeholder="Mahsulot">
-              </td>
-              <td style="padding:0; border-right:1px solid var(--border-light);">
-                <input type="text" class="excel-input f-month" value="1-oy" placeholder="Oy">
-              </td>
-              <td style="padding:0; border-right:1px solid var(--border-light);">
-                <input type="number" class="excel-input f-amount" value="${Math.max(0, d.amount - d.paidAmount)}" placeholder="Summa">
-              </td>
-              <td style="padding:0; border-right:1px solid var(--border-light);">
-                <input type="text" class="excel-input f-notes" value="" placeholder="Izoh">
-              </td>
-              <td style="text-align:center;">
-                <label style="cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; font-size:12px;">
-                  <input type="checkbox" class="f-paid"> To'landi
-                </label>
-              </td>
-            </tr>
-        `;
+        monthVal = d.installments[0].month || '1 oy';
       }
       
-      html += `
-        <tr class="deal-group-header">
-          <td colspan="6" style="padding:10px 12px; background:var(--bg-tertiary); border-top:2px solid var(--border);">
-            Sdelka #${d.id} — Jami Qarz: <span style="color:var(--danger)">${fmtMoney(Math.max(0, d.amount - d.paidAmount))}</span>
+      html += \`
+        <tr class="inst-row" data-deal-id="\${d.id}">
+          <td style="padding:0; border:1px solid var(--border-light);">
+            <input type="text" class="excel-input f-product" value="\${escHtml(d.productName)}" placeholder="Mahsulot nomi">
+          </td>
+          <td style="padding:0; border:1px solid var(--border-light);">
+            <input type="text" class="excel-input f-month" value="\${escHtml(monthVal)}" placeholder="1 oy">
+          </td>
+          <td style="padding:0; border:1px solid var(--border-light);">
+            <input type="number" class="excel-input f-amount" value="\${d.amount}" placeholder="0">
+          </td>
+          <td style="padding:0; border:1px solid var(--border-light);">
+            <input type="text" class="excel-input f-notes" value="\${escHtml(d.notes || d.client?.name || '')}" placeholder="Mijoz yoki Izoh">
+          </td>
+          <td style="text-align:center; padding:0; border:1px solid var(--border-light);">
+            <div style="display:flex; justify-content:center; gap:6px; padding:8px;">
+              <button class="btn btn-primary btn-sm" onclick="saveExistingRow(this, \${d.id})" title="Saqlash"><i class="fas fa-save"></i></button>
+              <button class="btn btn-ghost btn-sm text-danger" onclick="deleteRow(\${d.id})" title="O'chirish"><i class="fas fa-trash"></i></button>
+            </div>
           </td>
         </tr>
-      ` + rowsHtml;
+      \`;
     });
-
     tbody.innerHTML = html;
   } catch(e) {
-    document.getElementById('nasiyaTableBody').innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--danger)"><i class="fas fa-exclamation-triangle" style="font-size:28px; display:block; margin-bottom:8px;"></i>Yuklashda xato: ' + escHtml(e.message) + '</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--danger)"><i class="fas fa-exclamation-triangle"></i> Yuklashda xato</td></tr>';
   }
 }
 
-async function saveAllChanges() {
-  const rows = document.querySelectorAll('.inst-row');
-  const payloadMap = {}; // Group by dealId
-  
-  rows.forEach(row => {
-    const dealId = row.getAttribute('data-deal-id');
-    if (!payloadMap[dealId]) payloadMap[dealId] = [];
-    
-    // Fallback date to today + 1 month roughly if we don't have it in UI (UI simplified to Month string). 
-    // In real app, date input might be needed for dueDate, but we'll assign a default date logic if missing
-    let dueDateStr = new Date().toISOString(); 
-    
-    payloadMap[dealId].push({
-      productName: row.querySelector('.f-product').value,
-      month: row.querySelector('.f-month').value,
-      amount: Number(row.querySelector('.f-amount').value) || 0,
-      notes: row.querySelector('.f-notes').value,
-      paid: row.querySelector('.f-paid').checked,
-      dueDate: dueDateStr // Fallback needed for API contract
-    });
-  });
-
-  try {
-    const btn = document.querySelector('button[onclick="saveAllChanges()"]');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saqlanmoqda...';
-
-    // We send requests sequentially or via Promise.all
-    const promises = Object.keys(payloadMap).map(dealId => {
-      // For each deal, if we rewrite installments, we must fetch existing ones first to preserve dueDate,
-      // but since we simplified UI to not show dueDate, we might lose real dates if we overwrite. 
-      // Wait, we MUST preserve dueDate! Let's pass the real dueDate in a hidden field.
-      // Wait, I will refactor the UI to just use the new endpoint data.
-      return fetch('/api/deals/' + dealId + '/installments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ installments: payloadMap[dealId] })
-      });
-    });
-
-    await Promise.all(promises);
-    
-    if (typeof showToast === 'function') showToast('Barcha o\'zgarishlar saqlandi!', 'success');
-    loadNasiyaDeals();
-  } catch(e) {
-    if (typeof showToast === 'function') showToast('Saqlashda xatolik yuz berdi', 'error');
-  } finally {
-    const btn = document.querySelector('button[onclick="saveAllChanges()"]');
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fas fa-save"></i> Barchasini Saqlash';
+function addEmptyRow() {
+  const tbody = document.getElementById('nasiyaTableBody');
+  // Clear empty state if exists
+  if(tbody.querySelector('td[colspan]')) {
+    tbody.innerHTML = '';
   }
+  const tr = document.createElement('tr');
+  tr.className = 'inst-row new-row';
+  tr.innerHTML = \`
+    <td style="padding:0; border:1px solid var(--border-light);">
+      <input type="text" class="excel-input f-product" placeholder="Mahsulot nomi">
+    </td>
+    <td style="padding:0; border:1px solid var(--border-light);">
+      <input type="text" class="excel-input f-month" value="1 oy" placeholder="1 oy">
+    </td>
+    <td style="padding:0; border:1px solid var(--border-light);">
+      <input type="number" class="excel-input f-amount" placeholder="0">
+    </td>
+    <td style="padding:0; border:1px solid var(--border-light);">
+      <input type="text" class="excel-input f-notes" placeholder="Mijoz yoki Izoh">
+    </td>
+    <td style="text-align:center; padding:0; border:1px solid var(--border-light);">
+      <div style="display:flex; justify-content:center; gap:6px; padding:8px;">
+        <button class="btn btn-primary btn-sm" onclick="saveNewRow(this)" title="Saqlash"><i class="fas fa-save"></i></button>
+        <button class="btn btn-ghost btn-sm text-danger" onclick="this.closest('tr').remove()" title="O'chirish"><i class="fas fa-trash"></i></button>
+      </div>
+    </td>
+  \`;
+  tbody.prepend(tr);
+  tr.querySelector('.f-product').focus();
 }
 
-function openNasiyaModal() {
-  document.getElementById('n-clientName').value = '';
-  document.getElementById('n-clientPhone').value = '';
-  document.getElementById('n-productName').value = '';
-  document.getElementById('n-amount').value = '';
-  document.getElementById('addNasiyaModal').classList.remove('hidden');
-}
+async function saveNewRow(btn) {
+  const row = btn.closest('tr');
+  const product = row.querySelector('.f-product').value.trim();
+  const month = row.querySelector('.f-month').value.trim();
+  const amount = row.querySelector('.f-amount').value.trim();
+  const notes = row.querySelector('.f-notes').value.trim();
 
-async function submitNewNasiya() {
-  const cName = document.getElementById('n-clientName').value.trim();
-  const cPhone = document.getElementById('n-clientPhone').value.trim();
-  const prod = document.getElementById('n-productName').value.trim();
-  const amount = document.getElementById('n-amount').value.trim();
-
-  if (!cName || !cPhone || !prod) {
-    alert("Iltimos barcha qatorlarni to'ldiring!");
+  if(!product || !amount) {
+    if(typeof showToast === 'function') showToast('Mahsulot va Narxi kiritilishi shart!', 'error');
+    else alert('Mahsulot va Narxi kiritilishi shart!');
     return;
   }
 
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
   try {
     const res = await fetch('/api/nasiya/quick-add', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         stage: activeStageKey,
-        clientName: cName,
-        clientPhone: cPhone,
-        productName: prod,
-        amount: amount
+        productName: product,
+        clientName: notes || 'Noma\\'lum mijoz',
+        clientPhone: '',
+        amount: amount,
+        month: month
       })
     });
-    if(!res.ok) throw new Error("Saqlashda xato");
+    if(!res.ok) throw new Error('Saqlashda xato yuz berdi');
     
-    document.getElementById('addNasiyaModal').classList.add('hidden');
+    if(typeof showToast === 'function') showToast('Saqlandi!', 'success');
     loadNasiyaDeals();
   } catch(e) {
-    alert(e.message);
+    if(typeof showToast === 'function') showToast(e.message, 'error');
+    else alert(e.message);
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-save"></i>';
+  }
+}
+
+async function saveExistingRow(btn, dealId) {
+  const row = btn.closest('tr');
+  const product = row.querySelector('.f-product').value.trim();
+  const month = row.querySelector('.f-month').value.trim();
+  const amount = row.querySelector('.f-amount').value.trim();
+  const notes = row.querySelector('.f-notes').value.trim();
+
+  btn.disabled = true;
+  const originalHtml = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+  try {
+    // 1) Update Deal
+    const res = await fetch('/api/deals/' + dealId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        productName: product,
+        amount: Number(amount) || 0,
+        notes: notes
+      })
+    });
+    if(!res.ok) throw new Error('Xato');
+
+    // 2) Update Installment to save 'month'
+    await fetch('/api/deals/' + dealId + '/installments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ installments: [{ productName: product, month: month, amount: Number(amount)||0, notes: notes, paid: false, dueDate: new Date().toISOString() }] })
+    });
+
+    btn.innerHTML = '<i class="fas fa-check"></i>';
+    btn.classList.add('btn-success');
+    setTimeout(() => {
+      btn.innerHTML = '<i class="fas fa-save"></i>';
+      btn.classList.remove('btn-success');
+      btn.disabled = false;
+    }, 2000);
+  } catch(e) {
+    if(typeof showToast === 'function') showToast('Saqlashda xato', 'error');
+    btn.innerHTML = originalHtml;
+    btn.disabled = false;
+  }
+}
+
+async function deleteRow(dealId) {
+  if(!confirm("Ushbu qatorni o'chirishni tasdiqlaysizmi?")) return;
+  try {
+    const r = await fetch('/api/deals/' + dealId, { method: 'DELETE' });
+    if(!r.ok) throw new Error();
+    loadNasiyaDeals();
+  } catch(e) {
+    if(typeof showToast === 'function') showToast('O\\'chirishda xatolik', 'error');
   }
 }
 
 function escHtml(s) {
   if (s == null) return '';
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-function fmtMoney(v) {
-  return (Number(v) || 0).toLocaleString('uz-UZ') + " so'm";
 }
 
 document.addEventListener('DOMContentLoaded', loadNasiyaDeals);
