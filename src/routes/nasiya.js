@@ -40,7 +40,8 @@ router.get('/list-deals', async (req, res, next) => {
 
     res.json(deals);
   } catch (error) {
-    next(error);
+    console.error('Nasiya API xatosi:', error);
+    return res.status(500).json({ error: 'Server xatosi: Ma\'lumot yuklanmadi', details: error.message });
   }
 });
 

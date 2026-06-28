@@ -1199,6 +1199,31 @@ async function onDrop(e, stageId) {
     // into the local deal object without re-fetching the whole board.
     Object.assign(deal, updated);
     _toast('Bosqich o\'zgartirildi', 'success');
+
+    // Avtomatizatsiya: Vazifalar bosqichiga o'tganda avtomatik Vazifa yaratish
+    const targetStage = _stages.find(s => s.id === newStageId);
+    if (targetStage && targetStage.name && targetStage.name.toLowerCase() === 'vazifalar') {
+      const clientInfo = deal.client ? (deal.client.name + ' ' + (deal.client.phone || '')).trim() : "Mijoz noma'lum";
+      const desc = 'Mahsulot: ' + (deal.productName || deal.name || 'Noma\\'lum') + '\\nMijoz: ' + clientInfo;
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      apiFetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Qayta aloqa',
+          description: desc,
+          dueDate: tomorrow.toISOString().substring(0,10),
+          dealId: deal.id
+        })
+      }).then(() => {
+        _toast('Vazifa avtomatik yaratildi: Qayta aloqa', 'success');
+      }).catch(err => {
+        console.error('Vazifa avtomatizatsiya xatosi:', err);
+      });
+    }
+
   } catch (err) {
     // Roll back to the previous stage and re-render.
     deal.stageId = previousStageId;

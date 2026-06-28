@@ -139,7 +139,10 @@ async function loadNasiyaDeals() {
     });
     tbody.innerHTML = html;
   } catch(e) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--danger)"><i class="fas fa-exclamation-triangle"></i> Yuklashda xato</td></tr>';
+    document.getElementById('dealCount').textContent = '0 ta yozuv';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-tertiary)"><i class="fas fa-table" style="font-size:28px; display:block; margin-bottom:8px;"></i>Hozircha hech narsa yo\\'q</td></tr>';
+  } finally {
+    // Spinner is already overwritten by innerHTML in both try and catch branches
   }
 }
 
