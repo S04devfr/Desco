@@ -143,10 +143,11 @@ router.post('/lead', verifyWebhookToken, async (req, res, next) => {
 // ==========================================
 // TO'G'RIDAN-TO'G'RI META (FACEBOOK/INSTAGRAM) INTEGRATSIYASI
 // ==========================================
+const prisma = require('../config/database');
 
-// 1. Meta Webhook tasdiqlash (Verification)
-router.get('/meta', (req, res) => {
-  const verify_token = process.env.META_VERIFY_TOKEN;
+// 1-QADAM: Meta Webhook tasdiqlash (Verification)
+router.get('/instagram', (req, res) => {
+  const verify_token = process.env.WEBHOOK_VERIFY_TOKEN || 'desco-secret-token-123';
 
   let mode = req.query['hub.mode'];
   let token = req.query['hub.verify_token'];
@@ -164,16 +165,15 @@ router.get('/meta', (req, res) => {
   }
 });
 
-// 2. Meta'dan Lead qabul qilish
-router.post('/meta', async (req, res) => {
-  const sanitize = (str) => (str ? String(str).trim().substring(0, 500) : null);
-  
+// 2-QADAM: Meta'dan Lead qabul qilish
+router.post('/instagram', async (req, res) => {
+  // 1-Qoida: Meta'ga doim tezkor 200 qaytarish kerak, yo'qsa block qiladi
+  res.status(200).send('EVENT_RECEIVED');
+
   try {
     const body = req.body;
 
-    // Payload aynan sahifadan (page) kelganligini tekshirish
     if (body.object === 'page') {
-      
       for (const entry of body.entry) {
         if (entry.changes) {
           for (const change of entry.changes) {
@@ -183,15 +183,21 @@ router.post('/meta', async (req, res) => {
               const leadgenId = change.value.leadgen_id;
               
               if (leadgenId) {
-                // 3. Graph API ga so'rov yuborib asl ma'lumotlarni tortib olish
-                const accessToken = process.env.META_ACCESS_TOKEN;
+                // 3-QADAM: Graph API ga so'rov yuborib asl ma'lumotlarni tortib olish
+                const accessToken = process.env.PAGE_ACCESS_TOKEN || process.env.META_ACCESS_TOKEN;
+                
+                if (!accessToken) {
+                  console.error('PAGE_ACCESS_TOKEN topilmadi!');
+                  continue; // Cannot fetch without token
+                }
+
                 const metaResponse = await fetch(`https://graph.facebook.com/v19.0/${leadgenId}?access_token=${accessToken}`);
                 const leadData = await metaResponse.json();
 
                 if (leadData && leadData.field_data) {
-                  // Meta field_data formatini o'qish (odatda full_name va phone_number bo'ladi)
-                  let rawName = '';
+                  let rawName = 'Nomsiz Lead';
                   let rawPhone = '';
+                  let rawProduct = 'Instagram Orqali Murojaat';
 
                   leadData.field_data.forEach(field => {
                     if (field.name === 'full_name' || field.name === 'first_name') {
@@ -200,36 +206,30 @@ router.post('/meta', async (req, res) => {
                     if (field.name === 'phone_number') {
                       rawPhone = field.values[0];
                     }
+                    if (field.name === 'product_name' || field.name === 'mahsulot') {
+                      rawProduct = field.values[0];
+                    }
                   });
 
-                  const name = sanitize(rawName) || 'Nomsiz Lead';
-                  let phone = sanitize(rawPhone);
+                  if (rawPhone) {
+                    const cleanPhone = rawPhone.replace(/[\s-]/g, '');
 
-                  if (phone) {
-                    const cleanPhone = phone.replace(/[\s-]/g, '');
-
-                    // Baza bilan ishlash (oldingi mantiq kabi)
+                    // Baza bilan ishlash
                     let client = await prisma.client.findFirst({
                       where: { phone: { contains: cleanPhone } }
                     });
 
                     if (!client) {
-                      client = await prisma.client.findFirst({
-                        where: { phone: cleanPhone }
-                      });
-                    }
-
-                    if (!client) {
                       client = await prisma.client.create({
                         data: {
-                          name: name,
+                          name: String(rawName).trim().substring(0, 200),
                           phone: cleanPhone,
-                          notes: `Manba: Instagram Lead Ads (To'g'ridan-to'g'ri Meta)`
+                          notes: `Manba: Instagram Webhook`
                         }
                       });
                     }
 
-                    // Voronkani topish
+                    // Voronkani topish (Eng birinchi bosqichga tushirish)
                     const pipeline = await prisma.pipeline.findFirst({
                       where: { isDefault: true },
                       include: { stages: { orderBy: { order: 'asc' }, take: 1 } }
@@ -243,7 +243,7 @@ router.post('/meta', async (req, res) => {
                       targetStageId = pipeline.stages[0].id;
                     } else {
                       const fallbackPipeline = await prisma.pipeline.findFirst({
-                        include: { stages: { orderBy: { order: 'asc' }, take: 1 } }
+                         include: { stages: { orderBy: { order: 'asc' }, take: 1 } }
                       });
                       if (fallbackPipeline && fallbackPipeline.stages.length > 0) {
                         targetPipelineId = fallbackPipeline.id;
@@ -251,20 +251,28 @@ router.post('/meta', async (req, res) => {
                       }
                     }
 
-                    // Sdelka yaratish
-                    await prisma.deal.create({
-                      data: {
-                        productName: 'Instagram Meta Lead',
-                        amount: 0,
-                        status: 'new',
-                        clientId: client.id,
-                        pipelineId: targetPipelineId,
-                        stageId: targetStageId,
-                        notes: `Meta LeadGen ID: ${leadgenId}`
+                    if (targetPipelineId && targetStageId) {
+                      // Sdelka yaratish
+                      const deal = await prisma.deal.create({
+                        data: {
+                          productName: String(rawProduct).trim().substring(0, 200),
+                          amount: 0,
+                          status: 'new',
+                          clientId: client.id,
+                          pipelineId: targetPipelineId,
+                          stageId: targetStageId,
+                          notes: `Meta LeadGen ID: ${leadgenId}`
+                        }
+                      });
+                      
+                      // UI ga yuborish (Socket.io orqali Real-Time update)
+                      const broadcast = req.app.get('broadcast');
+                      if (broadcast) {
+                        broadcast({ type: 'deal_created', dealId: deal.id });
                       }
-                    });
-                    
-                    console.log(`[Meta Webhook] Muvaffaqiyatli saqlandi: ${name} / ${cleanPhone}`);
+
+                      console.log(`[Meta Webhook] Muvaffaqiyatli saqlandi: ${rawName} / ${cleanPhone}`);
+                    }
                   }
                 }
               }
@@ -272,15 +280,10 @@ router.post('/meta', async (req, res) => {
           }
         }
       }
-      // Meta serverlari so'rov yetib kelganini bilishi uchun tezkor 200 qaytarish shart
-      return res.status(200).send('EVENT_RECEIVED');
-    } else {
-      // Agar 'page' bo'lmasa
-      return res.sendStatus(404);
     }
   } catch (error) {
     console.error('Meta Webhook Error:', error);
-    res.status(500).send('ERROR');
+    // 200 is already sent at the very beginning of the POST handler
   }
 });
 

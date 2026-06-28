@@ -381,7 +381,12 @@ router.post('/:id/installments', async (req, res, next) => {
       const created = [];
       if (Array.isArray(installments)) {
         for (const inst of installments) {
-          const dueDate = new Date(inst.dueDate);
+          let dueDate = new Date(inst.dueDate);
+          if (isNaN(dueDate.getTime())) {
+            dueDate = new Date();
+            // Defaulting to 1 month ahead if invalid date was passed
+            dueDate.setMonth(dueDate.getMonth() + 1);
+          }
           const item = await tx.installment.create({
             data: {
               dealId,
