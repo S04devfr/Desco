@@ -396,63 +396,78 @@ async function loadDashboard() {
       </div>
     `;
 
+    // Safe defaults in case API fails
+    const safeSalesData = Array.isArray(salesData) ? salesData : [];
+    const safeProductData = Array.isArray(productData) ? productData : [];
+    const safeTasks = Array.isArray(tasks) ? tasks : [];
+
     // Charts rendering
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
     const textColor = isDark ? '#98989d' : '#6e6e73';
 
     if (salesChart) salesChart.destroy();
-    salesChart = new Chart(document.getElementById('salesChart'), {
-      type: 'bar',
-      data: {
-        labels: salesData.map(d => d.manager),
-        datasets: [{
-          label: "Savdo (so'm)",
-          data: salesData.map(d => d.totalSales),
-          backgroundColor: 'rgba(0,122,255,0.7)',
-          borderRadius: 8, borderSkipped: false
-        }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { grid: { color: gridColor }, ticks: { color: textColor, callback: v => fmtShort(v) } },
-          x: { grid: { display: false }, ticks: { color: textColor } }
+    
+    if (safeSalesData.length === 0) {
+      document.getElementById('salesChart').parentElement.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:13px;">Ma\\'lumot yo\\'q</div>';
+    } else {
+      salesChart = new Chart(document.getElementById('salesChart'), {
+        type: 'bar',
+        data: {
+          labels: safeSalesData.map(d => d.manager || 'Noma\\'lum'),
+          datasets: [{
+            label: "Savdo (so'm)",
+            data: safeSalesData.map(d => d.totalSales || 0),
+            backgroundColor: 'rgba(0,122,255,0.7)',
+            borderRadius: 8, borderSkipped: false
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { grid: { color: gridColor }, ticks: { color: textColor, callback: v => fmtShort(v) } },
+            x: { grid: { display: false }, ticks: { color: textColor } }
+          }
         }
-      }
-    });
+      });
+    }
 
     if (productChart) productChart.destroy();
-    const top = productData.slice(0, 8);
+    const top = safeProductData.slice(0, 8);
     const colors = ['#007AFF','#34C759','#FF9500','#FF3B30','#5856D6','#00C7BE','#FF2D55','#AC8E68'];
-    productChart = new Chart(document.getElementById('productChart'), {
-      type: 'doughnut',
-      data: {
-        labels: top.map(d => d.product),
-        datasets: [{ data: top.map(d => d.count), backgroundColor: colors, borderWidth: 0 }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { position: 'right', labels: { color: textColor, boxWidth: 12, padding: 14, font: { size: 12 } } } }
-      }
-    });
+    
+    if (top.length === 0) {
+      document.getElementById('productChart').parentElement.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:13px;">Ma\\'lumot yo\\'q</div>';
+    } else {
+      productChart = new Chart(document.getElementById('productChart'), {
+        type: 'doughnut',
+        data: {
+          labels: top.map(d => d.product || 'Noma\\'lum'),
+          datasets: [{ data: top.map(d => d.count || 0), backgroundColor: colors, borderWidth: 0 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: 'right', labels: { color: textColor, boxWidth: 12, padding: 14, font: { size: 12 } } } }
+        }
+      });
+    }
 
     // Today's tasks rendering
     const tasksEl = document.getElementById('todayTasks');
-    if (!tasks.length) {
-      tasksEl.innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-state-icon"><i class="fas fa-check-circle"></i></div><h3>Bugungi vazifalar yo\'q</h3></div>';
+    if (!safeTasks.length) {
+      tasksEl.innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-state-icon"><i class="fas fa-check-circle"></i></div><h3>Bugungi vazifalar yo\\'q</h3></div>';
     } else {
-      tasksEl.innerHTML = tasks.map(t => `
+      tasksEl.innerHTML = safeTasks.map(t => `
         <div class="task-item">
           <div class="task-check ${t.completed ? 'done' : ''}" onclick="toggleTask(${t.id}, this)">
             ${t.completed ? '<i class="fas fa-check" style="font-size:9px"></i>' : ''}
           </div>
           <div class="task-info">
-            <div class="task-title ${t.completed ? 'done' : ''}">${escHtml(t.title)}</div>
+            <div class="task-title ${t.completed ? 'done' : ''}">${escHtml(t?.title || 'Noma\\'lum')}</div>
             <div class="task-meta">
-              <span class="priority-dot ${t.priority}"></span>
-              ${t.dueDate ? '<span class="task-due"><i class="fas fa-clock"></i> ' + fmtDate(t.dueDate) + '</span>' : ''}
+              <span class="priority-dot ${t?.priority || 'medium'}"></span>
+              ${t?.dueDate ? '<span class="task-due"><i class="fas fa-clock"></i> ' + fmtDate(t.dueDate) + '</span>' : ''}
             </div>
           </div>
         </div>

@@ -32,7 +32,8 @@ router.get('/list-deals', async (req, res, next) => {
       include: {
         client: true,
         manager: { select: { id: true, fullName: true, email: true } },
-        stage: true
+        stage: true,
+        installments: { orderBy: { dueDate: 'asc' } }
       },
       orderBy: { updatedAt: 'desc' }
     });
