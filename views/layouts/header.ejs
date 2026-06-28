@@ -16,8 +16,18 @@
   </script>
 </head>
 <body>
+<div class="mobile-overlay" id="mobileOverlay" onclick="toggleMobileMenu()"></div>
 <div class="app-wrapper">
   <%- include('./sidebar', { user: typeof user !== 'undefined' ? user : null, activePage: typeof activePage !== 'undefined' ? activePage : '' }) %>
   <div class="main-area">
     <%- include('./topbar', { user: typeof user !== 'undefined' ? user : null }) %>
     <div class="page-content">
+
+<script>
+function toggleMobileMenu() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('mobileOverlay');
+  if (sidebar) sidebar.classList.toggle('mobile-open');
+  if (overlay) overlay.classList.toggle('active');
+}
+</script>

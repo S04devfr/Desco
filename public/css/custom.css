@@ -524,9 +524,54 @@ select.form-control { cursor: pointer; }
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 @media (max-width: 768px) {
-  .page-content { padding: 16px; }
-  .stats-grid { grid-template-columns: 1fr 1fr; }
-  .kanban-col { width: 240px; }
+  .page-content { padding: 12px 14px 20px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  
+  /* Sidebar Mobile - Burger Menu Toggle */
+  .sidebar { 
+    position: fixed; 
+    left: -100%; 
+    transition: left 0.3s cubic-bezier(0.16,1,0.3,1); 
+    box-shadow: 10px 0 30px rgba(0,0,0,0.1); 
+  }
+  .sidebar.mobile-open { 
+    left: 0; 
+  }
+  .mobile-overlay {
+    display: none;
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.3); z-index: 90;
+    backdrop-filter: blur(2px);
+  }
+  .mobile-overlay.active { display: block; }
+  
+  /* Topbar Mobile Adjustments */
+  .topbar { padding: 0 12px; gap: 8px; }
+  .topbar-search { max-width: 150px; }
+  .mobile-menu-toggle { display: inline-flex !important; }
+  
+  /* Kanban Board Mobile Layout */
+  .kb-board { 
+    display: flex; 
+    overflow-x: auto; 
+    flex-wrap: nowrap; 
+    gap: 12px; 
+    padding-bottom: 12px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .kanban-col { width: 85vw; min-width: 280px; flex-shrink: 0; }
+  
+  /* Buttons Enlarge for Touch */
+  .btn { min-height: 44px; padding: 10px 16px; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; }
+  .btn-sm { min-height: 36px; padding: 8px 12px; font-size: 13px; }
+  .btn-icon { width: 44px; height: 44px; }
+  
+  /* Form Inputs Mobile */
+  .form-control, select, textarea { min-height: 44px; font-size: 14px; }
+  
+  /* Responsive Tables */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+  .deals-tbl th, .deals-tbl td { padding: 10px; font-size: 12px; }
 }
 
 /* ── NOTIFICATION BADGE ── */
