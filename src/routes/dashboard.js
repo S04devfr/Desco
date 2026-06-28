@@ -40,6 +40,11 @@ function buildWhere(filter, req) {
     end.setHours(23,59,59,999);
   }
 
+  // Validate dates to prevent Prisma crash
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    return {};
+  }
+
   return {
     OR: [
       { createdAt: { gte: start, lte: end } },

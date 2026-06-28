@@ -114,28 +114,28 @@ async function loadNasiyaDeals() {
         monthVal = d.installments[0].month || '1 oy';
       }
       
-      html += \`
-        <tr class="inst-row" data-deal-id="\${d.id}">
+      html += `
+        <tr class="inst-row" data-deal-id="${d.id}">
           <td style="padding:0; border:1px solid var(--border-light);">
-            <input type="text" class="excel-input f-product" value="\${escHtml(d.productName)}" placeholder="Mahsulot nomi">
+            <input type="text" class="excel-input f-product" value="${escHtml(d.productName)}" placeholder="Mahsulot nomi">
           </td>
           <td style="padding:0; border:1px solid var(--border-light);">
-            <input type="text" class="excel-input f-month" value="\${escHtml(monthVal)}" placeholder="1 oy">
+            <input type="text" class="excel-input f-month" value="${escHtml(monthVal)}" placeholder="1 oy">
           </td>
           <td style="padding:0; border:1px solid var(--border-light);">
-            <input type="number" class="excel-input f-amount" value="\${d.amount}" placeholder="0">
+            <input type="number" class="excel-input f-amount" value="${d.amount}" placeholder="0">
           </td>
           <td style="padding:0; border:1px solid var(--border-light);">
-            <input type="text" class="excel-input f-notes" value="\${escHtml(d.notes || d.client?.name || '')}" placeholder="Mijoz yoki Izoh">
+            <input type="text" class="excel-input f-notes" value="${escHtml(d.notes || d.client?.name || '')}" placeholder="Mijoz yoki Izoh">
           </td>
           <td style="text-align:center; padding:0; border:1px solid var(--border-light);">
             <div style="display:flex; justify-content:center; gap:6px; padding:8px;">
-              <button class="btn btn-primary btn-sm" onclick="saveExistingRow(this, \${d.id})" title="Saqlash"><i class="fas fa-save"></i></button>
-              <button class="btn btn-ghost btn-sm text-danger" onclick="deleteRow(\${d.id})" title="O'chirish"><i class="fas fa-trash"></i></button>
+              <button class="btn btn-primary btn-sm" onclick="saveExistingRow(this, ${d.id})" title="Saqlash"><i class="fas fa-save"></i></button>
+              <button class="btn btn-ghost btn-sm text-danger" onclick="deleteRow(${d.id})" title="O'chirish"><i class="fas fa-trash"></i></button>
             </div>
           </td>
         </tr>
-      \`;
+      `;
     });
     tbody.innerHTML = html;
   } catch(e) {
@@ -151,7 +151,7 @@ function addEmptyRow() {
   }
   const tr = document.createElement('tr');
   tr.className = 'inst-row new-row';
-  tr.innerHTML = \`
+  tr.innerHTML = `
     <td style="padding:0; border:1px solid var(--border-light);">
       <input type="text" class="excel-input f-product" placeholder="Mahsulot nomi">
     </td>
@@ -170,7 +170,7 @@ function addEmptyRow() {
         <button class="btn btn-ghost btn-sm text-danger" onclick="this.closest('tr').remove()" title="O'chirish"><i class="fas fa-trash"></i></button>
       </div>
     </td>
-  \`;
+  `;
   tbody.prepend(tr);
   tr.querySelector('.f-product').focus();
 }
@@ -197,7 +197,7 @@ async function saveNewRow(btn) {
       body: JSON.stringify({
         stage: activeStageKey,
         productName: product,
-        clientName: notes || 'Noma\\'lum mijoz',
+        clientName: notes || "Noma'lum mijoz",
         clientPhone: '',
         amount: amount,
         month: month
