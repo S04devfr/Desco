@@ -73,7 +73,8 @@ router.post('/quick-add', async (req, res, next) => {
         status: 'new',
         clientId: client.id,
         stageId: stageRecord.id,
-        pipelineId: stageRecord.pipelineId
+        pipelineId: stageRecord.pipelineId,
+        managerId: req.userId
       }
     });
 

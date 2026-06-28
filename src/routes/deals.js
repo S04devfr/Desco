@@ -35,6 +35,14 @@ router.get('/', async (req, res, next) => {
       } catch(e) { /* ignore, show all */ }
     }
 
+    if (req.user && req.user.role !== 'admin') {
+      where.OR = [
+        { managerId: req.userId },
+        { managerId: null },
+        { stage: { name: { contains: 'Yangi', mode: 'insensitive' } } }
+      ]
+    }
+
     let deals = await prisma.deal.findMany({
       where,
       include: {
@@ -147,6 +155,27 @@ router.post('/', async (req, res, next) => {
     if (broadcast) broadcast({ type: 'deal_updated', dealId: deal.id });
     
     res.status(201).json(deal)
+  } catch (error) { next(error) }
+})
+
+// Claim a deal
+router.post('/:id/claim', async (req, res, next) => {
+  try {
+    const existing = await prisma.deal.findUnique({ where: { id: Number(req.params.id) }, include: { stage: true } })
+    if (!existing) return res.status(404).json({ message: 'Sdelka topilmadi' })
+
+    // Only allow claiming if it has no manager OR it's in a stage named "Yangi"
+    const isNewStage = existing.stage && existing.stage.name.toLowerCase().includes('yangi')
+    if (existing.managerId === null || isNewStage) {
+      const updated = await prisma.deal.update({
+        where: { id: Number(req.params.id) },
+        data: { managerId: req.userId }
+      })
+      await logActivity(updated.id, req.userId, 'Sdelka o\'zlashtirildi', `Sdelka menejerga biriktirildi`)
+      return res.json(updated)
+    }
+
+    return res.status(400).json({ message: 'Bu sdelka allaqachon boshqa menejerga tegishli' })
   } catch (error) { next(error) }
 })
 

@@ -126,9 +126,11 @@
   <div class="stat-card clickable" onclick="openFinancialModal('installments')"><div class="stat-icon blue"><i class="fas fa-handshake"></i></div><div class="stat-info"><div class="stat-label">Jami sdelkalar</div><div class="stat-value skeleton" style="height:28px;width:60px"> </div></div></div>
   <div class="stat-card"><div class="stat-icon green"><i class="fas fa-coins"></i></div><div class="stat-info"><div class="stat-label">To'langan</div><div class="stat-value skeleton" style="height:28px;width:80px"> </div></div></div>
   <div class="stat-card clickable" onclick="openFinancialModal('client-debts')"><div class="stat-icon red"><i class="fas fa-users"></i></div><div class="stat-info"><div class="stat-label">Klientlardan qarz</div><div class="stat-value skeleton" style="height:28px;width:80px"> </div></div></div>
+  <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
   <div class="stat-card" style="cursor: pointer" onclick="window.location.href='/expenses'"><div class="stat-icon orange"><i class="fas fa-minus-circle"></i></div><div class="stat-info"><div class="stat-label">Xarajatlar</div><div class="stat-value skeleton" style="height:28px;width:80px"> </div></div></div>
   <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')"><div class="stat-icon purple"><i class="fas fa-tags"></i></div><div class="stat-info"><div class="stat-label">Tan narxi</div><div class="stat-value skeleton" style="height:28px;width:80px"> </div></div></div>
   <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')"><div class="stat-icon green"><i class="fas fa-chart-line"></i></div><div class="stat-info"><div class="stat-label">Sof foyda</div><div class="stat-value skeleton" style="height:28px;width:80px"> </div></div></div>
+  <% } %>
 </div>
 
 <!-- CHARTS + TASKS -->
@@ -379,6 +381,7 @@ async function loadDashboard() {
           <div class="stat-value">${fmtMoney(safeKpis.totalClientDebt ?? 0)}</div>
         </div>
       </div>
+      <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
       <div class="stat-card" style="cursor: pointer" onclick="window.location.href='/expenses'">
         <div class="stat-icon orange"><i class="fas fa-minus-circle"></i></div>
         <div class="stat-info">
@@ -400,6 +403,7 @@ async function loadDashboard() {
           <div class="stat-value ${(safeKpis.netProfit ?? 0) >= 0 ? 'text-success' : 'text-danger'}">${fmtMoney(safeKpis.netProfit ?? 0)}</div>
         </div>
       </div>
+      <% } %>
     `;
 
     // Safe defaults in case API fails

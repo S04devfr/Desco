@@ -20,6 +20,28 @@ router.post('/register', async (req, res, next) => {
   try {
     const { email, password, fullName, role } = req.body
 
+    // If there are users in the DB, only an admin can register new users
+    const userCount = await prisma.user.count()
+    if (userCount > 0) {
+      // Manual auth check
+      let userId, userRole;
+      if (req.session && req.session.userId) {
+        userRole = req.session.user?.role;
+      } else {
+        const token = req.headers.authorization?.split(' ')[1];
+        if (!token) return res.status(401).json({ message: 'Avtorizatsiya talab qilinadi' });
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+          userRole = decoded.role;
+        } catch(e) {
+          return res.status(401).json({ message: 'Yaroqsiz token' });
+        }
+      }
+      if (userRole !== 'admin') {
+        return res.status(403).json({ message: 'Faqat administrator yangi foydalanuvchi qo\'sha oladi' })
+      }
+    }
+
     if (!email || !password) {
       return res.status(400).json({ message: 'Email va parol majburiy' })
     }

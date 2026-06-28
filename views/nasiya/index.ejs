@@ -29,10 +29,11 @@
     <table class="deals-tbl" style="width:100%; border-collapse: collapse;">
       <thead>
         <tr style="background:var(--bg-secondary)">
-          <th style="width:25%;">Mahsulot</th>
-          <th style="width:15%;">Oy</th>
-          <th style="width:20%;">Narxi</th>
-          <th style="width:25%;">Izoh</th>
+          <th style="width:20%;">Mahsulot</th>
+          <th style="width:10%;">Oy</th>
+          <th style="width:15%;">Narxi</th>
+          <th style="width:20%;">Menejer</th>
+          <th style="width:20%;">Izoh</th>
           <th style="width:15%; text-align:center;">Amal</th>
         </tr>
       </thead>
@@ -129,6 +130,11 @@ async function loadNasiyaDeals() {
             <input type="number" class="excel-input f-amount" value="${d.amount}" placeholder="0">
           </td>
           <td style="padding:0; border:1px solid var(--border-light);">
+            <div style="padding: 8px; color:var(--text-secondary); font-size:13px; font-weight:500;">
+              ${escHtml(d.manager?.fullName || 'Belgilanmagan')}
+            </div>
+          </td>
+          <td style="padding:0; border:1px solid var(--border-light);">
             <input type="text" class="excel-input f-notes" value="${escHtml(d.notes || d.client?.name || '')}" placeholder="Mijoz yoki Izoh">
           </td>
           <td style="text-align:center; padding:0; border:1px solid var(--border-light);">
@@ -168,12 +174,17 @@ function addEmptyRow() {
       <input type="number" class="excel-input f-amount" placeholder="0">
     </td>
     <td style="padding:0; border:1px solid var(--border-light);">
-      <input type="text" class="excel-input f-notes" placeholder="Mijoz yoki Izoh">
+      <div style="padding: 8px; color:var(--text-secondary); font-size:13px; font-style:italic;">
+        Siz (Yangi)
+      </div>
+    </td>
+    <td style="padding:0; border:1px solid var(--border-light);">
+      <input type="text" class="excel-input f-notes" placeholder="Izoh">
     </td>
     <td style="text-align:center; padding:0; border:1px solid var(--border-light);">
       <div style="display:flex; justify-content:center; gap:6px; padding:8px;">
         <button class="btn btn-primary btn-sm" onclick="saveNewRow(this)" title="Saqlash"><i class="fas fa-save"></i></button>
-        <button class="btn btn-ghost btn-sm text-danger" onclick="this.closest('tr').remove()" title="O'chirish"><i class="fas fa-trash"></i></button>
+        <button class="btn btn-ghost btn-sm text-danger" onclick="this.closest('tr').remove()" title="Olib tashlash"><i class="fas fa-times"></i></button>
       </div>
     </td>
   `;

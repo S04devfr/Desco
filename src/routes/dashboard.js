@@ -56,7 +56,14 @@ function buildWhere(filter, req) {
 // KPI metrics
 router.get('/kpis', async (req, res, next) => {
   try {
+    const isAdmin = req.user && req.user.role === 'admin';
     const where = buildWhere(req.query.filter, req);
+    
+    // Operator sees only their own deals for KPIs
+    if (!isAdmin) {
+      where.managerId = req.userId;
+    }
+    
     const deals = await prisma.deal.findMany({ where });
     // Expenses only use createdAt
     const expenseWhere = where.OR ? { createdAt: { gte: where.OR[0].createdAt.gte, lte: where.OR[0].createdAt.lte } } : {};
@@ -65,13 +72,16 @@ router.get('/kpis', async (req, res, next) => {
     const totalOrders = deals.length
     const totalRevenue = deals.reduce((sum, d) => sum + d.paidAmount, 0)
     const totalDebt = deals.reduce((sum, d) => sum + Math.max(d.amount - d.paidAmount, 0), 0)
-    const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0)
-    const totalCostPrice = deals.reduce((sum, d) => sum + (d.costPrice || 0), 0)
-    const netProfit = totalRevenue - totalCostPrice - totalExpenses
-
-    // Fetch total client manual debt
-    const clients = await prisma.client.findMany({ select: { debt: true } })
-    const totalClientDebt = clients.reduce((sum, c) => sum + (c.debt || 0), 0)
+    
+    let totalExpenses = 0, totalCostPrice = 0, netProfit = 0, totalClientDebt = 0;
+    
+    if (isAdmin) {
+      totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0)
+      totalCostPrice = deals.reduce((sum, d) => sum + (d.costPrice || 0), 0)
+      netProfit = totalRevenue - totalCostPrice - totalExpenses
+      const clients = await prisma.client.findMany({ select: { debt: true } })
+      totalClientDebt = clients.reduce((sum, c) => sum + (c.debt || 0), 0)
+    }
 
     const won = deals.filter(d => d.status === 'won').length
     const lost = deals.filter(d => d.status === 'lost').length
@@ -86,7 +96,9 @@ router.get('/kpis', async (req, res, next) => {
 // Sales grouped by manager
 router.get('/sales-by-manager', async (req, res, next) => {
   try {
+    const isAdmin = req.user && req.user.role === 'admin';
     const where = buildWhere(req.query.filter, req);
+    if (!isAdmin) where.managerId = req.userId;
     const deals = await prisma.deal.findMany({ where, include: { manager: true } })
     const totals = {}
     for (const deal of deals) {
@@ -103,7 +115,9 @@ router.get('/sales-by-manager', async (req, res, next) => {
 // Product popularity
 router.get('/product-popularity', async (req, res, next) => {
   try {
+    const isAdmin = req.user && req.user.role === 'admin';
     const where = buildWhere(req.query.filter, req);
+    if (!isAdmin) where.managerId = req.userId;
     const deals = await prisma.deal.findMany({ where })
     const counts = {}
     for (const deal of deals) {
