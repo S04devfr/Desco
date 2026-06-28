@@ -133,7 +133,7 @@
   <div class="stat-card">
     <div class="stat-icon green"><i class="fas fa-coins"></i></div>
     <div class="stat-info">
-      <div class="stat-label"><%= (typeof user !== 'undefined' && user && user.role === 'admin') ? 'Umumiy to\'langan' : 'Mening savdo summam' %></div>
+      <div class="stat-label"><%= (typeof user !== 'undefined' && user && user.role === 'admin') ? "Umumiy to'langan" : "Mening savdo summam" %></div>
       <div class="stat-value skeleton" style="height:28px;width:80px"> </div>
     </div>
   </div>
@@ -407,7 +407,7 @@ async function loadDashboard() {
       <div class="stat-card">
         <div class="stat-icon green"><i class="fas fa-coins"></i></div>
         <div class="stat-info">
-          <div class="stat-label"><%= (typeof user !== 'undefined' && user && user.role === 'admin') ? 'Umumiy to\\'langan' : 'Mening savdo summam' %></div>
+          <div class="stat-label"><%= (typeof user !== 'undefined' && user && user.role === 'admin') ? "Umumiy to'langan" : "Mening savdo summam" %></div>
           <div class="stat-value">${fmtMoney(safeKpis.totalRevenue ?? 0)}</div>
         </div>
       </div>
