@@ -79,7 +79,7 @@ router.get('/kpis', async (req, res, next) => {
     res.json({ totalOrders, totalRevenue, totalDebt, totalExpenses, totalCostPrice, netProfit, totalClientDebt, won, lost })
   } catch (error) {
     console.error('KPI Error:', error);
-    return res.status(500).json({ error: 'Server xatosi: Ma\'lumot yuklanmadi', details: error.message });
+    return res.status(200).json({ totalOrders: 0, totalRevenue: 0, totalDebt: 0, totalExpenses: 0, totalCostPrice: 0, netProfit: 0, totalClientDebt: 0, won: 0, lost: 0 });
   }
 })
 
@@ -96,7 +96,7 @@ router.get('/sales-by-manager', async (req, res, next) => {
     res.json(Object.entries(totals).map(([manager, totalSales]) => ({ manager, totalSales })))
   } catch (error) {
     console.error('Sales Error:', error);
-    return res.status(500).json({ error: 'Server xatosi', details: error.message });
+    return res.status(200).json([]);
   }
 })
 
@@ -112,7 +112,7 @@ router.get('/product-popularity', async (req, res, next) => {
     res.json(Object.entries(counts).map(([product, count]) => ({ product, count })))
   } catch (error) {
     console.error('Product Error:', error);
-    return res.status(500).json({ error: 'Server xatosi', details: error.message });
+    return res.status(200).json([]);
   }
 })
 
@@ -132,7 +132,7 @@ router.get('/today-tasks', async (req, res, next) => {
     res.json(tasks)
   } catch (error) {
     console.error('Tasks Error:', error);
-    return res.status(500).json({ error: 'Server xatosi', details: error.message });
+    return res.status(200).json([]);
   }
 })
 
