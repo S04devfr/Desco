@@ -190,12 +190,24 @@ model InstagramMessage {
 }
 
 model Installment {
+  id          Int      @id @default(autoincrement())
+  dealId      Int
+  deal        Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  dueDate     DateTime
+  amount      Float    @default(0)
+  paid        Boolean  @default(false)
+  productName String?
+  month       String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ProductCatalog {
   id        Int      @id @default(autoincrement())
-  dealId    Int
-  deal      Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  dueDate   DateTime
-  amount    Float    @default(0)
-  paid      Boolean  @default(false)
+  name      String
+  price     Float    @default(0)
+  notes     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

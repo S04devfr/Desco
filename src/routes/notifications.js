@@ -77,4 +77,16 @@ router.post('/read-all', async (req, res) => {
   } catch (e) { res.json({ ok: false }) }
 })
 
+// POST /api/notifications/:id/read
+router.post('/:id/read', async (req, res) => {
+  try {
+    const readIds = req.session.readNotifIds || []
+    if (!readIds.includes(req.params.id)) {
+      readIds.push(req.params.id)
+    }
+    req.session.readNotifIds = readIds
+    res.json({ ok: true })
+  } catch (e) { res.json({ ok: false }) }
+})
+
 module.exports = router

@@ -369,19 +369,48 @@ router.post('/:id/installments', async (req, res, next) => {
     const { installments } = req.body;
     
     const result = await prisma.$transaction(async (tx) => {
+      // Clear old installments and old auto-generated tasks
       await tx.installment.deleteMany({ where: { dealId } });
+      await tx.task.deleteMany({
+        where: {
+          dealId,
+          title: { startsWith: "To'lov eslatmasi" }
+        }
+      });
+      
       const created = [];
       if (Array.isArray(installments)) {
         for (const inst of installments) {
+          const dueDate = new Date(inst.dueDate);
           const item = await tx.installment.create({
             data: {
               dealId,
-              dueDate: new Date(inst.dueDate),
+              dueDate: dueDate,
               amount: Number(inst.amount) || 0,
-              paid: Boolean(inst.paid)
+              paid: Boolean(inst.paid),
+              productName: inst.productName || null,
+              month: inst.month || null,
+              notes: inst.notes || null
             }
           });
           created.push(item);
+
+          // 3 kun oldingi avtomatlashtirilgan eslatma yaratish (agar to'lanmagan bo'lsa)
+          if (!inst.paid) {
+            const taskDueDate = new Date(dueDate);
+            taskDueDate.setDate(taskDueDate.getDate() - 3);
+            
+            await tx.task.create({
+              data: {
+                title: `To'lov eslatmasi (Nasiya)`,
+                description: `Ushbu sdelka uchun to'lov muddati: ${dueDate.toLocaleDateString('uz-UZ')}. To'lov summasi: ${inst.amount} so'm. Mahsulot: ${inst.productName || 'Noma\'lum'}`,
+                dueDate: taskDueDate,
+                assignedToId: req.userId,
+                dealId: dealId,
+                priority: 'high'
+              }
+            });
+          }
         }
       }
       return created;

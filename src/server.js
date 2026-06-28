@@ -54,6 +54,7 @@ app.use('/api/clients',         require('./routes/clients'));
 app.use('/api/expenses',        require('./routes/expenses'));
 app.use('/api/tasks',           require('./routes/tasks'));
 app.use('/api/notifications',   require('./routes/notifications'));
+app.use('/api/product-catalog', require('./routes/productCatalog'));
 app.use('/api/search',          require('./routes/search'));
 app.use('/api/pipeline-stages', require('./routes/pipeline'));
 app.use('/api/pipelines',       require('./routes/pipelines'));

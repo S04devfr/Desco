@@ -122,14 +122,13 @@
 </div>
 
 <!-- KPI STATS -->
-<div class="stats-grid" id="kpiCards" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 24px;">
+<div class="stats-grid" id="kpiCards" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px;">
   <div class="stat-card clickable" onclick="openFinancialModal('installments')"><div class="stat-icon blue"><i class="fas fa-handshake"></i></div><div class="stat-info"><div class="stat-label">Jami sdelkalar</div><div class="stat-value skeleton" style="height:28px;width:60px"> </div></div></div>
   <div class="stat-card"><div class="stat-icon green"><i class="fas fa-coins"></i></div><div class="stat-info"><div class="stat-label">To'langan</div><div class="stat-value skeleton" style="height:28px;width:80px"> </div></div></div>
-  <div class="stat-card clickable" onclick="openFinancialModal('installments')"><div class="stat-icon orange"><i class="fas fa-clock"></i></div><div class="stat-info"><div class="stat-label">Qarz</div><div class="stat-value skeleton" style="height:28px;width:80px"> </div></div></div>
   <div class="stat-card clickable" onclick="openFinancialModal('client-debts')"><div class="stat-icon red"><i class="fas fa-users"></i></div><div class="stat-info"><div class="stat-label">Klientlardan qarz</div><div class="stat-value skeleton" style="height:28px;width:80px"> </div></div></div>
+  <div class="stat-card" style="cursor: pointer" onclick="window.location.href='/expenses'"><div class="stat-icon orange"><i class="fas fa-minus-circle"></i></div><div class="stat-info"><div class="stat-label">Xarajatlar</div><div class="stat-value skeleton" style="height:28px;width:80px"> </div></div></div>
   <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')"><div class="stat-icon purple"><i class="fas fa-tags"></i></div><div class="stat-info"><div class="stat-label">Tan narxi</div><div class="stat-value skeleton" style="height:28px;width:80px"> </div></div></div>
-  <div class="stat-card" style="cursor: pointer" onclick="window.location.href='/expenses'"><div class="stat-icon red"><i class="fas fa-minus-circle"></i></div><div class="stat-info"><div class="stat-label">Xarajatlar</div><div class="stat-value skeleton" style="height:28px;width:80px"> </div></div></div>
-  <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')"><div class="stat-icon purple"><i class="fas fa-chart-line"></i></div><div class="stat-info"><div class="stat-label">Sof foyda</div><div class="stat-value skeleton" style="height:28px;width:80px"> </div></div></div>
+  <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')"><div class="stat-icon green"><i class="fas fa-chart-line"></i></div><div class="stat-info"><div class="stat-label">Sof foyda</div><div class="stat-value skeleton" style="height:28px;width:80px"> </div></div></div>
 </div>
 
 <!-- CHARTS + TASKS -->
@@ -190,21 +189,30 @@
     </div>
 
     <div class="modal-body" style="flex:1; overflow-y:auto; padding:20px; background:var(--bg-primary);">
-      <!-- Tab 1: Cost Prices -->
+      <!-- Tab 1: Product Catalog -->
       <div class="fin-tab-content" id="tab-cost-prices">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:16px;">
-          <p style="font-size:12.5px; color:var(--text-secondary); margin:0;">Sdelkalar bo'yicha mahsulotlar tan narxini (cost price) tahrirlang. Sof foyda shu qiymatga qarab hisoblanadi.</p>
-          <input type="text" id="costSearch" class="form-control" placeholder="Mahsulot yoki mijoz..." style="width:220px; height:32px; font-size:12px" oninput="filterCostTable()">
+          <div>
+            <p style="font-size:12.5px; color:var(--text-secondary); margin:0;">Mahsulotlar va ularning narxlarini boshqarish.</p>
+            <button class="btn btn-primary btn-sm mt-2" onclick="openAddProductModal()"><i class="fas fa-plus"></i> Yangi mahsulot qo'shish</button>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <input type="text" id="dealAttachSearch" class="form-control" placeholder="Mijoz (sdelka) qidirish..." style="width:200px; height:32px; font-size:12px">
+            <select id="catalogSelect" class="form-control" style="width:200px; height:32px; font-size:12px">
+              <option value="">Mahsulotni tanlang...</option>
+            </select>
+            <button class="btn btn-success btn-sm" onclick="attachProductToDeal()"><i class="fas fa-link"></i> Biriktirish</button>
+          </div>
         </div>
         <div style="max-height:350px; overflow-y:auto; border:1px solid var(--glass-border); border-radius:8px; background:var(--bg-secondary);">
           <table class="deals-tbl" style="width:100%">
             <thead>
               <tr style="background:var(--bg-tertiary);">
                 <th style="padding:10px 12px; font-size:11px; font-weight:700;">ID</th>
-                <th style="padding:10px 12px; font-size:11px; font-weight:700;">Mahsulot</th>
-                <th style="padding:10px 12px; font-size:11px; font-weight:700;">Mijoz</th>
-                <th style="padding:10px 12px; font-size:11px; font-weight:700;">Sotilgan Summa</th>
-                <th style="padding:10px 12px; font-size:11px; font-weight:700; width:160px">Tan Narxi (Cost Price)</th>
+                <th style="padding:10px 12px; font-size:11px; font-weight:700;">Mahsulot Nomi</th>
+                <th style="padding:10px 12px; font-size:11px; font-weight:700;">Narxi</th>
+                <th style="padding:10px 12px; font-size:11px; font-weight:700;">Izoh</th>
+                <th style="padding:10px 12px; font-size:11px; font-weight:700; width:60px"></th>
               </tr>
             </thead>
             <tbody id="costTableBody"></tbody>
@@ -358,18 +366,18 @@ async function loadDashboard() {
           <div class="stat-value">${fmtMoney(kpis.totalRevenue ?? 0)}</div>
         </div>
       </div>
-      <div class="stat-card clickable" onclick="openFinancialModal('installments')">
-        <div class="stat-icon orange"><i class="fas fa-clock"></i></div>
-        <div class="stat-info">
-          <div class="stat-label">Qarz</div>
-          <div class="stat-value">${fmtMoney(kpis.totalDebt ?? 0)}</div>
-        </div>
-      </div>
       <div class="stat-card clickable" onclick="openFinancialModal('client-debts')">
         <div class="stat-icon red"><i class="fas fa-users"></i></div>
         <div class="stat-info">
           <div class="stat-label">Klientlardan qarz</div>
           <div class="stat-value">${fmtMoney(kpis.totalClientDebt ?? 0)}</div>
+        </div>
+      </div>
+      <div class="stat-card" style="cursor: pointer" onclick="window.location.href='/expenses'">
+        <div class="stat-icon orange"><i class="fas fa-minus-circle"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Xarajatlar</div>
+          <div class="stat-value">${fmtMoney(kpis.totalExpenses ?? 0)}</div>
         </div>
       </div>
       <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')">
@@ -379,15 +387,8 @@ async function loadDashboard() {
           <div class="stat-value">${fmtMoney(kpis.totalCostPrice ?? 0)}</div>
         </div>
       </div>
-      <div class="stat-card" style="cursor: pointer" onclick="window.location.href='/expenses'">
-        <div class="stat-icon red"><i class="fas fa-minus-circle"></i></div>
-        <div class="stat-info">
-          <div class="stat-label">Xarajatlar</div>
-          <div class="stat-value">${fmtMoney(kpis.totalExpenses ?? 0)}</div>
-        </div>
-      </div>
       <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')">
-        <div class="stat-icon purple"><i class="fas fa-chart-line"></i></div>
+        <div class="stat-icon green"><i class="fas fa-chart-line"></i></div>
         <div class="stat-info">
           <div class="stat-label">Sof foyda</div>
           <div class="stat-value ${(kpis.netProfit ?? 0) >= 0 ? 'text-success' : 'text-danger'}">${fmtMoney(kpis.netProfit ?? 0)}</div>
@@ -518,16 +519,21 @@ function switchFinTab(tab) {
   document.getElementById('tab-' + tab).classList.remove('hidden');
 }
 
+let allCatalogData = [];
+
 async function loadFinancialData() {
   try {
-    const [deals, clients] = await Promise.all([
+    const [deals, clients, catalog] = await Promise.all([
       dashFetch('/api/deals'),
-      dashFetch('/api/clients')
+      dashFetch('/api/clients'),
+      dashFetch('/api/product-catalog')
     ]);
     allDealsData = deals || [];
     allClientsData = clients || [];
+    allCatalogData = catalog || [];
     
-    renderCostTable();
+    renderCatalogTable();
+    updateCatalogDropdown();
     renderInstallmentTab();
     renderClientDebtTable();
   } catch(e) {
@@ -535,63 +541,101 @@ async function loadFinancialData() {
   }
 }
 
-// Tab 1: Cost Price rendering & updating
-function renderCostTable() {
+// Tab 1: Product Catalog rendering & updating
+function renderCatalogTable() {
   const tbody = document.getElementById('costTableBody');
-  const q = document.getElementById('costSearch').value.toLowerCase();
   
-  const filtered = allDealsData.filter(d => 
-    (d.productName || '').toLowerCase().includes(q) || 
-    (d.client?.name || '').toLowerCase().includes(q)
-  );
-
-  if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-tertiary)">Sdelkalar topilmadi</td></tr>';
+  if (!allCatalogData.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-tertiary)">Katalog bo\'sh</td></tr>';
     return;
   }
 
-  tbody.innerHTML = filtered.map(d => `
+  tbody.innerHTML = allCatalogData.map(d => `
     <tr>
       <td style="padding:10px 12px; font-size:12.5px; color:var(--text-tertiary)">#${d.id}</td>
-      <td style="padding:10px 12px; font-size:13px; font-weight:600">${escHtml(d.productName)}</td>
-      <td style="padding:10px 12px; font-size:12.5px">${escHtml(d.client?.name || 'Noma\'lum')}</td>
-      <td style="padding:10px 12px; font-size:12.5px; font-weight:600">${fmtMoney(d.amount)}</td>
-      <td style="padding:6px 12px;">
-        <input type="number" class="spreadsheet-input" value="${d.costPrice || 0}"
-               onchange="saveDealCostPrice(${d.id}, this)">
+      <td style="padding:10px 12px; font-size:13px; font-weight:600">${escHtml(d.name)}</td>
+      <td style="padding:10px 12px; font-size:12.5px; font-weight:600">${fmtMoney(d.price)}</td>
+      <td style="padding:10px 12px; font-size:12.5px">${escHtml(d.notes || '-')}</td>
+      <td style="padding:6px 12px; text-align:right;">
+        <button class="btn btn-ghost btn-sm text-danger" onclick="deleteCatalogProduct(${d.id})"><i class="fas fa-trash"></i></button>
       </td>
     </tr>
   `).join('');
 }
 
-function filterCostTable() {
-  renderCostTable();
+function updateCatalogDropdown() {
+  const select = document.getElementById('catalogSelect');
+  select.innerHTML = '<option value="">Mahsulotni tanlang...</option>' + 
+    allCatalogData.map(c => `<option value="${c.id}" data-price="${c.price}" data-name="${escHtml(c.name)}">${escHtml(c.name)} (${fmtMoney(c.price)})</option>`).join('');
 }
 
-async function saveDealCostPrice(id, inputEl) {
-  const val = Number(inputEl.value) || 0;
+function openAddProductModal() {
+  // We'll create a simple prompt-based modal logic for adding
+  const name = prompt("Mahsulot nomi:");
+  if (!name) return;
+  const price = prompt("Narxi (raqamda):");
+  if (!price) return;
+  const notes = prompt("Izoh (masalan qaysi shaharga qancha):");
+  
+  saveNewProduct(name, price, notes);
+}
+
+async function saveNewProduct(name, price, notes) {
   try {
-    inputEl.disabled = true;
-    const r = await fetch('/api/deals/' + id, {
-      method: 'PATCH',
+    const r = await fetch('/api/product-catalog', {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ costPrice: val })
+      body: JSON.stringify({ name, price, notes })
     });
     if (!r.ok) throw new Error();
-    
-    // Success feedback animation
-    inputEl.classList.add('success');
-    setTimeout(() => inputEl.classList.remove('success'), 1000);
-    
-    // Update local data
-    const d = allDealsData.find(x => x.id === id);
-    if (d) d.costPrice = val;
-    
-    loadDashboard(); // Recalculate dashboard metrics
+    if (typeof showToast === 'function') showToast('Qo\'shildi', 'success');
+    loadFinancialData();
   } catch(e) {
     if (typeof showToast === 'function') showToast('Saqlashda xato', 'error');
-  } finally {
-    inputEl.disabled = false;
+  }
+}
+
+async function deleteCatalogProduct(id) {
+  if (!confirm('Rostdan ham o\'chirmoqchimisiz?')) return;
+  try {
+    const r = await fetch('/api/product-catalog/' + id, { method: 'DELETE' });
+    if (!r.ok) throw new Error();
+    loadFinancialData();
+  } catch(e) {}
+}
+
+async function attachProductToDeal() {
+  const searchQ = document.getElementById('dealAttachSearch').value.toLowerCase();
+  const selectEl = document.getElementById('catalogSelect');
+  const catId = selectEl.value;
+  
+  if (!searchQ || !catId) return alert('Mijozni qidiring va mahsulotni tanlang!');
+  
+  const deal = allDealsData.find(d => 
+    (d.client?.name || '').toLowerCase().includes(searchQ) ||
+    String(d.client?.phone || '').includes(searchQ)
+  );
+  
+  if (!deal) return alert('Sdelka (mijoz) topilmadi!');
+  
+  const opt = selectEl.options[selectEl.selectedIndex];
+  const price = opt.getAttribute('data-price');
+  const pName = opt.getAttribute('data-name');
+  
+  if (!confirm(`Sdelka: ${deal.client?.name}\nMahsulot: ${pName}\nNarx: ${price}\nBiriktirilsinmi?`)) return;
+  
+  try {
+    const r = await fetch('/api/deals/' + deal.id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productName: pName, amount: Number(price) })
+    });
+    if (!r.ok) throw new Error();
+    if (typeof showToast === 'function') showToast('Mahsulot biriktirildi', 'success');
+    document.getElementById('dealAttachSearch').value = '';
+    loadFinancialData();
+  } catch(e) {
+    if (typeof showToast === 'function') showToast('Xatolik yuz berdi', 'error');
   }
 }
 
@@ -684,24 +728,27 @@ async function renderInstallmentPlanEditor(dealId) {
     const list = await dashFetch('/api/deals/' + dealId + '/installments');
     const container = document.getElementById('instRowsContainer');
     if (list && list.length) {
-      container.innerHTML = list.map((inst, idx) => getInstallmentRowHtml(idx, inst.dueDate.slice(0, 10), inst.amount, inst.paid)).join('');
+      container.innerHTML = list.map((inst, idx) => getInstallmentRowHtml(idx, inst.dueDate.slice(0, 10), inst.amount, inst.paid, inst.productName, inst.month, inst.notes)).join('');
     } else {
       // Default: 1 row pre-filled with remaining debt
-      container.innerHTML = getInstallmentRowHtml(0, new Date().toISOString().slice(0, 10), remainingDebt, false);
+      container.innerHTML = getInstallmentRowHtml(0, new Date().toISOString().slice(0, 10), remainingDebt, false, deal.productName, '1-oy', '');
     }
   } catch(e) {
-    document.getElementById('instRowsContainer').innerHTML = getInstallmentRowHtml(0, new Date().toISOString().slice(0, 10), remainingDebt, false);
+    document.getElementById('instRowsContainer').innerHTML = getInstallmentRowHtml(0, new Date().toISOString().slice(0, 10), remainingDebt, false, deal.productName, '1-oy', '');
   }
 }
 
-function getInstallmentRowHtml(index, dateVal, amountVal, paidVal) {
+function getInstallmentRowHtml(index, dateVal, amountVal, paidVal, productVal, monthVal, notesVal) {
   return `
-    <div class="installment-row" style="display:flex; align-items:center; gap:8px; background:var(--bg-secondary); border:1px solid var(--glass-border); padding:6px 8px; border-radius:6px;">
-      <span style="font-size:12px; color:var(--text-tertiary); width:20px; font-weight:600;">#${index + 1}</span>
-      <input type="date" class="form-control inst-date" value="${dateVal}" style="width:130px; height:28px; font-size:12px; padding:0 6px;">
-      <input type="number" class="form-control inst-amount" value="${amountVal}" style="flex:1; height:28px; font-size:12px; padding:0 6px; font-weight:600;" placeholder="Summa">
+    <div class="installment-row" style="display:flex; align-items:center; gap:6px; background:var(--bg-secondary); border:1px solid var(--glass-border); padding:6px 8px; border-radius:6px; margin-bottom:4px;">
+      <span style="font-size:12px; color:var(--text-tertiary); width:16px; font-weight:600;">#${index + 1}</span>
+      <input type="text" class="form-control inst-product spreadsheet-input" value="${escHtml(productVal || '')}" style="width:130px; height:28px; font-size:12px; padding:0 6px;" placeholder="Mahsulot">
+      <input type="text" class="form-control inst-month spreadsheet-input" value="${escHtml(monthVal || '')}" style="width:70px; height:28px; font-size:12px; padding:0 6px;" placeholder="Oy (1 oy)">
+      <input type="date" class="form-control inst-date spreadsheet-input" value="${dateVal}" style="width:115px; height:28px; font-size:12px; padding:0 6px;">
+      <input type="number" class="form-control inst-amount spreadsheet-input" value="${amountVal}" style="flex:1; max-width:100px; height:28px; font-size:12px; padding:0 6px; font-weight:600;" placeholder="Summa">
+      <input type="text" class="form-control inst-notes spreadsheet-input" value="${escHtml(notesVal || '')}" style="flex:1.5; height:28px; font-size:12px; padding:0 6px;" placeholder="Izoh">
       
-      <label style="display:inline-flex; align-items:center; gap:4px; font-size:11.5px; color:var(--text-secondary); cursor:pointer; margin:0; user-select:none;">
+      <label style="display:inline-flex; align-items:center; gap:4px; font-size:11.5px; color:var(--text-secondary); cursor:pointer; margin:0 8px 0 4px; user-select:none; white-space:nowrap;">
         <input type="checkbox" class="inst-paid" ${paidVal ? 'checked' : ''} style="cursor:pointer;"> To'landi
       </label>
       
@@ -716,9 +763,11 @@ function addInstallmentRow() {
   const container = document.getElementById('instRowsContainer');
   const index = container.querySelectorAll('.installment-row').length;
   
-  // Calculate next month's date by default
   const lastRowDate = container.querySelector('.installment-row:last-child .inst-date');
+  const lastProduct = container.querySelector('.installment-row:last-child .inst-product');
   let dateStr = new Date().toISOString().slice(0,10);
+  let pName = lastProduct ? lastProduct.value : '';
+  
   if (lastRowDate && lastRowDate.value) {
     const d = new Date(lastRowDate.value);
     d.setMonth(d.getMonth() + 1);
@@ -726,7 +775,7 @@ function addInstallmentRow() {
   }
 
   const div = document.createElement('div');
-  div.innerHTML = getInstallmentRowHtml(index, dateStr, 0, false);
+  div.innerHTML = getInstallmentRowHtml(index, dateStr, 0, false, pName, \`\${index+1}-oy\`, '');
   container.appendChild(div.firstElementChild);
 }
 
@@ -741,11 +790,11 @@ function autoGenerateInstallments(dealId, months) {
   
   for (let i = 0; i < months; i++) {
     const d = new Date();
-    d.setMonth(d.getMonth() + i); // monthly increments
+    d.setMonth(d.getMonth() + i);
     const dateStr = d.toISOString().slice(0, 10);
-    const amount = (i === months - 1) ? (remaining - (eachVal * (months - 1))) : eachVal; // deal with rounding error on last item
+    const amount = (i === months - 1) ? (remaining - (eachVal * (months - 1))) : eachVal;
     
-    container.innerHTML += getInstallmentRowHtml(i, dateStr, amount, false);
+    container.innerHTML += getInstallmentRowHtml(i, dateStr, amount, false, deal.productName, \`\${i+1}-oy\`, '');
   }
 }
 
@@ -762,13 +811,16 @@ async function saveInstallmentPlan(dealId) {
     const dueDate = row.querySelector('.inst-date').value;
     const amount = Number(row.querySelector('.inst-amount').value) || 0;
     const paid = row.querySelector('.inst-paid').checked;
+    const productName = row.querySelector('.inst-product').value;
+    const month = row.querySelector('.inst-month').value;
+    const notes = row.querySelector('.inst-notes').value;
     
     if (!dueDate) {
       if (typeof showToast === 'function') showToast('Sana kiritilishi majburiy', 'error');
       btn.disabled = false;
       return;
     }
-    installments.push({ dueDate, amount, paid });
+    installments.push({ dueDate, amount, paid, productName, month, notes });
     totalScheduled += amount;
   }
 

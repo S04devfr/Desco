@@ -12,7 +12,7 @@
     <div class="notif-wrap" id="notifWrap">
       <button class="topbar-btn" id="notifBtn" title="Bildirishnomalar" onclick="toggleNotifPanel()">
         <i class="fas fa-bell"></i>
-        <span class="notif-count hidden" id="notifCount">0</span>
+        <span class="notif-count hidden" id="notifCount" style="background:var(--danger); color:#fff; position:absolute; top:-4px; right:-6px; font-size:10px; font-weight:700; padding:2px 6px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.2);">0</span>
       </button>
       <div class="notif-panel hidden" id="notifPanel">
         <div class="notif-panel-header">
@@ -103,7 +103,7 @@ async function loadNotifications() {
       return
     }
     list.innerHTML = notifs.map(n => `
-      <div class="notif-item ${n.read ? '' : 'notif-unread'} notif-${n.type}">
+      <div class="notif-item ${n.read ? '' : 'notif-unread'} notif-${n.type}" ${n.read ? '' : `onclick="markAsRead('${n.id}', this)"`} style="cursor:${n.read ? 'default' : 'pointer'}; transition: all 0.3s ease;">
         <div class="notif-icon"><i class="fas fa-${n.type === 'overdue' ? 'exclamation-circle' : 'clock'}"></i></div>
         <div class="notif-body">
           <div class="notif-title">${n.title}</div>
@@ -124,6 +124,29 @@ async function markAllRead() {
   await fetch('/api/notifications/read-all', { method: 'POST' })
   document.getElementById('notifCount').classList.add('hidden')
   loadNotifications()
+}
+
+async function markAsRead(id, el) {
+  if (el.classList.contains('notif-unread')) {
+    await fetch('/api/notifications/' + id + '/read', { method: 'POST' })
+    el.classList.remove('notif-unread')
+    el.style.opacity = '0'
+    setTimeout(() => {
+      el.remove()
+      const countEl = document.getElementById('notifCount')
+      let count = parseInt(countEl.textContent) || 0
+      count--
+      if (count > 0) {
+        countEl.textContent = count > 9 ? '9+' : count
+      } else {
+        countEl.classList.add('hidden')
+        const list = document.getElementById('notifList')
+        if (list.children.length === 0) {
+          list.innerHTML = "<div class='notif-empty'>Bildirishnoma yo'q</div>"
+        }
+      }
+    }, 300)
+  }
 }
 
 // ── Profile dropdown ──
