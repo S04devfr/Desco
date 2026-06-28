@@ -719,12 +719,16 @@
 
     // ── API helpers ────────────────────────────────────────────────
     async function apiFetch(url, opts) {
-      const fetchFn = (typeof fetchWithTimeout === 'function') ? fetchWithTimeout : fetch;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      const fetchOpts = Object.assign({ signal: controller.signal }, opts);
       let r;
       try {
-        r = await fetchFn(url, opts);
+        r = await fetch(url, fetchOpts);
+        clearTimeout(timeoutId);
       } catch (err) {
-        throw new Error("Tarmoq xatosi yoki server ishlamayapti.");
+        clearTimeout(timeoutId);
+        throw new Error("Tarmoq xatosi yoki server ishlamayapti (Timeout).");
       }
       let data;
       try { data = await r.json(); } catch { data = {}; }

@@ -128,7 +128,7 @@ router.post('/', async (req, res, next) => {
         costPrice: costPrice ? Number(costPrice) : 0,
         status: status || 'new',
         notes: notes || null,
-        deadline: deadline ? new Date(deadline) : null,
+        deadline: (deadline && !isNaN(new Date(deadline))) ? new Date(deadline) : null,
         clientId: resolvedClientId,
         managerId: req.userId,
         stageId: stageId ? Number(stageId) : null,
@@ -166,7 +166,7 @@ router.patch('/:id', async (req, res, next) => {
     if (status !== undefined) data.status = status
     if (notes !== undefined) data.notes = notes
     if (clientId !== undefined) data.clientId = clientId ? Number(clientId) : null
-    if (deadline !== undefined) data.deadline = deadline ? new Date(deadline) : null
+    if (deadline !== undefined) data.deadline = (deadline && !isNaN(new Date(deadline))) ? new Date(deadline) : null
     if (managerId !== undefined) data.managerId = managerId ? Number(managerId) : null
     if (stageId !== undefined) data.stageId = stageId ? Number(stageId) : null
 

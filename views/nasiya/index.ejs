@@ -95,7 +95,10 @@ async function loadNasiyaDeals() {
   tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px;"><div class="spinner" style="margin:auto"></div></td></tr>';
 
   try {
-    const r = await fetch('/api/nasiya/list-deals?stage=' + activeStageKey);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const r = await fetch('/api/nasiya/list-deals?stage=' + activeStageKey, { signal: controller.signal });
+    clearTimeout(timeoutId);
     if (!r.ok) throw new Error('Xatolik');
     const deals = await r.json();
 

@@ -88,7 +88,7 @@ router.post('/', async (req, res, next) => {
       data: {
         title,
         description: description || null,
-        dueDate: dueDate ? new Date(dueDate) : null,
+        dueDate: (dueDate && !isNaN(new Date(dueDate))) ? new Date(dueDate) : null,
         dueTime: dueTime || null,
         priority: priority || 'medium',
         dealId: dealId ? Number(dealId) : null,
@@ -118,7 +118,7 @@ router.patch('/:id', async (req, res, next) => {
     const data = {}
     if (title !== undefined) data.title = title
     if (description !== undefined) data.description = description
-    if (dueDate !== undefined) data.dueDate = dueDate ? new Date(dueDate) : null
+    if (dueDate !== undefined) data.dueDate = (dueDate && !isNaN(new Date(dueDate))) ? new Date(dueDate) : null
     if (dueTime !== undefined) data.dueTime = dueTime
     if (priority !== undefined) data.priority = priority
     if (completed !== undefined) data.completed = completed

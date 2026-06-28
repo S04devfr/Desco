@@ -58,7 +58,7 @@ router.post('/', async (req, res, next) => {
         description,
         amount: Number(amount),
         category: category || 'other',
-        date: date ? new Date(date) : new Date(),
+        date: (date && !isNaN(new Date(date))) ? new Date(date) : new Date(),
         createdById: req.userId
       },
       include: { createdBy: userSelect }
@@ -78,7 +78,7 @@ router.patch('/:id', async (req, res, next) => {
     if (description !== undefined) data.description = description
     if (amount !== undefined) data.amount = Number(amount)
     if (category !== undefined) data.category = category
-    if (date !== undefined) data.date = date ? new Date(date) : new Date()
+    if (date !== undefined) data.date = (date && !isNaN(new Date(date))) ? new Date(date) : new Date()
 
     const expense = await prisma.expense.update({
       where: { id: Number(req.params.id) },
