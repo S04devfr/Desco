@@ -415,12 +415,12 @@ async function loadDashboard() {
     if (salesChart) salesChart.destroy();
     
     if (safeSalesData.length === 0) {
-      document.getElementById('salesChart').parentElement.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:13px;">Ma\\'lumot yo\\'q</div>';
+      document.getElementById('salesChart').parentElement.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:13px;">Ma\'lumot yo\'q</div>';
     } else {
       salesChart = new Chart(document.getElementById('salesChart'), {
         type: 'bar',
         data: {
-          labels: safeSalesData.map(d => d.manager || 'Noma\\'lum'),
+          labels: safeSalesData.map(d => d.manager || 'Noma\'lum'),
           datasets: [{
             label: "Savdo (so'm)",
             data: safeSalesData.map(d => d.totalSales || 0),
@@ -444,12 +444,12 @@ async function loadDashboard() {
     const colors = ['#007AFF','#34C759','#FF9500','#FF3B30','#5856D6','#00C7BE','#FF2D55','#AC8E68'];
     
     if (top.length === 0) {
-      document.getElementById('productChart').parentElement.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:13px;">Ma\\'lumot yo\\'q</div>';
+      document.getElementById('productChart').parentElement.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:13px;">Ma\'lumot yo\'q</div>';
     } else {
       productChart = new Chart(document.getElementById('productChart'), {
         type: 'doughnut',
         data: {
-          labels: top.map(d => d.product || 'Noma\\'lum'),
+          labels: top.map(d => d.product || 'Noma\'lum'),
           datasets: [{ data: top.map(d => d.count || 0), backgroundColor: colors, borderWidth: 0 }]
         },
         options: {
@@ -462,7 +462,7 @@ async function loadDashboard() {
     // Today's tasks rendering
     const tasksEl = document.getElementById('todayTasks');
     if (!safeTasks.length) {
-      tasksEl.innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-state-icon"><i class="fas fa-check-circle"></i></div><h3>Bugungi vazifalar yo\\'q</h3></div>';
+      tasksEl.innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-state-icon"><i class="fas fa-check-circle"></i></div><h3>Bugungi vazifalar yo\'q</h3></div>';
     } else {
       tasksEl.innerHTML = safeTasks.map(t => `
         <div class="task-item">
@@ -470,7 +470,7 @@ async function loadDashboard() {
             ${t.completed ? '<i class="fas fa-check" style="font-size:9px"></i>' : ''}
           </div>
           <div class="task-info">
-            <div class="task-title ${t.completed ? 'done' : ''}">${escHtml(t?.title || 'Noma\\'lum')}</div>
+            <div class="task-title ${t.completed ? 'done' : ''}">${escHtml(t?.title || 'Noma\'lum')}</div>
             <div class="task-meta">
               <span class="priority-dot ${t?.priority || 'medium'}"></span>
               ${t?.dueDate ? '<span class="task-due"><i class="fas fa-clock"></i> ' + fmtDate(t.dueDate) + '</span>' : ''}
@@ -497,11 +497,11 @@ async function loadDashboard() {
     // Clear chart spinners
     const salesChartEl = document.getElementById('salesChart');
     if (salesChartEl && salesChartEl.parentElement) {
-      salesChartEl.parentElement.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:13px;">Yuklashda xato (Ma\\'lumot yo\\'q)</div>';
+      salesChartEl.parentElement.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:13px;">Yuklashda xato (Ma\'lumot yo\'q)</div>';
     }
     const productChartEl = document.getElementById('productChart');
     if (productChartEl && productChartEl.parentElement) {
-      productChartEl.parentElement.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:13px;">Yuklashda xato (Ma\\'lumot yo\\'q)</div>';
+      productChartEl.parentElement.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:13px;">Yuklashda xato (Ma\'lumot yo\'q)</div>';
     }
     const tasksEl = document.getElementById('todayTasks');
     if (tasksEl) {

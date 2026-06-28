@@ -102,12 +102,12 @@ async function loadNasiyaDeals() {
     document.getElementById('dealCount').textContent = deals.length + ' ta yozuv';
 
     if (!deals.length) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-tertiary)"><i class="fas fa-table" style="font-size:28px; display:block; margin-bottom:8px;"></i>Hozircha hech narsa yo\\'q</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-tertiary)"><i class="fas fa-table" style="font-size:28px; display:block; margin-bottom:8px;"></i>Hozircha hech narsa yo\'q</td></tr>';
       return;
     }
 
     let html = '';
-    deals.forEach(d => {
+    (deals || []).forEach(d => {
       // Get month from first installment if exists, else default
       let monthVal = '1 oy';
       if (d.installments && d.installments.length > 0) {
@@ -140,7 +140,7 @@ async function loadNasiyaDeals() {
     tbody.innerHTML = html;
   } catch(e) {
     document.getElementById('dealCount').textContent = '0 ta yozuv';
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-tertiary)"><i class="fas fa-table" style="font-size:28px; display:block; margin-bottom:8px;"></i>Hozircha hech narsa yo\\'q</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-tertiary)"><i class="fas fa-table" style="font-size:28px; display:block; margin-bottom:8px;"></i>Hozircha hech narsa yo\'q</td></tr>';
   } finally {
     // Spinner is already overwritten by innerHTML in both try and catch branches
   }
@@ -269,7 +269,7 @@ async function deleteRow(dealId) {
     if(!r.ok) throw new Error();
     loadNasiyaDeals();
   } catch(e) {
-    if(typeof showToast === 'function') showToast('O\\'chirishda xatolik', 'error');
+    if(typeof showToast === 'function') showToast('O\'chirishda xatolik', 'error');
   }
 }
 

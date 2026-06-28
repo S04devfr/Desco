@@ -1204,7 +1204,7 @@ async function onDrop(e, stageId) {
     const targetStage = _stages.find(s => s.id === newStageId);
     if (targetStage && targetStage.name && targetStage.name.toLowerCase() === 'vazifalar') {
       const clientInfo = deal.client ? (deal.client.name + ' ' + (deal.client.phone || '')).trim() : "Mijoz noma'lum";
-      const desc = 'Mahsulot: ' + (deal.productName || deal.name || 'Noma\\'lum') + '\\nMijoz: ' + clientInfo;
+      const desc = 'Mahsulot: ' + (deal.productName || deal.name || 'Noma\'lum') + '\\nMijoz: ' + clientInfo;
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       

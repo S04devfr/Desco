@@ -163,8 +163,8 @@ const swatchHtml = colorSwatches.map(c =>
           </button>
         </div>
         <div class="settings-section-body" id="pipelineList">
-          <% if (pipelinesList.length) { %>
-            <% pipelinesList.forEach(p => { %>
+          <% if ((pipelinesList || []).length) { %>
+            <% (pipelinesList || []).forEach(p => { %>
             <div class="pipeline-card" id="pc-<%= p.id %>">
               <div class="pipeline-card-hdr" onclick="togglePipeline(<%= p.id %>)">
                 <div class="p-dot" style="background:<%= p.color %>"></div>
@@ -219,8 +219,8 @@ const swatchHtml = colorSwatches.map(c =>
             <table class="data-table">
               <thead><tr><th>Ism</th><th>Email</th><th>Rol</th><th>Qo'shilgan</th><th></th></tr></thead>
               <tbody>
-                <% if (usersList.length) { %>
-                  <% usersList.forEach(u => { %>
+                <% if ((usersList || []).length) { %>
+                  <% (usersList || []).forEach(u => { %>
                   <tr>
                     <td><strong><%= escHtml(u.fullName||'—') %></strong></td>
                     <td><%= escHtml(u.email) %></td>
