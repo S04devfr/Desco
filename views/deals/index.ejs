@@ -1033,7 +1033,7 @@ function dcardHtml(d) {
       onclick="openDetail(${d.id})" style="position:relative; padding:12px 14px; box-shadow:0 2px 8px rgba(0,0,0,0.03); border:1px solid var(--glass-border); border-radius:10px; transition:all 0.2s; background:var(--bg-secondary); cursor:pointer; margin-bottom: 10px;">
       
       <!-- Tahrirlash tugmasi -->
-      <div onclick="event.stopPropagation(); openDealModal(${d.id})" style="position:absolute; top:10px; right:12px; color:var(--text-tertiary); cursor:pointer; padding: 4px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='var(--glass-bg)'; this.style.color='var(--accent)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-tertiary)'">
+      <div onclick="event.stopPropagation(); openDealModal(null, ${d.id})" style="position:absolute; top:10px; right:12px; color:var(--text-tertiary); cursor:pointer; padding: 4px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='var(--glass-bg)'; this.style.color='var(--accent)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-tertiary)'">
         <i class="fas fa-edit"></i>
       </div>
 

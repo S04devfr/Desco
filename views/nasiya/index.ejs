@@ -20,6 +20,9 @@
     <h3 id="tableHeader">Mijozlar to'lovlari (Excel-Grid)</h3>
     <div style="display:flex; gap:10px;">
       <span id="dealCount" class="badge badge-blue">0</span>
+      <button class="btn btn-outline btn-sm" onclick="openNasiyaModal()" style="border:1px dashed var(--border-med);">
+        <i class="fas fa-plus"></i> Yangi qo'shish
+      </button>
       <button class="btn btn-primary btn-sm" onclick="saveAllChanges()">
         <i class="fas fa-save"></i> Barchasini Saqlash
       </button>
@@ -45,6 +48,38 @@
         </tr>
       </tbody>
     </table>
+  </div>
+</div>
+
+<!-- Nasiya Qo'shish Modali -->
+<div class="modal-overlay hidden" id="addNasiyaModal" style="z-index:9999; display: flex; align-items: center; justify-content: center;">
+  <div class="modal-box" style="width:100%; max-width:400px; background:var(--bg-primary); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.2);">
+    <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
+      <h2 style="font-size: 16px; font-weight: 600; margin: 0;">Yangi Nasiya Qo'shish</h2>
+      <button class="modal-close" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-tertiary);" onclick="document.getElementById('addNasiyaModal').classList.add('hidden')">&times;</button>
+    </div>
+    <div class="modal-body" style="padding: 20px;">
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:4px;">Mijoz Ismi</label>
+        <input type="text" id="n-clientName" class="form-control" placeholder="Ismni kiriting" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-light); border-radius: 6px; background: var(--bg-secondary); color: var(--text-primary);">
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:4px;">Telefon Raqami</label>
+        <input type="text" id="n-clientPhone" class="form-control" placeholder="+998..." style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-light); border-radius: 6px; background: var(--bg-secondary); color: var(--text-primary);">
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:4px;">Mahsulot Nomi</label>
+        <input type="text" id="n-productName" class="form-control" placeholder="Sotib olingan mahsulot" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-light); border-radius: 6px; background: var(--bg-secondary); color: var(--text-primary);">
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:4px;">Jami Summasi</label>
+        <input type="number" id="n-amount" class="form-control" placeholder="100000" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-light); border-radius: 6px; background: var(--bg-secondary); color: var(--text-primary);">
+      </div>
+    </div>
+    <div class="modal-footer" style="padding: 16px 20px; border-top: 1px solid var(--border-light); display: flex; justify-content: flex-end; gap: 8px; background: var(--bg-secondary); border-radius: 0 0 12px 12px;">
+      <button class="btn btn-secondary" onclick="document.getElementById('addNasiyaModal').classList.add('hidden')">Bekor</button>
+      <button class="btn btn-primary" onclick="submitNewNasiya()">Saqlash</button>
+    </div>
   </div>
 </div>
 
@@ -237,6 +272,46 @@ async function saveAllChanges() {
     const btn = document.querySelector('button[onclick="saveAllChanges()"]');
     btn.disabled = false;
     btn.innerHTML = '<i class="fas fa-save"></i> Barchasini Saqlash';
+  }
+}
+
+function openNasiyaModal() {
+  document.getElementById('n-clientName').value = '';
+  document.getElementById('n-clientPhone').value = '';
+  document.getElementById('n-productName').value = '';
+  document.getElementById('n-amount').value = '';
+  document.getElementById('addNasiyaModal').classList.remove('hidden');
+}
+
+async function submitNewNasiya() {
+  const cName = document.getElementById('n-clientName').value.trim();
+  const cPhone = document.getElementById('n-clientPhone').value.trim();
+  const prod = document.getElementById('n-productName').value.trim();
+  const amount = document.getElementById('n-amount').value.trim();
+
+  if (!cName || !cPhone || !prod) {
+    alert("Iltimos barcha qatorlarni to'ldiring!");
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/nasiya/quick-add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        stage: activeStageKey,
+        clientName: cName,
+        clientPhone: cPhone,
+        productName: prod,
+        amount: amount
+      })
+    });
+    if(!res.ok) throw new Error("Saqlashda xato");
+    
+    document.getElementById('addNasiyaModal').classList.add('hidden');
+    loadNasiyaDeals();
+  } catch(e) {
+    alert(e.message);
   }
 }
 

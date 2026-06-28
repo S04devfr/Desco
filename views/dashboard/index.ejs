@@ -290,13 +290,16 @@ document.getElementById('endDate').addEventListener('change', () => {
   if (document.getElementById('startDate').value) loadDashboard();
 });
 
-async function dashFetch(url) {
-  const fetchFn = (typeof fetchWithTimeout === 'function') ? fetchWithTimeout : fetch;
+async function dashFetch(url, timeoutMs = 8000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
   let r;
   try {
-    r = await fetchFn(url);
+    r = await fetch(url, { signal: controller.signal });
+    clearTimeout(id);
   } catch(err) {
-    throw new Error("Tarmoq xatosi yoki server ishlamayapti.");
+    clearTimeout(id);
+    throw new Error("Tarmoq xatosi yoki server ishlamayapti (Timeout).");
   }
   let data;
   try { data = await r.json(); } catch { data = {}; }
@@ -343,10 +346,10 @@ async function loadDashboard() {
     }
 
     const [kpis, salesData, productData, tasks] = await Promise.all([
-      dashFetch('/api/dashboard/kpis?' + urlParams),
-      dashFetch('/api/dashboard/sales-by-manager?' + urlParams),
-      dashFetch('/api/dashboard/product-popularity?' + urlParams),
-      dashFetch('/api/dashboard/today-tasks')
+      dashFetch('/api/dashboard/kpis?' + urlParams).catch(e => { console.error(e); return {}; }),
+      dashFetch('/api/dashboard/sales-by-manager?' + urlParams).catch(e => { console.error(e); return []; }),
+      dashFetch('/api/dashboard/product-popularity?' + urlParams).catch(e => { console.error(e); return []; }),
+      dashFetch('/api/dashboard/today-tasks').catch(e => { console.error(e); return []; })
     ]);
 
     // Safe default for KPI stats

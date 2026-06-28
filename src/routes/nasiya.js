@@ -44,4 +44,42 @@ router.get('/list-deals', async (req, res, next) => {
   }
 });
 
+// POST /api/nasiya/quick-add
+router.post('/quick-add', async (req, res, next) => {
+  try {
+    const { stage, clientName, clientPhone, productName, amount } = req.body;
+    
+    // Find the stage
+    const stageRecord = await prisma.pipelineStage.findFirst({
+      where: { name: { contains: stage, mode: 'insensitive' } }
+    });
+    
+    if (!stageRecord) return res.status(400).json({ message: "Bosqich topilmadi" });
+
+    // Find or create client
+    let client = await prisma.client.findFirst({ where: { phone: clientPhone } });
+    if (!client) {
+      client = await prisma.client.create({
+        data: { name: clientName, phone: clientPhone }
+      });
+    }
+
+    // Create deal
+    const deal = await prisma.deal.create({
+      data: {
+        productName: productName || 'Nasiya',
+        amount: Number(amount) || 0,
+        status: 'new',
+        clientId: client.id,
+        stageId: stageRecord.id,
+        pipelineId: stageRecord.pipelineId
+      }
+    });
+
+    res.json(deal);
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;
