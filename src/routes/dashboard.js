@@ -153,7 +153,7 @@ router.get('/today-tasks', async (req, res, next) => {
       completed: false,
       dueDate: { gte: startOfDay, lte: endOfDay }
     }
-    if (req.user.role !== 'admin') where.assignedToId = req.userId
+    if (req.user?.role !== 'admin') where.assignedToId = req.userId
 
     const tasks = await prisma.task.findMany({ where, orderBy: { dueDate: 'asc' } })
     res.json(tasks)

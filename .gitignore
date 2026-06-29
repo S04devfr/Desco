@@ -32,3 +32,15 @@ Thumbs.db
 # Build
 dist/
 build/
+
+# Temp scripts and large binaries
+git-installer.exe
+deals_original.txt
+diff_output.txt
+fix.js
+fix_backticks.js
+fix_quotes.js
+cleanup.js
+.agents/
+
+

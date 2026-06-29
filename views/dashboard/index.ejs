@@ -856,7 +856,7 @@ function addInstallmentRow() {
   }
 
   const div = document.createElement('div');
-  div.innerHTML = getInstallmentRowHtml(index, dateStr, 0, false, pName, \`\${index+1}-oy\`, '');
+  div.innerHTML = getInstallmentRowHtml(index, dateStr, 0, false, pName, `${index+1}-oy`, '');
   container.appendChild(div.firstElementChild);
 }
 
@@ -875,7 +875,7 @@ function autoGenerateInstallments(dealId, months) {
     const dateStr = d.toISOString().slice(0, 10);
     const amount = (i === months - 1) ? (remaining - (eachVal * (months - 1))) : eachVal;
     
-    container.innerHTML += getInstallmentRowHtml(i, dateStr, amount, false, deal.productName, \`\${i+1}-oy\`, '');
+    container.innerHTML += getInstallmentRowHtml(i, dateStr, amount, false, deal.productName, `${i+1}-oy`, '');
   }
 }
 
