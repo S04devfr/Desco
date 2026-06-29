@@ -61,6 +61,7 @@ app.use('/api/pipelines',       require('./routes/pipelines'));
 app.use('/api/settings',        require('./routes/settings'));
 app.use('/api/instagram',       require('./routes/instagram'));
 app.use('/api/webhooks',        require('./routes/webhooks'));
+app.use('/api/webhook',         require('./routes/webhooks'));
 app.use('/api/ai',              require('./routes/ai'));
 
 // ── PAGE ROUTES ──

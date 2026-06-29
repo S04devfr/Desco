@@ -146,12 +146,12 @@ router.post('/lead', verifyWebhookToken, async (req, res, next) => {
 const prisma = require('../config/database');
 
 // 1-QADAM: Meta Webhook tasdiqlash (Verification)
-router.get('/instagram', (req, res) => {
+router.get('/', (req, res) => {
   const verify_token = process.env.WEBHOOK_VERIFY_TOKEN || 'desco-secret-token-123';
 
-  let mode = req.query['hub.mode'];
-  let token = req.query['hub.verify_token'];
-  let challenge = req.query['hub.challenge'];
+  const mode = req.query['hub.mode'] || (req.query.hub && req.query.hub.mode);
+  const token = req.query['hub.verify_token'] || (req.query.hub && req.query.hub.verify_token);
+  const challenge = req.query['hub.challenge'] || (req.query.hub && req.query.hub.challenge);
 
   if (mode && token) {
     if (mode === 'subscribe' && token === verify_token) {
@@ -166,7 +166,7 @@ router.get('/instagram', (req, res) => {
 });
 
 // 2-QADAM: Meta'dan Lead qabul qilish
-router.post('/instagram', async (req, res) => {
+router.post('/', async (req, res) => {
   // 1-Qoida: Meta'ga doim tezkor 200 qaytarish kerak, yo'qsa block qiladi
   res.status(200).send('EVENT_RECEIVED');
 

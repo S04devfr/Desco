@@ -697,7 +697,7 @@
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          if (data && (data.type === 'deal_updated' || data.type === 'deal_deleted')) {
+          if (data && (data.type === 'deal_updated' || data.type === 'deal_deleted' || data.type === 'deal_created')) {
             // Re-fetch only deals, no need to reload pipelines/managers
             loadDeals();
           }
@@ -1028,9 +1028,10 @@ function dcardHtml(d) {
   const sc = statusColors[d.status] || '#8E8E93';
   const sl = statusLabels[d.status] || 'Noma’lum';
   
-  const clientHtml = d.client ? '<div style="font-size:12.5px;color:var(--text-secondary);margin-bottom:6px;display:flex;align-items:center;gap:6px"><i class="fas fa-user" style="color:var(--text-tertiary);"></i><span style="font-weight:500">' + _esc(d.client.name) + '</span></div>' : '';
-  const phoneHtml = (d.client && d.client.phone) ? '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px;display:flex;align-items:center;gap:6px"><i class="fas fa-phone-alt" style="color:var(--text-tertiary);"></i>' + _esc(d.client.phone) + '</div>' : '';
-  
+  const clientName = d.client ? _esc(d.client.name) : '<span style="color:var(--text-tertiary); font-weight:500; font-style:italic;">Kiritilmagan</span>';
+  const clientPhone = (d.client && d.client.phone) ? _esc(d.client.phone) : '<span style="color:var(--text-tertiary); font-weight:500; font-style:italic;">Kiritilmagan</span>';
+  const productName = _esc(d.productName || d.name || 'Belgilanmagan');
+
   return `
     <div class="dcard" draggable="true" data-id="${d.id}"
       ondragstart="onDragStart(event,${d.id})" ondragend="onDragEnd(event)"
@@ -1041,13 +1042,25 @@ function dcardHtml(d) {
         <i class="fas fa-edit"></i>
       </div>
 
-      <div class="dcard-header" style="margin-bottom:8px; display:flex; flex-direction:column; align-items:flex-start; padding-right:24px;">
+      <div class="dcard-header" style="margin-bottom:10px; display:flex; flex-direction:column; align-items:flex-start; padding-right:24px;">
         <span class="dcard-badge" style="background:${sc}1A; color:${sc}; padding:2px 6px; font-size:9.5px; border-radius:4px; font-weight:700; text-transform:uppercase; margin-bottom: 6px;">${sl}</span>
-        <div style="font-weight:600; font-size:14px; color:var(--text-primary); line-height:1.3">${_esc(d.productName||d.name)}</div>
       </div>
       
-      ${clientHtml}
-      ${phoneHtml}
+      <!-- Labeled fields for easy operator reading -->
+      <div style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px;">
+        <div style="font-size:12.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
+          <span style="font-weight:600; color:var(--text-tertiary); width: 65px; flex-shrink: 0;">Mijoz:</span>
+          <span style="font-weight:600; color:var(--text-primary);">${clientName}</span>
+        </div>
+        <div style="font-size:12.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
+          <span style="font-weight:600; color:var(--text-tertiary); width: 65px; flex-shrink: 0;">Telefon:</span>
+          <span style="font-weight:600; color:var(--text-primary);">${clientPhone}</span>
+        </div>
+        <div style="font-size:12.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
+          <span style="font-weight:600; color:var(--text-tertiary); width: 65px; flex-shrink: 0;">Mahsulot:</span>
+          <span style="font-weight:700; color:var(--accent);">${productName}</span>
+        </div>
+      </div>
       
       <div style="margin-top:10px; display:flex; gap:6px;">
         <button class="btn btn-secondary btn-sm" style="flex:1; font-size:11.5px; padding: 6px 0;" onclick="event.stopPropagation(); callbackRedirect(${d.id}, '${_esc(d.productName||d.name)}', ${d.clientId})">
