@@ -147,7 +147,7 @@ const prisma = require('../config/database');
 
 // 1-QADAM: Meta Webhook tasdiqlash (Verification)
 router.get('/', (req, res) => {
-  const verify_token = process.env.WEBHOOK_VERIFY_TOKEN || 'desco-secret-token-123';
+  const verify_token = process.env.VERIFY_TOKEN || process.env.WEBHOOK_VERIFY_TOKEN || 'desco-secret-token-123';
 
   const mode = req.query['hub.mode'] || (req.query.hub && req.query.hub.mode);
   const token = req.query['hub.verify_token'] || (req.query.hub && req.query.hub.verify_token);
@@ -193,6 +193,10 @@ router.post('/', async (req, res) => {
 
                 const metaResponse = await fetch(`https://graph.facebook.com/v19.0/${leadgenId}?access_token=${accessToken}`);
                 const leadData = await metaResponse.json();
+
+                if (leadData && leadData.error) {
+                  console.error('[Meta Webhook Graph API Error]:', leadData.error);
+                }
 
                 if (leadData && leadData.field_data) {
                   let rawName = 'Nomsiz Lead';
