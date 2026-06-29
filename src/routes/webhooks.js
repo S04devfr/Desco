@@ -143,12 +143,13 @@ router.post('/lead', verifyWebhookToken, async (req, res, next) => {
 // ==========================================
 // TO'G'RIDAN-TO'G'RI META (FACEBOOK/INSTAGRAM) INTEGRATSIYASI
 // ==========================================
-const prisma = require('../config/database');
 
 // 1-QADAM: Meta Webhook tasdiqlash (Verification)
 router.get('/', (req, res) => {
+  // 1. Birinchi navbatda process.env.VERIFY_TOKEN o'qiladi
   const verify_token = process.env.VERIFY_TOKEN || process.env.WEBHOOK_VERIFY_TOKEN || 'desco-secret-token-123';
 
+  // 2. Query parser mustaqilligi: dot notation va ob'ekt holatida ham moslikni tekshirish
   const mode = req.query['hub.mode'] || (req.query.hub && req.query.hub.mode);
   const token = req.query['hub.verify_token'] || (req.query.hub && req.query.hub.verify_token);
   const challenge = req.query['hub.challenge'] || (req.query.hub && req.query.hub.challenge);
@@ -156,7 +157,7 @@ router.get('/', (req, res) => {
   if (mode && token) {
     if (mode === 'subscribe' && token === verify_token) {
       console.log('META WEBHOOK VERIFIED!');
-      res.status(200).send(challenge); // Meta faqat shu yalang'och raqamni (string) kutadi
+      res.status(200).send(challenge); // Meta faqatgina toza matn formatidagi challenge raqamini kutadi
     } else {
       res.sendStatus(403);
     }
@@ -171,123 +172,11 @@ router.post('/', async (req, res) => {
   res.status(200).send('EVENT_RECEIVED');
 
   try {
-    const body = req.body;
-
-    if (body.object === 'page') {
-      for (const entry of body.entry) {
-        if (entry.changes) {
-          for (const change of entry.changes) {
-            
-            // Faqat leadgen (forma to'ldirilgan) hodisalarini ushlash
-            if (change.field === 'leadgen') {
-              const leadgenId = change.value.leadgen_id;
-              
-              if (leadgenId) {
-                // 3-QADAM: Graph API ga so'rov yuborib asl ma'lumotlarni tortib olish
-                const accessToken = process.env.PAGE_ACCESS_TOKEN || process.env.META_ACCESS_TOKEN;
-                
-                if (!accessToken) {
-                  console.error('PAGE_ACCESS_TOKEN topilmadi!');
-                  continue; // Cannot fetch without token
-                }
-
-                const metaResponse = await fetch(`https://graph.facebook.com/v19.0/${leadgenId}?access_token=${accessToken}`);
-                const leadData = await metaResponse.json();
-
-                if (leadData && leadData.error) {
-                  console.error('[Meta Webhook Graph API Error]:', leadData.error);
-                }
-
-                if (leadData && leadData.field_data) {
-                  let rawName = 'Nomsiz Lead';
-                  let rawPhone = '';
-                  let rawProduct = 'Instagram Orqali Murojaat';
-
-                  leadData.field_data.forEach(field => {
-                    if (field.name === 'full_name' || field.name === 'first_name') {
-                      rawName = field.values[0];
-                    }
-                    if (field.name === 'phone_number') {
-                      rawPhone = field.values[0];
-                    }
-                    if (field.name === 'product_name' || field.name === 'mahsulot') {
-                      rawProduct = field.values[0];
-                    }
-                  });
-
-                  if (rawPhone) {
-                    const cleanPhone = rawPhone.replace(/[\s-]/g, '');
-
-                    // Baza bilan ishlash
-                    let client = await prisma.client.findFirst({
-                      where: { phone: { contains: cleanPhone } }
-                    });
-
-                    if (!client) {
-                      client = await prisma.client.create({
-                        data: {
-                          name: String(rawName).trim().substring(0, 200),
-                          phone: cleanPhone,
-                          notes: `Manba: Instagram Webhook`
-                        }
-                      });
-                    }
-
-                    // Voronkani topish (Eng birinchi bosqichga tushirish)
-                    const pipeline = await prisma.pipeline.findFirst({
-                      where: { isDefault: true },
-                      include: { stages: { orderBy: { order: 'asc' }, take: 1 } }
-                    });
-
-                    let targetStageId = null;
-                    let targetPipelineId = null;
-
-                    if (pipeline && pipeline.stages.length > 0) {
-                      targetPipelineId = pipeline.id;
-                      targetStageId = pipeline.stages[0].id;
-                    } else {
-                      const fallbackPipeline = await prisma.pipeline.findFirst({
-                         include: { stages: { orderBy: { order: 'asc' }, take: 1 } }
-                      });
-                      if (fallbackPipeline && fallbackPipeline.stages.length > 0) {
-                        targetPipelineId = fallbackPipeline.id;
-                        targetStageId = fallbackPipeline.stages[0].id;
-                      }
-                    }
-
-                    if (targetPipelineId && targetStageId) {
-                      // Sdelka yaratish
-                      const deal = await prisma.deal.create({
-                        data: {
-                          productName: String(rawProduct).trim().substring(0, 200),
-                          amount: 0,
-                          status: 'new',
-                          clientId: client.id,
-                          pipelineId: targetPipelineId,
-                          stageId: targetStageId,
-                          notes: `Meta LeadGen ID: ${leadgenId}`
-                        }
-                      });
-                      
-                      // UI ga yuborish (Socket.io orqali Real-Time update)
-                      const broadcast = req.app.get('broadcast');
-                      if (broadcast) {
-                        broadcast({ type: 'deal_created', dealId: deal.id });
-                      }
-
-                      console.log(`[Meta Webhook] Muvaffaqiyatli saqlandi: ${rawName} / ${cleanPhone}`);
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+    const broadcast = req.app.get('broadcast');
+    const webhookService = require('../services/webhookService');
+    await webhookService.handleMetaWebhook(req.body, broadcast);
   } catch (error) {
-    console.error('Meta Webhook Error:', error);
-    // 200 is already sent at the very beginning of the POST handler
+    console.error('[Meta Webhook Router Error] Asinxron ishga tushirishda xato:', error);
   }
 });
 
