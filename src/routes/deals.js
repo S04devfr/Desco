@@ -38,8 +38,7 @@ router.get('/', async (req, res, next) => {
     if (req.user && req.user.role !== 'admin') {
       where.OR = [
         { managerId: req.userId },
-        { managerId: null },
-        { stage: { name: { contains: 'Yangi', mode: 'insensitive' } } }
+        { managerId: null }
       ]
     }
 
