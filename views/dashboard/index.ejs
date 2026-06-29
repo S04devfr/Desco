@@ -569,6 +569,7 @@ async function toggleTask(id, el) {
       el.classList.toggle('done');
       el.innerHTML = completed ? '<i class="fas fa-check" style="font-size:9px"></i>' : '';
       el.nextElementSibling.querySelector('.task-title').classList.toggle('done');
+      if (typeof window.updateSidebarTaskBadge === 'function') window.updateSidebarTaskBadge();
     }
   } catch(e) {}
 }

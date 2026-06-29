@@ -138,6 +138,7 @@ async function toggleTask(id, el) {
     // Find nearby title and toggle done class
     const titleEl = el.closest('.task-item')?.querySelector('.task-title');
     if (titleEl) titleEl.classList.toggle('done', completed);
+    if (typeof window.updateSidebarTaskBadge === 'function') window.updateSidebarTaskBadge();
   } catch (e) {
     showToast('Xato', 'error');
   }
@@ -172,4 +173,30 @@ document.addEventListener('keydown', function (e) {
   if (e.key === 'Escape') {
     document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(m => m.classList.add('hidden'));
   }
+});
+
+// ── UPDATE SIDEBAR TASK BADGE ──
+async function updateSidebarTaskBadge() {
+  const badge = document.getElementById('sidebar-task-badge');
+  if (!badge) return;
+  try {
+    const r = await fetch('/api/dashboard/today-tasks');
+    if (r.ok) {
+      const tasks = await r.json();
+      const count = Array.isArray(tasks) ? tasks.length : 0;
+      if (count > 0) {
+        badge.textContent = count;
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+  } catch (e) {
+    console.error('Error fetching today tasks count:', e);
+  }
+}
+window.updateSidebarTaskBadge = updateSidebarTaskBadge;
+
+document.addEventListener('DOMContentLoaded', () => {
+  updateSidebarTaskBadge();
 });

@@ -1223,6 +1223,7 @@ async function onDrop(e, stageId) {
         })
       }).then(() => {
         _toast('Vazifa avtomatik yaratildi: Qayta aloqa', 'success');
+        if (typeof window.updateSidebarTaskBadge === 'function') window.updateSidebarTaskBadge();
       }).catch(err => {
         console.error('Vazifa avtomatizatsiya xatosi:', err);
       });
@@ -1660,6 +1661,7 @@ async function createTaskForDeal(dealId, dealTitle) {
       })
     });
     _toast('Vazifa muvaffaqiyatli yaratildi', 'success');
+    if (typeof window.updateSidebarTaskBadge === 'function') window.updateSidebarTaskBadge();
   } catch(e) {
     _toast(e.message, 'error');
   }

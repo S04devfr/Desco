@@ -218,6 +218,7 @@ async function toggleTask(id, el) {
       body: JSON.stringify({ completed })
     });
     await loadTasks();
+    if (typeof window.updateSidebarTaskBadge === 'function') window.updateSidebarTaskBadge();
   } catch(e) { showToast('Xato', 'error'); }
 }
 
@@ -287,6 +288,7 @@ async function saveTask() {
     showToast(id ? 'Vazifa yangilandi' : 'Vazifa qo\'shildi', 'success');
     closeTaskModal();
     await loadTasks();
+    if (typeof window.updateSidebarTaskBadge === 'function') window.updateSidebarTaskBadge();
   } catch(e) {
     showToast(e.message || 'Xato', 'error');
   } finally { btn.disabled = false; }
@@ -299,6 +301,7 @@ async function deleteTask(id) {
     if (!r.ok) throw new Error();
     showToast('Vazifa o\'chirildi', 'success');
     await loadTasks();
+    if (typeof window.updateSidebarTaskBadge === 'function') window.updateSidebarTaskBadge();
   } catch(e) { showToast('O\'chirishda xato', 'error'); }
 }
 
