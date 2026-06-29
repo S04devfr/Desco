@@ -1,9 +1,54 @@
 const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
 const supabase = require('../config/supabase');
+const leadService = require('../services/leadService');
 
-// Xavfsizlik Middleware: Tokenni tekshirish
-const verifyWebhookToken = (req, res, next) => {
+/**
+ * Meta (Facebook/Instagram) X-Hub-Signature-256 xavfsizlik imzosini tekshirish middleware.
+ * Bu so'rov aynan Meta platformasidan kelayotganini kafolatlaydi.
+ */
+function verifyWebhookToken(req, res, next) {
+  // GET so'rovi (tasdiqlash) uchun xavfsizlik tekshiruvini o'tkazib yuboramiz
+  if (req.method === 'GET') return next();
+
+  const signature = req.headers['x-hub-signature-256'];
+  const appSecret = process.env.APP_SECRET;
+
+  // Agar server muhitida APP_SECRET o'rnatilmagan bo'lsa, tekshiruvni chetlab o'tamiz
+  if (!appSecret) {
+    return next();
+  }
+
+  if (!signature) {
+    console.error('[Meta Webhook Secure] Signature xabari headerlarda topilmadi.');
+    return res.status(401).json({ error: 'Signature is missing.' });
+  }
+
+  try {
+    const elements = signature.split('=');
+    const signatureHash = elements[1];
+    
+    // rawBody ni crypto yordamida appSecret orqali hashlaymiz
+    const expectedHash = crypto
+      .createHmac('sha256', appSecret)
+      .update(req.rawBody || '')
+      .digest('hex');
+
+    if (signatureHash !== expectedHash) {
+      console.error('[Meta Webhook Secure] Signature mos kelmadi (Signature Mismatch).');
+      return res.status(401).json({ error: 'Signature mismatch.' });
+    }
+
+    next();
+  } catch (error) {
+    console.error('[Meta Webhook Secure] Imzoni tekshirishda xatolik:', error.message);
+    return res.status(500).json({ error: 'Internal signature verification error.' });
+  }
+}
+
+// Xavfsizlik Middleware: Tokenni tekshirish (Make.com webhook uchun)
+const verifyMakeToken = (req, res, next) => {
   const token = req.header('X-CRM-Webhook-Token');
   const secret = process.env.WEBHOOK_SECRET_TOKEN || 'desco-crm-secret-2026';
 
@@ -13,10 +58,9 @@ const verifyWebhookToken = (req, res, next) => {
   next();
 };
 
-// POST /api/webhooks/lead
-router.post('/lead', verifyWebhookToken, async (req, res, next) => {
+// POST /api/webhook/lead (Make/Zapier uchun)
+router.post('/lead', verifyMakeToken, async (req, res, next) => {
   try {
-    // Kiberxavfsizlik: ma'lumotlarni tozalash (sanitize)
     const sanitize = (str) => (str ? String(str).trim().substring(0, 500) : null);
     
     let { name, phone, region, product, forWhom, campaign, source } = req.body;
@@ -29,15 +73,12 @@ router.post('/lead', verifyWebhookToken, async (req, res, next) => {
     campaign = sanitize(campaign);
     source = sanitize(source);
 
-    // Majburiy maydonlarni tekshirish
     if (!name || !phone) {
       return res.status(400).json({ error: 'Bad Request: "name" and "phone" are required fields.' });
     }
 
-    // Telefon raqami formatini biroz tozalash (masalan probellar va tirelarni olib tashlash)
     const cleanPhone = phone.replace(/[\s-]/g, '');
 
-    // Telefon raqami bo'yicha mijozni qidiramiz (ilike bilan)
     let { data: client } = await supabase
       .from('Client')
       .select('*')
@@ -45,7 +86,6 @@ router.post('/lead', verifyWebhookToken, async (req, res, next) => {
       .limit(1)
       .maybeSingle();
 
-    // Agar roppa-rosa moslik bilan topilmasa yoki contains xato qilsa, yana bir bor to'liq phone bilan qidiramiz
     if (!client) {
       const { data: exactClient } = await supabase
         .from('Client')
@@ -56,7 +96,6 @@ router.post('/lead', verifyWebhookToken, async (req, res, next) => {
       client = exactClient;
     }
 
-    // Mijoz topilmasa, yangisini yaratamiz
     if (!client) {
       const { data: newClient, error: clientErr } = await supabase
         .from('Client')
@@ -73,7 +112,6 @@ router.post('/lead', verifyWebhookToken, async (req, res, next) => {
       client = newClient;
     }
 
-    // Asosiy Voronka (isDefault = true) va uning 1-bosqichini topamiz
     const { data: pipeline } = await supabase
       .from('Pipeline')
       .select('id, PipelineStage(id, order)')
@@ -89,7 +127,6 @@ router.post('/lead', verifyWebhookToken, async (req, res, next) => {
       const sortedStages = pipeline.PipelineStage.sort((a, b) => a.order - b.order);
       targetStageId = sortedStages[0].id;
     } else {
-      // Agar Asosiy Voronka topilmasa, istalgan birinchi voronkani olamiz
       const { data: fallbackPipeline } = await supabase
         .from('Pipeline')
         .select('id, PipelineStage(id, order)')
@@ -103,7 +140,6 @@ router.post('/lead', verifyWebhookToken, async (req, res, next) => {
       }
     }
 
-    // Izohni chiroyli formatda shakllantiramiz
     const notesArray = [];
     if (forWhom) notesArray.push(`Kim uchun: ${forWhom}`);
     if (campaign) notesArray.push(`Kampaniya: ${campaign}`);
@@ -111,7 +147,6 @@ router.post('/lead', verifyWebhookToken, async (req, res, next) => {
     if (region) notesArray.push(`Viloyat: ${region}`);
     const finalNotes = notesArray.length > 0 ? notesArray.join('\n') : null;
 
-    // Sdelka yaratamiz
     const { data: deal, error: dealErr } = await supabase
       .from('Deal')
       .insert({
@@ -146,10 +181,8 @@ router.post('/lead', verifyWebhookToken, async (req, res, next) => {
 
 // 1-QADAM: Meta Webhook tasdiqlash (Verification)
 router.get('/', (req, res) => {
-  // 1. Birinchi navbatda process.env.VERIFY_TOKEN o'qiladi
   const verify_token = process.env.VERIFY_TOKEN || process.env.WEBHOOK_VERIFY_TOKEN || 'desco-secret-token-123';
 
-  // 2. Query parser mustaqilligi: dot notation va ob'ekt holatida ham moslikni tekshirish
   const mode = req.query['hub.mode'] || (req.query.hub && req.query.hub.mode);
   const token = req.query['hub.verify_token'] || (req.query.hub && req.query.hub.verify_token);
   const challenge = req.query['hub.challenge'] || (req.query.hub && req.query.hub.challenge);
@@ -166,15 +199,14 @@ router.get('/', (req, res) => {
   }
 });
 
-// 2-QADAM: Meta'dan Lead qabul qilish
-router.post('/', async (req, res) => {
-  // 1-Qoida: Meta'ga doim tezkor 200 qaytarish kerak, yo'qsa block qiladi
+// 2-QADAM: Meta'dan Lead qabul qilish (POST)
+router.post('/', verifyWebhookToken, async (req, res) => {
+  // Meta'ga bloklanib qolmaslik uchun darhol 200 OK qaytaramiz
   res.status(200).send('EVENT_RECEIVED');
 
   try {
     const broadcast = req.app.get('broadcast');
-    const webhookService = require('../services/webhookService');
-    await webhookService.handleMetaWebhook(req.body, broadcast);
+    await leadService.handleMetaWebhook(req.body, broadcast);
   } catch (error) {
     console.error('[Meta Webhook Router Error] Asinxron ishga tushirishda xato:', error);
   }

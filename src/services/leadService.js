@@ -100,19 +100,29 @@ async function handleMetaWebhook(body, broadcast) {
     if (!entry.changes) continue;
 
     for (const change of entry.changes) {
-      // Faqat leadgen (forma to'ldirilgan) hodisalarini ushlaymiz
       if (change.field === 'leadgen') {
         const leadgenId = change.value.leadgen_id;
         if (!leadgenId) continue;
 
         try {
+          // 1. Dublikatlarni oldini olish uchun leadgen_id tekshiruvi.
+          // Sdelka notes maydonidan ushbu leadgen_id allaqachon yozilganligini tekshiramiz.
+          const existingDeal = await prisma.deal.findFirst({
+            where: { notes: { contains: `Meta LeadGen ID: ${leadgenId}` } }
+          });
+
+          if (existingDeal) {
+            console.log(`[Meta Webhook] Leadgen ID ${leadgenId} allaqachon qayta ishlangan. O'tkazib yuboriladi.`);
+            continue;
+          }
+
           const accessToken = process.env.PAGE_ACCESS_TOKEN || process.env.META_ACCESS_TOKEN;
           if (!accessToken) {
             console.error('[Meta Webhook Error] PAGE_ACCESS_TOKEN topilmadi!');
             continue;
           }
 
-          // 1. Meta Graph API'dan ma'lumotlarni yuklab olish
+          // 2. Meta Graph API'dan ma'lumotlarni yuklab olish
           const leadData = await fetchMetaLeadDetails(leadgenId, accessToken);
           if (!leadData || !leadData.field_data) continue;
 
@@ -137,14 +147,14 @@ async function handleMetaWebhook(body, broadcast) {
             continue;
           }
 
-          // 2. Mijozni bazada tranzaksiya yordamida upsert qilish (dublikatsiz)
+          // 3. Mijozni bazada tranzaksiya yordamida upsert qilish (dublikatsiz)
           const client = await upsertClientByPhone(rawName, rawPhone, 'Instagram Webhook');
 
-          // 3. Voronka va Bosqichni topish
+          // 4. Voronka va Bosqichni topish
           const { pipelineId, stageId } = await getDefaultPipelineAndStage();
 
           if (pipelineId && stageId) {
-            // 4. Sdelkani (Deal) yaratish
+            // 5. Sdelkani (Deal) yaratish
             const deal = await prisma.deal.create({
               data: {
                 productName: String(rawProduct).trim().substring(0, 200),
@@ -162,13 +172,13 @@ async function handleMetaWebhook(body, broadcast) {
               await prisma.activityLog.create({
                 data: {
                   action: 'Sdelka yaratildi',
-                  details: `Meta Webhook orqali "${deal.productName}" sdelkasi yaratildi`,
+                  details: `Meta Webhook orqali "${deal.productName}" sdelkasi yaratildi (LeadGen ID: ${leadgenId})`,
                   dealId: deal.id
                 }
               });
             } catch (e) { /* ignore log errors */ }
 
-            // 5. UI ni real-vaqtda yangilash (Socket)
+            // 6. UI ni real-vaqtda yangilash (Socket)
             if (broadcast) {
               broadcast({ type: 'deal_created', dealId: deal.id });
             }
@@ -177,7 +187,6 @@ async function handleMetaWebhook(body, broadcast) {
           }
 
         } catch (error) {
-          // Meta webhook async jarayonida xatolikni konsolda ko'rsatish
           console.error(`[Meta Webhook Async Error] Lead ${leadgenId} qayta ishlashda xato:`, error.message);
         }
       }

@@ -13,7 +13,11 @@ const app = express();
 
 app.use(helmet({ contentSecurityPolicy: false, hsts: false }));
 app.use(cors());
-app.use(express.json());
+app.use(express.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 app.use(express.urlencoded({ extended: true }));
 
 // Railway reverse proxy ortida ishlaydi — cookie va IP to'g'ri ishlashi uchun
@@ -60,8 +64,8 @@ app.use('/api/pipeline-stages', require('./routes/pipeline'));
 app.use('/api/pipelines',       require('./routes/pipelines'));
 app.use('/api/settings',        require('./routes/settings'));
 app.use('/api/instagram',       require('./routes/instagram'));
-app.use('/api/webhooks',        require('./routes/webhooks'));
-app.use('/api/webhook',         require('./routes/webhooks'));
+app.use('/api/webhooks',        require('./routes/webhook'));
+app.use('/api/webhook',         require('./routes/webhook'));
 app.use('/api/ai',              require('./routes/ai'));
 
 // ── PAGE ROUTES ──
