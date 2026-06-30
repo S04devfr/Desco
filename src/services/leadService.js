@@ -10,7 +10,7 @@ const supabase = require('../config/supabase');
  * @param {string} source - Manba nomi (masalan: "Instagram Webhook")
  * @returns {Promise<object>} Yaratilgan yoki topilgan mijoz ob'ekti
  */
-async function upsertClientByPhone(name, phone, source) {
+async function upsertClientByPhone(name, phone, email, source) {
   const cleanPhone = phone.replace(/[\s-]/g, '');
   if (!cleanPhone) {
     throw new Error('Mijoz telefon raqami kiritilmagan.');
@@ -27,8 +27,15 @@ async function upsertClientByPhone(name, phone, source) {
         data: {
           name: String(name).trim().substring(0, 200),
           phone: cleanPhone,
+          email: email || null,
           notes: `Manba: ${source}`
         }
+      });
+    } else if (email && !client.email) {
+      // Agar mijoz topilsa va uning emaili bo'lmasa, uni yangilab qo'yamiz
+      client = await tx.client.update({
+        where: { id: client.id },
+        data: { email: email }
       });
     }
 
@@ -71,7 +78,7 @@ async function getDefaultPipelineAndStage() {
  * @returns {Promise<object>} Meta qaytargan lead ma'lumotlari JSON ob'ekti
  */
 async function fetchMetaLeadDetails(leadgenId, accessToken) {
-  const url = `https://graph.facebook.com/v19.0/${leadgenId}?access_token=${accessToken}`;
+  const url = `https://graph.facebook.com/v25.0/${leadgenId}?access_token=${accessToken}`;
   
   const response = await fetch(url);
   if (!response.ok) {
@@ -106,7 +113,6 @@ async function handleMetaWebhook(body, broadcast) {
 
         try {
           // 1. Dublikatlarni oldini olish uchun leadgen_id tekshiruvi.
-          // Sdelka notes maydonidan ushbu leadgen_id allaqachon yozilganligini tekshiramiz.
           const existingDeal = await prisma.deal.findFirst({
             where: { notes: { contains: `Meta LeadGen ID: ${leadgenId}` } }
           });
@@ -116,18 +122,19 @@ async function handleMetaWebhook(body, broadcast) {
             continue;
           }
 
-          const accessToken = process.env.PAGE_ACCESS_TOKEN || process.env.META_ACCESS_TOKEN;
+          const accessToken = process.env.FB_PAGE_ACCESS_TOKEN || process.env.PAGE_ACCESS_TOKEN || process.env.META_ACCESS_TOKEN;
           if (!accessToken) {
-            console.error('[Meta Webhook Error] PAGE_ACCESS_TOKEN topilmadi!');
+            console.error('[Meta Webhook Error] FB_PAGE_ACCESS_TOKEN topilmadi!');
             continue;
           }
 
-          // 2. Meta Graph API'dan ma'lumotlarni yuklab olish
+          // 2. Meta Graph API'dan ma'lumotlarni yuklab olish (v25.0)
           const leadData = await fetchMetaLeadDetails(leadgenId, accessToken);
           if (!leadData || !leadData.field_data) continue;
 
           let rawName = 'Nomsiz Lead';
           let rawPhone = '';
+          let rawEmail = '';
           let rawProduct = 'Instagram Orqali Murojaat';
 
           leadData.field_data.forEach(field => {
@@ -136,6 +143,9 @@ async function handleMetaWebhook(body, broadcast) {
             }
             if (field.name === 'phone_number') {
               rawPhone = field.values[0];
+            }
+            if (field.name === 'email') {
+              rawEmail = field.values[0];
             }
             if (field.name === 'product_name' || field.name === 'mahsulot') {
               rawProduct = field.values[0];
@@ -148,10 +158,13 @@ async function handleMetaWebhook(body, broadcast) {
           }
 
           // 3. Mijozni bazada tranzaksiya yordamida upsert qilish (dublikatsiz)
-          const client = await upsertClientByPhone(rawName, rawPhone, 'Instagram Webhook');
+          const client = await upsertClientByPhone(rawName, rawPhone, rawEmail, 'Instagram Webhook');
 
           // 4. Voronka va Bosqichni topish
           const { pipelineId, stageId } = await getDefaultPipelineAndStage();
+
+          const formId = change.value.form_id || '';
+          const adId = change.value.ad_id || '';
 
           if (pipelineId && stageId) {
             // 5. Sdelkani (Deal) yaratish
@@ -163,7 +176,7 @@ async function handleMetaWebhook(body, broadcast) {
                 clientId: client.id,
                 pipelineId,
                 stageId,
-                notes: `Meta LeadGen ID: ${leadgenId}`
+                notes: `Meta LeadGen ID: ${leadgenId}\nForm ID: ${formId}\nAd ID: ${adId}`
               }
             });
 
