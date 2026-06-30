@@ -35,7 +35,13 @@ function verifyWebhookToken(req, res, next) {
       .update(req.rawBody || '')
       .digest('hex');
 
-    if (signatureHash !== expectedHash) {
+    const sigBuffer = Buffer.from(signatureHash || '', 'hex');
+    const expectedBuffer = Buffer.from(expectedHash, 'hex');
+
+    if (
+      sigBuffer.length !== expectedBuffer.length ||
+      !crypto.timingSafeEqual(sigBuffer, expectedBuffer)
+    ) {
       console.error('[Meta Webhook Secure] Signature mos kelmadi (Signature Mismatch).');
       return res.status(401).json({ error: 'Signature mismatch.' });
     }
