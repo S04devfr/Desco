@@ -68,6 +68,9 @@ app.use('/api/webhooks',        require('./routes/webhook'));
 app.use('/api/webhook',         require('./routes/webhook'));
 app.use('/api/ai',              require('./routes/ai'));
 
+// ── PUBLIC LEGAL PAGES (no auth required — Meta App Review uchun) ──
+app.use('/', require('./routes/legal'));
+
 // ── PAGE ROUTES ──
 function requireAuth(req, res, next) {
   if (!req.session.userId) return res.redirect('/login');
