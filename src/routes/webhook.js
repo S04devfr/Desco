@@ -12,11 +12,14 @@ function verifyWebhookToken(req, res, next) {
   // GET so'rovi (tasdiqlash) uchun xavfsizlik tekshiruvini o'tkazib yuboramiz
   if (req.method === 'GET') return next();
 
+  console.log(`[Signature Check] POST so'rov keldi. URL: ${req.originalUrl}`);
+
   const signature = req.headers['x-hub-signature-256'];
   const appSecret = process.env.APP_SECRET;
 
   // Agar server muhitida APP_SECRET o'rnatilmagan bo'lsa, tekshiruvni chetlab o'tamiz
   if (!appSecret) {
+    console.warn('[Signature Check] APP_SECRET o\'rnatilmagan — signature tekshiruvi o\'tkazib yuborildi.');
     return next();
   }
 
@@ -207,6 +210,12 @@ router.get('/', (req, res) => {
 
 // 2-QADAM: Meta'dan Lead qabul qilish (POST)
 router.post('/', verifyWebhookToken, async (req, res) => {
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log(`[Webhook POST] So'rov keldi! Vaqt: ${new Date().toISOString()}`);
+  console.log(`[Webhook POST] Body object: ${req.body?.object}, entry soni: ${req.body?.entry?.length || 0}`);
+  console.log(`[Webhook POST] Headers: content-type=${req.headers['content-type']}, x-hub-signature=${req.headers['x-hub-signature-256'] ? 'MAVJUD' : 'YO\'Q'}`);
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
   // Meta'ga bloklanib qolmaslik uchun darhol 200 OK qaytaramiz
   res.status(200).send('EVENT_RECEIVED');
 
