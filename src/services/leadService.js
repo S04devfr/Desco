@@ -101,6 +101,57 @@ async function fetchMetaLeadDetails(leadgenId, accessToken) {
 }
 
 /**
+ * Telegram botga yangi lead haqida xabar yuboradi.
+ * Xato bo'lsa CRM logikasiga ta'sir qilmaydi — alohida try/catch ichida.
+ *
+ * @param {object} leadData - { name, phone, email, formId, adId }
+ */
+async function sendTelegramNotification(leadData) {
+  try {
+    const token = process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.TELEGRAM_CHAT_ID;
+
+    if (!token || !chatId) {
+      console.log('[Telegram] TELEGRAM_BOT_TOKEN yoki TELEGRAM_CHAT_ID topilmadi, skip');
+      return;
+    }
+
+    const message = `
+\u{1F195} Yangi Lead!
+
+\u{1F464} Ism: ${leadData.name || "Noma'lum"}
+\u{1F4DE} Telefon: ${leadData.phone || "Noma'lum"}
+\u{1F4E7} Email: ${leadData.email || "Noma'lum"}
+\u{1F4CB} Forma: ${leadData.formId || '-'}
+\u{1F3AF} Reklama: ${leadData.adId || '-'}
+\u{1F550} Vaqt: ${new Date().toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' })}
+    `.trim();
+
+    const response = await fetch(
+      `https://api.telegram.org/bot${token}/sendMessage`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: message
+        })
+      }
+    );
+
+    const result = await response.json();
+    if (result.ok) {
+      console.log('[Telegram] \u2713 Xabar muvaffaqiyatli yuborildi');
+    } else {
+      console.warn(`[Telegram] Xabar yuborishda xato: ${result.description}`);
+    }
+  } catch (error) {
+    console.error(`[Telegram] Xatolik: ${error.message}`);
+    // Telegram xatosi CRM logikasiga ta'sir qilmaydi
+  }
+}
+
+/**
  * Meta (Facebook/Instagram) Webhook POST so'rovini qayta ishlaydi.
  * 
  * @param {object} body - Express req.body ob'ekti
@@ -210,7 +261,20 @@ async function handleMetaWebhook(body, broadcast) {
                 notes: `Meta LeadGen ID: ${leadgenId}\nForm ID: ${formId}\nAd ID: ${adId}`
               }
             });
-            console.log(`[Meta Webhook] ✓ Sdelka muvaffaqiyatli saqlandi! Deal ID: ${deal.id}`);
+            console.log(`[Meta Webhook] \u2713 Sdelka muvaffaqiyatli saqlandi! Deal ID: ${deal.id}`);
+
+            // 5.5. Telegram botga xabar yuborish (alohida try/catch — CRM ga ta'sir qilmaydi)
+            try {
+              await sendTelegramNotification({
+                name: rawName,
+                phone: rawPhone,
+                email: rawEmail,
+                formId: formId,
+                adId: adId
+              });
+            } catch (tgErr) {
+              console.warn(`[Telegram] Xabar yuborishda xato (muhim emas): ${tgErr.message}`);
+            }
 
             // Activity Log ga yozish
             try {
