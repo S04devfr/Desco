@@ -127,7 +127,10 @@ app.get('/settings', requireAuth, requireRole('admin'), async (req, res) => {
     ]);
     let users = [];
     if (req.session.user?.role === 'admin') {
-      users = await prisma.user.findMany({ select: { id: true, email: true, fullName: true, role: true, createdAt: true } });
+      users = await prisma.user.findMany({
+        select: { id: true, fullName: true, email: true, role: true, isActive: true, createdAt: true },
+        orderBy: { createdAt: 'desc' }
+      });
     }
     res.render('settings/index', { user: req.session.user, activePage: 'settings', pipelines, company, users });
   } catch (err) {
