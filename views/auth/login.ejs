@@ -83,11 +83,21 @@
   </form>
 
   <div class="footer">
-    Akkaunt yo'qmi? <a href="/register">Ro'yxatdan o'tish</a>
+    <a href="mailto:admin@desco.uz">Yordam kerakmi?</a>
   </div>
 </div>
 
 <script>
+document.addEventListener('DOMContentLoaded', () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const msg = urlParams.get('msg');
+  if (msg) {
+    const err = document.getElementById('errorBox');
+    err.textContent = msg;
+    err.style.display = 'block';
+  }
+});
+
 document.getElementById('loginForm').addEventListener('submit', async e => {
   e.preventDefault();
   const err = document.getElementById('errorBox');

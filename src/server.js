@@ -98,23 +98,24 @@ function requireAuth(req, res, next) {
   next();
 }
 
+const { requireRole } = require('./middleware/auth');
 const { getStages } = require('./routes/pipeline');
 const { getCompanySettings } = require('./routes/settings');
 
-app.get('/', requireAuth, (req, res) => res.render('dashboard/index', { user: req.session.user, activePage: 'dashboard' }));
-app.get('/deals',    requireAuth, (req, res) => res.render('deals/index',    { user: req.session.user, activePage: 'deals' }));
-app.get('/clients',  requireAuth, (req, res) => res.render('clients/index',  { user: req.session.user, activePage: 'clients' }));
-app.get('/expenses', requireAuth, (req, res) => res.render('expenses/index', { user: req.session.user, activePage: 'expenses' }));
-app.get('/extra/drivers',  requireAuth, (req, res) => res.render('extra/index',  { user: req.session.user, activePage: 'extra-drivers', subPage: 'drivers' }));
-app.get('/extra/branches', requireAuth, (req, res) => res.render('extra/index',  { user: req.session.user, activePage: 'extra-branches', subPage: 'branches' }));
-app.get('/tasks',    requireAuth, (req, res) => res.render('tasks/index',    { user: req.session.user, activePage: 'tasks' }));
-app.get('/instagram', requireAuth, (req, res) => res.render('instagram/index', { user: req.session.user, activePage: 'instagram' }));
-app.get('/ai',        requireAuth, (req, res) => res.render('ai/index',        { user: req.session.user, activePage: 'ai' }));
-app.get('/nasiya',   requireAuth, (req, res) => res.render('deals/index',    { user: req.session.user, activePage: 'nasiya' }));
-app.get('/nasiya/list', requireAuth, (req, res) => res.render('nasiya/index', { user: req.session.user, activePage: 'nasiya-' + req.query.stage, subPage: req.query.stage }));
-app.get('/design-system', requireAuth, (req, res) => res.render('design-system/index', { user: req.session.user, activePage: 'design-system' }));
+app.get('/', requireAuth, requireRole('admin', 'manager', 'operator'), (req, res) => res.render('dashboard/index', { user: req.session.user, activePage: 'dashboard' }));
+app.get('/deals',    requireAuth, requireRole('admin', 'manager', 'operator'), (req, res) => res.render('deals/index',    { user: req.session.user, activePage: 'deals' }));
+app.get('/clients',  requireAuth, requireRole('admin', 'manager', 'operator'), (req, res) => res.render('clients/index',  { user: req.session.user, activePage: 'clients' }));
+app.get('/expenses', requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('expenses/index', { user: req.session.user, activePage: 'expenses' }));
+app.get('/extra/drivers',  requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('extra/index',  { user: req.session.user, activePage: 'extra-drivers', subPage: 'drivers' }));
+app.get('/extra/branches', requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('extra/index',  { user: req.session.user, activePage: 'extra-branches', subPage: 'branches' }));
+app.get('/tasks',    requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('tasks/index',    { user: req.session.user, activePage: 'tasks' }));
+app.get('/instagram', requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('instagram/index', { user: req.session.user, activePage: 'instagram' }));
+app.get('/ai',        requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('ai/index',        { user: req.session.user, activePage: 'ai' }));
+app.get('/nasiya',   requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('deals/index',    { user: req.session.user, activePage: 'nasiya' }));
+app.get('/nasiya/list', requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('nasiya/index', { user: req.session.user, activePage: 'nasiya-' + req.query.stage, subPage: req.query.stage }));
+app.get('/design-system', requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('design-system/index', { user: req.session.user, activePage: 'design-system' }));
 
-app.get('/settings', requireAuth, async (req, res) => {
+app.get('/settings', requireAuth, requireRole('admin'), async (req, res) => {
   try {
     const prisma = require('./config/database');
     const [pipelines, company] = await Promise.all([
@@ -136,7 +137,7 @@ app.get('/settings', requireAuth, async (req, res) => {
 });
 
 app.get('/login',    (req, res) => { if (req.session.userId) return res.redirect('/'); res.render('auth/login'); });
-app.get('/register', (req, res) => { if (req.session.userId) return res.redirect('/'); res.render('auth/register'); });
+app.get('/register', (req, res) => { res.redirect('/login?msg=' + encodeURIComponent("Kirish faqat administrator tomonidan beriladi")); });
 
 // ── ERROR HANDLING ──
 app.use((req, res) => res.status(404).json({ message: 'Route not found' }));

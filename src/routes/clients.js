@@ -1,6 +1,6 @@
 const express = require('express')
 const prisma = require('../config/database')
-const { protect } = require('../middleware/auth')
+const { protect, requireRole } = require('../middleware/auth')
 
 const router = express.Router()
 router.use(protect)
@@ -47,7 +47,7 @@ router.get('/:id', async (req, res, next) => {
 })
 
 // Create client
-router.post('/', async (req, res, next) => {
+router.post('/', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
     const { name, phone, email, company, notes, city } = req.body
     if (!name) return res.status(400).json({ message: 'Ism majburiy' })
@@ -63,7 +63,7 @@ router.post('/', async (req, res, next) => {
 })
 
 // Update client
-router.patch('/:id', async (req, res, next) => {
+router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
     const { name, phone, email, company, notes, debt, city } = req.body
 
@@ -89,7 +89,7 @@ router.patch('/:id', async (req, res, next) => {
 })
 
 // Delete client
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
     await prisma.client.delete({ where: { id: Number(req.params.id) } })
     res.json({ message: 'Mijoz o\'chirildi' })

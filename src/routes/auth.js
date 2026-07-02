@@ -72,26 +72,23 @@ router.post('/register', async (req, res, next) => {
   try {
     const { email, password, fullName, role } = req.body
 
-    // If there are users in the DB, only an admin can register new users
     const userCount = await prisma.user.count()
-    if (userCount > 0) {
-      // Manual auth check
-      let userId, userRole;
-      if (req.session && req.session.userId) {
-        userRole = req.session.user?.role;
-      } else {
-        const token = req.headers.authorization?.split(' ')[1];
-        if (!token) return res.status(401).json({ message: 'Avtorizatsiya talab qilinadi' });
+    let userRole;
+    if (req.session && req.session.userId) {
+      userRole = req.session.user?.role;
+    } else {
+      const token = req.headers.authorization?.split(' ')[1];
+      if (token) {
         try {
           const decoded = jwt.verify(token, process.env.JWT_SECRET);
           userRole = decoded.role;
-        } catch(e) {
-          return res.status(401).json({ message: 'Yaroqsiz token' });
-        }
+        } catch(e) {}
       }
-      if (userRole !== 'admin') {
-        return res.status(403).json({ message: 'Faqat administrator yangi foydalanuvchi qo\'sha oladi' })
-      }
+    }
+    
+    // Only admin can register new users, unless database is empty
+    if (userCount > 0 && userRole !== 'admin') {
+      return res.status(403).json({ message: 'Faqat administrator yangi foydalanuvchi qo\'sha oladi' })
     }
 
     if (!email || !password) {
@@ -149,6 +146,11 @@ router.post('/login', rateLimiter(20, 60000), async (req, res, next) => {
       recordFailedLogin(email);
       logAudit('LOGIN_FAILED', `Email topilmadi: ${email}`, null, email, req.ip);
       return res.status(401).json({ message: 'Email yoki parol noto\'g\'ri' })
+    }
+
+    if (!user.isActive) {
+      logAudit('LOGIN_BLOCKED', `Bloklangan foydalanuvchi kirishga urindi: ${email}`, user.id, email, req.ip);
+      return res.status(403).json({ message: 'Akkountingiz bloklangan. Administratorga murojaat qiling.' })
     }
 
     const isMatch = await bcrypt.compare(password, user.password)

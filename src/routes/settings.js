@@ -91,22 +91,60 @@ router.get('/users', async (req, res, next) => {
   try {
     // Admin bo'lmasa ham user listini qaytaramiz (deals filter uchun)
     const users = await prisma.user.findMany({
-      select: { id: true, email: true, fullName: true, role: true, createdAt: true },
+      select: { id: true, email: true, fullName: true, role: true, isActive: true, createdAt: true },
       orderBy: { createdAt: 'asc' }
     })
     res.json(users)
   } catch (error) { next(error) }
 })
 
-router.patch('/users/:id/role', async (req, res, next) => {
+router.post('/users', async (req, res, next) => {
   try {
     if (req.user?.role !== 'admin') return res.status(403).json({ message: 'Faqat admin uchun' })
-    const { role } = req.body
-    if (!['admin', 'manager'].includes(role)) return res.status(400).json({ message: "Noto'g'ri rol" })
+    const { fullName, email, password, role, isActive } = req.body
+    if (!email || !password) return res.status(400).json({ message: "Email va parol majburiy" })
+    if (password.length < 8) return res.status(400).json({ message: "Parol kamida 8 ta belgi bo'lishi kerak" })
+    
+    const existing = await prisma.user.findUnique({ where: { email } })
+    if (existing) return res.status(400).json({ message: "Bu email band" })
+    
+    const hashedPassword = await bcrypt.hash(password, 10)
+    const user = await prisma.user.create({
+      data: {
+        fullName,
+        email,
+        password: hashedPassword,
+        role: role || 'manager',
+        isActive: isActive !== false
+      }
+    })
+    res.json({ message: "Foydalanuvchi qo'shildi", id: user.id })
+  } catch (error) { next(error) }
+})
+
+router.patch('/users/:id', async (req, res, next) => {
+  try {
+    if (req.user?.role !== 'admin') return res.status(403).json({ message: 'Faqat admin uchun' })
+    const { fullName, email, password, role, isActive } = req.body
+    
+    const data = {}
+    if (fullName !== undefined) data.fullName = fullName
+    if (email !== undefined) {
+      const existing = await prisma.user.findFirst({ where: { email, id: { not: Number(req.params.id) } } })
+      if (existing) return res.status(400).json({ message: "Bu email band" })
+      data.email = email
+    }
+    if (password) {
+      if (password.length < 8) return res.status(400).json({ message: "Parol kamida 8 ta belgi bo'lishi kerak" })
+      data.password = await bcrypt.hash(password, 10)
+    }
+    if (role && ['admin', 'manager', 'operator'].includes(role)) data.role = role
+    if (isActive !== undefined) data.isActive = isActive === true || isActive === 'true'
+
     const user = await prisma.user.update({
       where: { id: Number(req.params.id) },
-      data: { role },
-      select: { id: true, email: true, fullName: true, role: true }
+      data,
+      select: { id: true, email: true, fullName: true, role: true, isActive: true }
     })
     res.json(user)
   } catch (error) { next(error) }

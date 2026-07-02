@@ -222,6 +222,7 @@ const swatchHtml = colorSwatches.map(c =>
                   <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Ism</th>
                   <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Email</th>
                   <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Rol</th>
+                  <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Status</th>
                   <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Qo'shilgan</th>
                   <th style="padding:12px 16px; text-align:right; font-weight:600; font-size:13px; color:var(--text-secondary);"></th>
                 </tr>
@@ -232,9 +233,11 @@ const swatchHtml = colorSwatches.map(c =>
                   <tr style="border-bottom:1px solid var(--border); transition:background 0.2s;" onmouseover="this.style.background='var(--bg-tertiary)'" onmouseout="this.style.background='transparent'">
                     <td style="padding:12px 16px; font-size:14px; color:var(--text-primary); font-weight:500;"><%= escHtml(u.fullName||'—') %></td>
                     <td style="padding:12px 16px; font-size:13px; color:var(--text-primary);"><%= escHtml(u.email) %></td>
-                    <td style="padding:12px 16px; font-size:13px;"><span class="badge <%= u.role==='admin'?'badge-purple':'badge-blue' %>" style="font-weight:600;"><%= u.role==='admin'?'Admin':'Manager' %></span></td>
+                    <td style="padding:12px 16px; font-size:13px;"><span class="badge <%= u.role==='admin'?'badge-purple':u.role==='operator'?'badge-gray':'badge-blue' %>" style="font-weight:600;"><%= u.role==='admin'?'Admin':u.role==='operator'?'Operator':'Manager' %></span></td>
+                    <td style="padding:12px 16px; font-size:13px;"><span style="font-weight:600; padding:2px 8px; border-radius:4px; font-size:12px; <%= u.isActive ? 'background:rgba(16,185,129,0.1);color:#10B981;' : 'background:rgba(239,68,68,0.1);color:#EF4444;' %>"><%= u.isActive?'Faol':'Bloklangan' %></span></td>
                     <td style="padding:12px 16px; font-size:13px; color:var(--text-secondary);"><%= new Date(u.createdAt).toLocaleDateString('uz-UZ') %></td>
                     <td style="padding:12px 16px; text-align:right;">
+                      <button class="btn btn-ghost btn-icon btn-sm text-primary" onclick="openUserModal(<%= u.id %>, '<%= escHtml(u.fullName||'') %>', '<%= escHtml(u.email) %>', '<%= u.role %>', <%= u.isActive %>)" title="Tahrirlash"><i class="fas fa-edit"></i></button>
                       <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="deleteUser(<%= u.id %>)" title="O'chirish"><i class="fas fa-trash"></i></button>
                     </td>
                   </tr>
@@ -362,11 +365,22 @@ const swatchHtml = colorSwatches.map(c =>
       <button class="modal-close" onclick="closeUserModal()">&times;</button>
     </div>
     <div class="modal-body">
+      <input type="hidden" id="u-id">
       <div class="form-group"><label class="form-label">Ism-familiya</label><input type="text" id="u-fullName" class="form-control" placeholder="To'liq ism"></div>
       <div class="form-group"><label class="form-label">Email *</label><input type="email" id="u-email" class="form-control" placeholder="email@example.com"></div>
-      <div class="form-group"><label class="form-label">Parol *</label><input type="password" id="u-password" class="form-control" placeholder="Kamida 6 belgi"></div>
+      <div class="form-group"><label class="form-label">Parol <span id="u-password-hint" style="color:var(--text-secondary);font-size:11px;font-weight:normal">(Faqat o'zgartirish uchun kiritng)</span></label><input type="password" id="u-password" class="form-control" placeholder="Kamida 8 belgi"></div>
       <div class="form-group"><label class="form-label">Rol</label>
-        <select id="u-role" class="form-control"><option value="manager">Manager</option><option value="admin">Administrator</option></select>
+        <select id="u-role" class="form-control">
+          <option value="admin">Administrator</option>
+          <option value="manager">Manager</option>
+          <option value="operator">Operator</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Status</label>
+        <select id="u-isActive" class="form-control">
+          <option value="true">Faol</option>
+          <option value="false">Bloklangan</option>
+        </select>
       </div>
     </div>
     <div class="modal-footer">
@@ -583,20 +597,47 @@ async function saveCompany() {
 }
 
 // ── USERS ──
-function openUserModal() { document.getElementById('userModal').classList.remove('hidden'); }
+function openUserModal(id, fullName, email, role, isActive) {
+  document.getElementById('u-id').value = id || '';
+  document.getElementById('u-fullName').value = fullName || '';
+  document.getElementById('u-email').value = email || '';
+  document.getElementById('u-password').value = '';
+  document.getElementById('u-role').value = role || 'manager';
+  document.getElementById('u-isActive').value = (isActive === false) ? 'false' : 'true';
+  
+  if (id) {
+    document.querySelector('#userModal h2').textContent = 'Foydalanuvchini tahrirlash';
+    document.getElementById('u-password-hint').style.display = 'inline';
+  } else {
+    document.querySelector('#userModal h2').textContent = 'Yangi foydalanuvchi';
+    document.getElementById('u-password-hint').style.display = 'none';
+  }
+  document.getElementById('userModal').classList.remove('hidden');
+}
 function closeUserModal() { document.getElementById('userModal').classList.add('hidden'); }
 async function saveUser() {
+  const id = document.getElementById('u-id').value;
   const fullName = document.getElementById('u-fullName').value.trim();
   const email    = document.getElementById('u-email').value.trim();
   const password = document.getElementById('u-password').value;
   const role     = document.getElementById('u-role').value;
-  if (!email || !password) { showToast('Email va parol majburiy', 'error'); return; }
+  const isActive = document.getElementById('u-isActive').value === 'true';
+
+  if (!email) { showToast('Email majburiy', 'error'); return; }
+  if (!id && !password) { showToast('Parol majburiy', 'error'); return; }
+  if (password && password.length < 8) { showToast("Parol kamida 8 belgi bo'lishi kerak", 'error'); return; }
+  
+  const body = { fullName, email, role, isActive };
+  if (password) body.password = password;
+
   const btn = document.getElementById('userSaveBtn');
   btn.disabled = true;
   try {
-    const r = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fullName, email, password, role }) });
+    const url = id ? '/api/settings/users/' + id : '/api/settings/users';
+    const method = id ? 'PATCH' : 'POST';
+    const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     if (!r.ok) throw new Error((await r.json()).message);
-    showToast("Foydalanuvchi qo'shildi", 'success');
+    showToast(id ? "Yangilandi" : "Foydalanuvchi qo'shildi", 'success');
     closeUserModal();
     setTimeout(() => location.reload(), 800);
   } catch(e) { showToast(e.message || 'Xato', 'error'); }

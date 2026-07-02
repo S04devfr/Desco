@@ -1,6 +1,6 @@
 const express = require('express')
 const prisma = require('../config/database')
-const { protect } = require('../middleware/auth')
+const { protect, requireRole } = require('../middleware/auth')
 
 const router = express.Router()
 router.use(protect)
@@ -35,12 +35,7 @@ router.get('/', async (req, res, next) => {
       } catch(e) { /* ignore, show all */ }
     }
 
-    if (req.user && req.user.role !== 'admin') {
-      where.OR = [
-        { managerId: req.userId },
-        { managerId: null }
-      ]
-    }
+    // Admin va Manager barcha sdelkalarni ko'ra oladi, Operator ham (lekin o'zgartira olmaydi)
 
     let deals = await prisma.deal.findMany({
       where,
@@ -158,7 +153,7 @@ router.post('/', async (req, res, next) => {
 })
 
 // Claim a deal
-router.post('/:id/claim', async (req, res, next) => {
+router.post('/:id/claim', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
     const existing = await prisma.deal.findUnique({ where: { id: Number(req.params.id) }, include: { stage: true } })
     if (!existing) return res.status(404).json({ message: 'Sdelka topilmadi' })
@@ -179,7 +174,7 @@ router.post('/:id/claim', async (req, res, next) => {
 })
 
 // Update deal
-router.patch('/:id', async (req, res, next) => {
+router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
     const { productName, amount, paidAmount, status, notes, clientId, deadline, managerId, stageId, costPrice } = req.body
 
@@ -230,7 +225,7 @@ router.patch('/:id', async (req, res, next) => {
 // Strict validation + atomic transaction: if the activity-log write fails,
 // the stage change is rolled back automatically by Prisma's $transaction —
 // the deal never ends up "half moved".
-router.patch('/:id/stage', async (req, res, next) => {
+router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
     const id = Number(req.params.id)
     if (!Number.isInteger(id) || id <= 0) {
@@ -339,7 +334,7 @@ router.patch('/:id/stage', async (req, res, next) => {
 })
 
 // Delete deal
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
     await prisma.task.deleteMany({ where: { dealId: Number(req.params.id) } })
     await prisma.activityLog.deleteMany({ where: { dealId: Number(req.params.id) } })
@@ -367,7 +362,7 @@ router.get('/:id/activity', async (req, res, next) => {
   } catch (error) { next(error) }
 })
 
-router.post('/:id/activity', async (req, res, next) => {
+router.post('/:id/activity', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
     const { details } = req.body
     if (!details) return res.status(400).json({ message: 'Izoh mazmuni majburiy' })
@@ -391,7 +386,7 @@ router.get('/:id/installments', async (req, res, next) => {
 });
 
 // Save/replace installments
-router.post('/:id/installments', async (req, res, next) => {
+router.post('/:id/installments', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
     const dealId = Number(req.params.id);
     const { installments } = req.body;
