@@ -115,7 +115,7 @@ app.get('/nasiya',   requireAuth, requireRole('admin', 'manager'), (req, res) =>
 app.get('/nasiya/list', requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('nasiya/index', { user: req.session.user, activePage: 'nasiya-' + req.query.stage, subPage: req.query.stage }));
 app.get('/design-system', requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('design-system/index', { user: req.session.user, activePage: 'design-system' }));
 
-app.get('/settings', requireAuth, requireRole('admin'), async (req, res) => {
+app.get('/settings', requireAuth, requireRole('admin', 'manager'), async (req, res) => {
   try {
     const prisma = require('./config/database');
     const [pipelines, company] = await Promise.all([

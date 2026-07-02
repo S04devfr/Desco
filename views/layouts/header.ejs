@@ -12,6 +12,78 @@
     (function() {
       const t = localStorage.getItem('crm-theme') || 'light';
       document.documentElement.setAttribute('data-theme', t);
+      
+      const lang = localStorage.getItem('crm-lang') || 'uz';
+      if (lang === 'ru') {
+        const dict = {
+          "Bosh sahifa": "Главная",
+          "Sdelkalar": "Сделки",
+          "Mijozlar": "Клиенты",
+          "Vazifalar": "Задачи",
+          "Kirim-chiqim": "Расходы",
+          "Sozlamalar": "Настройки",
+          "Yangi sdelka": "Новая сделка",
+          "Tizimdan chiqish": "Выйти",
+          "Qidiruv...": "Поиск...",
+          "Mening profilim": "Мой профиль",
+          "Kompaniya": "Компания",
+          "Voronkalar": "Воронки",
+          "Jamoa va rollar": "Команда и роли",
+          "Integratsiyalar": "Интеграции",
+          "Til / Tizim tili": "Язык системы",
+          "Tizim tili": "Язык системы",
+          "Shaxsiy ma'lumotlar": "Личные данные",
+          "Parolni o'zgartirish": "Сменить пароль",
+          "To'liq ismingiz": "Полное имя",
+          "Email manzilingiz": "Email адрес",
+          "Joriy parol": "Текущий пароль",
+          "Yangi parol": "Новый пароль",
+          "Saqlash": "Сохранить",
+          "Yangi": "Новый",
+          "Muzokaralar": "Переговоры",
+          "Taklif": "Предложение",
+          "Yutilgan": "Успешно",
+          "Yo'qotilgan": "Отказ",
+          "Tilni tanlang": "Выберите язык",
+          "O'zbek tili": "Узбекский",
+          "Tilni o'zgartirgandan so'ng": "* После изменения языка страница обновится."
+        };
+        
+        const translateNode = (node) => {
+          if (node.nodeType === Node.TEXT_NODE) {
+            let text = node.nodeValue;
+            let replaced = false;
+            for (const [uz, ru] of Object.entries(dict)) {
+              if (text.includes(uz)) {
+                text = text.replace(new RegExp(uz, 'g'), ru);
+                replaced = true;
+              }
+            }
+            if (replaced) node.nodeValue = text;
+          } else if (node.nodeType === Node.ELEMENT_NODE) {
+            if (node.placeholder) {
+              for (const [uz, ru] of Object.entries(dict)) {
+                if (node.placeholder.includes(uz)) node.placeholder = node.placeholder.replace(new RegExp(uz, 'g'), ru);
+              }
+            }
+            node.childNodes.forEach(translateNode);
+          }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+          translateNode(document.body);
+          const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+              mutation.addedNodes.forEach((node) => {
+                if (node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.TEXT_NODE) {
+                  translateNode(node);
+                }
+              });
+            });
+          });
+          observer.observe(document.body, { childList: true, subtree: true });
+        });
+      }
     })();
   </script>
 </head>

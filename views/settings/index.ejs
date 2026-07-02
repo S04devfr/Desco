@@ -81,10 +81,13 @@ const swatchHtml = colorSwatches.map(c =>
   <!-- Sidebar -->
   <div class="settings-sidebar">
     <div class="settings-tab active" onclick="switchTab('profile', this)"><i class="fas fa-user"></i> Mening profilim</div>
-    <div class="settings-tab" onclick="switchTab('company', this)"><i class="fas fa-building"></i> Kompaniya</div>
-    <div class="settings-tab" onclick="switchTab('pipelines', this)"><i class="fas fa-filter"></i> Voronkalar</div>
-    <% if (isAdmin) { %><div class="settings-tab" onclick="switchTab('users', this)"><i class="fas fa-users"></i> Jamoa va rollar</div><% } %>
-    <div class="settings-tab" onclick="switchTab('integrations', this)"><i class="fas fa-plug"></i> Integratsiyalar</div>
+    <div class="settings-tab" onclick="switchTab('language', this)"><i class="fas fa-language"></i> Tizim tili</div>
+    <% if (isAdmin) { %>
+      <div class="settings-tab" onclick="switchTab('company', this)"><i class="fas fa-building"></i> Kompaniya</div>
+      <div class="settings-tab" onclick="switchTab('pipelines', this)"><i class="fas fa-filter"></i> Voronkalar</div>
+      <div class="settings-tab" onclick="switchTab('users', this)"><i class="fas fa-users"></i> Jamoa va rollar</div>
+      <div class="settings-tab" onclick="switchTab('integrations', this)"><i class="fas fa-plug"></i> Integratsiyalar</div>
+    <% } %>
   </div>
 
   <!-- Content -->
@@ -125,6 +128,27 @@ const swatchHtml = colorSwatches.map(c =>
       </div>
     </div>
 
+    <!-- LANGUAGE -->
+    <div class="settings-pane" id="pane-language">
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <i class="fas fa-language" style="color:var(--accent)"></i>
+          <h3>Tizim tili</h3>
+        </div>
+        <div class="settings-section-body">
+          <div class="form-group" style="max-width: 300px;">
+            <label class="form-label">Tilni tanlang</label>
+            <select id="s-language" class="form-control" onchange="changeLanguage(this.value)">
+              <option value="uz">O'zbek tili</option>
+              <option value="ru">Русский язык</option>
+            </select>
+            <p style="font-size: 11px; color: var(--text-tertiary); margin-top: 8px;">* Tilni o'zgartirgandan so'ng sahifa yangilanadi va o'zgarishlar darhol faollashadi.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <% if (isAdmin) { %>
     <!-- 2. COMPANY -->
     <div class="settings-pane" id="pane-company">
       <div class="settings-section">
@@ -285,6 +309,7 @@ const swatchHtml = colorSwatches.map(c =>
         </div>
       </div>
     </div>
+    <% } %>
 
   </div>
 </div>
