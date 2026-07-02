@@ -79,9 +79,10 @@ async function getDefaultPipelineAndStage() {
  */
 async function fetchMetaLeadDetails(leadgenId, accessToken) {
   // Aniq maydonlarni so'raymiz: field_data (ism, telefon, email), created_time, ad_id, form_id
-  const url = `https://graph.facebook.com/v19.0/${leadgenId}?fields=field_data,created_time,ad_id,form_id&access_token=${accessToken}`;
+  const apiVersion = process.env.META_API_VERSION || 'v25.0';
+  const url = `https://graph.facebook.com/${apiVersion}/${leadgenId}?fields=field_data,created_time,ad_id,form_id&access_token=${accessToken}`;
   
-  console.log(`[Meta Webhook] Graph API v19.0 ga so'rov yuborilmoqda. LeadGen ID: ${leadgenId}`);
+  console.log(`[Meta Webhook] Graph API ${apiVersion} ga so'rov yuborilmoqda. LeadGen ID: ${leadgenId}`);
   
   const response = await fetch(url);
   if (!response.ok) {
