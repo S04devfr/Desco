@@ -185,6 +185,39 @@ router.post('/messages', async (req, res) => {
       }
     }
 
+    // --- MOCK AI BOT AUTO-REPLY ---
+    if (recipientId === 'ig_ai_bot') {
+      setTimeout(async () => {
+        try {
+          const botMessageId = `msg_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+          let botReplyText = "Xo'p tushunarli, yana qanday ma'lumot bera olasiz?";
+          
+          const t = text.toLowerCase();
+          if (t.includes('narx') || t.includes('qancha')) {
+            botReplyText = "Narxi menga to'g'ri keldi. Qanday qilib to'lov qilsam bo'ladi?";
+          } else if (t.includes('salom') || t.includes('alaykum')) {
+            botReplyText = "Vaalaykum assalom. Katta rahmat! Yana bitta savolim bor edi.";
+          } else if (text.length > 20) {
+            botReplyText = "Zo'r! Batafsil ma'lumot uchun rahmat. Men hozir o'ylab ko'rib, aniq javobini aytaman.";
+          }
+          
+          await prisma.instagramMessage.create({
+            data: {
+              messageId: botMessageId,
+              text: botReplyText,
+              senderId: recipientId,
+              recipientId: 'CRM',
+              timestamp: new Date(),
+              isOutgoing: false,
+              clientId: client.id
+            }
+          });
+        } catch (err) {
+          console.error("AI Bot Mock Reply Error:", err);
+        }
+      }, 3000); // Wait 3 seconds to simulate typing
+    }
+
     res.json(savedMsg);
   } catch (error) {
     console.error('Error sending instagram message:', error);
