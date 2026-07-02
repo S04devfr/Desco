@@ -138,10 +138,10 @@ function renderClients() {
     const totalAmount = deals.reduce((s, d) => s + (d.amount || 0), 0);
     return `
       <div class="client-card" onclick="openClientModal(true, ${c.id})">
-        <div class="client-card-header">
-          <div class="avatar" style="background:linear-gradient(135deg,${color},${color}99)">${initials}</div>
-          <div class="client-card-info">
-            <h4>${escHtml(c.name)}</h4>
+        <div class="client-header">
+          <div class="client-avatar" style="background:linear-gradient(135deg,${color},${color}99)">${initials}</div>
+          <div class="client-info">
+            <h3>${escHtml(c.name)}</h3>
             <p>${c.company ? escHtml(c.company) : (c.phone || c.email || '—')}</p>
           </div>
           <div style="margin-left:auto;display:flex;gap:4px">
@@ -149,11 +149,11 @@ function renderClients() {
             <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="event.stopPropagation();deleteClient(${c.id})" title="O'chirish"><i class="fas fa-trash"></i></button>
           </div>
         </div>
-        <div class="client-card-stats">
-          ${c.phone ? `<div class="client-stat"><i class="fas fa-phone" style="color:var(--accent);font-size:11px"></i> ${escHtml(c.phone)}</div>` : ''}
-          ${c.email ? `<div class="client-stat"><i class="fas fa-envelope" style="color:var(--accent);font-size:11px"></i> ${escHtml(c.email)}</div>` : ''}
-          <div class="client-stat"><i class="fas fa-handshake" style="color:var(--success);font-size:11px"></i> ${deals.length} sdelka</div>
-          ${totalAmount > 0 ? `<div class="client-stat"><i class="fas fa-coins" style="color:var(--warning);font-size:11px"></i> ${fmtShort(totalAmount)}</div>` : ''}
+        <div class="client-details">
+          ${c.phone ? `<div><i class="fas fa-phone" style="color:var(--accent);width:16px;text-align:center;margin-right:6px"></i> ${escHtml(c.phone)}</div>` : ''}
+          ${c.email ? `<div><i class="fas fa-envelope" style="color:var(--accent);width:16px;text-align:center;margin-right:6px"></i> ${escHtml(c.email)}</div>` : ''}
+          <div><i class="fas fa-handshake" style="color:var(--success);width:16px;text-align:center;margin-right:6px"></i> ${deals.length} sdelka</div>
+          ${totalAmount > 0 ? `<div><i class="fas fa-coins" style="color:var(--warning);width:16px;text-align:center;margin-right:6px"></i> ${fmtShort(totalAmount)}</div>` : ''}
         </div>
       </div>
     `;

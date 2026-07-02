@@ -19,12 +19,12 @@ const swatchHtml = colorSwatches.map(c =>
 
 <style>
 .pipeline-card {
-  border:1px solid var(--glass-border); border-radius:10px; margin-bottom:12px;
-  background:var(--glass-bg); overflow:hidden;
+  border:1px solid var(--border); border-radius:10px; margin-bottom:12px;
+  background:var(--bg-secondary); overflow:hidden;
 }
 .pipeline-card-hdr {
   display:flex; align-items:center; gap:10px;
-  padding:12px 16px; border-bottom:1px solid var(--glass-border);
+  padding:12px 16px; border-bottom:1px solid var(--border);
   cursor:pointer; user-select:none;
 }
 .pipeline-card-hdr:hover { background:var(--bg-secondary); }
@@ -108,7 +108,7 @@ const swatchHtml = colorSwatches.map(c =>
               <input type="email" id="prof-email" class="form-control" value="<%= escHtml(user.email) %>">
             </div>
           </div>
-          <div style="height: 1px; background: var(--glass-border); margin: 20px 0;"></div>
+          <div style="height: 1px; background: var(--border); margin: 20px 0;"></div>
           <h4 style="font-size: 14px; margin-bottom: 12px; color: var(--text-primary);"><i class="fas fa-lock" style="color:var(--text-tertiary);margin-right:6px"></i> Parolni o'zgartirish</h4>
           <div class="form-grid form-grid-2">
             <div class="form-group">

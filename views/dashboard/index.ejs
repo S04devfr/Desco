@@ -13,10 +13,10 @@
 .stat-card.clickable:hover {
   transform: translateY(-4px);
   border-color: var(--accent);
-  box-shadow: var(--glass-shadow-hover);
+  box-shadow: var(--shadow-hover);
 }
 .stat-card.clickable::after {
-  content: "\\f304";
+  content: "\f304";
   font-family: "Font Awesome 5 Free";
   font-weight: 900;
   position: absolute;
@@ -80,7 +80,7 @@
   padding: 8px 10px;
   border-radius: var(--radius-sm);
   background: var(--bg-secondary);
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--border);
   cursor: pointer;
   transition: all 0.15s;
   font-size: 12.5px;
@@ -209,13 +209,13 @@
 <!-- ════════════ FINANCIAL METRICS MODAL ════════════ -->
 <div class="modal-overlay hidden" id="financialModal" style="z-index:1100">
   <div class="modal-box" style="max-width:850px; max-height:85vh; display:flex; flex-direction:column; overflow:hidden; padding:0;">
-    <div class="modal-header" style="padding:16px 20px; border-bottom:1px solid var(--glass-border);">
+    <div class="modal-header" style="padding:16px 20px; border-bottom:1px solid var(--border);">
       <h2 style="display:flex; align-items:center; gap:8px;"><i class="fas fa-wallet" style="color:var(--accent)"></i> Moliyaviy Sozlamalar va Nasiya</h2>
       <button class="modal-close" onclick="closeFinancialModal()">&times;</button>
     </div>
     
     <!-- Tab headers -->
-    <div style="display:flex; border-bottom:1px solid var(--glass-border); padding:0 16px; background:var(--bg-secondary); flex-shrink:0;">
+    <div style="display:flex; border-bottom:1px solid var(--border); padding:0 16px; background:var(--bg-secondary); flex-shrink:0;">
       <button class="btn financial-tab-btn active" id="tab-cost-prices-btn" onclick="switchFinTab('cost-prices')" style="border-radius:0; border:none; padding:12px 16px; background:none; font-size:13px; cursor:pointer;">
         <i class="fas fa-tags" style="margin-right:6px"></i> Mahsulotlar Tan Narxi
       </button>
@@ -243,7 +243,7 @@
             <button class="btn btn-success btn-sm" onclick="attachProductToDeal()"><i class="fas fa-link"></i> Biriktirish</button>
           </div>
         </div>
-        <div style="max-height:350px; overflow-y:auto; border:1px solid var(--glass-border); border-radius:8px; background:var(--bg-secondary);">
+        <div style="max-height:350px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; background:var(--bg-secondary);">
           <table class="deals-tbl" style="width:100%">
             <thead>
               <tr style="background:var(--bg-tertiary);">
@@ -263,7 +263,7 @@
       <div class="fin-tab-content hidden" id="tab-installments">
         <div style="display:grid; grid-template-columns:250px 1fr; gap:20px; min-height:350px;">
           <!-- Left sdelka list -->
-          <div style="border-right:1px solid var(--glass-border); padding-right:12px; max-height:380px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;">
+          <div style="border-right:1px solid var(--border); padding-right:12px; max-height:380px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;">
             <p style="font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-tertiary); margin-bottom:4px">Qarzdorlik bor sdelkalar</p>
             <div id="installmentDealsList" style="display:flex; flex-direction:column; gap:6px"></div>
           </div>
@@ -284,7 +284,7 @@
           <p style="font-size:12.5px; color:var(--text-secondary); margin:0;">Mijozlarning qo'shimcha yoki manual qarzlarini tahrirlash.</p>
           <input type="text" id="clientDebtSearch" class="form-control" placeholder="Mijoz ismi..." style="width:220px; height:32px; font-size:12px" oninput="filterClientDebtTable()">
         </div>
-        <div style="max-height:350px; overflow-y:auto; border:1px solid var(--glass-border); border-radius:8px; background:var(--bg-secondary);">
+        <div style="max-height:350px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; background:var(--bg-secondary);">
           <table class="deals-tbl" style="width:100%">
             <thead>
               <tr style="background:var(--bg-tertiary);">
@@ -301,7 +301,7 @@
       </div>
     </div>
     
-    <div class="modal-footer" style="padding:12px 20px; background:var(--bg-secondary); border-top:1px solid var(--glass-border); display:flex; justify-content:flex-end; flex-shrink:0;">
+    <div class="modal-footer" style="padding:12px 20px; background:var(--bg-secondary); border-top:1px solid var(--border); display:flex; justify-content:flex-end; flex-shrink:0;">
       <button class="btn btn-secondary btn-sm" onclick="closeFinancialModal()">Yopish</button>
     </div>
   </div>
@@ -768,7 +768,7 @@ async function renderInstallmentPlanEditor(dealId) {
   const remainingDebt = deal.amount - deal.paidAmount;
 
   editorEl.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed var(--glass-border); padding-bottom:10px; margin-bottom:12px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed var(--border); padding-bottom:10px; margin-bottom:12px;">
       <div>
         <h3 style="font-size:14px; font-weight:700; margin:0;">${escHtml(deal.client?.name)} · ${escHtml(deal.productName)}</h3>
         <p style="font-size:11px; color:var(--text-tertiary); margin:0;">Sdelka #${deal.id}</p>
@@ -785,9 +785,9 @@ async function renderInstallmentPlanEditor(dealId) {
         <i class="fas fa-magic" style="color:var(--accent); margin-right:4px;"></i> Avto-Bo'lib to'lash plani
       </span>
       <div style="display:flex; gap:6px;">
-        <button class="btn btn-sm btn-ghost" onclick="autoGenerateInstallments(${deal.id}, 3)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border-med)">3 oy</button>
-        <button class="btn btn-sm btn-ghost" onclick="autoGenerateInstallments(${deal.id}, 6)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border-med)">6 oy</button>
-        <button class="btn btn-sm btn-ghost" onclick="autoGenerateInstallments(${deal.id}, 12)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border-med)">12 oy</button>
+        <button class="btn btn-sm btn-ghost" onclick="autoGenerateInstallments(${deal.id}, 3)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border)">3 oy</button>
+        <button class="btn btn-sm btn-ghost" onclick="autoGenerateInstallments(${deal.id}, 6)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border)">6 oy</button>
+        <button class="btn btn-sm btn-ghost" onclick="autoGenerateInstallments(${deal.id}, 12)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border)">12 oy</button>
       </div>
     </div>
 
@@ -795,8 +795,8 @@ async function renderInstallmentPlanEditor(dealId) {
     <div style="font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-tertiary); margin-bottom:6px;">To'lov jadvali</div>
     <div id="instRowsContainer" style="display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto; margin-bottom:16px; padding-right:4px;"></div>
     
-    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--glass-border); padding-top:12px;">
-      <button class="btn btn-sm btn-ghost" onclick="addInstallmentRow()" style="border:1px dashed var(--border-med); font-size:12px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border); padding-top:12px;">
+      <button class="btn btn-sm btn-ghost" onclick="addInstallmentRow()" style="border:1px dashed var(--border); font-size:12px;">
         <i class="fas fa-plus"></i> To'lov qo'shish
       </button>
       <button class="btn btn-sm btn-primary" onclick="saveInstallmentPlan(${deal.id})" id="saveInstPlanBtn">
@@ -822,7 +822,7 @@ async function renderInstallmentPlanEditor(dealId) {
 
 function getInstallmentRowHtml(index, dateVal, amountVal, paidVal, productVal, monthVal, notesVal) {
   return `
-    <div class="installment-row" style="display:flex; align-items:center; gap:6px; background:var(--bg-secondary); border:1px solid var(--glass-border); padding:6px 8px; border-radius:6px; margin-bottom:4px;">
+    <div class="installment-row" style="display:flex; align-items:center; gap:6px; background:var(--bg-secondary); border:1px solid var(--border); padding:6px 8px; border-radius:6px; margin-bottom:4px;">
       <span style="font-size:12px; color:var(--text-tertiary); width:16px; font-weight:600;">#${index + 1}</span>
       <input type="text" class="form-control inst-product spreadsheet-input" value="${escHtml(productVal || '')}" style="width:130px; height:28px; font-size:12px; padding:0 6px;" placeholder="Mahsulot">
       <input type="text" class="form-control inst-month spreadsheet-input" value="${escHtml(monthVal || '')}" style="width:70px; height:28px; font-size:12px; padding:0 6px;" placeholder="Oy (1 oy)">

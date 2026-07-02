@@ -18,7 +18,7 @@
 <!-- FILTER BAR -->
 <div class="filter-bar">
   <div style="display:flex;gap:4px;background:var(--bg-primary);padding:3px;border-radius:var(--radius-sm)">
-    <button class="btn btn-sm active" id="fAll" onclick="setFilter('all')" style="background:var(--glass-bg);color:var(--text-primary);border:none">Barchasi</button>
+    <button class="btn btn-sm active" id="fAll" onclick="setFilter('all')" style="background:var(--bg-secondary);color:var(--text-primary);border:none">Barchasi</button>
     <button class="btn btn-ghost btn-sm" id="fToday" onclick="setFilter('today')">Bugun</button>
     <button class="btn btn-ghost btn-sm" id="fOverdue" onclick="setFilter('overdue')">Muddati o'tgan</button>
     <button class="btn btn-ghost btn-sm" id="fDone" onclick="setFilter('done')">Bajarilgan</button>
@@ -136,7 +136,7 @@ function setFilter(f) {
   ['fAll','fToday','fOverdue','fDone'].forEach(id => {
     const el = document.getElementById(id);
     el.className = 'btn btn-sm' + (id === 'f' + f.charAt(0).toUpperCase() + f.slice(1) ? '' : '');
-    el.style.background = id === 'f' + f.charAt(0).toUpperCase() + f.slice(1) ? 'var(--glass-bg)' : 'transparent';
+    el.style.background = id === 'f' + f.charAt(0).toUpperCase() + f.slice(1) ? 'var(--bg-secondary)' : 'transparent';
     el.style.color = id === 'f' + f.charAt(0).toUpperCase() + f.slice(1) ? 'var(--text-primary)' : 'var(--text-secondary)';
     el.style.border = 'none';
   });
