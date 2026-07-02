@@ -35,7 +35,13 @@ router.get('/', async (req, res, next) => {
       } catch(e) { /* ignore, show all */ }
     }
 
-    // Admin va Manager barcha sdelkalarni ko'ra oladi, Operator ham (lekin o'zgartira olmaydi)
+    // Admin barcha sdelkalarni ko'ra oladi. Manager va Operator faqat o'ziga tegishli yoki unassigned(bo'sh) sdelkalarni.
+    if (req.user?.role !== 'admin') {
+      where.OR = [
+        { managerId: null },
+        { managerId: req.userId }
+      ]
+    }
 
     let deals = await prisma.deal.findMany({
       where,
@@ -70,6 +76,11 @@ router.get('/:id', async (req, res, next) => {
       }
     })
     if (!deal) return res.status(404).json({ message: 'Sdelka topilmadi' })
+
+    if (req.user?.role !== 'admin' && deal.managerId !== null && deal.managerId !== req.userId) {
+      return res.status(403).json({ message: "Bu sdelkani ko'rish huquqiga ega emassiz" })
+    }
+
     if (!deal.managerId) {
       await prisma.deal.update({
         where: { id: deal.id },
@@ -181,6 +192,10 @@ router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => 
     const existing = await prisma.deal.findUnique({ where: { id: Number(req.params.id) } })
     if (!existing) return res.status(404).json({ message: 'Sdelka topilmadi' })
 
+    if (req.user?.role !== 'admin' && existing.managerId !== null && existing.managerId !== req.userId) {
+      return res.status(403).json({ message: "Boshqa menejer sdelkasini o'zgartira olmaysiz" })
+    }
+
     const data = {}
     if (productName !== undefined) data.productName = productName
     if (amount !== undefined) data.amount = Number(amount)
@@ -246,6 +261,10 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
       include: { stage: stageSelect }
     })
     if (!existing) return res.status(404).json({ message: 'Sdelka topilmadi' })
+
+    if (req.user?.role !== 'admin' && existing.managerId !== null && existing.managerId !== req.userId) {
+      return res.status(403).json({ message: "Boshqa menejer sdelkasini o'zgartira olmaysiz" })
+    }
 
     let newStage = null
     if (newStageId !== null) {
