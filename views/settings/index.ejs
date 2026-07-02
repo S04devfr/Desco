@@ -138,12 +138,13 @@ const swatchHtml = colorSwatches.map(c =>
         <div class="settings-section-body">
           <div class="form-group" style="max-width: 300px;">
             <label class="form-label">Tilni tanlang</label>
-            <select id="s-language" class="form-control" onchange="changeLanguage(this.value)">
+            <select id="s-language" class="form-control">
               <option value="uz">O'zbek tili</option>
               <option value="ru">Русский язык</option>
             </select>
             <p style="font-size: 11px; color: var(--text-tertiary); margin-top: 8px;">* Tilni o'zgartirgandan so'ng sahifa yangilanadi va o'zgarishlar darhol faollashadi.</p>
           </div>
+          <button class="btn btn-primary btn-sm" onclick="saveLanguage()" style="margin-top:10px"><i class="fas fa-save"></i> Saqlash</button>
         </div>
       </div>
     </div>
@@ -676,6 +677,19 @@ async function deleteUser(id) {
     showToast("O'chirildi", 'success');
     setTimeout(() => location.reload(), 800);
   } catch(e) { showToast(e.message || "O'chirishda xato", 'error'); }
+}
+
+// ── LANGUAGE ──
+document.addEventListener('DOMContentLoaded', () => {
+  const lang = localStorage.getItem('crm-lang') || 'uz';
+  const langSelect = document.getElementById('s-language');
+  if (langSelect) langSelect.value = lang;
+});
+
+function saveLanguage() {
+  const val = document.getElementById('s-language').value;
+  localStorage.setItem('crm-lang', val);
+  window.location.reload();
 }
 </script>
 <%- include('../layouts/footer') %>
