@@ -187,6 +187,18 @@ function renderTasks() {
     const dueClass = isOverdue ? 'overdue' : isToday ? 'today' : '';
     const pLabel = { high: '🔴 Yuqori', medium: '🟡 O\'rta', low: '🟢 Past' };
 
+    let dueHtml = '<span class="task-due" style="color:var(--text-tertiary)"><i class="fas fa-clock"></i> Sana belgilanmagan</span>';
+    if (t.dueDate) {
+      const d = new Date(t.dueDate);
+      if (!isNaN(d.getTime())) {
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const yyyy = d.getFullYear();
+        const dateFormatted = `${dd}.${mm}.${yyyy}` + (t.dueTime ? ` ${t.dueTime}` : '');
+        dueHtml = `<span class="task-due ${dueClass}"><i class="fas fa-clock"></i> ${dateFormatted}</span>`;
+      }
+    }
+
     return `
       <div class="task-item" id="task-${t.id}">
         <div class="task-check ${t.completed ? 'done' : ''}" onclick="toggleTask(${t.id}, this)" title="${t.completed ? 'Bajarilmagan' : 'Bajarildi'}">
@@ -197,7 +209,7 @@ function renderTasks() {
           <div class="task-meta">
             <div class="priority-dot ${t.priority}"></div>
             <span class="fs-12" style="color:var(--text-tertiary)">${pLabel[t.priority]||''}</span>
-            ${due ? `<span class="task-due ${dueClass}"><i class="fas fa-clock"></i> ${fmtDate(t.dueDate)}${t.dueTime ? ' '+t.dueTime : ''}</span>` : ''}
+            ${dueHtml}
             ${t.assignedTo ? `<span class="badge badge-gray">${escHtml(t.assignedTo.fullName||t.assignedTo.email)}</span>` : ''}
           </div>
         </div>

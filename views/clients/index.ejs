@@ -29,9 +29,24 @@
   <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-building"></i></div><div class="stat-info"><div class="stat-label">Kompaniyalar</div><div class="stat-value" id="statCompanies">—</div></div></div>
 </div>
 
-<!-- CLIENT GRID -->
-<div class="client-grid" id="clientGrid">
-  <div style="grid-column:1/-1;text-align:center;padding:40px"><div class="spinner"></div></div>
+<!-- CLIENT TABLE -->
+<div class="table-responsive" style="overflow-x:auto;">
+  <table class="table" style="width:100%; border-collapse:collapse; background:var(--bg-secondary); border-radius:10px; overflow:hidden;">
+    <thead style="background:var(--bg-primary); border-bottom:1px solid var(--border);">
+      <tr>
+        <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">#</th>
+        <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Mijoz ismi</th>
+        <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Telefon</th>
+        <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Email</th>
+        <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Sdelkalar soni</th>
+        <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">So'nggi faollik</th>
+        <th style="padding:12px 16px; text-align:right; font-weight:600; font-size:13px; color:var(--text-secondary);">Amallar</th>
+      </tr>
+    </thead>
+    <tbody id="clientGrid">
+      <tr><td colspan="7" style="text-align:center;padding:40px"><div class="spinner"></div></td></tr>
+    </tbody>
+  </table>
 </div>
 
 <!-- CREATE/EDIT MODAL -->
@@ -123,39 +138,46 @@ function avatarColors(name) {
 function renderClients() {
   const grid = document.getElementById('clientGrid');
   if (!allClients.length) {
-    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+    grid.innerHTML = `<tr><td colspan="7" class="empty-state" style="border:none;">
       <div class="empty-state-icon"><i class="fas fa-users"></i></div>
       <h3>Mijozlar yo'q</h3>
       <p>Birinchi mijozni qo'shing</p>
       <button class="btn btn-primary" style="margin-top:14px" onclick="openClientModal()"><i class="fas fa-plus"></i> Qo'shish</button>
-    </div>`;
+    </td></tr>`;
     return;
   }
-  grid.innerHTML = allClients.map(c => {
+  grid.innerHTML = allClients.map((c, idx) => {
     const initials = c.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
     const color = avatarColors(c.name);
     const deals = c.deals || [];
     const totalAmount = deals.reduce((s, d) => s + (d.amount || 0), 0);
+    const lastActive = c.updatedAt ? new Date(c.updatedAt).toLocaleDateString('uz-UZ') : (c.createdAt ? new Date(c.createdAt).toLocaleDateString('uz-UZ') : '—');
     return `
-      <div class="client-card" onclick="openClientModal(true, ${c.id})">
-        <div class="client-header">
-          <div class="client-avatar" style="background:linear-gradient(135deg,${color},${color}99)">${initials}</div>
-          <div class="client-info">
-            <h3>${escHtml(c.name)}</h3>
-            <p>${c.company ? escHtml(c.company) : (c.phone || c.email || '—')}</p>
+      <tr class="client-row" style="border-bottom:1px solid var(--border); transition:background 0.2s;" onmouseover="this.style.background='#1E293B'" onmouseout="this.style.background='transparent'">
+        <td style="padding:12px 16px; font-size:13px; color:var(--text-secondary);">${idx + 1}</td>
+        <td style="padding:12px 16px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:36px; height:36px; font-size:14px; background:linear-gradient(135deg,${color},${color}99); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:bold;">${initials}</div>
+            <div>
+              <div style="font-weight:600; font-size:14px; color:var(--text-primary);">${escHtml(c.name)}</div>
+              <div style="font-size:12px; color:var(--text-tertiary);">${c.company ? escHtml(c.company) : '—'}</div>
+            </div>
           </div>
-          <div style="margin-left:auto;display:flex;gap:4px">
-            <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();openClientModal(false,${c.id})" title="Tahrirlash"><i class="fas fa-edit"></i></button>
-            <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="event.stopPropagation();deleteClient(${c.id})" title="O'chirish"><i class="fas fa-trash"></i></button>
+        </td>
+        <td style="padding:12px 16px; font-size:13px; color:var(--text-primary);">${c.phone ? escHtml(c.phone) : '—'}</td>
+        <td style="padding:12px 16px; font-size:13px; color:var(--text-primary);">${c.email ? escHtml(c.email) : '—'}</td>
+        <td style="padding:12px 16px; font-size:13px;">
+          <span class="badge badge-green" style="background:rgba(16,185,129,0.1);color:#10B981;padding:2px 6px;border-radius:4px;font-weight:600;">${deals.length}</span>
+          ${totalAmount > 0 ? `<span style="color:var(--warning); font-size:12px; margin-left:6px;">${fmtShort(totalAmount)}</span>` : ''}
+        </td>
+        <td style="padding:12px 16px; font-size:13px; color:var(--text-secondary);">${lastActive}</td>
+        <td style="padding:12px 16px; text-align:right;">
+          <div style="display:flex; justify-content:flex-end; gap:6px;">
+            <button class="btn btn-ghost btn-sm btn-icon" onclick="openClientModal(false, ${c.id})" title="Ko'rish / Tahrirlash"><i class="fas fa-eye"></i></button>
+            <button class="btn btn-ghost btn-sm btn-icon text-danger" onclick="deleteClient(${c.id})" title="O'chirish"><i class="fas fa-trash"></i></button>
           </div>
-        </div>
-        <div class="client-details">
-          ${c.phone ? `<div><i class="fas fa-phone" style="color:var(--accent);width:16px;text-align:center;margin-right:6px"></i> ${escHtml(c.phone)}</div>` : ''}
-          ${c.email ? `<div><i class="fas fa-envelope" style="color:var(--accent);width:16px;text-align:center;margin-right:6px"></i> ${escHtml(c.email)}</div>` : ''}
-          <div><i class="fas fa-handshake" style="color:var(--success);width:16px;text-align:center;margin-right:6px"></i> ${deals.length} sdelka</div>
-          ${totalAmount > 0 ? `<div><i class="fas fa-coins" style="color:var(--warning);width:16px;text-align:center;margin-right:6px"></i> ${fmtShort(totalAmount)}</div>` : ''}
-        </div>
-      </div>
+        </td>
+      </tr>
     `;
   }).join('');
 }
