@@ -37,9 +37,9 @@
         <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">#</th>
         <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Mijoz ismi</th>
         <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Telefon</th>
-        <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Email</th>
-        <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Sdelkalar soni</th>
-        <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">So'nggi faollik</th>
+        <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Shahar</th>
+        <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Mahsulot</th>
+        <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Menejer</th>
         <th style="padding:12px 16px; text-align:right; font-weight:600; font-size:13px; color:var(--text-secondary);">Amallar</th>
       </tr>
     </thead>
@@ -68,10 +68,14 @@
           <input type="text" id="c-phone" class="form-control" placeholder="+998 90 000 00 00">
         </div>
         <div class="form-group">
+          <label class="form-label">Shahar / Hudud</label>
+          <input type="text" id="c-city" class="form-control" placeholder="Qaysi shahardan">
+        </div>
+        <div class="form-group">
           <label class="form-label">Email</label>
           <input type="email" id="c-email" class="form-control" placeholder="email@example.com">
         </div>
-        <div class="form-group" style="grid-column:1/-1">
+        <div class="form-group">
           <label class="form-label">Kompaniya</label>
           <input type="text" id="c-company" class="form-control" placeholder="Kompaniya nomi">
         </div>
@@ -150,10 +154,11 @@ function renderClients() {
     const initials = c.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
     const color = avatarColors(c.name);
     const deals = c.deals || [];
-    const totalAmount = deals.reduce((s, d) => s + (d.amount || 0), 0);
-    const lastActive = c.updatedAt ? new Date(c.updatedAt).toLocaleDateString('uz-UZ') : (c.createdAt ? new Date(c.createdAt).toLocaleDateString('uz-UZ') : '—');
+    const products = deals.map(d => d.productName).filter(Boolean);
+    const uniqueProducts = [...new Set(products)].join(', ') || '—';
+    const manager = c.owner ? (c.owner.fullName || c.owner.email) : '—';
     return `
-      <tr class="client-row" style="border-bottom:1px solid var(--border); transition:background 0.2s;" onmouseover="this.style.background='#1E293B'" onmouseout="this.style.background='transparent'">
+      <tr class="client-row" style="border-bottom:1px solid var(--border); transition:background 0.2s;" onmouseover="this.style.background='var(--bg-tertiary)'" onmouseout="this.style.background='transparent'">
         <td style="padding:12px 16px; font-size:13px; color:var(--text-secondary);">${idx + 1}</td>
         <td style="padding:12px 16px;">
           <div style="display:flex; align-items:center; gap:12px;">
@@ -165,12 +170,9 @@ function renderClients() {
           </div>
         </td>
         <td style="padding:12px 16px; font-size:13px; color:var(--text-primary);">${c.phone ? escHtml(c.phone) : '—'}</td>
-        <td style="padding:12px 16px; font-size:13px; color:var(--text-primary);">${c.email ? escHtml(c.email) : '—'}</td>
-        <td style="padding:12px 16px; font-size:13px;">
-          <span class="badge badge-green" style="background:rgba(16,185,129,0.1);color:#10B981;padding:2px 6px;border-radius:4px;font-weight:600;">${deals.length}</span>
-          ${totalAmount > 0 ? `<span style="color:var(--warning); font-size:12px; margin-left:6px;">${fmtShort(totalAmount)}</span>` : ''}
-        </td>
-        <td style="padding:12px 16px; font-size:13px; color:var(--text-secondary);">${lastActive}</td>
+        <td style="padding:12px 16px; font-size:13px; color:var(--text-primary);">${c.city ? escHtml(c.city) : '—'}</td>
+        <td style="padding:12px 16px; font-size:13px; color:var(--text-primary);">${escHtml(uniqueProducts)}</td>
+        <td style="padding:12px 16px; font-size:13px; color:var(--text-primary);"><span class="badge badge-gray">${escHtml(manager)}</span></td>
         <td style="padding:12px 16px; text-align:right;">
           <div style="display:flex; justify-content:flex-end; gap:6px;">
             <button class="btn btn-ghost btn-sm btn-icon" onclick="openClientModal(false, ${c.id})" title="Ko'rish / Tahrirlash"><i class="fas fa-eye"></i></button>
@@ -186,6 +188,7 @@ async function openClientModal(viewOnly, id) {
   document.getElementById('clientId').value = id || '';
   document.getElementById('c-name').value = '';
   document.getElementById('c-phone').value = '';
+  document.getElementById('c-city').value = '';
   document.getElementById('c-email').value = '';
   document.getElementById('c-company').value = '';
   document.getElementById('c-notes').value = '';
@@ -196,6 +199,7 @@ async function openClientModal(viewOnly, id) {
       const c = await fetch('/api/clients/' + id).then(r => r.json());
       document.getElementById('c-name').value = c.name || '';
       document.getElementById('c-phone').value = c.phone || '';
+      document.getElementById('c-city').value = c.city || '';
       document.getElementById('c-email').value = c.email || '';
       document.getElementById('c-company').value = c.company || '';
       document.getElementById('c-notes').value = c.notes || '';
@@ -219,6 +223,7 @@ async function saveClient() {
   const body = {
     name,
     phone: document.getElementById('c-phone').value || null,
+    city: document.getElementById('c-city').value || null,
     email: document.getElementById('c-email').value || null,
     company: document.getElementById('c-company').value || null,
     notes: document.getElementById('c-notes').value || null

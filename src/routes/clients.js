@@ -49,11 +49,11 @@ router.get('/:id', async (req, res, next) => {
 // Create client
 router.post('/', async (req, res, next) => {
   try {
-    const { name, phone, email, company, notes } = req.body
+    const { name, phone, email, company, notes, city } = req.body
     if (!name) return res.status(400).json({ message: 'Ism majburiy' })
 
     const client = await prisma.client.create({
-      data: { name, phone: phone || null, email: email || null, company: company || null, notes: notes || null, ownerId: req.userId },
+      data: { name, phone: phone || null, email: email || null, company: company || null, notes: notes || null, city: city || null, ownerId: req.userId },
       include: { owner: ownerSelect }
     })
     res.status(201).json(client)
@@ -65,7 +65,7 @@ router.post('/', async (req, res, next) => {
 // Update client
 router.patch('/:id', async (req, res, next) => {
   try {
-    const { name, phone, email, company, notes, debt } = req.body
+    const { name, phone, email, company, notes, debt, city } = req.body
 
     const data = {}
     if (name !== undefined) data.name = name
@@ -74,6 +74,7 @@ router.patch('/:id', async (req, res, next) => {
     if (company !== undefined) data.company = company
     if (notes !== undefined) data.notes = notes
     if (debt !== undefined) data.debt = Number(debt) || 0
+    if (city !== undefined) data.city = city
 
     const client = await prisma.client.update({
       where: { id: Number(req.params.id) },
