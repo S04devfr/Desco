@@ -3,8 +3,60 @@ const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const prisma = require('../config/database')
 const { protect } = require('../middleware/auth')
+const { rateLimiter } = require('../middleware/security')
+const { logAudit } = require('../middleware/auditLog')
 
 const router = express.Router()
+
+// ── BRUTE FORCE HIMOYASI ──
+// 5 ta noto'g'ri urinishdan keyin 15 daqiqa bloklash
+const loginAttempts = new Map();
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 15 * 60 * 1000; // 15 daqiqa
+
+function checkBruteForce(email) {
+  const record = loginAttempts.get(email);
+  if (!record) return { blocked: false };
+
+  if (record.lockedUntil && Date.now() < record.lockedUntil) {
+    const remainSec = Math.ceil((record.lockedUntil - Date.now()) / 1000);
+    return { blocked: true, remainSec };
+  }
+
+  // Bloklash vaqti o'tgan — tozalash
+  if (record.lockedUntil && Date.now() >= record.lockedUntil) {
+    loginAttempts.delete(email);
+    return { blocked: false };
+  }
+
+  return { blocked: false };
+}
+
+function recordFailedLogin(email) {
+  const record = loginAttempts.get(email) || { count: 0, lockedUntil: null };
+  record.count++;
+
+  if (record.count >= MAX_ATTEMPTS) {
+    record.lockedUntil = Date.now() + LOCKOUT_MS;
+    console.warn(`[Brute Force] ${email} — ${MAX_ATTEMPTS} marta noto'g'ri, 15 daqiqa bloklandi`);
+  }
+
+  loginAttempts.set(email, record);
+}
+
+function clearLoginAttempts(email) {
+  loginAttempts.delete(email);
+}
+
+// Har 10 daqiqada eskirgan yozuvlarni tozalash
+setInterval(() => {
+  const now = Date.now();
+  for (const [email, record] of loginAttempts) {
+    if (record.lockedUntil && now >= record.lockedUntil) {
+      loginAttempts.delete(email);
+    }
+  }
+}, 10 * 60 * 1000);
 
 function buildUserPayload(user) {
   return {
@@ -66,14 +118,15 @@ router.post('/register', async (req, res, next) => {
     req.session.userId = user.id
     req.session.user = payload
 
+    logAudit('USER_REGISTER', `Yangi foydalanuvchi: ${email}`, user.id, email, req.ip);
     res.status(201).json({ message: 'Ro\'yxatdan o\'tish muvaffaqiyatli', user: payload })
   } catch (error) {
     next(error)
   }
 })
 
-// Login route
-router.post('/login', async (req, res, next) => {
+// Login route — brute force himoyasi + rate limiting
+router.post('/login', rateLimiter(20, 60000), async (req, res, next) => {
   try {
     const { email, password } = req.body
 
@@ -81,15 +134,32 @@ router.post('/login', async (req, res, next) => {
       return res.status(400).json({ message: 'Email va parol majburiy' })
     }
 
+    // Brute force tekshiruvi
+    const bruteCheck = checkBruteForce(email);
+    if (bruteCheck.blocked) {
+      logAudit('LOGIN_BLOCKED', `Brute force: ${email}, qolgan: ${bruteCheck.remainSec}s`, null, email, req.ip);
+      return res.status(429).json({
+        message: `Juda ko'p noto'g'ri urinish. ${Math.ceil(bruteCheck.remainSec / 60)} daqiqadan keyin qayta urinib ko'ring.`,
+        retryAfter: bruteCheck.remainSec
+      });
+    }
+
     const user = await prisma.user.findUnique({ where: { email } })
     if (!user) {
+      recordFailedLogin(email);
+      logAudit('LOGIN_FAILED', `Email topilmadi: ${email}`, null, email, req.ip);
       return res.status(401).json({ message: 'Email yoki parol noto\'g\'ri' })
     }
 
     const isMatch = await bcrypt.compare(password, user.password)
     if (!isMatch) {
+      recordFailedLogin(email);
+      logAudit('LOGIN_FAILED', `Noto'g'ri parol: ${email}`, null, email, req.ip);
       return res.status(401).json({ message: 'Email yoki parol noto\'g\'ri' })
     }
+
+    // Muvaffaqiyatli login — brute force hisoblagichni tozalash
+    clearLoginAttempts(email);
 
     const payload = buildUserPayload(user)
 
@@ -100,6 +170,7 @@ router.post('/login', async (req, res, next) => {
       expiresIn: process.env.JWT_EXPIRY || '7d'
     })
 
+    logAudit('LOGIN_SUCCESS', `Muvaffaqiyatli kirish: ${email}`, user.id, email, req.ip);
     res.json({ message: 'Kirish muvaffaqiyatli', user: payload, token })
   } catch (error) {
     next(error)
@@ -108,12 +179,16 @@ router.post('/login', async (req, res, next) => {
 
 // Logout route
 router.post('/logout', (req, res, next) => {
+  const userId = req.session?.userId;
+  const email = req.session?.user?.email;
+
   if (!req.session) {
     return res.json({ message: 'Chiqish muvaffaqiyatli' })
   }
   req.session.destroy((err) => {
     if (err) return next(err)
     res.clearCookie('connect.sid')
+    logAudit('LOGOUT', `Chiqish: ${email || 'unknown'}`, userId, email, req.ip);
     res.json({ message: 'Chiqish muvaffaqiyatli' })
   })
 })

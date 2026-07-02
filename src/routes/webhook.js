@@ -3,6 +3,8 @@ const router = express.Router();
 const crypto = require('crypto');
 const supabase = require('../config/supabase');
 const leadService = require('../services/leadService');
+const { webhookIPWhitelist, rateLimiter } = require('../middleware/security');
+const { logAudit, getAuditContext } = require('../middleware/auditLog');
 
 /**
  * Meta (Facebook/Instagram) X-Hub-Signature-256 xavfsizlik imzosini tekshirish middleware.
@@ -209,7 +211,8 @@ router.get('/', (req, res) => {
 });
 
 // 2-QADAM: Meta'dan Lead qabul qilish (POST)
-router.post('/', verifyWebhookToken, async (req, res) => {
+// Xavfsizlik qatlamlari: IP Whitelist → Rate Limit → Signature Verification
+router.post('/', webhookIPWhitelist, rateLimiter(100, 60000), verifyWebhookToken, async (req, res) => {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log(`[Webhook POST] So'rov keldi! Vaqt: ${new Date().toISOString()}`);
   console.log(`[Webhook POST] Body object: ${req.body?.object}, entry soni: ${req.body?.entry?.length || 0}`);
@@ -220,6 +223,16 @@ router.post('/', verifyWebhookToken, async (req, res) => {
   res.status(200).send('EVENT_RECEIVED');
 
   try {
+    // Audit log: webhook kelishi
+    const firstEntry = req.body?.entry?.[0];
+    const firstChange = firstEntry?.changes?.[0];
+    logAudit(
+      'WEBHOOK_RECEIVED',
+      `page_id: ${firstEntry?.id || 'unknown'}, leadgen_id: ${firstChange?.value?.leadgen_id || 'unknown'}`,
+      null, null,
+      req.ip || ''
+    );
+
     const broadcast = req.app.get('broadcast');
     await leadService.handleMetaWebhook(req.body, broadcast);
   } catch (error) {

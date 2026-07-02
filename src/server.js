@@ -11,8 +11,24 @@ dotenv.config();
 
 const app = express();
 
-app.use(helmet({ contentSecurityPolicy: false, hsts: false }));
-app.use(cors());
+// ── SECURITY HEADERS (Helmet) ──
+app.use(helmet({
+  contentSecurityPolicy: false,  // EJS templates uchun
+  hsts: { maxAge: 31536000, includeSubDomains: true },
+  frameguard: { action: 'deny' },
+  xssFilter: true,
+  noSniff: true,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
+}));
+
+// ── CORS — faqat ruxsat etilgan domenlar ──
+app.use(cors({
+  origin: [
+    'https://desco-production.up.railway.app',
+    'http://localhost:3000'
+  ],
+  credentials: true
+}));
 app.use(express.json({
   verify: (req, res, buf) => {
     req.rawBody = buf;
@@ -46,8 +62,13 @@ app.use((req, res, next) => {
   next();
 });
 
+// ── SECURITY MIDDLEWARE ──
+const { rateLimiter, sanitizeResponse } = require('./middleware/security');
+app.use('/api', sanitizeResponse);          // Barcha API javoblardan sensitive ma'lumotlarni tozalash
+app.use('/api', rateLimiter(200, 60000));    // API uchun global rate limit: 200 req/min
+
 // ── API ROUTES ──
-app.get('/api/health', (req, res) => res.json({ status: 'OK', message: 'DESCO CRM is running' }));
+app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 app.use('/api/auth',            require('./routes/auth'));
 app.use('/api/dashboard',       require('./routes/dashboard'));
@@ -149,12 +170,16 @@ app.set('broadcast', (data) => {
   });
 });
 
-runMigrations(prisma).then(() => {
+// Audit log jadvalini yaratish
+const { ensureAuditTable } = require('./middleware/auditLog');
+
+runMigrations(prisma).then(async () => {
+  await ensureAuditTable();
   server.listen(PORT, () => {
     console.log(`
-  ╔══════════════════════════════════════╗
-  ║   DESCO CRM — Running on :${PORT}     ║
-  ╚══════════════════════════════════════╝`);
+   ╔══════════════════════════════════════╗
+   ║   DESCO CRM — Running on :${PORT}     ║
+   ╚══════════════════════════════════════╝`);
   });
 }).catch(err => {
   console.error('Migration xatosi:', err);
