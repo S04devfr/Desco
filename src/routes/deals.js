@@ -230,7 +230,12 @@ router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => 
     if (notes !== undefined) data.notes = notes
     if (resolvedClientId !== undefined) data.clientId = resolvedClientId
     if (deadline !== undefined) data.deadline = (deadline && !isNaN(new Date(deadline))) ? new Date(deadline) : null
-    if (managerId !== undefined) data.managerId = managerId ? Number(managerId) : null
+    if (managerId !== undefined) {
+      data.managerId = managerId ? Number(managerId) : null
+    } else if (existing.managerId === null) {
+      // Boshqa tahrirlash jarayonida ham bo'sh sdelka o'zlashtiriladi
+      data.managerId = req.userId
+    }
     if (stageId !== undefined) data.stageId = stageId ? Number(stageId) : null
 
     const deal = await prisma.deal.update({
@@ -287,6 +292,7 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
     })
     if (!existing) return res.status(404).json({ message: 'Sdelka topilmadi' })
 
+    // Dastlabki tekshiruv (bu qism tranzaksiyadan tashqarida, tezkor xatolik berish uchun)
     if (req.user?.role !== 'admin' && existing.managerId !== null && existing.managerId !== req.userId) {
       return res.status(403).json({ message: "Boshqa menejer sdelkasini o'zgartira olmaysiz" })
     }
@@ -310,26 +316,34 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
       return res.json(unchanged)
     }
 
-    const deal = await prisma.$transaction(async (tx) => {
-      let finalStageId = newStageId;
-      let finalPipelineId = existing.pipelineId;
-      
-      // Automation: Nasiya
-      if (newStage && newStage.name.toLowerCase().includes('nasiya')) {
-        const nasiyaPipeline = await tx.pipeline.findFirst({
-          where: { name: { contains: 'nasiya', mode: 'insensitive' } },
-          include: { stages: { orderBy: { order: 'asc' } } }
-        });
-        if (nasiyaPipeline && nasiyaPipeline.stages.length > 0 && nasiyaPipeline.id !== existing.pipelineId) {
-          finalStageId = nasiyaPipeline.stages[0].id;
-          finalPipelineId = nasiyaPipeline.id;
+    try {
+      const deal = await prisma.$transaction(async (tx) => {
+        // RACE CONDITION ni oldini olish: sdelka holatini tranzaksiya ichida qayta o'qiymiz
+        const txDeal = await tx.deal.findUnique({ where: { id } })
+        if (!txDeal) throw new Error("Sdelka topilmadi")
+        if (req.user?.role !== 'admin' && txDeal.managerId !== null && txDeal.managerId !== req.userId) {
+          throw new Error("Sdelkani allaqachon boshqa menejer o'zlashtirgan")
         }
-      }
 
-      let finalManagerId = existing.managerId;
-      if (!finalManagerId) {
-        finalManagerId = req.userId;
-      }
+        let finalStageId = newStageId;
+        let finalPipelineId = txDeal.pipelineId;
+        
+        // Automation: Nasiya
+        if (newStage && newStage.name.toLowerCase().includes('nasiya')) {
+          const nasiyaPipeline = await tx.pipeline.findFirst({
+            where: { name: { contains: 'nasiya', mode: 'insensitive' } },
+            include: { stages: { orderBy: { order: 'asc' } } }
+          });
+          if (nasiyaPipeline && nasiyaPipeline.stages.length > 0 && nasiyaPipeline.id !== txDeal.pipelineId) {
+            finalStageId = nasiyaPipeline.stages[0].id;
+            finalPipelineId = nasiyaPipeline.id;
+          }
+        }
+
+        let finalManagerId = txDeal.managerId;
+        if (!finalManagerId) {
+          finalManagerId = req.userId;
+        }
 
       const updated = await tx.deal.update({
         where: { id },
@@ -372,6 +386,9 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
 
     res.json(deal)
   } catch (error) {
+    if (error.message === "Sdelkani allaqachon boshqa menejer o'zlashtirgan") {
+      return res.status(403).json({ message: error.message })
+    }
     if (error.code === 'P2025') return res.status(404).json({ message: 'Sdelka yoki bosqich topilmadi' })
     next(error)
   }
