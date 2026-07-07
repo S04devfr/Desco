@@ -697,7 +697,6 @@
     async function init() {
       try {
         await loadAll();
-        initWebSocket();
         
         const params = new URLSearchParams(window.location.search);
         const openId = params.get('openDealId');
@@ -710,20 +709,7 @@
       }
     }
     
-    function initWebSocket() {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const ws = new WebSocket(protocol + '//' + window.location.host);
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data && (data.type === 'deal_updated' || data.type === 'deal_deleted' || data.type === 'deal_created')) {
-            // Re-fetch only deals, no need to reload pipelines/managers
-            loadDeals();
-          }
-        } catch(e) {}
-      };
-      ws.onerror = (e) => console.error('WebSocket xatosi', e);
-    }
+    // (initWebSocket has been removed because a smart websocket handler exists at the bottom)
 
     async function loadAll() {
       showLoading();
@@ -2044,7 +2030,7 @@ ws.onmessage = async (event) => {
     const data = JSON.parse(event.data);
     const myId = <%= typeof user !== 'undefined' && user ? user.id : 'null' %>;
     
-    if (data.type === 'deal_updated' && data.dealId) {
+    if ((data.type === 'deal_updated' || data.type === 'deal_created') && data.dealId) {
       const res = await fetch('/api/deals/' + data.dealId);
       if (res.ok) {
         const updatedDeal = await res.json();
@@ -2056,6 +2042,9 @@ ws.onmessage = async (event) => {
           const idx = _deals.findIndex(d => d.id === updatedDeal.id);
           if (idx >= 0) _deals[idx] = updatedDeal;
           else _deals.push(updatedDeal);
+          
+          // Tartibni saqlash (Yangi sdelkalar eng tepada bo'lishi uchun)
+          _deals.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
         }
         
         if (document.getElementById('viewKanban').classList.contains('active')) {
