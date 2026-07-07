@@ -193,4 +193,15 @@ runMigrations(prisma).then(async () => {
   });
 });
 
+// Global xatoliklarni ushlab qolish (Crash larning oldini olish)
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[Unhandled Rejection] at:', promise, 'reason:', reason);
+  // Dasturni to'xtatmaymiz (Railway'da 502 bo'lmasligi uchun)
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('[Uncaught Exception] Xatolik:', error);
+  // Tizim holatini tekshirib sekinlashtirish mumkin, lekin crash qildirmaymiz
+});
+
 module.exports = { app, server };
