@@ -631,7 +631,8 @@
 
     function _date(d) {
       if (!d) return '';
-      const dt = new Date(d);
+      let dateStr = typeof d === 'string' ? d.replace(' ', 'T') : d;
+      const dt = new Date(dateStr);
       if (isNaN(dt)) return '';
       return dt.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: '2-digit' });
     }
@@ -1689,8 +1690,13 @@ async function openDetail(id) {
         </div>
       </div>
       ${deal.notes ? `<div style="margin-bottom:16px"><div style="font-size:11px;color:var(--text-tertiary);margin-bottom:4px">Izoh</div><div style="font-size:13px;padding:10px;background:var(--bg-secondary);border-radius:8px">${_esc(deal.notes)}</div></div>` : ''}
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        ${_stages.map(s => `<button class="btn btn-sm ${s.id===deal.stageId?'btn-primary':'btn-ghost'}" onclick="moveDeal(${deal.id},${s.id})">${_esc(s.name)}</button>`).join('')}
+      
+      <div style="margin-bottom:16px">
+        <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:4px">Bosqichni o'zgartirish</div>
+        <select class="form-control" style="font-size:13px; max-width: 300px; cursor: pointer;" onchange="if(this.value) moveDeal(${deal.id}, this.value)">
+          <option value="">— Bosqichni tanlang —</option>
+          ${_stages.map(s => `<option value="${s.id}" ${s.id===deal.stageId?'selected':''}>${_esc(s.name)}</option>`).join('')}
+        </select>
       </div>
       <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items:center">
         <button class="btn btn-primary btn-sm" onclick="createTaskForDeal(${deal.id}, '${_esc(deal.productName || deal.name).replace(/'/g, "\\\'")}')">
