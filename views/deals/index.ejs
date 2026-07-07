@@ -1779,8 +1779,9 @@ async function addComment(dealId) {
 
 function editCurrentDeal() {
   if (!_detailId) return;
+  const idToEdit = _detailId;
   closeDetail();
-  openDealModal(null, _detailId);
+  openDealModal(null, idToEdit);
 }
 
 function editDealDirectly(id) {

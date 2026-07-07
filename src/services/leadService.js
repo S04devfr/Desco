@@ -404,7 +404,9 @@ function parseLeadPayload(source, rawData) {
   const leadId = findFuzzyValue(rawData, ['lead_id', 'leadid', 'id']) || null;
   const city = findFuzzyValue(rawData, ['city', 'shahar', 'manzil', 'hudud', 'address', 'viloyat', 'rayon', 'qayerga', 'location'], ['campaign', 'product', 'form', 'ad', 'id']);
 
-  const productName = (pageName !== "Webhook" && pageName !== "Make.com" && pageName !== "Yuboraman.uz") ? pageName : formId;
+  const productNameFromPayload = findFuzzyValue(rawData, ['mahsulot', 'product', 'tovar', 'item', 'buyum', 'xizmat', 'kurs']);
+  const defaultProductName = (pageName !== "Webhook" && pageName !== "Make.com" && pageName !== "Yuboraman.uz") ? pageName : formId;
+  const productName = productNameFromPayload || defaultProductName;
 
   // Operatorga xalaqit beruvchi texnik maydonlarni izohdan (notes) o'chiramiz
   const additionalNotes = [];
