@@ -316,8 +316,7 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
       return res.json(unchanged)
     }
 
-    try {
-      const deal = await prisma.$transaction(async (tx) => {
+    const deal = await prisma.$transaction(async (tx) => {
         // RACE CONDITION ni oldini olish: sdelka holatini tranzaksiya ichida qayta o'qiymiz
         const txDeal = await tx.deal.findUnique({ where: { id } })
         if (!txDeal) throw new Error("Sdelka topilmadi")
