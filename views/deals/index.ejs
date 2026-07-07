@@ -1715,7 +1715,7 @@ async function openDetail(id) {
             '<div style="background:var(--bg-secondary); border-radius:8px; padding:10px; font-size:12px">' +
               '<div style="display:flex; justify-content:space-between; margin-bottom:4px">' +
                 '<span style="font-weight:600; color:' + (a.action==='Izoh qoldirildi'?'var(--accent)':'var(--text-primary)') + '">' + _esc(a.action) + '</span>' +
-                '<span style="color:var(--text-tertiary); font-size:10px">' + _date(a.createdAt) + ' ' + new Date(a.createdAt).toLocaleTimeString('uz-UZ', {hour:'2-digit',minute:'2-digit'}) + '</span>' +
+                '<span style="color:var(--text-tertiary); font-size:10px">' + _date(a.createdAt) + ' ' + new Date(typeof a.createdAt==='string' ? a.createdAt.replace(' ', 'T') : a.createdAt).toLocaleTimeString('uz-UZ', {hour:'2-digit',minute:'2-digit'}) + '</span>' +
               '</div>' +
               '<div style="color:var(--text-secondary); line-height:1.4">' + _esc(a.details||'') + '</div>' +
               '<div style="color:var(--text-tertiary); font-size:10px; margin-top:6px; text-align:right">' + (a.user ? _esc(a.user.fullName||a.user.email) : 'Tizim') + '</div>' +
@@ -1764,10 +1764,10 @@ async function addComment(dealId) {
   try {
     const btn = input.nextElementSibling;
     btn.disabled = true;
-    await apiFetch('/api/deals/' + dealId + '/comments', {
+    await apiFetch('/api/deals/' + dealId + '/activity', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text })
+      body: JSON.stringify({ details: text })
     });
     input.value = '';
     // Reload detail to show the new comment
