@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title : 'DESCO CRM' %></title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/css/custom.css">
+  <!-- Theme flicker oldini olish uchun early script -->
+  <script>
+    (function() {
+      const t = localStorage.getItem('crm-theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+      
+      const lang = localStorage.getItem('crm-lang') || 'uz';
+      if (lang === 'ru') {
+        const dict = {
+          "Bosh sahifa": "Главная",
+          "Sdelkalar": "Сделки",
+          "Mijozlar": "Клиенты",
+          "Vazifalar": "Задачи",
+          "Kirim-chiqim": "Расходы",
+          "Sozlamalar": "Настройки",
+          "Yangi sdelka": "Новая сделка",
+          "Tizimdan chiqish": "Выйти",
+          "Qidiruv...": "Поиск...",
+          "Mening profilim": "Мой профиль",
+          "Kompaniya": "Компания",
+          "Voronkalar": "Воронки",
+          "Jamoa va rollar": "Команда и роли",
+          "Integratsiyalar": "Интеграции",
+          "Til / Tizim tili": "Язык системы",
+          "Tizim tili": "Язык системы",
+          "Shaxsiy ma'lumotlar": "Личные данные",
+          "Parolni o'zgartirish": "Сменить пароль",
+          "To'liq ismingiz": "Полное имя",
+          "Email manzilingiz": "Email адрес",
+          "Joriy parol": "Текущий пароль",
+          "Yangi parol": "Новый пароль",
+          "Saqlash": "Сохранить",
+          "Yangi": "Новый",
+          "Muzokaralar": "Переговоры",
+          "Taklif": "Предложение",
+          "Yutilgan": "Успешно",
+          "Yo'qotilgan": "Отказ",
+          "Tilni tanlang": "Выберите язык",
+          "O'zbek tili": "Узбекский",
+          "Tilni o'zgartirgandan so'ng": "* После изменения языка страница обновится."
+        };
+        
+        const translateNode = (node) => {
+          if (node.nodeType === Node.TEXT_NODE) {
+            let text = node.nodeValue;
+            let replaced = false;
+            for (const [uz, ru] of Object.entries(dict)) {
+              if (text.includes(uz)) {
+                text = text.replace(new RegExp(uz, 'g'), ru);
+                replaced = true;
+              }
+            }
+            if (replaced) node.nodeValue = text;
+          } else if (node.nodeType === Node.ELEMENT_NODE) {
+            if (node.placeholder) {
+              for (const [uz, ru] of Object.entries(dict)) {
+                if (node.placeholder.includes(uz)) node.placeholder = node.placeholder.replace(new RegExp(uz, 'g'), ru);
+              }
+            }
+            node.childNodes.forEach(translateNode);
+          }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+          translateNode(document.body);
+          const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+              mutation.addedNodes.forEach((node) => {
+                if (node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.TEXT_NODE) {
+                  translateNode(node);
+                }
+              });
+            });
+          });
+          observer.observe(document.body, { childList: true, subtree: true });
+        });
+      }
+    })();
+  </script>
+</head>
+<body>
+<div class="mobile-overlay" id="mobileOverlay" onclick="toggleMobileMenu()"></div>
+<div class="app-wrapper">
+  <%- include('./sidebar', { user: typeof user !== 'undefined' ? user : null, activePage: typeof activePage !== 'undefined' ? activePage : '' }) %>
+  <div class="main-area">
+    <%- include('./topbar', { user: typeof user !== 'undefined' ? user : null }) %>
+    <div class="page-content">
+
+<script>
+function toggleMobileMenu() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('mobileOverlay');
+  if (sidebar) sidebar.classList.toggle('mobile-open');
+  if (overlay) overlay.classList.toggle('active');
+}
+</script>

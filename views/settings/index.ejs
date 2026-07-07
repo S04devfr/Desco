@@ -1,0 +1,695 @@
+<%
+const escHtml = s => String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const isAdmin = typeof user !== 'undefined' && user && user.role === 'admin';
+const companyName = (typeof company !== 'undefined' && company && company.companyName) ? company.companyName : 'DESCO CRM';
+const companyCurrency = (typeof company !== 'undefined' && company && company.currency) ? company.currency : 'UZS';
+const usersList = (typeof users !== 'undefined' && Array.isArray(users)) ? users : [];
+const pipelinesList = (typeof pipelines !== 'undefined' && Array.isArray(pipelines)) ? pipelines : [];
+
+const colorSwatches = ['#007AFF','#34C759','#FF9500','#FF3B30','#5856D6','#00C7BE','#FF2D55','#1565C0','#2E7D32','#C62828'];
+const swatchHtml = colorSwatches.map(c =>
+  `<div style="width:22px;height:22px;border-radius:50%;background:${c};cursor:pointer;border:2px solid transparent;flex-shrink:0"
+    onclick="pickColor('${c}',this)"></div>`
+).join('');
+%>
+<%- include('../layouts/header', {
+  title: 'Sozlamalar — DESCO CRM',
+  activePage: 'settings',
+  user: user}) %>
+
+<style>
+.pipeline-card {
+  border:1px solid var(--border); border-radius:10px; margin-bottom:12px;
+  background:var(--bg-secondary); overflow:hidden;
+}
+.pipeline-card-hdr {
+  display:flex; align-items:center; gap:10px;
+  padding:12px 16px; border-bottom:1px solid var(--border);
+  cursor:pointer; user-select:none;
+}
+.pipeline-card-hdr:hover { background:var(--bg-secondary); }
+.p-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.pipeline-card-title { font-size:14px; font-weight:600; flex:1; }
+.pipeline-card-meta { font-size:12px; color:var(--text-tertiary); }
+.pipeline-card-body { padding:12px 16px; display:none; }
+.pipeline-card-body.open { display:block; }
+.stage-row {
+  display:flex; align-items:center; gap:8px; padding:6px 0;
+  border-bottom:1px solid var(--border-light);
+}
+.stage-row:last-child { border-bottom:none; }
+.stage-color { width:8px; height:28px; border-radius:4px; flex-shrink:0; }
+.stage-name-txt { flex:1; font-size:13.5px; font-weight:500; }
+.stage-order { font-size:11px; color:var(--text-tertiary); }
+
+/* ── Settings Layout ── */
+.settings-layout {
+  display: flex; gap: 24px; align-items: flex-start; height: 100%;
+}
+.settings-sidebar {
+  width: 240px; flex-shrink: 0; display: flex; flex-direction: column; gap: 6px;
+}
+.settings-tab {
+  padding: 10px 14px; font-size: 13.5px; font-weight: 500; color: var(--text-secondary);
+  border-radius: 8px; cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; gap: 10px;
+}
+.settings-tab i { width: 16px; text-align: center; color: var(--text-tertiary); }
+.settings-tab:hover { background: var(--bg-secondary); color: var(--text-primary); }
+.settings-tab:hover i { color: var(--text-secondary); }
+.settings-tab.active { background: var(--accent); color: #fff; font-weight: 600; box-shadow: 0 4px 12px rgba(0,122,255,0.2); }
+.settings-tab.active i { color: #fff; }
+
+.settings-content {
+  flex: 1; min-width: 0;
+}
+.settings-pane {
+  display: none; animation: fadeIn 0.2s ease;
+}
+.settings-pane.active {
+  display: block;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+</style>
+
+<div class="page-header">
+  <div><h1>Sozlamalar</h1><p>Voronkalar, bosqichlar va tizim sozlamalari</p></div>
+</div>
+
+<div class="settings-layout">
+  <!-- Sidebar -->
+  <div class="settings-sidebar">
+    <div class="settings-tab active" onclick="switchTab('profile', this)"><i class="fas fa-user"></i> Mening profilim</div>
+    <div class="settings-tab" onclick="switchTab('language', this)"><i class="fas fa-language"></i> Tizim tili</div>
+    <% if (isAdmin) { %>
+      <div class="settings-tab" onclick="switchTab('company', this)"><i class="fas fa-building"></i> Kompaniya</div>
+      <div class="settings-tab" onclick="switchTab('pipelines', this)"><i class="fas fa-filter"></i> Voronkalar</div>
+      <div class="settings-tab" onclick="switchTab('users', this)"><i class="fas fa-users"></i> Jamoa va rollar</div>
+      <div class="settings-tab" onclick="switchTab('integrations', this)"><i class="fas fa-plug"></i> Integratsiyalar</div>
+    <% } %>
+  </div>
+
+  <!-- Content -->
+  <div class="settings-content">
+    
+    <!-- 1. PROFILE -->
+    <div class="settings-pane active" id="pane-profile">
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <i class="fas fa-user" style="color:var(--accent)"></i>
+          <h3>Shaxsiy ma'lumotlar</h3>
+        </div>
+        <div class="settings-section-body">
+          <div class="form-grid form-grid-2">
+            <div class="form-group">
+              <label class="form-label">To'liq ismingiz</label>
+              <input type="text" id="prof-fullName" class="form-control" value="<%= escHtml(user.fullName) %>">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email manzilingiz</label>
+              <input type="email" id="prof-email" class="form-control" value="<%= escHtml(user.email) %>">
+            </div>
+          </div>
+          <div style="height: 1px; background: var(--border); margin: 20px 0;"></div>
+          <h4 style="font-size: 14px; margin-bottom: 12px; color: var(--text-primary);"><i class="fas fa-lock" style="color:var(--text-tertiary);margin-right:6px"></i> Parolni o'zgartirish</h4>
+          <div class="form-grid form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Joriy parol</label>
+              <input type="password" id="prof-currentPassword" class="form-control" placeholder="Hozirgi parolingiz">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Yangi parol</label>
+              <input type="password" id="prof-newPassword" class="form-control" placeholder="Kamida 6 ta belgi">
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="saveProfile()" style="margin-top:10px"><i class="fas fa-save"></i> Saqlash</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LANGUAGE -->
+    <div class="settings-pane" id="pane-language">
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <i class="fas fa-language" style="color:var(--accent)"></i>
+          <h3>Tizim tili</h3>
+        </div>
+        <div class="settings-section-body">
+          <div class="form-group" style="max-width: 300px;">
+            <label class="form-label">Tilni tanlang</label>
+            <select id="s-language" class="form-control">
+              <option value="uz">O'zbek tili</option>
+              <option value="ru">Русский язык</option>
+            </select>
+            <p style="font-size: 11px; color: var(--text-tertiary); margin-top: 8px;">* Tilni o'zgartirgandan so'ng sahifa yangilanadi va o'zgarishlar darhol faollashadi.</p>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="saveLanguage()" style="margin-top:10px"><i class="fas fa-save"></i> Saqlash</button>
+        </div>
+      </div>
+    </div>
+
+    <% if (isAdmin) { %>
+    <!-- 2. COMPANY -->
+    <div class="settings-pane" id="pane-company">
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <i class="fas fa-building" style="color:var(--accent)"></i>
+          <h3>Kompaniya ma'lumotlari</h3>
+        </div>
+        <div class="settings-section-body">
+          <div class="form-grid form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Kompaniya nomi</label>
+              <input type="text" id="s-companyName" class="form-control" value="<%= escHtml(companyName) %>">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Valyuta</label>
+              <select id="s-currency" class="form-control">
+                <option value="UZS" <%= companyCurrency==='UZS' ? 'selected' : '' %>>UZS — So'm</option>
+                <option value="USD" <%= companyCurrency==='USD' ? 'selected' : '' %>>USD — Dollar</option>
+                <option value="EUR" <%= companyCurrency==='EUR' ? 'selected' : '' %>>EUR — Euro</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="saveCompany()"><i class="fas fa-save"></i> Saqlash</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. PIPELINES -->
+    <div class="settings-pane" id="pane-pipelines">
+      <div class="settings-section" id="pipelinesSection">
+        <div class="settings-section-header">
+          <i class="fas fa-filter" style="color:var(--accent)"></i>
+          <h3>Voronkalar (Pipeline)</h3>
+          <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openPipelineModal()">
+            <i class="fas fa-plus"></i> Yangi voronka
+          </button>
+        </div>
+        <div class="settings-section-body" id="pipelineList">
+          <% if ((pipelinesList || []).length) { %>
+            <% (pipelinesList || []).forEach(p => { %>
+            <div class="pipeline-card" id="pc-<%= p.id %>">
+              <div class="pipeline-card-hdr" onclick="togglePipeline(<%= p.id %>)">
+                <div class="p-dot" style="background:<%= p.color %>"></div>
+                <div class="pipeline-card-title"><%= escHtml(p.name) %> <%- p.isDefault?'<span class="badge badge-blue" style="font-size:9px;padding:1px 6px">Default</span>':'' %></div>
+                <div class="pipeline-card-meta"><%= (p.stages||[]).length %> bosqich</div>
+                <div style="display:flex;gap:4px">
+                  <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();openPipelineModal(<%= p.id %>)" title="Tahrirlash"><i class="fas fa-edit"></i></button>
+                  <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="event.stopPropagation();deletePipeline(<%= p.id %>)" title="O'chirish"><i class="fas fa-trash"></i></button>
+                </div>
+                <i class="fas fa-chevron-down" id="pch-<%= p.id %>" style="font-size:11px;color:var(--text-tertiary);transition:transform 0.2s"></i>
+              </div>
+              <div class="pipeline-card-body" id="pb-<%= p.id %>">
+                <% if ((p.stages||[]).length) { %>
+                  <% p.stages.forEach(s => { %>
+                  <div class="stage-row" id="sr-<%= s.id %>">
+                    <div class="stage-color" style="background:<%= s.color %>"></div>
+                    <div class="stage-name-txt"><%= escHtml(s.name) %></div>
+                    <div class="stage-order">#<%= s.order %></div>
+                    <div style="display:flex;gap:3px">
+                      <button class="btn btn-ghost btn-icon btn-sm" onclick="openStageModal(<%= p.id %>,<%= s.id %>,'<%= escHtml(s.name) %>','<%= s.color %>')" title="Tahrirlash"><i class="fas fa-edit"></i></button>
+                      <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="deleteStage(<%= p.id %>,<%= s.id %>)" title="O'chirish"><i class="fas fa-trash"></i></button>
+                    </div>
+                  </div>
+                  <% }) %>
+                <% } else { %>
+                  <div style="color:var(--text-tertiary);font-size:13px;padding:8px 0">Hech qanday bosqich topilmadi</div>
+                <% } %>
+                <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="openStageModal(<%= p.id %>)">
+                  <i class="fas fa-plus"></i> Bosqich qo'shish
+                </button>
+              </div>
+            </div>
+            <% }) %>
+          <% } else { %>
+            <div class="empty-state" style="padding:40px"><div class="empty-state-icon"><i class="fas fa-filter"></i></div><h3>Hech qanday voronka topilmadi</h3><p>Yangi voronka yarating</p></div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. USERS -->
+    <% if (isAdmin) { %>
+    <div class="settings-pane" id="pane-users">
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <i class="fas fa-users" style="color:var(--accent)"></i>
+          <h3>Foydalanuvchilar</h3>
+          <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openUserModal()"><i class="fas fa-plus"></i> Qo'shish</button>
+        </div>
+        <div class="settings-section-body">
+          <div class="table-responsive" style="overflow-x:auto;">
+            <table class="table" style="width:100%; border-collapse:collapse; background:var(--bg-secondary); border-radius:10px; overflow:hidden;">
+              <thead style="background:var(--bg-primary); border-bottom:1px solid var(--border);">
+                <tr>
+                  <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Ism</th>
+                  <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Email</th>
+                  <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Rol</th>
+                  <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Status</th>
+                  <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Qo'shilgan</th>
+                  <th style="padding:12px 16px; text-align:right; font-weight:600; font-size:13px; color:var(--text-secondary);"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if ((usersList || []).length) { %>
+                  <% (usersList || []).forEach(u => { %>
+                  <tr style="border-bottom:1px solid var(--border); transition:background 0.2s;" onmouseover="this.style.background='var(--bg-tertiary)'" onmouseout="this.style.background='transparent'">
+                    <td style="padding:12px 16px; font-size:14px; color:var(--text-primary); font-weight:500;"><%= escHtml(u.fullName||'—') %></td>
+                    <td style="padding:12px 16px; font-size:13px; color:var(--text-primary);"><%= escHtml(u.email) %></td>
+                    <td style="padding:12px 16px; font-size:13px;"><span class="badge <%= u.role==='admin'?'badge-purple':u.role==='operator'?'badge-gray':'badge-blue' %>" style="font-weight:600;"><%= u.role==='admin'?'Admin':u.role==='operator'?'Operator':'Manager' %></span></td>
+                    <td style="padding:12px 16px; font-size:13px;"><span style="font-weight:600; padding:2px 8px; border-radius:4px; font-size:12px; <%= u.isActive ? 'background:rgba(16,185,129,0.1);color:#10B981;' : 'background:rgba(239,68,68,0.1);color:#EF4444;' %>"><%= u.isActive?'Faol':'Bloklangan' %></span></td>
+                    <td style="padding:12px 16px; font-size:13px; color:var(--text-secondary);"><%= new Date(u.createdAt).toLocaleDateString('uz-UZ') %></td>
+                    <td style="padding:12px 16px; text-align:right;">
+                      <button class="btn btn-ghost btn-icon btn-sm text-primary" onclick="openUserModal(<%= u.id %>, '<%= escHtml(u.fullName||'') %>', '<%= escHtml(u.email) %>', '<%= u.role %>', <%= u.isActive %>)" title="Tahrirlash"><i class="fas fa-edit"></i></button>
+                      <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="deleteUser(<%= u.id %>)" title="O'chirish"><i class="fas fa-trash"></i></button>
+                    </td>
+                  </tr>
+                  <% }) %>
+                <% } else { %>
+                  <tr><td colspan="5" style="border:none;"><div class="empty-state" style="padding:24px"><h3>Foydalanuvchilar yo'q</h3></div></td></tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <% } %>
+
+    <!-- 5. INTEGRATIONS -->
+    <div class="settings-pane" id="pane-integrations">
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <i class="fas fa-plug" style="color:var(--accent)"></i>
+          <h3>Integratsiyalar</h3>
+        </div>
+        <div class="settings-section-body">
+          <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom: 20px; background: rgba(225, 48, 108, 0.08); border: 1px solid rgba(225, 48, 108, 0.2); padding: 16px; border-radius: 12px;">
+            <i class="fab fa-instagram" style="color: #E1306C; font-size: 24px; margin-top: 2px;"></i>
+            <div>
+              <h4 style="margin-bottom: 4px; color: var(--text-primary);">Instagram Lead Ads</h4>
+              <p style="font-size: 13px; color: var(--text-secondary); margin: 0; line-height: 1.5;">Facebook va Instagram orqali kelgan formalarni avtomatik tarzda Sdelkalar bo'limiga tushishi uchun Webhook manzilini Meta For Developers paneliga ulang.</p>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Webhook Callback URL</label>
+            <div style="display:flex; gap:8px;">
+              <input type="text" class="form-control" id="webhookUrlInput" value="https://<DOMEN_NOMI>/api/webhooks/instagram" readonly style="font-family: monospace; flex: 1; background: var(--bg-tertiary);">
+              <button class="btn btn-secondary btn-sm" onclick="copyToClipboard('webhookUrlInput', this)"><i class="fas fa-copy"></i> Nusxalash</button>
+            </div>
+          </div>
+          <div class="form-group" style="margin-top:16px;">
+            <label class="form-label">Verify Token (Tasdiqlash kodi)</label>
+            <div style="display:flex; gap:8px;">
+              <input type="text" class="form-control" id="webhookTokenInput" value="desco-secret-token-123" readonly style="font-family: monospace; background: var(--bg-tertiary);">
+              <button class="btn btn-secondary btn-sm" onclick="copyToClipboard('webhookTokenInput', this)"><i class="fas fa-copy"></i> Nusxalash</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <% } %>
+
+  </div>
+</div>
+
+<!-- PIPELINE MODAL -->
+<div class="modal-overlay hidden" id="pipelineModal">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-header">
+      <h2 id="pipelineModalTitle">Yangi voronka</h2>
+      <button class="modal-close" onclick="closePipelineModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="pipelineId">
+      <div class="form-group">
+        <label class="form-label">Voronka nomi *</label>
+        <input type="text" id="p-name" class="form-control" placeholder="Masalan: Asosiy voronka">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Rang</label>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input type="color" id="p-color" value="#007AFF"
+            style="width:44px;height:36px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;padding:2px">
+          <div style="display:flex;gap:6px;flex-wrap:wrap"><%- swatchHtml.replace(/pickColor/g,'pickPipelineColor') %></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tavsif</label>
+        <input type="text" id="p-desc" class="form-control" placeholder="Ixtiyoriy">
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+          <input type="checkbox" id="p-isDefault"> Default voronka sifatida belgilash
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closePipelineModal()">Bekor qilish</button>
+      <button class="btn btn-primary" id="pipelineSaveBtn" onclick="savePipeline()"><i class="fas fa-save"></i> Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- STAGE MODAL -->
+<div class="modal-overlay hidden" id="stageModal">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header">
+      <h2 id="stageModalTitle">Yangi bosqich</h2>
+      <button class="modal-close" onclick="closeStageModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="stageId">
+      <input type="hidden" id="stagePipelineId">
+      <div class="form-group">
+        <label class="form-label">Bosqich nomi *</label>
+        <input type="text" id="st-name" class="form-control" placeholder="Masalan: Muzokaralar">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Rang</label>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input type="color" id="st-color" value="#007AFF"
+            style="width:44px;height:36px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;padding:2px">
+          <div style="display:flex;gap:6px;flex-wrap:wrap"><%- swatchHtml %></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeStageModal()">Bekor qilish</button>
+      <button class="btn btn-primary" id="stageSaveBtn" onclick="saveStage()"><i class="fas fa-save"></i> Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- USER MODAL -->
+<div class="modal-overlay hidden" id="userModal">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-header">
+      <h2>Yangi foydalanuvchi</h2>
+      <button class="modal-close" onclick="closeUserModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="u-id">
+      <div class="form-group"><label class="form-label">Ism-familiya</label><input type="text" id="u-fullName" class="form-control" placeholder="To'liq ism"></div>
+      <div class="form-group"><label class="form-label">Email *</label><input type="email" id="u-email" class="form-control" placeholder="email@example.com"></div>
+      <div class="form-group"><label class="form-label">Parol <span id="u-password-hint" style="color:var(--text-secondary);font-size:11px;font-weight:normal">(Faqat o'zgartirish uchun kiritng)</span></label><input type="password" id="u-password" class="form-control" placeholder="Kamida 8 belgi"></div>
+      <div class="form-group"><label class="form-label">Rol</label>
+        <select id="u-role" class="form-control">
+          <option value="admin">Administrator</option>
+          <option value="manager">Manager</option>
+          <option value="operator">Operator</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Status</label>
+        <select id="u-isActive" class="form-control">
+          <option value="true">Faol</option>
+          <option value="false">Bloklangan</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeUserModal()">Bekor qilish</button>
+      <button class="btn btn-primary" id="userSaveBtn" onclick="saveUser()"><i class="fas fa-save"></i> Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Settings Tab Switching ──
+function switchTab(tabId, el) {
+  // Update tabs
+  document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  
+  // Update panes
+  document.querySelectorAll('.settings-pane').forEach(p => p.classList.remove('active'));
+  const targetPane = document.getElementById('pane-' + tabId);
+  if(targetPane) targetPane.classList.add('active');
+}
+
+// ── Profile Saving ──
+async function saveProfile() {
+  const fullName = document.getElementById('prof-fullName').value.trim();
+  const email = document.getElementById('prof-email').value.trim();
+  const currentPassword = document.getElementById('prof-currentPassword').value.trim();
+  const newPassword = document.getElementById('prof-newPassword').value.trim();
+
+  const body = {};
+  if (fullName) body.fullName = fullName;
+  if (email) body.email = email;
+  if (newPassword) {
+    if (!currentPassword) { showToast('Joriy parolni kiritish majburiy', 'error'); return; }
+    body.currentPassword = currentPassword;
+    body.newPassword = newPassword;
+  }
+
+  if (Object.keys(body).length === 0) return;
+
+  try {
+    const r = await fetch('/api/settings/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.message || 'Xato yuz berdi');
+    
+    showToast('Profil muvaffaqiyatli yangilandi', 'success');
+    document.getElementById('prof-currentPassword').value = '';
+    document.getElementById('prof-newPassword').value = '';
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+}
+
+// ── Copy to Clipboard ──
+function copyToClipboard(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  input.select();
+  document.execCommand('copy');
+  
+  const originalHtml = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-check"></i> Nusxalandi';
+  btn.classList.add('btn-primary');
+  btn.classList.remove('btn-secondary');
+  setTimeout(() => {
+    btn.innerHTML = originalHtml;
+    btn.classList.add('btn-secondary');
+    btn.classList.remove('btn-primary');
+  }, 2000);
+}
+
+function pickColor(c, el) {
+  document.getElementById('st-color').value = c;
+  el.closest('div').querySelectorAll('div').forEach(d => d.style.borderColor = 'transparent');
+  el.style.borderColor = 'var(--text-primary)';
+}
+function pickPipelineColor(c, el) {
+  document.getElementById('p-color').value = c;
+  el.closest('div').querySelectorAll('div').forEach(d => d.style.borderColor = 'transparent');
+  el.style.borderColor = 'var(--text-primary)';
+}
+
+// ── Pipeline accordion toggle ──
+function togglePipeline(id) {
+  const body = document.getElementById('pb-' + id);
+  const icon = document.getElementById('pch-' + id);
+  if (!body) return;
+  const isOpen = body.classList.toggle('open');
+  if (icon) icon.style.transform = isOpen ? 'rotate(180deg)' : '';
+}
+
+// ── PIPELINE CRUD ──
+function openPipelineModal(id) {
+  document.getElementById('pipelineId').value = id || '';
+  document.getElementById('p-name').value = '';
+  document.getElementById('p-color').value = '#007AFF';
+  document.getElementById('p-desc').value = '';
+  document.getElementById('p-isDefault').checked = false;
+  document.getElementById('pipelineModalTitle').textContent = id ? 'Voronkani tahrirlash' : 'Yangi voronka';
+
+  if (id) {
+    fetch('/api/pipelines/' + id).then(r => r.json()).then(p => {
+      if (!p.message) {
+        document.getElementById('p-name').value  = p.name || '';
+        document.getElementById('p-color').value = p.color || '#007AFF';
+        document.getElementById('p-desc').value  = p.description || '';
+        document.getElementById('p-isDefault').checked = !!p.isDefault;
+      }
+    }).catch(() => {});
+  }
+  document.getElementById('pipelineModal').classList.remove('hidden');
+}
+function closePipelineModal() { document.getElementById('pipelineModal').classList.add('hidden'); }
+
+async function savePipeline() {
+  const id   = document.getElementById('pipelineId').value;
+  const name = document.getElementById('p-name').value.trim();
+  if (!name) { showToast('Voronka nomi majburiy', 'error'); return; }
+  const btn = document.getElementById('pipelineSaveBtn');
+  btn.disabled = true;
+  try {
+    const body = {
+      name,
+      color: document.getElementById('p-color').value,
+      description: document.getElementById('p-desc').value.trim() || null,
+      isDefault: document.getElementById('p-isDefault').checked
+    };
+    const r = await fetch(id ? '/api/pipelines/' + id : '/api/pipelines', {
+      method: id ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error((await r.json()).message || 'Xato');
+    showToast(id ? 'Voronka yangilandi' : "Voronka qo'shildi", 'success');
+    closePipelineModal();
+    setTimeout(() => location.reload(), 600);
+  } catch(e) { showToast(e.message || 'Xato', 'error'); }
+  finally { btn.disabled = false; }
+}
+
+async function deletePipeline(id) {
+  if (!confirm("Voronkani o'chirishni tasdiqlaysizmi? Ichidagi sdelkalar boshqa voronkaga o'tkaziladi.")) return;
+  try {
+    const r = await fetch('/api/pipelines/' + id, { method: 'DELETE' });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.message);
+    showToast("Voronka o'chirildi", 'success');
+    setTimeout(() => location.reload(), 600);
+  } catch(e) { showToast(e.message || "O'chirishda xato", 'error'); }
+}
+
+// ── STAGE CRUD ──
+function openStageModal(pipelineId, stageId, name, color) {
+  document.getElementById('stagePipelineId').value = pipelineId || '';
+  document.getElementById('stageId').value = stageId || '';
+  document.getElementById('st-name').value = name || '';
+  document.getElementById('st-color').value = color || '#007AFF';
+  document.getElementById('stageModalTitle').textContent = stageId ? 'Bosqichni tahrirlash' : 'Yangi bosqich';
+  document.getElementById('stageModal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('st-name').focus(), 60);
+}
+function closeStageModal() { document.getElementById('stageModal').classList.add('hidden'); }
+
+async function saveStage() {
+  const pid  = document.getElementById('stagePipelineId').value;
+  const sid  = document.getElementById('stageId').value;
+  const name = document.getElementById('st-name').value.trim();
+  const color = document.getElementById('st-color').value;
+  if (!name) { showToast('Nom majburiy', 'error'); return; }
+  if (!pid)  { showToast('Pipeline aniqlanmadi', 'error'); return; }
+  const btn = document.getElementById('stageSaveBtn');
+  btn.disabled = true;
+  try {
+    const url = sid
+      ? '/api/pipelines/' + pid + '/stages/' + sid
+      : '/api/pipelines/' + pid + '/stages';
+    const r = await fetch(url, {
+      method: sid ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, color })
+    });
+    if (!r.ok) throw new Error((await r.json()).message);
+    showToast(sid ? 'Bosqich yangilandi' : "Bosqich qo'shildi", 'success');
+    closeStageModal();
+    setTimeout(() => location.reload(), 600);
+  } catch(e) { showToast(e.message || 'Xato', 'error'); }
+  finally { btn.disabled = false; }
+}
+
+async function deleteStage(pipelineId, stageId) {
+  if (!confirm("Bosqichni o'chirishni tasdiqlaysizmi?")) return;
+  try {
+    const r = await fetch('/api/pipelines/' + pipelineId + '/stages/' + stageId, { method: 'DELETE' });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.message);
+    showToast("Bosqich o'chirildi", 'success');
+    setTimeout(() => location.reload(), 600);
+  } catch(e) { showToast(e.message || "O'chirishda xato", 'error'); }
+}
+
+// ── COMPANY ──
+async function saveCompany() {
+  const companyName = document.getElementById('s-companyName').value.trim();
+  const currency = document.getElementById('s-currency').value;
+  try {
+    const r = await fetch('/api/settings/company', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ companyName, currency }) });
+    if (!r.ok) throw new Error();
+    showToast('Saqlandi', 'success');
+  } catch(e) { showToast('Xato', 'error'); }
+}
+
+// ── USERS ──
+function openUserModal(id, fullName, email, role, isActive) {
+  document.getElementById('u-id').value = id || '';
+  document.getElementById('u-fullName').value = fullName || '';
+  document.getElementById('u-email').value = email || '';
+  document.getElementById('u-password').value = '';
+  document.getElementById('u-role').value = role || 'manager';
+  document.getElementById('u-isActive').value = (isActive === false) ? 'false' : 'true';
+  
+  if (id) {
+    document.querySelector('#userModal h2').textContent = 'Foydalanuvchini tahrirlash';
+    document.getElementById('u-password-hint').style.display = 'inline';
+  } else {
+    document.querySelector('#userModal h2').textContent = 'Yangi foydalanuvchi';
+    document.getElementById('u-password-hint').style.display = 'none';
+  }
+  document.getElementById('userModal').classList.remove('hidden');
+}
+function closeUserModal() { document.getElementById('userModal').classList.add('hidden'); }
+async function saveUser() {
+  const id = document.getElementById('u-id').value;
+  const fullName = document.getElementById('u-fullName').value.trim();
+  const email    = document.getElementById('u-email').value.trim();
+  const password = document.getElementById('u-password').value;
+  const role     = document.getElementById('u-role').value;
+  const isActive = document.getElementById('u-isActive').value === 'true';
+
+  if (!email) { showToast('Email majburiy', 'error'); return; }
+  if (!id && !password) { showToast('Parol majburiy', 'error'); return; }
+  if (password && password.length < 8) { showToast("Parol kamida 8 belgi bo'lishi kerak", 'error'); return; }
+  
+  const body = { fullName, email, role, isActive };
+  if (password) body.password = password;
+
+  const btn = document.getElementById('userSaveBtn');
+  btn.disabled = true;
+  try {
+    const url = id ? '/api/settings/users/' + id : '/api/settings/users';
+    const method = id ? 'PATCH' : 'POST';
+    const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!r.ok) throw new Error((await r.json()).message);
+    showToast(id ? "Yangilandi" : "Foydalanuvchi qo'shildi", 'success');
+    closeUserModal();
+    setTimeout(() => location.reload(), 800);
+  } catch(e) { showToast(e.message || 'Xato', 'error'); }
+  finally { btn.disabled = false; }
+}
+async function deleteUser(id) {
+  if (!confirm("Foydalanuvchini o'chirishni tasdiqlaysizmi?")) return;
+  try {
+    const r = await fetch('/api/settings/users/' + id, { method: 'DELETE' });
+    if (!r.ok) throw new Error((await r.json()).message);
+    showToast("O'chirildi", 'success');
+    setTimeout(() => location.reload(), 800);
+  } catch(e) { showToast(e.message || "O'chirishda xato", 'error'); }
+}
+
+// ── LANGUAGE ──
+document.addEventListener('DOMContentLoaded', () => {
+  const lang = localStorage.getItem('crm-lang') || 'uz';
+  const langSelect = document.getElementById('s-language');
+  if (langSelect) langSelect.value = lang;
+});
+
+function saveLanguage() {
+  const val = document.getElementById('s-language').value;
+  localStorage.setItem('crm-lang', val);
+  window.location.reload();
+}
+</script>
+<%- include('../layouts/footer') %>

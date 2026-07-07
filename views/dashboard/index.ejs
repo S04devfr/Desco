@@ -1,0 +1,1008 @@
+<%- include('../layouts/header', {
+  title: 'Tahlil — DESCO CRM',
+  activePage: 'dashboard',
+  user: user}) %>
+
+<style>
+/* Stats card enhancements */
+.stat-card.clickable {
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.stat-card.clickable:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-hover);
+}
+.stat-card.clickable::after {
+  content: "\f304";
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.stat-card.clickable:hover::after {
+  opacity: 1;
+}
+
+/* Financial Tab Navigation */
+.financial-tab-btn {
+  border-bottom: 2px solid transparent !important;
+  color: var(--text-secondary);
+  border-radius: 0 !important;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.financial-tab-btn.active {
+  color: var(--accent) !important;
+  border-bottom: 2px solid var(--accent) !important;
+  font-weight: 600;
+}
+.fin-tab-content.hidden {
+  display: none !important;
+}
+
+/* Inline Inputs styling */
+.spreadsheet-input {
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  width: 100%;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+.spreadsheet-input:hover {
+  background: var(--bg-primary);
+  border-color: var(--border);
+}
+.spreadsheet-input:focus {
+  background: var(--bg-secondary);
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.spreadsheet-input.success {
+  border-color: var(--success) !important;
+  background-color: var(--success-bg) !important;
+}
+
+/* Installment Plan UI */
+.inst-deal-item {
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 12.5px;
+}
+.inst-deal-item:hover {
+  background: var(--bg-tertiary);
+}
+.inst-deal-item.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+</style>
+
+<div class="page-header">
+  <div>
+    <h1>Tahlil</h1>
+    <p>Umumiy ko'rsatkichlar va statistika</p>
+  </div>
+  <div class="page-header-actions" style="display:flex; align-items:center; gap:8px;">
+    <!-- Date Filter Picker -->
+    <div id="dateRangeContainer" style="display:none; align-items:center; gap:6px;">
+      <input type="date" id="startDate" class="form-control" style="width:130px;height:32px;font-size:12px;padding:0 8px;">
+      <span style="font-size:12px;color:var(--text-secondary)">-</span>
+      <input type="date" id="endDate" class="form-control" style="width:130px;height:32px;font-size:12px;padding:0 8px;">
+    </div>
+    
+    <select id="dashFilter" class="form-control" style="width:auto;display:inline-block;height:32px;font-size:13px;" onchange="onFilterChange()">
+      <option value="all">Barcha vaqt</option>
+      <option value="today">Bugun</option>
+      <option value="yesterday">Kecha</option>
+      <option value="day-before-yesterday">Kuni kecha</option>
+      <option value="month">Shu oy</option>
+      <option value="range">Sana oralig'i</option>
+    </select>
+    <button class="btn btn-secondary btn-sm" onclick="loadDashboard()">
+      <i class="fas fa-sync-alt"></i> Yangilash
+    </button>
+  </div>
+</div>
+
+<!-- KPI STATS -->
+<div class="stats-grid" id="kpiCards" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px;">
+  <div class="stat-card clickable" onclick="openFinancialModal('installments')">
+    <div class="stat-icon blue"><i class="fas fa-handshake"></i></div>
+    <div class="stat-info">
+      <div class="stat-label"><%= (typeof user !== 'undefined' && user && user.role === 'admin') ? 'Jami sdelkalar' : 'Mening sdelkalarim' %></div>
+      <div class="stat-value skeleton" style="height:28px;width:60px"> </div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="fas fa-coins"></i></div>
+    <div class="stat-info">
+      <div class="stat-label"><%= (typeof user !== 'undefined' && user && user.role === 'admin') ? "Umumiy to'langan" : "Mening savdo summam" %></div>
+      <div class="stat-value skeleton" style="height:28px;width:80px"> </div>
+    </div>
+  </div>
+  
+  <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
+  <div class="stat-card clickable" onclick="openFinancialModal('client-debts')">
+    <div class="stat-icon red"><i class="fas fa-users"></i></div>
+    <div class="stat-info">
+      <div class="stat-label">Klientlardan qarz</div>
+      <div class="stat-value skeleton" style="height:28px;width:80px"> </div>
+    </div>
+  </div>
+  <div class="stat-card" style="cursor: pointer" onclick="window.location.href='/expenses'">
+    <div class="stat-icon orange"><i class="fas fa-minus-circle"></i></div>
+    <div class="stat-info">
+      <div class="stat-label">Xarajatlar</div>
+      <div class="stat-value skeleton" style="height:28px;width:80px"> </div>
+    </div>
+  </div>
+  <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')">
+    <div class="stat-icon purple"><i class="fas fa-tags"></i></div>
+    <div class="stat-info">
+      <div class="stat-label">Tan narxi</div>
+      <div class="stat-value skeleton" style="height:28px;width:80px"> </div>
+    </div>
+  </div>
+  <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')">
+    <div class="stat-icon green"><i class="fas fa-chart-line"></i></div>
+    <div class="stat-info">
+      <div class="stat-label">Sof foyda</div>
+      <div class="stat-value skeleton" style="height:28px;width:80px"> </div>
+    </div>
+  </div>
+  <% } %>
+</div>
+
+<!-- CHARTS + TASKS -->
+<div class="dashboard-grid">
+  <div class="card">
+    <div class="card-header">
+      <h3><i class="fas fa-chart-bar" style="color:var(--accent);margin-right:6px"></i>Menejerlar bo'yicha savdo</h3>
+    </div>
+    <div class="card-body">
+      <div class="chart-wrap">
+        <canvas id="salesChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3><i class="fas fa-tasks" style="color:var(--accent);margin-right:6px"></i>Bugungi vazifalar</h3>
+      <a href="/tasks" class="btn btn-ghost btn-sm" style="font-size:12px">Barchasi</a>
+    </div>
+    <div id="todayTasks" class="task-list">
+      <div style="padding:20px;text-align:center"><div class="spinner"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- PRODUCT CHART -->
+<div class="card mt-4">
+  <div class="card-header">
+    <h3><i class="fas fa-box" style="color:var(--accent);margin-right:6px"></i>Mahsulotlar bo'yicha</h3>
+  </div>
+  <div class="card-body">
+    <div class="chart-wrap" style="height:200px">
+      <canvas id="productChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ FINANCIAL METRICS MODAL ════════════ -->
+<div class="modal-overlay hidden" id="financialModal" style="z-index:1100">
+  <div class="modal-box" style="max-width:850px; max-height:85vh; display:flex; flex-direction:column; overflow:hidden; padding:0;">
+    <div class="modal-header" style="padding:16px 20px; border-bottom:1px solid var(--border);">
+      <h2 style="display:flex; align-items:center; gap:8px;"><i class="fas fa-wallet" style="color:var(--accent)"></i> Moliyaviy Sozlamalar va Nasiya</h2>
+      <button class="modal-close" onclick="closeFinancialModal()">&times;</button>
+    </div>
+    
+    <!-- Tab headers -->
+    <div style="display:flex; border-bottom:1px solid var(--border); padding:0 16px; background:var(--bg-secondary); flex-shrink:0;">
+      <button class="btn financial-tab-btn active" id="tab-cost-prices-btn" onclick="switchFinTab('cost-prices')" style="border-radius:0; border:none; padding:12px 16px; background:none; font-size:13px; cursor:pointer;">
+        <i class="fas fa-tags" style="margin-right:6px"></i> Mahsulotlar Tan Narxi
+      </button>
+      <button class="btn financial-tab-btn" id="tab-installments-btn" onclick="switchFinTab('installments')" style="border-radius:0; border:none; padding:12px 16px; background:none; font-size:13px; cursor:pointer;">
+        <i class="fas fa-calendar-alt" style="margin-right:6px"></i> Nasiya Rejalari
+      </button>
+      <button class="btn financial-tab-btn" id="tab-client-debts-btn" onclick="switchFinTab('client-debts')" style="border-radius:0; border:none; padding:12px 16px; background:none; font-size:13px; cursor:pointer;">
+        <i class="fas fa-users" style="margin-right:6px"></i> Klientlardan Qarz (Manual)
+      </button>
+    </div>
+
+    <div class="modal-body" style="flex:1; overflow-y:auto; padding:20px; background:var(--bg-primary);">
+      <!-- Tab 1: Product Catalog -->
+      <div class="fin-tab-content" id="tab-cost-prices">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:16px;">
+          <div>
+            <p style="font-size:12.5px; color:var(--text-secondary); margin:0;">Mahsulotlar va ularning narxlarini boshqarish.</p>
+            <button class="btn btn-primary btn-sm mt-2" onclick="openAddProductModal()"><i class="fas fa-plus"></i> Yangi mahsulot qo'shish</button>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <input type="text" id="dealAttachSearch" class="form-control" placeholder="Mijoz (sdelka) qidirish..." style="width:200px; height:32px; font-size:12px">
+            <select id="catalogSelect" class="form-control" style="width:200px; height:32px; font-size:12px">
+              <option value="">Mahsulotni tanlang...</option>
+            </select>
+            <button class="btn btn-success btn-sm" onclick="attachProductToDeal()"><i class="fas fa-link"></i> Biriktirish</button>
+          </div>
+        </div>
+        <div style="max-height:350px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; background:var(--bg-secondary);">
+          <table class="deals-tbl" style="width:100%">
+            <thead>
+              <tr style="background:var(--bg-tertiary);">
+                <th style="padding:10px 12px; font-size:11px; font-weight:700;">ID</th>
+                <th style="padding:10px 12px; font-size:11px; font-weight:700;">Mahsulot Nomi</th>
+                <th style="padding:10px 12px; font-size:11px; font-weight:700;">Narxi</th>
+                <th style="padding:10px 12px; font-size:11px; font-weight:700;">Izoh</th>
+                <th style="padding:10px 12px; font-size:11px; font-weight:700; width:60px"></th>
+              </tr>
+            </thead>
+            <tbody id="costTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab 2: Installments -->
+      <div class="fin-tab-content hidden" id="tab-installments">
+        <div style="display:grid; grid-template-columns:250px 1fr; gap:20px; min-height:350px;">
+          <!-- Left sdelka list -->
+          <div style="border-right:1px solid var(--border); padding-right:12px; max-height:380px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;">
+            <p style="font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-tertiary); margin-bottom:4px">Qarzdorlik bor sdelkalar</p>
+            <div id="installmentDealsList" style="display:flex; flex-direction:column; gap:6px"></div>
+          </div>
+          <!-- Right installment editor -->
+          <div id="installmentPlanEditor" style="display:flex; flex-direction:column; min-height:350px;">
+            <div class="empty-state" style="padding:60px 40px; text-align:center; margin:auto;">
+              <i class="fas fa-chevron-left" style="font-size:28px; color:var(--text-tertiary); margin-bottom:10px"></i>
+              <h4 style="margin:0 0 4px; font-size:14px; color:var(--text-secondary)">Sdelkani tanlang</h4>
+              <p style="margin:0; font-size:12px; color:var(--text-tertiary)">Nasiya rejasini (oyma-oy to'lovlarni) sozlash uchun chapdan mijozni tanlang</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Client Debts -->
+      <div class="fin-tab-content hidden" id="tab-client-debts">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:16px;">
+          <p style="font-size:12.5px; color:var(--text-secondary); margin:0;">Mijozlarning qo'shimcha yoki manual qarzlarini tahrirlash.</p>
+          <input type="text" id="clientDebtSearch" class="form-control" placeholder="Mijoz ismi..." style="width:220px; height:32px; font-size:12px" oninput="filterClientDebtTable()">
+        </div>
+        <div style="max-height:350px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; background:var(--bg-secondary);">
+          <table class="deals-tbl" style="width:100%">
+            <thead>
+              <tr style="background:var(--bg-tertiary);">
+                <th style="padding:10px 12px; font-size:11px; font-weight:700;">ID</th>
+                <th style="padding:10px 12px; font-size:11px; font-weight:700;">Mijoz Ismi</th>
+                <th style="padding:10px 12px; font-size:11px; font-weight:700;">Telefon</th>
+                <th style="padding:10px 12px; font-size:11px; font-weight:700;">Kompaniya</th>
+                <th style="padding:10px 12px; font-size:11px; font-weight:700; width:180px">Klient Qarz (Manual)</th>
+              </tr>
+            </thead>
+            <tbody id="clientDebtTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <div class="modal-footer" style="padding:12px 20px; background:var(--bg-secondary); border-top:1px solid var(--border); display:flex; justify-content:flex-end; flex-shrink:0;">
+      <button class="btn btn-secondary btn-sm" onclick="closeFinancialModal()">Yopish</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let salesChart, productChart;
+
+// Dynamic filter handlers
+function onFilterChange() {
+  const filter = document.getElementById('dashFilter').value;
+  const rangeContainer = document.getElementById('dateRangeContainer');
+  if (filter === 'range') {
+    rangeContainer.style.display = 'inline-flex';
+  } else {
+    rangeContainer.style.display = 'none';
+    loadDashboard();
+  }
+}
+
+document.getElementById('startDate').addEventListener('change', () => {
+  if (document.getElementById('endDate').value) loadDashboard();
+});
+document.getElementById('endDate').addEventListener('change', () => {
+  if (document.getElementById('startDate').value) loadDashboard();
+});
+
+async function dashFetch(url, timeoutMs = 8000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  let r;
+  try {
+    r = await fetch(url, { signal: controller.signal });
+    clearTimeout(id);
+  } catch(err) {
+    clearTimeout(id);
+    throw new Error("Tarmoq xatosi yoki server ishlamayapti (Timeout).");
+  }
+  let data;
+  try { data = await r.json(); } catch { data = {}; }
+  if (!r.ok) {
+    if (typeof _toast === 'function') _toast(data.message || 'Server xatosi: ' + r.status, 'error');
+    throw new Error(data.message || (url + ' -> ' + r.status));
+  }
+  return data;
+}
+
+// Helpers
+function escHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function fmtMoney(v) {
+  return (Number(v) || 0).toLocaleString('uz-UZ') + " so'm";
+}
+function fmtShort(v) {
+  const n = Number(v) || 0;
+  if (n >= 1e9) return (n / 1e9).toFixed(1).replace('.0', '') + " mlrd";
+  if (n >= 1e6) return (n / 1e6).toFixed(1).replace('.0', '') + " mln";
+  if (n >= 1e3) return (n / 1e3).toFixed(0) + " ming";
+  return String(n);
+}
+function fmtDate(d) {
+  if (!d) return '';
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return typeof d === 'object' ? JSON.stringify(d) : String(d);
+  const dd = String(dt.getDate()).padStart(2, '0');
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const yyyy = dt.getFullYear();
+  return `${dd}.${mm}.${yyyy}`;
+}
+
+// Main loader
+async function loadDashboard() {
+  try {
+    const filter = document.getElementById('dashFilter') ? document.getElementById('dashFilter').value : 'all';
+    let urlParams = 'filter=' + filter;
+    if (filter === 'range') {
+      const start = document.getElementById('startDate').value;
+      const end = document.getElementById('endDate').value;
+      if (start && end) {
+        urlParams += '&startDate=' + start + '&endDate=' + end;
+      }
+    }
+
+    const [kpis, salesData, productData, tasks] = await Promise.all([
+      dashFetch('/api/dashboard/kpis?' + urlParams).catch(e => { console.error(e); return {}; }),
+      dashFetch('/api/dashboard/sales-by-manager?' + urlParams).catch(e => { console.error(e); return []; }),
+      dashFetch('/api/dashboard/product-popularity?' + urlParams).catch(e => { console.error(e); return []; }),
+      dashFetch('/api/dashboard/today-tasks').catch(e => { console.error(e); return []; })
+    ]);
+
+    // Safe default for KPI stats
+    const safeKpis = kpis || {};
+
+    // KPI Cards rendering
+    document.getElementById('kpiCards').innerHTML = `
+      <div class="stat-card clickable" onclick="openFinancialModal('installments')">
+        <div class="stat-icon blue"><i class="fas fa-handshake"></i></div>
+        <div class="stat-info">
+          <div class="stat-label"><%= (typeof user !== 'undefined' && user && user.role === 'admin') ? 'Jami sdelkalar' : 'Mening sdelkalarim' %></div>
+          <div class="stat-value">${safeKpis.totalOrders ?? 0}</div>
+          <div class="stat-sub">Yutilgan: ${safeKpis.won ?? 0} · Yo'qotilgan: ${safeKpis.lost ?? 0}</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green"><i class="fas fa-coins"></i></div>
+        <div class="stat-info">
+          <div class="stat-label"><%= (typeof user !== 'undefined' && user && user.role === 'admin') ? "Umumiy to'langan" : "Mening savdo summam" %></div>
+          <div class="stat-value">${fmtMoney(safeKpis.totalRevenue ?? 0)}</div>
+        </div>
+      </div>
+      <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
+      <div class="stat-card clickable" onclick="openFinancialModal('client-debts')">
+        <div class="stat-icon red"><i class="fas fa-users"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Klientlardan qarz</div>
+          <div class="stat-value">${fmtMoney(safeKpis.totalClientDebt ?? 0)}</div>
+        </div>
+      </div>
+      <div class="stat-card" style="cursor: pointer" onclick="window.location.href='/expenses'">
+        <div class="stat-icon orange"><i class="fas fa-minus-circle"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Xarajatlar</div>
+          <div class="stat-value">${fmtMoney(safeKpis.totalExpenses ?? 0)}</div>
+        </div>
+      </div>
+      <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')">
+        <div class="stat-icon purple"><i class="fas fa-tags"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Tan narxi</div>
+          <div class="stat-value">${fmtMoney(safeKpis.totalCostPrice ?? 0)}</div>
+        </div>
+      </div>
+      <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')">
+        <div class="stat-icon green"><i class="fas fa-chart-line"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Sof foyda</div>
+          <div class="stat-value ${(safeKpis.netProfit ?? 0) >= 0 ? 'text-success' : 'text-danger'}">${fmtMoney(safeKpis.netProfit ?? 0)}</div>
+        </div>
+      </div>
+      <% } %>
+    `;
+
+    // Safe defaults in case API fails
+    const safeSalesData = Array.isArray(salesData) ? salesData : [];
+    const safeProductData = Array.isArray(productData) ? productData : [];
+    const safeTasks = Array.isArray(tasks) ? tasks : [];
+
+    // Charts rendering
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+    const textColor = isDark ? '#98989d' : '#6e6e73';
+
+    if (salesChart) salesChart.destroy();
+    
+    if (safeSalesData.length === 0) {
+      document.getElementById('salesChart').parentElement.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:13px;">Ma\'lumot yo\'q</div>';
+    } else {
+      salesChart = new Chart(document.getElementById('salesChart'), {
+        type: 'bar',
+        data: {
+          labels: safeSalesData.map(d => d.manager || 'Noma\'lum'),
+          datasets: [{
+            label: "Savdo (so'm)",
+            data: safeSalesData.map(d => d.totalSales || 0),
+            backgroundColor: 'rgba(0,122,255,0.7)',
+            borderRadius: 8, borderSkipped: false
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { grid: { color: gridColor }, ticks: { color: textColor, callback: v => fmtShort(v) } },
+            x: { grid: { display: false }, ticks: { color: textColor } }
+          }
+        }
+      });
+    }
+
+    if (productChart) productChart.destroy();
+    const top = safeProductData.slice(0, 8);
+    const colors = ['#007AFF','#34C759','#FF9500','#FF3B30','#5856D6','#00C7BE','#FF2D55','#AC8E68'];
+    
+    if (top.length === 0) {
+      document.getElementById('productChart').parentElement.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:13px;">Ma\'lumot yo\'q</div>';
+    } else {
+      productChart = new Chart(document.getElementById('productChart'), {
+        type: 'doughnut',
+        data: {
+          labels: top.map(d => d.product || 'Noma\'lum'),
+          datasets: [{ data: top.map(d => d.count || 0), backgroundColor: colors, borderWidth: 0 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: 'right', labels: { color: textColor, boxWidth: 12, padding: 14, font: { size: 12 } } } }
+        }
+      });
+    }
+
+    // Today's tasks rendering
+    const tasksEl = document.getElementById('todayTasks');
+    if (!safeTasks.length) {
+      tasksEl.innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-state-icon"><i class="fas fa-check-circle"></i></div><h3>Bugungi vazifalar yo\'q</h3></div>';
+    } else {
+      tasksEl.innerHTML = safeTasks.map(t => `
+        <div class="task-item">
+          <div class="task-check ${t.completed ? 'done' : ''}" onclick="toggleTask(${t.id}, this)">
+            ${t.completed ? '<i class="fas fa-check" style="font-size:9px"></i>' : ''}
+          </div>
+          <div class="task-info">
+            <div class="task-title ${t.completed ? 'done' : ''}">${escHtml(t?.title || 'Noma\'lum')}</div>
+            <div class="task-meta">
+              <span class="priority-dot ${t?.priority || 'medium'}"></span>
+              ${t?.dueDate ? '<span class="task-due"><i class="fas fa-clock"></i> ' + fmtDate(t.dueDate) + '</span>' : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+  } catch(e) {
+    console.error('Dashboard yuk xatosi:', e);
+    const kpiCards = document.getElementById('kpiCards');
+    if (kpiCards) {
+      kpiCards.innerHTML = `
+        <div class="stat-card" style="grid-column:1/-1">
+          <div class="stat-icon red"><i class="fas fa-exclamation-triangle"></i></div>
+          <div class="stat-info">
+            <div class="stat-label">Yuklashda xato</div>
+            <div class="stat-value" style="font-size:14px;font-weight:500">${escHtml(e.message)}</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" style="margin-left:auto" onclick="loadDashboard()"><i class="fas fa-redo"></i> Qayta urinish</button>
+        </div>
+      `;
+    }
+    // Clear chart spinners
+    const salesChartEl = document.getElementById('salesChart');
+    if (salesChartEl && salesChartEl.parentElement) {
+      salesChartEl.parentElement.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:13px;">Yuklashda xato (Ma\'lumot yo\'q)</div>';
+    }
+    const productChartEl = document.getElementById('productChart');
+    if (productChartEl && productChartEl.parentElement) {
+      productChartEl.parentElement.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:13px;">Yuklashda xato (Ma\'lumot yo\'q)</div>';
+    }
+    const tasksEl = document.getElementById('todayTasks');
+    if (tasksEl) {
+      tasksEl.innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-state-icon"><i class="fas fa-exclamation-circle"></i></div><h3>Yuklashda xato</h3></div>';
+    }
+  } finally {
+    const refreshBtn = document.querySelector('button[onclick="loadDashboard()"]');
+    if (refreshBtn) {
+      refreshBtn.disabled = false;
+      refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Yangilash';
+    }
+  }
+}
+
+async function toggleTask(id, el) {
+  const completed = !el.classList.contains('done');
+  try {
+    const r = await fetch('/api/tasks/' + id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ completed })
+    });
+    if (r.ok) {
+      el.classList.toggle('done');
+      el.innerHTML = completed ? '<i class="fas fa-check" style="font-size:9px"></i>' : '';
+      el.nextElementSibling.querySelector('.task-title').classList.toggle('done');
+      if (typeof window.updateSidebarTaskBadge === 'function') window.updateSidebarTaskBadge();
+    }
+  } catch(e) {}
+}
+
+// ── FINANCIAL MODAL LOGIC ──
+let allDealsData = [];
+let allClientsData = [];
+let selectedDealIdForInstallments = null;
+
+function openFinancialModal(tab) {
+  document.getElementById('financialModal').classList.remove('hidden');
+  switchFinTab(tab);
+  loadFinancialData();
+}
+
+function closeFinancialModal() {
+  document.getElementById('financialModal').classList.add('hidden');
+}
+
+function switchFinTab(tab) {
+  document.querySelectorAll('.financial-tab-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  document.querySelectorAll('.fin-tab-content').forEach(content => {
+    content.classList.add('hidden');
+  });
+
+  document.getElementById('tab-' + tab + '-btn').classList.add('active');
+  document.getElementById('tab-' + tab).classList.remove('hidden');
+}
+
+let allCatalogData = [];
+
+async function loadFinancialData() {
+  try {
+    const [deals, clients, catalog] = await Promise.all([
+      dashFetch('/api/deals'),
+      dashFetch('/api/clients'),
+      dashFetch('/api/product-catalog')
+    ]);
+    allDealsData = deals || [];
+    allClientsData = clients || [];
+    allCatalogData = catalog || [];
+    
+    renderCatalogTable();
+    updateCatalogDropdown();
+    renderInstallmentTab();
+    renderClientDebtTable();
+  } catch(e) {
+    console.error('Moliya yuklashda xato:', e);
+  }
+}
+
+// Tab 1: Product Catalog rendering & updating
+function renderCatalogTable() {
+  const tbody = document.getElementById('costTableBody');
+  
+  if (!allCatalogData.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-tertiary)">Katalog bo\'sh</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = allCatalogData.map(d => `
+    <tr>
+      <td style="padding:10px 12px; font-size:12.5px; color:var(--text-tertiary)">#${d.id}</td>
+      <td style="padding:10px 12px; font-size:13px; font-weight:600">${escHtml(d.name)}</td>
+      <td style="padding:10px 12px; font-size:12.5px; font-weight:600">${fmtMoney(d.price)}</td>
+      <td style="padding:10px 12px; font-size:12.5px">${escHtml(d.notes || '-')}</td>
+      <td style="padding:6px 12px; text-align:right;">
+        <button class="btn btn-ghost btn-sm text-danger" onclick="deleteCatalogProduct(${d.id})"><i class="fas fa-trash"></i></button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function updateCatalogDropdown() {
+  const select = document.getElementById('catalogSelect');
+  select.innerHTML = '<option value="">Mahsulotni tanlang...</option>' + 
+    allCatalogData.map(c => `<option value="${c.id}" data-price="${c.price}" data-name="${escHtml(c.name)}">${escHtml(c.name)} (${fmtMoney(c.price)})</option>`).join('');
+}
+
+function openAddProductModal() {
+  // We'll create a simple prompt-based modal logic for adding
+  const name = prompt("Mahsulot nomi:");
+  if (!name) return;
+  const price = prompt("Narxi (raqamda):");
+  if (!price) return;
+  const notes = prompt("Izoh (masalan qaysi shaharga qancha):");
+  
+  saveNewProduct(name, price, notes);
+}
+
+async function saveNewProduct(name, price, notes) {
+  try {
+    const r = await fetch('/api/product-catalog', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, price, notes })
+    });
+    if (!r.ok) throw new Error();
+    if (typeof showToast === 'function') showToast('Qo\'shildi', 'success');
+    loadFinancialData();
+  } catch(e) {
+    if (typeof showToast === 'function') showToast('Saqlashda xato', 'error');
+  }
+}
+
+async function deleteCatalogProduct(id) {
+  if (!confirm('Rostdan ham o\'chirmoqchimisiz?')) return;
+  try {
+    const r = await fetch('/api/product-catalog/' + id, { method: 'DELETE' });
+    if (!r.ok) throw new Error();
+    loadFinancialData();
+  } catch(e) {}
+}
+
+async function attachProductToDeal() {
+  const searchQ = document.getElementById('dealAttachSearch').value.toLowerCase();
+  const selectEl = document.getElementById('catalogSelect');
+  const catId = selectEl.value;
+  
+  if (!searchQ || !catId) return alert('Mijozni qidiring va mahsulotni tanlang!');
+  
+  const deal = allDealsData.find(d => 
+    (d.client?.name || '').toLowerCase().includes(searchQ) ||
+    String(d.client?.phone || '').includes(searchQ)
+  );
+  
+  if (!deal) return alert('Sdelka (mijoz) topilmadi!');
+  
+  const opt = selectEl.options[selectEl.selectedIndex];
+  const price = opt.getAttribute('data-price');
+  const pName = opt.getAttribute('data-name');
+  
+  if (!confirm(`Sdelka: ${deal.client?.name}\nMahsulot: ${pName}\nNarx: ${price}\nBiriktirilsinmi?`)) return;
+  
+  try {
+    const r = await fetch('/api/deals/' + deal.id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productName: pName, amount: Number(price) })
+    });
+    if (!r.ok) throw new Error();
+    if (typeof showToast === 'function') showToast('Mahsulot biriktirildi', 'success');
+    document.getElementById('dealAttachSearch').value = '';
+    loadFinancialData();
+  } catch(e) {
+    if (typeof showToast === 'function') showToast('Xatolik yuz berdi', 'error');
+  }
+}
+
+// Tab 2: Installments rendering & planners
+function renderInstallmentTab() {
+  const listEl = document.getElementById('installmentDealsList');
+  
+  // Only deals that have outstanding debt
+  const debtorDeals = allDealsData.filter(d => d.amount > d.paidAmount);
+  
+  if (!debtorDeals.length) {
+    listEl.innerHTML = '<div style="color:var(--text-tertiary);font-size:12px;padding:10px;text-align:center;">Qarzdorlar yo\'q</div>';
+    document.getElementById('installmentPlanEditor').innerHTML = `
+      <div class="empty-state" style="padding:60px 40px; text-align:center; margin:auto;">
+        <i class="fas fa-check-circle" style="font-size:28px; color:var(--success); margin-bottom:10px"></i>
+        <h4 style="margin:0; font-size:14px; color:var(--text-secondary)">Barcha qarzdorliklar yopilgan</h4>
+      </div>
+    `;
+    return;
+  }
+
+  listEl.innerHTML = debtorDeals.map(d => `
+    <div class="inst-deal-item ${selectedDealIdForInstallments === d.id ? 'active' : ''}" onclick="selectDealForInstallments(${d.id})">
+      <div style="font-weight:600; color:var(--text-primary);">${escHtml(d.client?.name || 'Mijoz #' + d.id)}</div>
+      <div style="font-size:11px; color:var(--text-secondary); margin-top:2px;">${escHtml(d.productName)}</div>
+      <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:4px;">
+        <span style="color:var(--text-tertiary)">Qarz:</span>
+        <span style="color:var(--danger); font-weight:700;">${fmtMoney(d.amount - d.paidAmount)}</span>
+      </div>
+    </div>
+  `).join('');
+
+  if (selectedDealIdForInstallments) {
+    renderInstallmentPlanEditor(selectedDealIdForInstallments);
+  }
+}
+
+async function selectDealForInstallments(dealId) {
+  selectedDealIdForInstallments = dealId;
+  renderInstallmentTab();
+}
+
+async function renderInstallmentPlanEditor(dealId) {
+  const deal = allDealsData.find(d => d.id === dealId);
+  const editorEl = document.getElementById('installmentPlanEditor');
+  if (!deal) return;
+
+  const remainingDebt = deal.amount - deal.paidAmount;
+
+  editorEl.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed var(--border); padding-bottom:10px; margin-bottom:12px;">
+      <div>
+        <h3 style="font-size:14px; font-weight:700; margin:0;">${escHtml(deal.client?.name)} · ${escHtml(deal.productName)}</h3>
+        <p style="font-size:11px; color:var(--text-tertiary); margin:0;">Sdelka #${deal.id}</p>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase;">Qolgan Qarz</div>
+        <div style="font-size:16px; font-weight:800; color:var(--danger)">${fmtMoney(remainingDebt)}</div>
+      </div>
+    </div>
+
+    <!-- Quick action: auto-generate plan -->
+    <div style="background:var(--bg-tertiary); padding:10px; border-radius:8px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+      <span style="font-size:11.5px; color:var(--text-secondary); font-weight:500;">
+        <i class="fas fa-magic" style="color:var(--accent); margin-right:4px;"></i> Avto-Bo'lib to'lash plani
+      </span>
+      <div style="display:flex; gap:6px;">
+        <button class="btn btn-sm btn-ghost" onclick="autoGenerateInstallments(${deal.id}, 3)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border)">3 oy</button>
+        <button class="btn btn-sm btn-ghost" onclick="autoGenerateInstallments(${deal.id}, 6)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border)">6 oy</button>
+        <button class="btn btn-sm btn-ghost" onclick="autoGenerateInstallments(${deal.id}, 12)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border)">12 oy</button>
+      </div>
+    </div>
+
+    <!-- Installments rows -->
+    <div style="font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-tertiary); margin-bottom:6px;">To'lov jadvali</div>
+    <div id="instRowsContainer" style="display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto; margin-bottom:16px; padding-right:4px;"></div>
+    
+    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border); padding-top:12px;">
+      <button class="btn btn-sm btn-ghost" onclick="addInstallmentRow()" style="border:1px dashed var(--border); font-size:12px;">
+        <i class="fas fa-plus"></i> To'lov qo'shish
+      </button>
+      <button class="btn btn-sm btn-primary" onclick="saveInstallmentPlan(${deal.id})" id="saveInstPlanBtn">
+        <i class="fas fa-save"></i> Planni Saqlash
+      </button>
+    </div>
+  `;
+
+  // Fetch current plan
+  try {
+    const list = await dashFetch('/api/deals/' + dealId + '/installments');
+    const container = document.getElementById('instRowsContainer');
+    if (list && list.length) {
+      container.innerHTML = list.map((inst, idx) => getInstallmentRowHtml(idx, inst.dueDate.slice(0, 10), inst.amount, inst.paid, inst.productName, inst.month, inst.notes)).join('');
+    } else {
+      // Default: 1 row pre-filled with remaining debt
+      container.innerHTML = getInstallmentRowHtml(0, new Date().toISOString().slice(0, 10), remainingDebt, false, deal.productName, '1-oy', '');
+    }
+  } catch(e) {
+    document.getElementById('instRowsContainer').innerHTML = getInstallmentRowHtml(0, new Date().toISOString().slice(0, 10), remainingDebt, false, deal.productName, '1-oy', '');
+  }
+}
+
+function getInstallmentRowHtml(index, dateVal, amountVal, paidVal, productVal, monthVal, notesVal) {
+  return `
+    <div class="installment-row" style="display:flex; align-items:center; gap:6px; background:var(--bg-secondary); border:1px solid var(--border); padding:6px 8px; border-radius:6px; margin-bottom:4px;">
+      <span style="font-size:12px; color:var(--text-tertiary); width:16px; font-weight:600;">#${index + 1}</span>
+      <input type="text" class="form-control inst-product spreadsheet-input" value="${escHtml(productVal || '')}" style="width:130px; height:28px; font-size:12px; padding:0 6px;" placeholder="Mahsulot">
+      <input type="text" class="form-control inst-month spreadsheet-input" value="${escHtml(monthVal || '')}" style="width:70px; height:28px; font-size:12px; padding:0 6px;" placeholder="Oy (1 oy)">
+      <input type="date" class="form-control inst-date spreadsheet-input" value="${dateVal}" style="width:115px; height:28px; font-size:12px; padding:0 6px;">
+      <input type="number" class="form-control inst-amount spreadsheet-input" value="${amountVal}" style="flex:1; max-width:100px; height:28px; font-size:12px; padding:0 6px; font-weight:600;" placeholder="Summa">
+      <input type="text" class="form-control inst-notes spreadsheet-input" value="${escHtml(notesVal || '')}" style="flex:1.5; height:28px; font-size:12px; padding:0 6px;" placeholder="Izoh">
+      
+      <label style="display:inline-flex; align-items:center; gap:4px; font-size:11.5px; color:var(--text-secondary); cursor:pointer; margin:0 8px 0 4px; user-select:none; white-space:nowrap;">
+        <input type="checkbox" class="inst-paid" ${paidVal ? 'checked' : ''} style="cursor:pointer;"> To'landi
+      </label>
+      
+      <button class="btn btn-ghost btn-sm text-danger" onclick="this.parentElement.remove()" style="padding:2px 6px; font-size:11px;" title="Qatorni o'chirish">
+        <i class="fas fa-trash"></i>
+      </button>
+    </div>
+  `;
+}
+
+function addInstallmentRow() {
+  const container = document.getElementById('instRowsContainer');
+  const index = container.querySelectorAll('.installment-row').length;
+  
+  const lastRowDate = container.querySelector('.installment-row:last-child .inst-date');
+  const lastProduct = container.querySelector('.installment-row:last-child .inst-product');
+  let dateStr = new Date().toISOString().slice(0,10);
+  let pName = lastProduct ? lastProduct.value : '';
+  
+  if (lastRowDate && lastRowDate.value) {
+    const d = new Date(lastRowDate.value);
+    d.setMonth(d.getMonth() + 1);
+    dateStr = d.toISOString().slice(0,10);
+  }
+
+  const div = document.createElement('div');
+  div.innerHTML = getInstallmentRowHtml(index, dateStr, 0, false, pName, `${index+1}-oy`, '');
+  container.appendChild(div.firstElementChild);
+}
+
+function autoGenerateInstallments(dealId, months) {
+  const deal = allDealsData.find(d => d.id === dealId);
+  if (!deal) return;
+  const remaining = deal.amount - deal.paidAmount;
+  const eachVal = Math.round(remaining / months);
+
+  const container = document.getElementById('instRowsContainer');
+  container.innerHTML = '';
+  
+  for (let i = 0; i < months; i++) {
+    const d = new Date();
+    d.setMonth(d.getMonth() + i);
+    const dateStr = d.toISOString().slice(0, 10);
+    const amount = (i === months - 1) ? (remaining - (eachVal * (months - 1))) : eachVal;
+    
+    container.innerHTML += getInstallmentRowHtml(i, dateStr, amount, false, deal.productName, `${i+1}-oy`, '');
+  }
+}
+
+async function saveInstallmentPlan(dealId) {
+  const btn = document.getElementById('saveInstPlanBtn');
+  btn.disabled = true;
+  
+  const container = document.getElementById('instRowsContainer');
+  const rows = container.querySelectorAll('.installment-row');
+  const installments = [];
+  
+  let totalScheduled = 0;
+  for (const row of rows) {
+    const dueDate = row.querySelector('.inst-date').value;
+    const amount = Number(row.querySelector('.inst-amount').value) || 0;
+    const paid = row.querySelector('.inst-paid').checked;
+    const productName = row.querySelector('.inst-product').value;
+    const month = row.querySelector('.inst-month').value;
+    const notes = row.querySelector('.inst-notes').value;
+    
+    if (!dueDate) {
+      if (typeof showToast === 'function') showToast('Sana kiritilishi majburiy', 'error');
+      btn.disabled = false;
+      return;
+    }
+    installments.push({ dueDate, amount, paid, productName, month, notes });
+    totalScheduled += amount;
+  }
+
+  try {
+    const r = await fetch('/api/deals/' + dealId + '/installments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ installments })
+    });
+    if (!r.ok) throw new Error();
+    
+    if (typeof showToast === 'function') showToast('To\'lov plani saqlandi', 'success');
+    loadFinancialData(); // Refresh metrics locally
+  } catch(e) {
+    if (typeof showToast === 'function') showToast('Saqlashda xatolik', 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// Tab 3: Client Manual Debt rendering & updating
+function renderClientDebtTable() {
+  const tbody = document.getElementById('clientDebtTableBody');
+  const q = document.getElementById('clientDebtSearch').value.toLowerCase();
+  
+  const filtered = allClientsData.filter(c => 
+    (c.name || '').toLowerCase().includes(q) ||
+    (c.company || '').toLowerCase().includes(q) ||
+    (c.phone || '').toLowerCase().includes(q)
+  );
+
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-tertiary)">Mijozlar topilmadi</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(c => `
+    <tr>
+      <td style="padding:10px 12px; font-size:12.5px; color:var(--text-tertiary)">#${c.id}</td>
+      <td style="padding:10px 12px; font-size:13px; font-weight:600">${escHtml(c.name)}</td>
+      <td style="padding:10px 12px; font-size:12.5px">${escHtml(c.phone || '—')}</td>
+      <td style="padding:10px 12px; font-size:12.5px">${escHtml(c.company || '—')}</td>
+      <td style="padding:6px 12px;">
+        <input type="number" class="spreadsheet-input" value="${c.debt || 0}"
+               onchange="saveClientDebt(${c.id}, this)">
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterClientDebtTable() {
+  renderClientDebtTable();
+}
+
+async function saveClientDebt(id, inputEl) {
+  const val = Number(inputEl.value) || 0;
+  try {
+    inputEl.disabled = true;
+    const r = await fetch('/api/clients/' + id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ debt: val })
+    });
+    if (!r.ok) throw new Error();
+    
+    // Success feedback animation
+    inputEl.classList.add('success');
+    setTimeout(() => inputEl.classList.remove('success'), 1000);
+    
+    // Update local data
+    const c = allClientsData.find(x => x.id === id);
+    if (c) c.debt = val;
+    
+    loadDashboard(); // Recalculate dashboard metrics
+  } catch(e) {
+    if (typeof showToast === 'function') showToast('Saqlashda xato', 'error');
+  } finally {
+    inputEl.disabled = false;
+  }
+}
+
+// Emergency override: Majburiy loading to'xtatuvchi
+setTimeout(() => {
+  const gl = document.getElementById('global-loader');
+  if (gl) gl.style.display = 'none'; // yashirish
+  document.querySelectorAll('.spinner, .fa-spinner').forEach(el => {
+    // try to remove spinners or parent fallback
+    if(el.parentElement && el.parentElement.tagName !== 'BUTTON') el.remove();
+  });
+  const refreshBtn = document.querySelector('button[onclick="loadDashboard()"]');
+  if (refreshBtn && refreshBtn.disabled) {
+    refreshBtn.disabled = false;
+    refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Yangilash';
+  }
+}, 2000);
+
+// Start
+loadDashboard();
+</script>
+<%- include('../layouts/footer') %>

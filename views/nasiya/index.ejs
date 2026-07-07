@@ -1,0 +1,297 @@
+<%- include('../layouts/header', {
+  title: "Nasiya Bo'limi — DESCO CRM",
+  activePage: 'nasiya-' + subPage,
+  user: user}) %>
+
+<div class="page-header">
+  <div>
+    <h1 id="nasiyaTitle">Nasiya</h1>
+    <p>Sdelka voronkasidan kelgan nasiya to'lovlari ro'yxati</p>
+  </div>
+  <div class="page-header-actions">
+    <button class="btn btn-secondary btn-sm" onclick="loadNasiyaDeals()">
+      <i class="fas fa-sync-alt"></i> Yangilash
+    </button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+    <h3 id="tableHeader">Mijozlar to'lovlari (Excel-Grid)</h3>
+    <div style="display:flex; gap:10px;">
+      <span id="dealCount" class="badge badge-blue">0</span>
+      <button class="btn btn-outline btn-sm" onclick="addEmptyRow()" style="border:1px dashed var(--border);">
+        <i class="fas fa-plus"></i> Yangi qo'shish
+      </button>
+    </div>
+  </div>
+  <div class="table-wrap" style="overflow-x:auto;">
+    <table class="deals-tbl" style="width:100%; border-collapse: collapse;">
+      <thead>
+        <tr style="background:var(--bg-secondary)">
+          <th style="width:20%;">Mahsulot</th>
+          <th style="width:10%;">Oy</th>
+          <th style="width:15%;">Narxi</th>
+          <th style="width:20%;">Menejer</th>
+          <th style="width:20%;">Izoh</th>
+          <th style="width:15%; text-align:center;">Amal</th>
+        </tr>
+      </thead>
+      <tbody id="nasiyaTableBody">
+        <tr>
+          <td colspan="6" style="text-align:center; padding:40px;">
+            <div class="spinner" style="margin:auto"></div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<style>
+.excel-input {
+  width: 100%;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 10px 8px;
+  font-size: 13px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  color: var(--text-primary);
+}
+.excel-input:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border);
+}
+.excel-input:focus {
+  background: var(--bg-primary);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+  outline: none;
+}
+.new-row {
+  background: var(--bg-primary);
+  animation: highlight 1s ease-out;
+}
+@keyframes highlight {
+  0% { background: var(--accent-soft); }
+  100% { background: transparent; }
+}
+</style>
+
+<script>
+const activeStageKey = '<%= subPage %>';
+const titlesMap = {
+  'shopir': 'Shopirdagi pul',
+  'desco': 'Nasiya Desco',
+  'ishonch': 'Nasiya Ishonch',
+  'baraka': 'Nasiya Baraka'
+};
+
+document.getElementById('nasiyaTitle').textContent = titlesMap[activeStageKey] || 'Nasiya';
+document.getElementById('tableHeader').textContent = (titlesMap[activeStageKey] || 'Nasiya') + ' jadvali';
+
+async function loadNasiyaDeals() {
+  const tbody = document.getElementById('nasiyaTableBody');
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px;"><div class="spinner" style="margin:auto"></div></td></tr>';
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const r = await fetch('/api/nasiya/list-deals?stage=' + activeStageKey, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (!r.ok) throw new Error('Xatolik');
+    const deals = await r.json();
+
+    document.getElementById('dealCount').textContent = deals.length + ' ta yozuv';
+
+    if (!deals.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--text-tertiary)"><i class="fas fa-table" style="font-size:28px; display:block; margin-bottom:8px;"></i>Hozircha hech narsa yo\'q</td></tr>';
+      return;
+    }
+
+    let html = '';
+    (deals || []).forEach(d => {
+      // Get month from first installment if exists, else default
+      let monthVal = '1 oy';
+      if (d.installments && d.installments.length > 0) {
+        monthVal = d.installments[0].month || '1 oy';
+      }
+      
+      html += `
+        <tr class="inst-row" data-deal-id="${d.id}">
+          <td style="padding:0; border:1px solid var(--border-light);">
+            <input type="text" class="excel-input f-product" value="${escHtml(d.productName)}" placeholder="Mahsulot nomi">
+          </td>
+          <td style="padding:0; border:1px solid var(--border-light);">
+            <input type="text" class="excel-input f-month" value="${escHtml(monthVal)}" placeholder="1 oy">
+          </td>
+          <td style="padding:0; border:1px solid var(--border-light);">
+            <input type="number" class="excel-input f-amount" value="${d.amount}" placeholder="0">
+          </td>
+          <td style="padding:0; border:1px solid var(--border-light);">
+            <div style="padding: 8px; color:var(--text-secondary); font-size:13px; font-weight:500;">
+              ${escHtml(d.manager?.fullName || 'Belgilanmagan')}
+            </div>
+          </td>
+          <td style="padding:0; border:1px solid var(--border-light);">
+            <input type="text" class="excel-input f-notes" value="${escHtml(d.notes || d.client?.name || '')}" placeholder="Mijoz yoki Izoh">
+          </td>
+          <td style="text-align:center; padding:0; border:1px solid var(--border-light);">
+            <div style="display:flex; justify-content:center; gap:6px; padding:8px;">
+              <button class="btn btn-primary btn-sm" onclick="saveExistingRow(this, ${d.id})" title="Saqlash"><i class="fas fa-save"></i></button>
+              <button class="btn btn-ghost btn-sm text-danger" onclick="deleteRow(${d.id})" title="O'chirish"><i class="fas fa-trash"></i></button>
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+    tbody.innerHTML = html;
+  } catch(e) {
+    document.getElementById('dealCount').textContent = '0 ta yozuv';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--text-tertiary)"><i class="fas fa-table" style="font-size:28px; display:block; margin-bottom:8px;"></i>Hozircha hech narsa yo\'q</td></tr>';
+  } finally {
+    // Spinner is already overwritten by innerHTML in both try and catch branches
+  }
+}
+
+function addEmptyRow() {
+  const tbody = document.getElementById('nasiyaTableBody');
+  // Clear empty state if exists
+  if(tbody.querySelector('td[colspan]')) {
+    tbody.innerHTML = '';
+  }
+  const tr = document.createElement('tr');
+  tr.className = 'inst-row new-row';
+  tr.innerHTML = `
+    <td style="padding:0; border:1px solid var(--border-light);">
+      <input type="text" class="excel-input f-product" placeholder="Mahsulot nomi">
+    </td>
+    <td style="padding:0; border:1px solid var(--border-light);">
+      <input type="text" class="excel-input f-month" value="1 oy" placeholder="1 oy">
+    </td>
+    <td style="padding:0; border:1px solid var(--border-light);">
+      <input type="number" class="excel-input f-amount" placeholder="0">
+    </td>
+    <td style="padding:0; border:1px solid var(--border-light);">
+      <div style="padding: 8px; color:var(--text-secondary); font-size:13px; font-style:italic;">
+        Siz (Yangi)
+      </div>
+    </td>
+    <td style="padding:0; border:1px solid var(--border-light);">
+      <input type="text" class="excel-input f-notes" placeholder="Izoh">
+    </td>
+    <td style="text-align:center; padding:0; border:1px solid var(--border-light);">
+      <div style="display:flex; justify-content:center; gap:6px; padding:8px;">
+        <button class="btn btn-primary btn-sm" onclick="saveNewRow(this)" title="Saqlash"><i class="fas fa-save"></i></button>
+        <button class="btn btn-ghost btn-sm text-danger" onclick="this.closest('tr').remove()" title="Olib tashlash"><i class="fas fa-times"></i></button>
+      </div>
+    </td>
+  `;
+  tbody.prepend(tr);
+  tr.querySelector('.f-product').focus();
+}
+
+async function saveNewRow(btn) {
+  const row = btn.closest('tr');
+  const product = row.querySelector('.f-product').value.trim();
+  const month = row.querySelector('.f-month').value.trim();
+  const amount = row.querySelector('.f-amount').value.trim();
+  const notes = row.querySelector('.f-notes').value.trim();
+
+  if(!product || !amount) {
+    if(typeof showToast === 'function') showToast('Mahsulot va Narxi kiritilishi shart!', 'error');
+    else alert('Mahsulot va Narxi kiritilishi shart!');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+  try {
+    const res = await fetch('/api/nasiya/quick-add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        stage: activeStageKey,
+        productName: product,
+        clientName: notes || "Noma'lum mijoz",
+        clientPhone: '',
+        amount: amount,
+        month: month
+      })
+    });
+    if(!res.ok) throw new Error('Saqlashda xato yuz berdi');
+    
+    if(typeof showToast === 'function') showToast('Saqlandi!', 'success');
+    loadNasiyaDeals();
+  } catch(e) {
+    if(typeof showToast === 'function') showToast(e.message, 'error');
+    else alert(e.message);
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-save"></i>';
+  }
+}
+
+async function saveExistingRow(btn, dealId) {
+  const row = btn.closest('tr');
+  const product = row.querySelector('.f-product').value.trim();
+  const month = row.querySelector('.f-month').value.trim();
+  const amount = row.querySelector('.f-amount').value.trim();
+  const notes = row.querySelector('.f-notes').value.trim();
+
+  btn.disabled = true;
+  const originalHtml = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+  try {
+    // 1) Update Deal
+    const res = await fetch('/api/deals/' + dealId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        productName: product,
+        amount: Number(amount) || 0,
+        notes: notes
+      })
+    });
+    if(!res.ok) throw new Error('Xato');
+
+    // 2) Update Installment to save 'month'
+    await fetch('/api/deals/' + dealId + '/installments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ installments: [{ productName: product, month: month, amount: Number(amount)||0, notes: notes, paid: false, dueDate: new Date().toISOString() }] })
+    });
+
+    btn.innerHTML = '<i class="fas fa-check"></i>';
+    btn.classList.add('btn-success');
+    setTimeout(() => {
+      btn.innerHTML = '<i class="fas fa-save"></i>';
+      btn.classList.remove('btn-success');
+      btn.disabled = false;
+    }, 2000);
+  } catch(e) {
+    if(typeof showToast === 'function') showToast('Saqlashda xato', 'error');
+    btn.innerHTML = originalHtml;
+    btn.disabled = false;
+  }
+}
+
+async function deleteRow(dealId) {
+  if(!confirm("Ushbu qatorni o'chirishni tasdiqlaysizmi?")) return;
+  try {
+    const r = await fetch('/api/deals/' + dealId, { method: 'DELETE' });
+    if(!r.ok) throw new Error();
+    loadNasiyaDeals();
+  } catch(e) {
+    if(typeof showToast === 'function') showToast('O\'chirishda xatolik', 'error');
+  }
+}
+
+function escHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+document.addEventListener('DOMContentLoaded', loadNasiyaDeals);
+</script>
+<%- include('../layouts/footer') %>

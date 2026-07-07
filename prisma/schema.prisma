@@ -1,0 +1,238 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  fullName  String?
+  role      String   @default("manager")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  deals       Deal[]
+  tasks       Task[]
+  expenses    Expense[]
+  clients     Client[]
+  activities  ActivityLog[]
+}
+
+model Client {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String?
+  email     String?
+  company   String?
+  companyAddress String?
+  notes     String?
+  city      String?
+  debt      Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ownerId Int?
+  owner   User?  @relation(fields: [ownerId], references: [id])
+
+  deals Deal[]
+  tasks Task[]
+
+  instagramId       String? @unique
+  instagramUsername String?
+  messages          InstagramMessage[]
+}
+
+// ── VORONKA (PIPELINE) ──
+model Pipeline {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  isDefault   Boolean  @default(false)
+  color       String   @default("#007AFF")
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  stages PipelineStage[]
+  deals  Deal[]
+}
+
+model PipelineStage {
+  id        Int      @id @default(autoincrement())
+  name      String
+  color     String   @default("#5D4037")
+  order     Int      @default(0)
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pipelineId Int?
+  pipeline   Pipeline? @relation(fields: [pipelineId], references: [id])
+
+  deals Deal[]
+}
+
+model Deal {
+  id          Int       @id @default(autoincrement())
+  productName String
+  amount      Float     @default(0)
+  paidAmount  Float     @default(0)
+  costPrice   Float     @default(0)
+  status      String    @default("new")
+  notes       String?
+  deadline    DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  clientId Int?
+  client   Client? @relation(fields: [clientId], references: [id])
+
+  managerId Int?
+  manager   User? @relation(fields: [managerId], references: [id])
+
+  stageId Int?
+  stage   PipelineStage? @relation(fields: [stageId], references: [id])
+
+  pipelineId Int?
+  pipeline   Pipeline? @relation(fields: [pipelineId], references: [id])
+
+  tasks      Task[]
+  activities ActivityLog[]
+  installments Installment[]
+
+  @@index([stageId])
+  @@index([managerId])
+}
+
+model ActivityLog {
+  id        Int      @id @default(autoincrement())
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+
+  dealId Int?
+  deal   Deal? @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  userId Int?
+  user   User? @relation(fields: [userId], references: [id])
+}
+
+model Expense {
+  id          Int      @id @default(autoincrement())
+  description String
+  amount      Float    @default(0)
+  category    String   @default("other")
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdById Int?
+  createdBy   User? @relation(fields: [createdById], references: [id])
+}
+
+model Task {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String?
+  dueDate     DateTime?
+  dueTime     String?
+  completed   Boolean   @default(false)
+  priority    String    @default("medium")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  assignedToId Int?
+  assignedTo   User? @relation(fields: [assignedToId], references: [id])
+
+  dealId Int?
+  deal   Deal? @relation(fields: [dealId], references: [id])
+
+  clientId Int?
+  client   Client? @relation(fields: [clientId], references: [id])
+}
+
+model CompanySettings {
+  id          Int      @id @default(autoincrement())
+  companyName String   @default("DESCO CRM")
+  currency    String   @default("UZS")
+  logoUrl     String?
+  updatedAt   DateTime @updatedAt
+}
+
+model InstagramAccount {
+  id          Int      @id @default(autoincrement())
+  accountId   String   @unique
+  accessToken String?
+  username    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model InstagramMessage {
+  id        Int      @id @default(autoincrement())
+  messageId String   @unique
+  text      String?
+  senderId  String
+  recipientId String
+  timestamp DateTime
+  isOutgoing Boolean @default(false)
+  createdAt DateTime @default(now())
+
+  clientId  Int?
+  client    Client?  @relation(fields: [clientId], references: [id])
+}
+
+model Installment {
+  id          Int      @id @default(autoincrement())
+  dealId      Int
+  deal        Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  dueDate     DateTime
+  amount      Float    @default(0)
+  paid        Boolean  @default(false)
+  productName String?
+  month       String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ProductCatalog {
+  id        Int      @id @default(autoincrement())
+  name      String
+  price     Float    @default(0)
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Shopir {
+  id         Int      @id @default(autoincrement())
+  name       String
+  phone      String?
+  region     String?
+  price      Float    @default(0)
+  travelCost Float    @default(0)
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model IshonchFilial {
+  id         Int      @id @default(autoincrement())
+  name       String
+  phone      String?
+  region     String?
+  price      Float    @default(0)
+  travelCost Float    @default(0)
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}

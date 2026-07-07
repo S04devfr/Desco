@@ -1,0 +1,360 @@
+<%- include('../layouts/header', {
+  title: 'Instagram Integratsiyasi — DESCO CRM',
+  activePage: 'instagram',
+  user: user}) %>
+
+<div class="page-header">
+  <div>
+    <h1>Instagram Integratsiyasi</h1>
+    <p>Instagram Direct xabarlarini boshqarish va ulanish</p>
+  </div>
+</div>
+
+<style>
+.chat-container {
+  display: flex;
+  height: calc(100vh - 120px);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-top: 20px;
+}
+.chat-sidebar {
+  width: 300px;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+}
+.chat-sidebar-header {
+  padding: 15px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.chat-client-list {
+  flex: 1;
+  overflow-y: auto;
+}
+.chat-client-item {
+  padding: 15px;
+  border-bottom: 1px solid var(--border-light);
+  cursor: pointer;
+  transition: 0.2s;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.chat-client-item:hover {
+  background: var(--bg-secondary);
+}
+.chat-client-item.active {
+  background: var(--bg-tertiary);
+  border-left: 3px solid var(--accent);
+}
+.chat-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+.chat-client-info {
+  flex: 1;
+  min-width: 0;
+}
+.chat-client-name {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chat-client-msg {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chat-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary);
+}
+.chat-header {
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: var(--bg-primary);
+}
+.chat-messages {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.msg-bubble {
+  max-width: 70%;
+  padding: 10px 15px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  position: relative;
+}
+.msg-in {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+.msg-out {
+  background: var(--accent);
+  color: white;
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+}
+.msg-time {
+  font-size: 10px;
+  opacity: 0.7;
+  margin-top: 5px;
+  text-align: right;
+}
+.chat-input-area {
+  padding: 15px;
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+}
+.chat-input {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 10px 15px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  outline: none;
+}
+.chat-input:focus {
+  border-color: var(--accent);
+}
+.chat-send-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.2s;
+}
+.chat-send-btn:hover {
+  background: var(--accent-hover);
+}
+.empty-chat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-tertiary);
+}
+</style>
+
+<div class="page-header">
+  <div>
+    <h1>Instagram Chat</h1>
+    <p>Mijozlar bilan Instagram Direct orqali yozishish</p>
+  </div>
+</div>
+
+<div class="chat-container">
+  <div class="chat-sidebar">
+    <div class="chat-sidebar-header">
+      Suhbatlar
+      <button class="btn btn-sm btn-icon" onclick="loadClients()" title="Yangilash">
+        <i class="fas fa-sync-alt"></i>
+      </button>
+    </div>
+    <div class="chat-client-list" id="clientList">
+      <!-- Clients will be loaded here -->
+      <div style="padding: 20px; text-align: center; color: var(--text-tertiary);">Yuklanmoqda...</div>
+    </div>
+  </div>
+
+  <div class="chat-main" id="chatMain">
+    <div class="empty-chat">
+      <i class="fab fa-instagram" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i>
+      <p>Suhbatni boshlash uchun chap tomondan mijozni tanlang</p>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentClientId = null;
+let currentClientName = '';
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadClients();
+});
+
+async function loadClients() {
+  try {
+    const res = await fetch('/api/instagram/clients');
+    const clients = await res.json();
+    
+    const list = document.getElementById('clientList');
+    list.innerHTML = '';
+    
+    if (clients.length === 0) {
+      list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-tertiary);">Suhbatlar yo\'q</div>';
+      return;
+    }
+    
+    clients.forEach(c => {
+      const lastMsg = c.messages && c.messages.length > 0 ? c.messages[0].text : 'Yangi mijoz';
+      const div = document.createElement('div');
+      div.className = `chat-client-item ${c.id === currentClientId ? 'active' : ''}`;
+      div.onclick = () => selectClient(c.id, c.name);
+      
+      div.innerHTML = `
+        <div class="chat-avatar"><i class="fas fa-user"></i></div>
+        <div class="chat-client-info">
+          <div class="chat-client-name">${c.name}</div>
+          <div class="chat-client-msg">${lastMsg}</div>
+        </div>
+      `;
+      list.appendChild(div);
+    });
+  } catch (error) {
+    console.error('Error loading clients:', error);
+  }
+}
+
+async function selectClient(id, name) {
+  currentClientId = id;
+  currentClientName = name;
+  
+  // Update active state in sidebar
+  document.querySelectorAll('.chat-client-item').forEach(el => el.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  
+  // Build chat header and container
+  const chatMain = document.getElementById('chatMain');
+  chatMain.innerHTML = `
+    <div class="chat-header">
+      <div class="chat-avatar"><i class="fas fa-user"></i></div>
+      <div style="font-weight: 600;">${name}</div>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div style="text-align: center; color: var(--text-tertiary);">Yuklanmoqda...</div>
+    </div>
+    <div class="chat-input-area">
+      <input type="text" id="msgInput" class="chat-input" placeholder="Xabar yozing..." onkeypress="if(event.key === 'Enter') sendMessage()">
+      <button class="chat-send-btn" onclick="sendMessage()">
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+  `;
+  
+  loadMessages(id);
+}
+
+async function loadMessages(clientId) {
+  try {
+    const res = await fetch('/api/instagram/messages/' + clientId);
+    const messages = await res.json();
+    
+    const container = document.getElementById('chatMessages');
+    container.innerHTML = '';
+    
+    if (messages.length === 0) {
+      container.innerHTML = '<div style="text-align: center; color: var(--text-tertiary);">Xabarlar yo\'q</div>';
+      return;
+    }
+    
+    messages.forEach(m => {
+      const div = document.createElement('div');
+      div.className = `msg-bubble ${m.isOutgoing ? 'msg-out' : 'msg-in'}`;
+      
+      const time = new Date(m.timestamp).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
+      div.innerHTML = `
+        <div>${m.text}</div>
+        <div class="msg-time">${time}</div>
+      `;
+      container.appendChild(div);
+    });
+    
+    container.scrollTop = container.scrollHeight;
+  } catch (error) {
+    console.error('Error loading messages:', error);
+  }
+}
+
+async function sendMessage() {
+  if (!currentClientId) return;
+  
+  const input = document.getElementById('msgInput');
+  const text = input.value.trim();
+  if (!text) return;
+  
+  input.value = '';
+  
+  // Optimistic UI update
+  const container = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'msg-bubble msg-out';
+  const time = new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
+  div.innerHTML = `
+    <div>${text}</div>
+    <div class="msg-time">${time} <i class="fas fa-clock" style="font-size: 8px;"></i></div>
+  `;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  
+  try {
+    const res = await fetch('/api/instagram/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clientId: currentClientId, text })
+    });
+    
+    if (res.ok) {
+      div.querySelector('.fa-clock').className = 'fas fa-check';
+      loadClients(); // update last message in sidebar
+    } else {
+      div.querySelector('.fa-clock').className = 'fas fa-exclamation-circle';
+      div.querySelector('.fa-exclamation-circle').style.color = '#ffcccc';
+    }
+  } catch (error) {
+    console.error('Error sending message:', error);
+  }
+}
+
+// Ensure _toast fallback exists
+function _toast(msg, type) {
+  if (typeof showToast === 'function') {
+    showToast(msg, type);
+  } else {
+    alert(msg);
+  }
+}
+</script>
+<%- include('../layouts/footer') %>

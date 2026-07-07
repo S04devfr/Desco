@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+yarn.lock
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Database
+*.db
+dev.db
+prisma/migrations/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+dist/
+build/
+
+# Temp scripts and large binaries
+git-installer.exe
+deals_original.txt
+diff_output.txt
+fix.js
+fix_backticks.js
+fix_quotes.js
+cleanup.js
+.agents/
+
+

@@ -1,0 +1,283 @@
+<%- include('../layouts/header', {
+  title: 'Mijozlar — DESCO CRM',
+  activePage: 'clients',
+  user: user}) %>
+
+<div class="page-header">
+  <div>
+    <h1>Mijozlar</h1>
+    <p>Mijozlar bazasi</p>
+  </div>
+  <div class="page-header-actions">
+    <button class="btn btn-primary" onclick="openClientModal()">
+      <i class="fas fa-plus"></i> Yangi mijoz
+    </button>
+  </div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+  <i class="fas fa-search" style="color:var(--text-tertiary);font-size:13px"></i>
+  <input type="text" id="clientSearch" class="form-control" style="flex:1;max-width:300px" placeholder="Ism, kompaniya, telefon...">
+  <button class="btn btn-ghost btn-sm" onclick="clearSearch()"><i class="fas fa-times"></i></button>
+</div>
+
+<!-- STATS ROW -->
+<div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px" id="clientStats">
+  <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-users"></i></div><div class="stat-info"><div class="stat-label">Jami mijozlar</div><div class="stat-value" id="statTotal">—</div></div></div>
+  <div class="stat-card"><div class="stat-icon green"><i class="fas fa-handshake"></i></div><div class="stat-info"><div class="stat-label">Aktiv sdelkalar</div><div class="stat-value" id="statDeals">—</div></div></div>
+  <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-building"></i></div><div class="stat-info"><div class="stat-label">Kompaniyalar</div><div class="stat-value" id="statCompanies">—</div></div></div>
+</div>
+
+<!-- CLIENT TABLE -->
+<div class="table-responsive" style="overflow-x:auto;">
+  <table class="table" style="width:100%; border-collapse:collapse; background:var(--bg-secondary); border-radius:10px; overflow:hidden;">
+    <thead style="background:var(--bg-primary); border-bottom:1px solid var(--border);">
+      <tr>
+        <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">#</th>
+        <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Mijoz ismi</th>
+        <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Telefon</th>
+        <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Shahar</th>
+        <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Mahsulot</th>
+        <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Menejer</th>
+        <th style="padding:12px 16px; text-align:right; font-weight:600; font-size:13px; color:var(--text-secondary);">Amallar</th>
+      </tr>
+    </thead>
+    <tbody id="clientGrid">
+      <tr><td colspan="7" style="text-align:center;padding:40px"><div class="spinner"></div></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- CREATE/EDIT MODAL -->
+<div class="modal-overlay hidden" id="clientModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="clientModalTitle">Yangi mijoz</h2>
+      <button class="modal-close" onclick="closeClientModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="clientId">
+      <div class="form-grid form-grid-2">
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Ism-familiya *</label>
+          <input type="text" id="c-name" class="form-control" placeholder="To'liq ism">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Telefon</label>
+          <input type="text" id="c-phone" class="form-control" placeholder="+998 90 000 00 00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Shahar / Hudud</label>
+          <input type="text" id="c-city" class="form-control" placeholder="Qaysi shahardan">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" id="c-email" class="form-control" placeholder="email@example.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kompaniya</label>
+          <input type="text" id="c-company" class="form-control" placeholder="Kompaniya nomi">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Izoh</label>
+          <textarea id="c-notes" class="form-control" rows="2" placeholder="Qo'shimcha ma'lumot..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeClientModal()">Bekor qilish</button>
+      <button class="btn btn-primary" id="clientSaveBtn" onclick="saveClient()">
+        <i class="fas fa-save"></i> Saqlash
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+let allClients = [];
+
+async function loadClients() {
+  const q = document.getElementById('clientSearch').value;
+  const params = q ? '?q=' + encodeURIComponent(q) : '';
+  try {
+    const fetchFn = (typeof fetchWithTimeout === 'function') ? fetchWithTimeout : fetch;
+    const r = await fetchFn('/api/clients' + params);
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.message || 'Server xatosi: ' + r.status);
+    allClients = Array.isArray(data) ? data : [];
+    renderClients();
+    updateStats();
+  } catch(e) {
+    allClients = [];
+    _safeToast("Ma'lumotlarni yuklashda xatolik" + (e && e.message && !e.isTimeout ? ': ' + e.message : ''), 'error');
+    document.getElementById('clientGrid').innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon"><i class="fas fa-exclamation-triangle"></i></div><h3>Yuklashda xato</h3><p>Sahifani yangilang yoki qayta urinib ko'ring</p><button class="btn btn-primary" style="margin-top:14px" onclick="loadClients()"><i class="fas fa-redo"></i> Qayta yuklash</button></div>`;
+    updateStats();
+  }
+}
+
+// Toast that doesn't depend on main.js having loaded yet (defense in
+// depth — init() below is already DOMContentLoaded-gated so main.js
+// will be ready, but this keeps loadClients() safe even if called earlier).
+function _safeToast(msg, type) {
+  if (typeof showToast === 'function') showToast(msg, type);
+  else console.warn('[Clients]', msg);
+}
+
+function updateStats() {
+  document.getElementById('statTotal').textContent = allClients.length;
+  const totalDeals = allClients.reduce((s, c) => s + (c.deals?.length || 0), 0);
+  document.getElementById('statDeals').textContent = totalDeals;
+  const companies = new Set(allClients.filter(c => c.company).map(c => c.company)).size;
+  document.getElementById('statCompanies').textContent = companies;
+}
+
+function avatarColors(name) {
+  const colors = ['#007AFF','#34C759','#FF9500','#FF3B30','#5856D6','#00C7BE','#FF2D55'];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return colors[Math.abs(hash) % colors.length];
+}
+
+function renderClients() {
+  const grid = document.getElementById('clientGrid');
+  if (!allClients.length) {
+    grid.innerHTML = `<tr><td colspan="7" class="empty-state" style="border:none;">
+      <div class="empty-state-icon"><i class="fas fa-users"></i></div>
+      <h3>Mijozlar yo'q</h3>
+      <p>Birinchi mijozni qo'shing</p>
+      <button class="btn btn-primary" style="margin-top:14px" onclick="openClientModal()"><i class="fas fa-plus"></i> Qo'shish</button>
+    </td></tr>`;
+    return;
+  }
+  grid.innerHTML = allClients.map((c, idx) => {
+    const initials = c.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+    const color = avatarColors(c.name);
+    const deals = c.deals || [];
+    const products = deals.map(d => d.productName).filter(Boolean);
+    const uniqueProducts = [...new Set(products)].join(', ') || '—';
+    const manager = c.owner ? (c.owner.fullName || c.owner.email) : '—';
+    return `
+      <tr class="client-row" style="border-bottom:1px solid var(--border); transition:background 0.2s;" onmouseover="this.style.background='var(--bg-tertiary)'" onmouseout="this.style.background='transparent'">
+        <td style="padding:12px 16px; font-size:13px; color:var(--text-secondary);">${idx + 1}</td>
+        <td style="padding:12px 16px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:36px; height:36px; font-size:14px; background:linear-gradient(135deg,${color},${color}99); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:bold;">${initials}</div>
+            <div>
+              <div style="font-weight:600; font-size:14px; color:var(--text-primary);">${escHtml(c.name)}</div>
+              <div style="font-size:12px; color:var(--text-tertiary);">${c.company ? escHtml(c.company) : '—'}</div>
+            </div>
+          </div>
+        </td>
+        <td style="padding:12px 16px; font-size:13px; color:var(--text-primary);">${c.phone ? escHtml(c.phone) : '—'}</td>
+        <td style="padding:12px 16px; font-size:13px; color:var(--text-primary);">${c.city ? escHtml(c.city) : '—'}</td>
+        <td style="padding:12px 16px; font-size:13px; color:var(--text-primary);">${escHtml(uniqueProducts)}</td>
+        <td style="padding:12px 16px; font-size:13px; color:var(--text-primary);"><span class="badge badge-gray">${escHtml(manager)}</span></td>
+        <td style="padding:12px 16px; text-align:right;">
+          <div style="display:flex; justify-content:flex-end; gap:6px;">
+            <button class="btn btn-ghost btn-sm btn-icon" onclick="openClientModal(false, ${c.id})" title="Ko'rish / Tahrirlash"><i class="fas fa-eye"></i></button>
+            <button class="btn btn-ghost btn-sm btn-icon text-danger" onclick="deleteClient(${c.id})" title="O'chirish"><i class="fas fa-trash"></i></button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function openClientModal(viewOnly, id) {
+  document.getElementById('clientId').value = id || '';
+  document.getElementById('c-name').value = '';
+  document.getElementById('c-phone').value = '';
+  document.getElementById('c-city').value = '';
+  document.getElementById('c-email').value = '';
+  document.getElementById('c-company').value = '';
+  document.getElementById('c-notes').value = '';
+  document.getElementById('clientModalTitle').textContent = id ? 'Mijozni tahrirlash' : 'Yangi mijoz';
+
+  if (id) {
+    try {
+      const c = await fetch('/api/clients/' + id).then(r => r.json());
+      document.getElementById('c-name').value = c.name || '';
+      document.getElementById('c-phone').value = c.phone || '';
+      document.getElementById('c-city').value = c.city || '';
+      document.getElementById('c-email').value = c.email || '';
+      document.getElementById('c-company').value = c.company || '';
+      document.getElementById('c-notes').value = c.notes || '';
+    } catch(e) {}
+  }
+  document.getElementById('clientModal').classList.remove('hidden');
+}
+
+function closeClientModal() {
+  document.getElementById('clientModal').classList.add('hidden');
+}
+
+async function saveClient() {
+  const id = document.getElementById('clientId').value;
+  const name = document.getElementById('c-name').value.trim();
+  if (!name) { showToast('Ism majburiy', 'error'); return; }
+
+  const btn = document.getElementById('clientSaveBtn');
+  btn.disabled = true;
+
+  const body = {
+    name,
+    phone: document.getElementById('c-phone').value || null,
+    city: document.getElementById('c-city').value || null,
+    email: document.getElementById('c-email').value || null,
+    company: document.getElementById('c-company').value || null,
+    notes: document.getElementById('c-notes').value || null
+  };
+
+  try {
+    const url = id ? '/api/clients/' + id : '/api/clients';
+    const r = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!r.ok) throw new Error((await r.json()).message);
+    showToast(id ? 'Mijoz yangilandi' : 'Mijoz qo\'shildi', 'success');
+    closeClientModal();
+    await loadClients();
+  } catch(e) {
+    showToast(e.message || 'Xato', 'error');
+  } finally { btn.disabled = false; }
+}
+
+async function deleteClient(id) {
+  if (!confirm('Mijozni o\'chirishni tasdiqlaysizmi?')) return;
+  try {
+    const r = await fetch('/api/clients/' + id, { method: 'DELETE' });
+    if (!r.ok) throw new Error((await r.json()).message);
+    showToast('Mijoz o\'chirildi', 'success');
+    await loadClients();
+  } catch(e) { showToast(e.message || 'O\'chirishda xato', 'error'); }
+}
+
+function clearSearch() {
+  document.getElementById('clientSearch').value = '';
+  loadClients();
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+// IMPORTANT: do NOT call loadClients()/debounce() at the top level of this
+// script. This inline <script> runs while the browser is still parsing the
+// page body, which is BEFORE the later <script src="/js/main.js"> tag (in
+// the shared layout) has loaded — so main.js functions like debounce() are
+// not defined yet. Calling debounce() directly here threw "ReferenceError:
+// debounce is not defined", which aborted the rest of this script before
+// loadClients() ever ran — leaving the static loading spinner in
+// #clientGrid frozen forever. Deferring to DOMContentLoaded guarantees
+// main.js has already executed by the time this code runs.
+function init() {
+  const searchEl = document.getElementById('clientSearch');
+  const debounceFn = (typeof debounce === 'function') ? debounce : (fn, delay) => {
+    let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn.apply(null, args), delay); };
+  };
+  searchEl.addEventListener('input', debounceFn(loadClients, 400));
+  loadClients();
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+<%- include('../layouts/footer') %>

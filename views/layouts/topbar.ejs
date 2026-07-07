@@ -1,0 +1,211 @@
+<header class="topbar">
+  <div class="flex items-center gap-3">
+    <button class="topbar-btn mobile-menu-toggle hidden" onclick="toggleMobileMenu()">
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="breadcrumb" id="pageTitle">
+      <!-- Sarlavhani JS orqali yoki EJS viewdan kelib to'ldirish mumkin. Hozircha bo'sh emas. -->
+    </div>
+  </div>
+
+  <div class="topbar-right">
+    <div class="topbar-search">
+      <i class="fas fa-search"></i>
+      <input type="text" id="globalSearch" placeholder="Mijoz, sdelka qidirish..." autocomplete="off">
+    </div>
+    
+    <button class="topbar-btn" id="themeToggleBtn" title="Mavzuni o'zgartirish" onclick="toggleTheme()">
+      <i class="fas fa-moon" id="themeIcon"></i>
+    </button>
+
+    <!-- Bell icon -->
+    <div class="notif-wrap" id="notifWrap" style="position: relative;">
+      <button class="topbar-btn" id="notifBtn" title="Bildirishnomalar" onclick="toggleNotifPanel()">
+        <i class="fas fa-bell"></i>
+        <span class="notif-badge hidden" id="notifCount">0</span>
+      </button>
+      <div class="notif-panel hidden" id="notifPanel" style="position:absolute; top:calc(100% + 10px); right:0; width:320px; background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); z-index:200;">
+        <div class="notif-panel-header" style="display:flex; justify-content:space-between; padding:16px; border-bottom:1px solid var(--border);">
+          <span style="font-weight:600;">Bildirishnomalar</span>
+          <button class="notif-read-all" onclick="markAllRead()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-size:12px;">Hammasini o'qildi</button>
+        </div>
+        <div class="notif-list" id="notifList" style="max-height: 320px; overflow-y: auto;">
+          <div class="empty-state" style="padding: 24px;">Bildirishnoma yo'q</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile dropdown -->
+    <div class="profile-wrap" id="profileWrap" style="position: relative;">
+      <div class="topbar-avatar" id="profileBtn" onclick="toggleProfileMenu()" title="<%= user.fullName %>">
+        <%= user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U' %>
+      </div>
+      <div class="profile-dropdown hidden" id="profileMenu" style="position:absolute; top:calc(100% + 10px); right:0; width:220px; background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); z-index:200; overflow:hidden;">
+        <div style="padding:16px; border-bottom:1px solid var(--border); display:flex; gap:12px; align-items:center;">
+          <div class="topbar-avatar" style="width:40px; height:40px;"><%= user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U' %></div>
+          <div>
+            <div style="font-size:14px; font-weight:600; color:var(--text-primary);"><%= user.fullName || 'Foydalanuvchi' %></div>
+            <div style="font-size:12px; color:var(--text-secondary);"><%= user.email %></div>
+          </div>
+        </div>
+        <div style="padding: 8px;">
+          <a href="/settings#profile" style="display:flex; align-items:center; gap:10px; padding:10px 12px; color:var(--text-primary); text-decoration:none; border-radius:var(--radius-sm); transition:var(--transition);" onmouseover="this.style.background='var(--bg-primary)'" onmouseout="this.style.background='none'">
+            <i class="fas fa-user" style="color:var(--text-secondary);"></i> Profil sozlamalari
+          </a>
+          <button onclick="openPasswordModal()" style="width:100%; display:flex; align-items:center; gap:10px; padding:10px 12px; color:var(--text-primary); background:none; border:none; cursor:pointer; text-align:left; border-radius:var(--radius-sm); transition:var(--transition);" onmouseover="this.style.background='var(--bg-primary)'" onmouseout="this.style.background='none'">
+            <i class="fas fa-lock" style="color:var(--text-secondary);"></i> Parol o'zgartirish
+          </button>
+        </div>
+        <div style="padding: 8px; border-top:1px solid var(--border);">
+          <a href="/api/auth/logout" style="display:flex; align-items:center; gap:10px; padding:10px 12px; color:var(--danger); text-decoration:none; border-radius:var(--radius-sm); transition:var(--transition);" onmouseover="this.style.background='var(--danger-bg)'" onmouseout="this.style.background='none'">
+            <i class="fas fa-sign-out-alt"></i> Chiqish
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Password change modal -->
+<div class="modal-overlay hidden" id="passwordModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Parol o'zgartirish</h2>
+      <button class="modal-close" onclick="closePasswordModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Joriy parol</label>
+        <input type="password" id="pwCurrent" class="form-control" placeholder="••••••••">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Yangi parol</label>
+        <input type="password" id="pwNew" class="form-control" placeholder="••••••••">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Yangi parolni takrorlang</label>
+        <input type="password" id="pwConfirm" class="form-control" placeholder="••••••••">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closePasswordModal()">Bekor</button>
+      <button class="btn btn-primary" onclick="submitPasswordChange()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Notifications ──
+async function loadNotifications() {
+  try {
+    const res = await fetch('/api/notifications')
+    if (!res.ok) return
+    const notifs = await res.json()
+    const unread = notifs.filter(n => !n.read).length
+    const countEl = document.getElementById('notifCount')
+    if (unread > 0) {
+      countEl.textContent = unread > 9 ? '9+' : unread
+      countEl.classList.remove('hidden')
+    } else {
+      countEl.classList.add('hidden')
+    }
+    const list = document.getElementById('notifList')
+    if (!notifs.length) {
+      list.innerHTML = "<div class='empty-state' style='padding:24px;'>Bildirishnoma yo'q</div>"
+      return
+    }
+    list.innerHTML = notifs.map(n => `
+      <div class="notif-item ${n.read ? '' : 'notif-unread'} notif-${n.type}" ${n.read ? '' : `onclick="markAsRead('${n.id}', this)"`} style="display:flex; gap:12px; padding:16px; border-bottom:1px solid var(--border); cursor:${n.read ? 'default' : 'pointer'}; background:${n.read ? 'transparent' : 'var(--bg-primary)'}; transition:all var(--transition);">
+        <div style="font-size:18px; color: ${n.type === 'overdue' ? 'var(--danger)' : 'var(--warning)'}"><i class="fas fa-${n.type === 'overdue' ? 'exclamation-circle' : 'clock'}"></i></div>
+        <div>
+          <div style="font-weight:600; font-size:14px; color:var(--text-primary); margin-bottom:4px;">${n.title}</div>
+          <div style="font-size:13px; color:var(--text-secondary);">${n.message}</div>
+        </div>
+      </div>`).join('')
+  } catch (e) {}
+}
+
+function toggleNotifPanel() {
+  const panel = document.getElementById('notifPanel')
+  document.getElementById('profileMenu').classList.add('hidden')
+  panel.classList.toggle('hidden')
+  if (!panel.classList.contains('hidden')) loadNotifications()
+}
+
+async function markAllRead() {
+  await fetch('/api/notifications/read-all', { method: 'POST' })
+  document.getElementById('notifCount').classList.add('hidden')
+  loadNotifications()
+}
+
+async function markAsRead(id, el) {
+  if (el.classList.contains('notif-unread')) {
+    await fetch('/api/notifications/' + id + '/read', { method: 'POST' })
+    el.classList.remove('notif-unread')
+    el.style.opacity = '0'
+    setTimeout(() => {
+      el.remove()
+      const countEl = document.getElementById('notifCount')
+      let count = parseInt(countEl.textContent) || 0
+      count--
+      if (count > 0) {
+        countEl.textContent = count > 9 ? '9+' : count
+      } else {
+        countEl.classList.add('hidden')
+        const list = document.getElementById('notifList')
+        if (list.children.length === 0) {
+          list.innerHTML = "<div class='empty-state' style='padding:24px;'>Bildirishnoma yo'q</div>"
+        }
+      }
+    }, 300)
+  }
+}
+
+// ── Profile dropdown ──
+function toggleProfileMenu() {
+  const menu = document.getElementById('profileMenu')
+  document.getElementById('notifPanel').classList.add('hidden')
+  menu.classList.toggle('hidden')
+}
+
+document.addEventListener('click', function(e) {
+  const pw = document.getElementById('profileWrap')
+  const nw = document.getElementById('notifWrap')
+  if (pw && !pw.contains(e.target)) document.getElementById('profileMenu')?.classList.add('hidden')
+  if (nw && !nw.contains(e.target)) document.getElementById('notifPanel')?.classList.add('hidden')
+})
+
+// ── Password modal ──
+function openPasswordModal() {
+  document.getElementById('profileMenu').classList.add('hidden')
+  document.getElementById('passwordModal').classList.remove('hidden')
+}
+function closePasswordModal() {
+  document.getElementById('passwordModal').classList.add('hidden')
+  ;['pwCurrent','pwNew','pwConfirm'].forEach(id => document.getElementById(id).value = '')
+}
+async function submitPasswordChange() {
+  const current = document.getElementById('pwCurrent').value
+  const newPw = document.getElementById('pwNew').value
+  const confirm = document.getElementById('pwConfirm').value
+  if (!current || !newPw) return showToast("Barcha maydonlarni to'ldiring", 'error')
+  if (newPw !== confirm) return showToast('Yangi parollar mos kelmadi', 'error')
+  if (newPw.length < 6) return showToast("Parol kamida 6 ta belgi bo'lishi kerak", 'error')
+  try {
+    const res = await fetch('/api/auth/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentPassword: current, newPassword: newPw })
+    })
+    const data = await res.json()
+    if (!res.ok) return showToast(data.message || 'Xatolik yuz berdi', 'error')
+    showToast("Parol muvaffaqiyatli o'zgartirildi", 'success')
+    closePasswordModal()
+  } catch (e) { showToast('Server bilan bog\'lanishda xatolik', 'error') }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadNotifications()
+  setInterval(loadNotifications, 2 * 60 * 1000)
+})
+</script>

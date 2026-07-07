@@ -1,0 +1,155 @@
+<%- include('../layouts/header', {
+  title: 'Design System — DESCO CRM',
+  activePage: 'design-system',
+  user: user}) %>
+
+<div class="page-header">
+  <div>
+    <h1>Design System</h1>
+    <p>DESCO Premium UI Color Palettes, Typography, and Components</p>
+  </div>
+  <div class="page-header-actions">
+    <button class="btn btn-secondary" onclick="toggleThemeSystem()">
+      <i class="fas fa-adjust"></i> MAVZUNI O'ZGARTIRISH
+    </button>
+  </div>
+</div>
+
+<div class="card mb-4" style="margin-bottom: 24px;">
+  <div class="card-header">
+    <h3><i class="fas fa-palette" style="color:var(--accent);margin-right:6px"></i> 1. Ranglar Palitrasi (Colors)</h3>
+  </div>
+  <div class="card-body">
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+      
+      <!-- Accent -->
+      <div style="border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; background: var(--bg-secondary);">
+        <div style="height: 60px; background: var(--accent); border-radius: var(--radius-sm); margin-bottom: 8px;"></div>
+        <div style="font-weight:600;">Accent Blue</div>
+        <div style="font-size:12px; color:var(--text-secondary);">--accent: #007AFF</div>
+      </div>
+      
+      <!-- Success -->
+      <div style="border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; background: var(--bg-secondary);">
+        <div style="height: 60px; background: var(--success); border-radius: var(--radius-sm); margin-bottom: 8px;"></div>
+        <div style="font-weight:600;">Success Green</div>
+        <div style="font-size:12px; color:var(--text-secondary);">--success: #34C759</div>
+      </div>
+
+      <!-- Warning -->
+      <div style="border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; background: var(--bg-secondary);">
+        <div style="height: 60px; background: var(--warning); border-radius: var(--radius-sm); margin-bottom: 8px;"></div>
+        <div style="font-weight:600;">Warning Orange</div>
+        <div style="font-size:12px; color:var(--text-secondary);">--warning: #FF9500</div>
+      </div>
+
+      <!-- Danger -->
+      <div style="border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; background: var(--bg-secondary);">
+        <div style="height: 60px; background: var(--danger); border-radius: var(--radius-sm); margin-bottom: 8px;"></div>
+        <div style="font-weight:600;">Danger Red</div>
+        <div style="font-size:12px; color:var(--text-secondary);">--danger: #FF3B30</div>
+      </div>
+
+      <!-- Info -->
+      <div style="border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; background: var(--bg-secondary);">
+        <div style="height: 60px; background: var(--info); border-radius: var(--radius-sm); margin-bottom: 8px;"></div>
+        <div style="font-weight:600;">Info Purple</div>
+        <div style="font-size:12px; color:var(--text-secondary);">--info: #5856D6</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="dashboard-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+  
+  <!-- Typography & Badges -->
+  <div class="card">
+    <div class="card-header">
+      <h3><i class="fas fa-font" style="color:var(--accent);margin-right:6px"></i> 2. Tipografiya va Belgilar (Typography & Badges)</h3>
+    </div>
+    <div class="card-body" style="display:flex; flex-direction:column; gap:20px;">
+      <div>
+        <div style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:4px;">H1 Heading</div>
+        <h1>Tizim Asosiy Sarlavhasi (22px)</h1>
+      </div>
+      <div>
+        <div style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:4px;">H3 Card Title</div>
+        <h3>Karta sarlavhasi (14px)</h3>
+      </div>
+      <div>
+        <div style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:4px;">Body Text</div>
+        <p>DESCO Premium CRM - sotuv va logistika jarayonlarini boshqarish tizimi. Bu yerda foydalanuvchilar qulay va tezkor ishlaydi.</p>
+      </div>
+
+      <div>
+        <div style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:8px;">Badges & Tags</div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px;">
+          <span class="badge badge-blue">Kutilmoqda</span>
+          <span class="badge badge-green">Muvaffaqiyatli</span>
+          <span class="badge badge-orange">Qarz</span>
+          <span class="badge badge-red">Yo'qotilgan</span>
+          <span class="badge badge-purple">Admin</span>
+          <span class="tag tag-hot">🔥 Issiq</span>
+          <span class="tag tag-warm">🌤 Iliq</span>
+          <span class="tag tag-cold">❄️ Sovuq</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Buttons & Inputs -->
+  <div class="card">
+    <div class="card-header">
+      <h3><i class="fas fa-hand-pointer" style="color:var(--accent);margin-right:6px"></i> 3. Tugmalar va Kiritish Maydonlari (Buttons & Inputs)</h3>
+    </div>
+    <div class="card-body" style="display:flex; flex-direction:column; gap:20px;">
+      <div>
+        <div style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:8px;">Tugmalar (Buttons)</div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px;">
+          <button class="btn btn-primary">Primary</button>
+          <button class="btn btn-secondary">Secondary</button>
+          <button class="btn btn-danger">Danger</button>
+          <button class="btn btn-ghost">Ghost</button>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:8px;">O'lchamlar (Sizes)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button class="btn btn-primary btn-sm">Small Button</button>
+          <button class="btn btn-primary">Default Button</button>
+          <button class="btn btn-primary btn-lg">Large Button</button>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:8px;">Kiritish formasi (Form Inputs)</div>
+        <div class="form-group">
+          <label class="form-label">Kompaniya nomi</label>
+          <input type="text" class="form-input" placeholder="Masalan: DESCO Premium Logistic">
+        </div>
+        <div class="form-group" style="margin-top: 10px;">
+          <label class="form-label">Hamkorlik turi</label>
+          <select class="form-select">
+            <option>Import/Eksport</option>
+            <option>Transport xizmatlari</option>
+            <option>Omborxona</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function toggleThemeSystem() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('crm-theme', next);
+  showToast('Mavzu muvaffaqiyatli o\'zgartirildi!', 'info');
+}
+</script>
+<%- include('../layouts/footer') %>
