@@ -156,22 +156,36 @@ router.post('/', async (req, res, next) => {
 // Claim a deal
 router.post('/:id/claim', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
-    const existing = await prisma.deal.findUnique({ where: { id: Number(req.params.id) }, include: { stage: true } })
-    if (!existing) return res.status(404).json({ message: 'Sdelka topilmadi' })
+    const updated = await prisma.$transaction(async (tx) => {
+      const existing = await tx.deal.findUnique({ where: { id: Number(req.params.id) }, include: { stage: true } })
+      if (!existing) throw new Error('NOT_FOUND')
 
-    // Only allow claiming if it has no manager OR it's in a stage named "Yangi"
-    const isNewStage = existing.stage && existing.stage.name.toLowerCase().includes('yangi')
-    if (existing.managerId === null || isNewStage) {
-      const updated = await prisma.deal.update({
-        where: { id: Number(req.params.id) },
-        data: { managerId: req.userId }
-      })
-      await logActivity(updated.id, req.userId, 'Sdelka o\'zlashtirildi', `Sdelka menejerga biriktirildi`)
-      return res.json(updated)
-    }
-
-    return res.status(400).json({ message: 'Bu sdelka allaqachon boshqa menejerga tegishli' })
-  } catch (error) { next(error) }
+      // Only allow claiming if it has no manager OR it's in a stage named "Yangi"
+      const isNewStage = existing.stage && existing.stage.name.toLowerCase().includes('yangi')
+      if (existing.managerId === null || isNewStage) {
+        const result = await tx.deal.update({
+          where: { id: Number(req.params.id) },
+          data: { managerId: req.userId }
+        })
+        await tx.activityLog.create({
+          data: {
+            action: 'Sdelka o\'zlashtirildi',
+            details: `Sdelka menejerga biriktirildi`,
+            dealId: result.id,
+            userId: req.userId
+          }
+        })
+        return result
+      }
+      throw new Error('ALREADY_CLAIMED')
+    })
+    
+    return res.json(updated)
+  } catch (error) { 
+    if (error.message === 'NOT_FOUND') return res.status(404).json({ message: 'Sdelka topilmadi' })
+    if (error.message === 'ALREADY_CLAIMED') return res.status(400).json({ message: 'Bu sdelka allaqachon boshqa menejerga tegishli' })
+    next(error) 
+  }
 })
 
 // Update deal
@@ -396,9 +410,18 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
 // Delete deal
 router.delete('/:id', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
-    await prisma.task.deleteMany({ where: { dealId: Number(req.params.id) } })
-    await prisma.activityLog.deleteMany({ where: { dealId: Number(req.params.id) } })
-    await prisma.deal.delete({ where: { id: Number(req.params.id) } })
+    const existing = await prisma.deal.findUnique({ where: { id: Number(req.params.id) } })
+    if (!existing) return res.status(404).json({ message: 'Sdelka topilmadi' })
+
+    if (req.user?.role !== 'admin' && existing.managerId !== null && existing.managerId !== req.userId) {
+      return res.status(403).json({ message: "Boshqa menejer sdelkasini o'chira olmaysiz" })
+    }
+
+    await prisma.$transaction([
+      prisma.task.deleteMany({ where: { dealId: Number(req.params.id) } }),
+      prisma.activityLog.deleteMany({ where: { dealId: Number(req.params.id) } }),
+      prisma.deal.delete({ where: { id: Number(req.params.id) } })
+    ])
     
     const broadcast = req.app.get('broadcast');
     if (broadcast) broadcast({ type: 'deal_deleted', dealId: Number(req.params.id) });
