@@ -264,13 +264,14 @@ router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => 
 
     // Automation: Qayta aloqa yoki Vazifa
     if (stageId !== undefined && deal.stage && (deal.stage.name.toLowerCase().includes('qayta aloqa') || deal.stage.name.toLowerCase().includes('vazifa'))) {
-      const targetDate = deal.deadline ? new Date(deal.deadline) : new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const targetDate = deal.deadline ? new Date(deal.deadline) : new Date();
       await prisma.task.create({
         data: {
           title: (existing.productName || 'Sdelka') + " bo'yicha vazifa",
           description: "Avtomatik yaratilgan vazifa: Mijoz bilan kelishilgan ishlarni bajarish",
           dueDate: targetDate,
           dealId: deal.id,
+          clientId: deal.clientId,
           assignedToId: req.userId
         }
       });
@@ -392,13 +393,14 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
 
       // Automation: Qayta aloqa yoki Vazifa
       if (updated.stage && (updated.stage.name.toLowerCase().includes('qayta aloqa') || updated.stage.name.toLowerCase().includes('vazifa'))) {
-        const targetDate = updated.deadline ? new Date(updated.deadline) : new Date(Date.now() + 24 * 60 * 60 * 1000); // Agar deadline yo'q bo'lsa, ertaga
+        const targetDate = updated.deadline ? new Date(updated.deadline) : new Date(); // Hozirgi kun, darhol ko'rinishi uchun
         await tx.task.create({
           data: {
             title: (existing.productName || 'Sdelka') + " bo'yicha vazifa",
             description: "Avtomatik yaratilgan vazifa: Mijoz bilan kelishilgan ishlarni bajarish",
             dueDate: targetDate,
             dealId: id,
+            clientId: updated.clientId, // mijoz bog'lanishi uchun
             assignedToId: req.userId
           }
         });
