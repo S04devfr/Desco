@@ -483,11 +483,9 @@
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Mijoz (baza) <span
-                style="font-size:10px;font-weight:normal;color:#999">(ixtiyoriy)</span></label>
-            <select id="f-clientId" class="form-control">
-              <option value="">— Yangi mijoz —</option>
-            </select>
+            <label class="form-label">Mijoz oladigan vaqt <span
+                style="font-size:10px;font-weight:normal;color:#999">(Sana va vaqt)</span></label>
+            <input type="datetime-local" id="f-deadline" class="form-control">
           </div>
         </div>
 
@@ -1545,7 +1543,18 @@ function openDealModal(defaultStageId, editId) {
       setVal('f-city', deal?.client?.city || '');
       setVal('f-amount', deal?.amount || '');
       setVal('f-paidAmount', deal?.paidAmount || '');
-      setVal('f-clientId', deal?.clientId || '');
+      if (deal?.deadline) {
+        const dDate = new Date(deal.deadline);
+        if (!isNaN(dDate.getTime())) {
+          const pad = (n) => String(n).padStart(2, '0');
+          const fmt = `${dDate.getFullYear()}-${pad(dDate.getMonth()+1)}-${pad(dDate.getDate())}T${pad(dDate.getHours())}:${pad(dDate.getMinutes())}`;
+          setVal('f-deadline', fmt);
+        } else {
+          setVal('f-deadline', '');
+        }
+      } else {
+        setVal('f-deadline', '');
+      }
       if (stageEl) stageEl.value = deal?.stageId || '';
       setVal('f-notes', deal?.notes || '');
 
@@ -1586,7 +1595,7 @@ async function saveDeal() {
     city:        document.getElementById('f-city').value.trim() || null,
     amount:      Number(document.getElementById('f-amount').value) || 0,
     paidAmount:  Number(document.getElementById('f-paidAmount').value) || 0,
-    clientId:    document.getElementById('f-clientId').value ? Number(document.getElementById('f-clientId').value) : null,
+    deadline:    document.getElementById('f-deadline').value ? new Date(document.getElementById('f-deadline').value).toISOString() : null,
     stageId:     rawStageId,
     pipelineId:  _activePid,
     notes:       document.getElementById('f-notes').value.trim() || null,
