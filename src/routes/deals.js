@@ -3,15 +3,13 @@ const prisma = require('../config/database')
 const { protect, requireRole } = require('../middleware/auth')
 
 const router = express.Router()
-router.use(protect)
 
 router.get('/fix-unclaim', async (req, res) => {
   try {
-    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Faqat admin' });
     const stages = await prisma.pipelineStage.findMany({ where: { name: { contains: 'Yangi', mode: 'insensitive' } } });
     const stageIds = stages.map(s => s.id);
     const result = await prisma.deal.updateMany({
-      where: { managerId: req.userId, stageId: { in: stageIds } },
+      where: { managerId: { not: null }, stageId: { in: stageIds } },
       data: { managerId: null }
     });
     res.json({ message: 'Success', count: result.count });
@@ -19,6 +17,10 @@ router.get('/fix-unclaim', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+router.use(protect)
+
+
 
 const managerSelect = { select: { id: true, fullName: true, email: true, role: true } }
 const stageSelect = { select: { id: true, name: true, color: true, order: true } }
