@@ -1614,6 +1614,39 @@ async function openDetail(id) {
     const statusLabels = { new:'Yangi', negotiation:'Muzokaralar', proposal:'Taklif', won:'Yutilgan', lost:"Yo'qotilgan" };
     const statusColors = { new:'#007AFF', negotiation:'#FF9500', proposal:'#5856D6', won:'#34C759', lost:'#FF3B30' };
     const paid = deal.amount > 0 ? Math.round(((deal.paidAmount||0)/deal.amount)*100) : 0;
+    
+    let parsedNotesItems = '';
+    let remainingNotes = '';
+    if (deal.notes) {
+      const lines = deal.notes.split('\n');
+      const otherLines = [];
+      const items = [];
+      lines.forEach(line => {
+        const colonIdx = line.indexOf(':');
+        const cleanLine = line.trim();
+        if (cleanLine === '--- Tafsilotlar ---') return; // skip this divider
+        
+        if (colonIdx > 0 && colonIdx < 60 && !cleanLine.startsWith('http')) {
+          const key = cleanLine.substring(0, colonIdx).trim();
+          const val = cleanLine.substring(colonIdx + 1).trim();
+          if (key && val) {
+            items.push(`
+              <div>
+                <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:3px">${_esc(key)}</div>
+                <div style="font-size:13px;font-weight:500;color:var(--text-primary)">${_esc(val)}</div>
+              </div>
+            `);
+          } else {
+            otherLines.push(cleanLine);
+          }
+        } else if (cleanLine) {
+          otherLines.push(cleanLine);
+        }
+      });
+      parsedNotesItems = items.join('');
+      remainingNotes = otherLines.join('\n').trim();
+    }
+
     document.getElementById('detailTitle').textContent = _esc(deal.productName||deal.name);
     document.getElementById('detailBody').innerHTML = `
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
@@ -1658,8 +1691,9 @@ async function openDetail(id) {
           <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:3px">Yaratilgan</div>
           <div style="font-size:13px">${_date(deal.createdAt)}</div>
         </div>
+        ${parsedNotesItems}
       </div>
-      ${deal.notes ? `<div style="margin-bottom:16px"><div style="font-size:11px;color:var(--text-tertiary);margin-bottom:4px">Izoh</div><div style="font-size:13px;padding:10px;background:var(--bg-secondary);border-radius:8px">${_esc(deal.notes)}</div></div>` : ''}
+      ${remainingNotes ? `<div style="margin-bottom:16px"><div style="font-size:11px;color:var(--text-tertiary);margin-bottom:4px">Qo'shimcha Izoh</div><div style="font-size:13px;padding:10px;background:var(--bg-secondary);border-radius:8px;white-space:pre-wrap;line-height:1.4;word-wrap:break-word;">${_esc(remainingNotes)}</div></div>` : ''}
       
       <div style="margin-bottom:16px">
         <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:4px">Bosqichni o'zgartirish</div>
