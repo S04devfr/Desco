@@ -416,6 +416,20 @@ function parseTelegramMessage(text) {
   if (!name || name === "Noma'lum") name = "Noma'lum Mijoz";
   if (!product) product = isYuboraman ? "Yuboraman Lead" : "Telegram Lead";
   
+  // Mahsulot nomini tozalash (rek 2 | 2.07 | Oyoq massajor (2) -> Oyoq massajor (2))
+  function cleanProductName(pName) {
+    if (!pName) return pName;
+    const parts = pName.split('|').map(p => p.trim());
+    if (parts.length > 1) {
+      if (/^rek\s*\d+/i.test(parts[0]) && parts.length >= 3) {
+        return parts[2];
+      }
+      return parts[0];
+    }
+    return pName;
+  }
+  product = cleanProductName(product);
+  
   if (city) {
     city = extractCity(city);
   }
