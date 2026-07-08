@@ -164,7 +164,7 @@ router.post('/', async (req, res, next) => {
     await logActivity(deal.id, req.userId, 'Sdelka yaratildi', `"${deal.productName}" sdelkasi yaratildi`)
     
     const broadcast = req.app.get('broadcast');
-    if (broadcast) broadcast({ type: 'deal_updated', dealId: deal.id });
+    if (broadcast) broadcast({ type: 'deal_created', dealId: deal.id, deal });
     
     res.status(201).json(deal)
   } catch (error) { next(error) }
@@ -303,7 +303,7 @@ router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => 
     }
 
     const broadcast = req.app.get('broadcast');
-    if (broadcast) broadcast({ type: 'deal_updated', dealId: deal.id });
+    if (broadcast) broadcast({ type: 'deal_updated', dealId: deal.id, deal });
 
     res.json(deal)
   } catch (error) {
@@ -424,7 +424,7 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
       }
 
       const broadcast = req.app.get('broadcast');
-      if (broadcast) broadcast({ type: 'deal_updated', dealId: updated.id });
+      if (broadcast) broadcast({ type: 'deal_updated', dealId: updated.id, deal: updated });
 
       return updated
     })

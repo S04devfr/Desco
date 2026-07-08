@@ -1818,13 +1818,20 @@ async function moveDeal(dealId, stageId) {
     return;
   }
   try {
-    await apiFetch('/api/deals/' + dealId + '/stage', {
+    const updated = await apiFetch('/api/deals/' + dealId + '/stage', {
       method:'PATCH', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ stageId })
     });
+    
+    // Optimistic UI update instead of reloading everything
+    const deal = _deals.find(d => d.id === dealId);
+    if (deal) {
+      Object.assign(deal, updated);
+      renderKanban();
+    }
+    
     _toast('Bosqich o\'zgartirildi', 'success');
     closeDetail();
-    await loadDeals();
   } catch(e) { _toast(e.message, 'error'); }
 }
 
@@ -2048,28 +2055,24 @@ ws.onmessage = async (event) => {
     const data = JSON.parse(event.data);
     const myId = <%= typeof user !== 'undefined' && user ? user.id : 'null' %>;
     
-    if ((data.type === 'deal_updated' || data.type === 'deal_created') && data.dealId) {
-      const res = await fetch('/api/deals/' + data.dealId);
-      if (res.ok) {
-        const updatedDeal = await res.json();
-        // Agar sdelka o'zlashtirilgan bo'lsa va u meniki bo'lmasa -> Ekrandan o'chiramiz! (Faqat admin bo'lmaganlar uchun)
-        if (USER_ROLE !== 'admin' && updatedDeal.managerId && updatedDeal.managerId !== myId) {
-          _deals = _deals.filter(d => d.id !== updatedDeal.id);
-        } else {
-          // Aks holda uni yangilaymiz yoki qo'shamiz
-          const idx = _deals.findIndex(d => d.id === updatedDeal.id);
-          if (idx >= 0) _deals[idx] = updatedDeal;
-          else _deals.push(updatedDeal);
-          
-          // Tartibni saqlash (Yangi sdelkalar eng tepada bo'lishi uchun)
-          _deals.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        }
-        
-        if (document.getElementById('viewKanban').classList.contains('active')) {
-          renderKanban();
-        } else {
-          renderTable();
-        }
+    if ((data.type === 'deal_updated' || data.type === 'deal_created') && data.deal) {
+      const updatedDeal = data.deal;
+      
+      // If the deal's local updatedAt matches the incoming one exactly, we can skip UI flash if we initiated it.
+      // But it's safer to just overwrite and re-render the specific item without network calls.
+      if (USER_ROLE !== 'admin' && updatedDeal.managerId && updatedDeal.managerId !== myId) {
+        _deals = _deals.filter(d => d.id !== updatedDeal.id);
+      } else {
+        const idx = _deals.findIndex(d => d.id === updatedDeal.id);
+        if (idx >= 0) _deals[idx] = updatedDeal;
+        else _deals.push(updatedDeal);
+        _deals.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      }
+      
+      if (document.getElementById('viewKanban').classList.contains('active')) {
+        renderKanban();
+      } else {
+        renderTable();
       }
     }
     
