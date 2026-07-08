@@ -1038,18 +1038,18 @@ function dcardHtml(d) {
   const clientCity = (d.client && d.client.city) ? _esc(d.client.city) : '<span style="color:var(--text-tertiary); font-weight:500; font-style:italic;">Kiritilmagan</span>';
   const productName = _esc(d.productName || d.name || 'Belgilanmagan');
 
-  // Extract source/manba from notes
-  let leadSource = 'Noma’lum';
+  // Extract 'Kim uchun' (Kim uchun xarid qilmoqchi) from notes
+  let kimUchun = 'Noma’lum';
   if (d.notes) {
-    const manbaMatch = d.notes.match(/Manba:\s*([^\n]+)/i) || d.notes.match(/ℹ️ Manba:\s*([^\n]+)/i) || d.notes.match(/Integratsiya usuli:\s*([^\n]+)/i);
-    if (manbaMatch) {
-      leadSource = manbaMatch[1].trim();
+    const kimMatch = d.notes.match(/Kim uchun xarid qilmoqchi(?:siz)?[?:]*\s*([^\n]+)/i) || d.notes.match(/Kim uchun[?:]*\s*([^\n]+)/i);
+    if (kimMatch) {
+      kimUchun = kimMatch[1].trim();
     }
   }
-  if (leadSource === 'Noma’lum' && d.client && d.client.notes) {
-    const manbaMatch = d.client.notes.match(/Manba:\s*([^\n]+)/i) || d.client.notes.match(/ℹ️ Manba:\s*([^\n]+)/i) || d.client.notes.match(/Integratsiya usuli:\s*([^\n]+)/i);
-    if (manbaMatch) {
-      leadSource = manbaMatch[1].trim();
+  if (kimUchun === 'Noma’lum' && d.client && d.client.notes) {
+    const kimMatch = d.client.notes.match(/Kim uchun xarid qilmoqchi(?:siz)?[?:]*\s*([^\n]+)/i) || d.client.notes.match(/Kim uchun[?:]*\s*([^\n]+)/i);
+    if (kimMatch) {
+      kimUchun = kimMatch[1].trim();
     }
   }
 
@@ -1101,8 +1101,8 @@ function dcardHtml(d) {
           <span style="font-weight:600; color:var(--text-primary);">${clientCity}</span>
         </div>
         <div style="font-size:12.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
-          <span style="font-weight:600; color:var(--text-tertiary); width: 65px; flex-shrink: 0;">Manba:</span>
-          <span style="font-weight:600; color:var(--text-primary);">${leadSource}</span>
+          <span style="font-weight:600; color:var(--text-tertiary); width: 65px; flex-shrink: 0;" title="Kim uchun xarid qilmoqchi">Kim uchun:</span>
+          <span style="font-weight:600; color:var(--text-primary);">${kimUchun}</span>
         </div>
         <div style="font-size:12.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
           <span style="font-weight:600; color:var(--text-tertiary); width: 65px; flex-shrink: 0;">Mahsulot:</span>
