@@ -11,8 +11,8 @@ const router = express.Router()
 // ── BRUTE FORCE HIMOYASI ──
 // 5 ta noto'g'ri urinishdan keyin 15 daqiqa bloklash
 const loginAttempts = new Map();
-const MAX_ATTEMPTS = 5;
-const LOCKOUT_MS = 15 * 60 * 1000; // 15 daqiqa
+const MAX_ATTEMPTS = 100; // Operarotlar adashib parolni ko'p kiritib yuborsa ham qotib qolmasligi uchun ko'paytirildi
+const LOCKOUT_MS = 10 * 1000; // 10 soniya
 
 function checkBruteForce(email) {
   const record = loginAttempts.get(email);
