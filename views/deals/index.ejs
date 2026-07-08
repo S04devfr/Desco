@@ -1678,6 +1678,7 @@ async function openDetail(id) {
         <div>
           <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:3px">Mijoz</div>
           <div style="font-size:13px">${deal.client ? _esc(deal.client.name) : '—'}</div>
+          ${deal.client && deal.client.phone ? `<div style="font-size:12px;margin-top:2px"><a href="tel:${_esc(deal.client.phone)}" style="color:var(--accent);text-decoration:none">${_esc(deal.client.phone)}</a></div>` : ''}
         </div>
         <div>
           <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:3px">Manager</div>
