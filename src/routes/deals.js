@@ -8,7 +8,7 @@ router.use(protect)
 router.get('/fix-unclaim', async (req, res) => {
   try {
     if (req.user.role !== 'admin') return res.status(403).json({ error: 'Faqat admin' });
-    const stages = await prisma.stage.findMany({ where: { name: { contains: 'Yangi', mode: 'insensitive' } } });
+    const stages = await prisma.pipelineStage.findMany({ where: { name: { contains: 'Yangi', mode: 'insensitive' } } });
     const stageIds = stages.map(s => s.id);
     const result = await prisma.deal.updateMany({
       where: { managerId: req.userId, stageId: { in: stageIds } },
