@@ -1550,15 +1550,7 @@ function openDealModal(defaultStageId, editId) {
       if (stageEl) stageEl.value = deal?.stageId || '';
       setVal('f-notes', deal?.notes || '');
 
-      // Claim logic
-      if (!deal.managerId || (deal.stage && deal.stage.name && deal.stage.name.toLowerCase().includes('yangi'))) {
-        apiFetch(`/api/deals/${deal.id}/claim`, { method: 'POST' })
-          .then(() => {
-            if (typeof _toast === 'function') _toast("Sdelka sizga biriktirildi", "success");
-            // Optionally reload to reflect ownership changes
-          })
-          .catch(e => { /* Ignore errors if already claimed */ });
-      }
+
     }
   }
 
