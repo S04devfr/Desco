@@ -76,6 +76,28 @@
   }
   .task-due.overdue { color: #ef4444; font-weight: 500; }
   .task-due.today { color: #eab308; font-weight: 500; }
+
+  /* ── View Toggle & Kanban Styles ── */
+  .view-toggle { display: flex; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .vtbtn {
+    padding: 6px 14px; font-size: 12.5px; font-weight: 500; border: none;
+    background: none; color: var(--text-secondary); cursor: pointer; transition: all 0.14s;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .vtbtn.active { background: var(--accent); color: #fff; }
+  .vtbtn:hover:not(.active) { background: var(--bg-secondary); color: var(--text-primary); }
+
+  .kanban-col-body .task-item {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 0;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .kanban-col-body .task-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
 </style>
 
 <div class="page-header">
@@ -83,7 +105,15 @@
     <h1>Vazifalar</h1>
     <p>Barcha vazifalar va eslatmalar</p>
   </div>
-  <div class="page-header-actions">
+  <div class="page-header-actions" style="display: flex; align-items: center; gap: 12px;">
+    <div class="view-toggle">
+      <button class="vtbtn active" id="btnList" onclick="setTasksView('list')">
+        <i class="fas fa-list"></i> Ro'yxat
+      </button>
+      <button class="vtbtn" id="btnKanban" onclick="setTasksView('kanban')">
+        <i class="fas fa-columns"></i> Kanban
+      </button>
+    </div>
     <button class="btn btn-primary" onclick="openTaskModal()">
       <i class="fas fa-plus"></i> Yangi vazifa
     </button>
@@ -107,14 +137,21 @@
   <input type="text" id="taskSearch" class="form-control" style="flex:1;max-width:220px" placeholder="Qidirish...">
 </div>
 
-<!-- TASK LIST -->
-<div class="card">
+<!-- LIST VIEW CONTAINER -->
+<div id="taskListView" class="card">
   <div class="card-header" id="taskListHeader">
     <h3 id="taskListTitle">Barcha vazifalar</h3>
     <span id="taskCount" class="badge badge-blue">0</span>
   </div>
   <div id="taskList">
     <div style="padding:40px;text-align:center"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<!-- KANBAN VIEW CONTAINER -->
+<div id="taskKanbanView" class="hidden" style="margin-top: 16px;">
+  <div id="taskKanbanBoard" style="display: flex; gap: 16px; overflow-x: auto; padding-bottom: 16px; align-items: flex-start; min-height: 580px;">
+    <div style="padding:40px;text-align:center;width:100%"><div class="spinner"></div></div>
   </div>
 </div>
 
