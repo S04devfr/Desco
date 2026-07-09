@@ -536,6 +536,7 @@ async function loadDashboard() {
                   <i class="fas fa-user" style="font-size: 10.5px; opacity: 0.8; margin-right: 2px;"></i>${escHtml(t.client.name || '')}
                   ${t.client.phone ? ` &bull; <a href="tel:${escHtml(t.client.phone)}" style="color: var(--accent); font-weight: 700; text-decoration: none;"><i class="fas fa-phone-alt" style="font-size: 9px; margin-right: 1px;"></i> ${escHtml(t.client.phone)}</a>` : ''}
                   ${t.client.city ? ` &bull; <span class="badge" style="font-size: 10px; background: var(--accent)1A; color: var(--accent); border-radius: 4px; padding: 1px 5px; font-weight: 600; display: inline-flex; align-items: center; gap: 2px;"><i class="fas fa-map-marker-alt" style="font-size: 9px;"></i> ${escHtml(t.client.city)}</span>` : ''}
+                  ${t.dueTime ? ` &bull; <span class="badge" style="font-size: 10px; background: #FF95001A; color: #FF9500; border-radius: 4px; padding: 1px 5px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px;"><i class="far fa-clock" style="font-size: 9px;"></i> Soat: ${escHtml(t.dueTime)}</span>` : ''}
                 </div>` : ''
               }
               ${t?.deal ? `

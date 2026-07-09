@@ -314,10 +314,11 @@ function renderSingleTaskHtml(t) {
         </div>
         <div class="task-meta" style="display: flex; flex-direction: column; gap: 3px; margin-top: 4px; padding-top: 6px; border-top: 1px dashed var(--border);">
           ${t.client ? `
-            <div style="color:var(--accent); font-size: 12px; font-weight: 600;">
+            <div style="color:var(--accent); font-size: 12px; font-weight: 600; display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
               <i class="fas fa-user" style="font-size: 11px; opacity:0.8; margin-right: 4px;"></i>${_esc(t.client.name||'')}
               ${t.client.phone ? ` &bull; <a href="tel:${_esc(t.client.phone)}" style="color:var(--accent); font-weight: 700;">${_esc(t.client.phone)}</a>` : ''}
               ${t.client.city ? ` &bull; <span class="badge" style="font-size:10.5px; background:var(--accent)1A; color:var(--accent); border-radius:4px; padding:2px 6px; display: inline-flex; align-items: center; gap: 3px; font-weight: 600;"><i class="fas fa-map-marker-alt" style="font-size: 9px;"></i> ${_esc(t.client.city)}</span>` : ''}
+              ${t.dueTime ? ` &bull; <span class="badge" style="font-size:10.5px; background:#FF95001A; color:#FF9500; border-radius:4px; padding:2px 6px; display: inline-flex; align-items: center; gap: 3px; font-weight: 700;"><i class="far fa-clock" style="font-size: 9px;"></i> Soat: ${_esc(t.dueTime)}</span>` : ''}
             </div>` : ''
           }
           ${t.deal ? `
