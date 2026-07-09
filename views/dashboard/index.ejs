@@ -31,6 +31,47 @@
   opacity: 1;
 }
 
+.stat-value {
+  font-size: 24px !important;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: nowrap;
+}
+.currency-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  margin-left: 5px;
+  text-transform: uppercase;
+}
+.stat-card {
+  padding: 16px 20px !important;
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+}
+.stat-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+.stat-label {
+  font-size: 13px;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stat-sub {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
 /* Financial Tab Navigation */
 .financial-tab-btn {
   border-bottom: 2px solid transparent !important;
@@ -122,7 +163,7 @@
 </div>
 
 <!-- KPI STATS -->
-<div class="stats-grid" id="kpiCards" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px;">
+<div class="stats-grid" id="kpiCards" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
   <div class="stat-card clickable" onclick="openFinancialModal('installments')">
     <div class="stat-icon blue"><i class="fas fa-handshake"></i></div>
     <div class="stat-info">
@@ -434,6 +475,9 @@ function escHtml(s) {
 function fmtMoney(v) {
   return (Number(v) || 0).toLocaleString('uz-UZ') + " so'm";
 }
+function renderCardMoney(v) {
+  return (Number(v) || 0).toLocaleString('uz-UZ') + ' <span class="currency-label">UZS</span>';
+}
 function fmtShort(v) {
   const n = Number(v) || 0;
   if (n >= 1e9) return (n / 1e9).toFixed(1).replace('.0', '') + " mlrd";
@@ -488,7 +532,7 @@ async function loadDashboard() {
         <div class="stat-icon green"><i class="fas fa-coins"></i></div>
         <div class="stat-info">
           <div class="stat-label"><%= (typeof user !== 'undefined' && user && user.role === 'admin') ? "Umumiy to'langan" : "Mening savdo summam" %></div>
-          <div class="stat-value">${fmtMoney(safeKpis.totalRevenue ?? 0)}</div>
+          <div class="stat-value">${renderCardMoney(safeKpis.totalRevenue ?? 0)}</div>
         </div>
       </div>
       <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
@@ -496,28 +540,28 @@ async function loadDashboard() {
         <div class="stat-icon red"><i class="fas fa-users"></i></div>
         <div class="stat-info">
           <div class="stat-label">Klientlardan qarz</div>
-          <div class="stat-value">${fmtMoney(safeKpis.totalClientDebt ?? 0)}</div>
+          <div class="stat-value">${renderCardMoney(safeKpis.totalClientDebt ?? 0)}</div>
         </div>
       </div>
       <div class="stat-card" style="cursor: pointer" onclick="window.location.href='/expenses'">
         <div class="stat-icon orange"><i class="fas fa-minus-circle"></i></div>
         <div class="stat-info">
           <div class="stat-label">Xarajatlar</div>
-          <div class="stat-value">${fmtMoney(safeKpis.totalExpenses ?? 0)}</div>
+          <div class="stat-value">${renderCardMoney(safeKpis.totalExpenses ?? 0)}</div>
         </div>
       </div>
       <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')">
         <div class="stat-icon purple"><i class="fas fa-tags"></i></div>
         <div class="stat-info">
           <div class="stat-label">Tan narxi</div>
-          <div class="stat-value">${fmtMoney(safeKpis.totalCostPrice ?? 0)}</div>
+          <div class="stat-value">${renderCardMoney(safeKpis.totalCostPrice ?? 0)}</div>
         </div>
       </div>
       <div class="stat-card clickable" onclick="openProfitModal()">
         <div class="stat-icon green"><i class="fas fa-chart-line"></i></div>
         <div class="stat-info">
           <div class="stat-label">Sof foyda</div>
-          <div class="stat-value ${(safeKpis.netProfit ?? 0) >= 0 ? 'text-success' : 'text-danger'}">${fmtMoney(safeKpis.netProfit ?? 0)}</div>
+          <div class="stat-value ${(safeKpis.netProfit ?? 0) >= 0 ? 'text-success' : 'text-danger'}">${renderCardMoney(safeKpis.netProfit ?? 0)}</div>
         </div>
       </div>
       <% } %>
