@@ -304,16 +304,23 @@
       <div class="fin-tab-content hidden" id="tab-installments">
         <div style="display:grid; grid-template-columns:250px 1fr; gap:20px; min-height:350px;">
           <!-- Left sdelka list -->
-          <div style="border-right:1px solid var(--border); padding-right:12px; max-height:380px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;">
-            <p style="font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-tertiary); margin-bottom:4px">Qarzdorlik bor sdelkalar</p>
-            <div id="installmentDealsList" style="display:flex; flex-direction:column; gap:6px"></div>
+          <div style="border-right:1px solid var(--border); padding-right:12px; max-height:380px; display:flex; flex-direction:column; gap:6px; position:relative;">
+            <p style="font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-tertiary); margin-bottom:4px">Nasiya rejasi bor sdelkalar</p>
+            
+            <!-- Manual search and ID addition -->
+            <div style="margin-bottom: 6px; position: relative;">
+              <input type="text" id="addNasiyaSearchInput" class="form-control" placeholder="Yangi nasiya qo'shish (Mijoz yoki ID)..." style="font-size:11.5px; height:32px; padding:6px 10px;" oninput="onNasiyaSearchInput()">
+              <div id="nasiyaSearchSuggestions" class="hidden" style="position: absolute; top: 34px; left: 0; right: 0; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; box-shadow: var(--shadow-lg); z-index: 100; max-height: 220px; overflow-y: auto;"></div>
+            </div>
+
+            <div id="installmentDealsList" style="display:flex; flex-direction:column; gap:6px; overflow-y:auto; flex-grow:1;"></div>
           </div>
           <!-- Right installment editor -->
           <div id="installmentPlanEditor" style="display:flex; flex-direction:column; min-height:350px;">
             <div class="empty-state" style="padding:60px 40px; text-align:center; margin:auto;">
               <i class="fas fa-chevron-left" style="font-size:28px; color:var(--text-tertiary); margin-bottom:10px"></i>
               <h4 style="margin:0 0 4px; font-size:14px; color:var(--text-secondary)">Sdelkani tanlang</h4>
-              <p style="margin:0; font-size:12px; color:var(--text-tertiary)">Nasiya rejasini (oyma-oy to'lovlarni) sozlash uchun chapdan mijozni tanlang</p>
+              <p style="margin:0; font-size:12px; color:var(--text-tertiary)">Nasiya rejasini (oyma-oy to'lovlarni) sozlash uchun chapdan mijozni tanlang yoki tepadan qidirib qo'shing</p>
             </div>
           </div>
         </div>
@@ -925,6 +932,16 @@ function renderProfitTable() {
 let allDealsData = [];
 let allClientsData = [];
 let selectedDealIdForInstallments = null;
+let manuallyAddedDealIds = [];
+
+document.addEventListener('click', (e) => {
+  const suggestionsEl = document.getElementById('nasiyaSearchSuggestions');
+  const input = document.getElementById('addNasiyaSearchInput');
+  if (suggestionsEl && !suggestionsEl.contains(e.target) && e.target !== input) {
+    suggestionsEl.innerHTML = '';
+    suggestionsEl.classList.add('hidden');
+  }
+});
 
 function openFinancialModal(tab) {
   document.getElementById('financialModal').classList.remove('hidden');
@@ -1069,18 +1086,89 @@ async function attachProductToDeal() {
 }
 
 // Tab 2: Installments rendering & planners
+function onNasiyaSearchInput() {
+  const input = document.getElementById('addNasiyaSearchInput');
+  const suggestionsEl = document.getElementById('nasiyaSearchSuggestions');
+  const q = input.value.trim().toLowerCase();
+  
+  if (!q) {
+    suggestionsEl.innerHTML = '';
+    suggestionsEl.classList.add('hidden');
+    return;
+  }
+  
+  const cleanId = q.startsWith('#') ? q.substring(1) : q;
+  
+  // Filter deals with outstanding debt
+  const matches = allDealsData.filter(d => {
+    const hasDebt = d.amount > d.paidAmount;
+    if (!hasDebt) return false;
+    
+    const matchesName = (d.client?.name || '').toLowerCase().includes(q);
+    const matchesPhone = (d.client?.phone || '').includes(q);
+    const matchesId = String(d.id) === cleanId;
+    
+    return matchesName || matchesPhone || matchesId;
+  });
+  
+  if (!matches.length) {
+    suggestionsEl.innerHTML = '<div style="padding:10px; font-size:11.5px; color:var(--text-tertiary); text-align:center;">Qarzdor sdelka topilmadi</div>';
+    suggestionsEl.classList.remove('hidden');
+    return;
+  }
+  
+  suggestionsEl.innerHTML = matches.map(d => {
+    const alreadyPlan = d.installments && d.installments.length > 0;
+    return `
+      <div class="suggestion-item" onclick="addDealToNasiyaList(${d.id})" style="padding:8px 10px; cursor:pointer; border-bottom:1px solid var(--border); transition:background 0.15s; text-align:left;" onmouseover="this.style.background='var(--bg-primary)'" onmouseout="this.style.background='transparent'">
+        <div style="font-weight:600; font-size:12px; color:var(--text-primary); display:flex; justify-content:space-between; align-items:center;">
+          <span>${escHtml(d.client?.name || 'Mijoz')} (#${d.id})</span>
+          ${alreadyPlan ? '<span style="font-size:10px; color:var(--success); font-weight:700;"><i class="fas fa-check"></i> Reja bor</span>' : '<span style="font-size:10px; color:var(--accent); font-weight:700;">+ Yangi</span>'}
+        </div>
+        <div style="font-size:11px; color:var(--text-secondary); display:flex; justify-content:space-between; margin-top:2px;">
+          <span>${escHtml(d.productName || 'Mahsulot')}</span>
+          <span style="color:var(--danger); font-weight:700;">Qarz: ${fmtMoney(d.amount - d.paidAmount)}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+  suggestionsEl.classList.remove('hidden');
+}
+
+function addDealToNasiyaList(dealId) {
+  const input = document.getElementById('addNasiyaSearchInput');
+  const suggestionsEl = document.getElementById('nasiyaSearchSuggestions');
+  
+  input.value = '';
+  suggestionsEl.innerHTML = '';
+  suggestionsEl.classList.add('hidden');
+  
+  if (!manuallyAddedDealIds.includes(dealId)) {
+    manuallyAddedDealIds.push(dealId);
+  }
+  
+  selectedDealIdForInstallments = dealId;
+  renderInstallmentTab();
+}
+
+// Tab 2: Installments rendering & planners
 function renderInstallmentTab() {
   const listEl = document.getElementById('installmentDealsList');
   
-  // Only deals that have outstanding debt
-  const debtorDeals = allDealsData.filter(d => d.amount > d.paidAmount);
+  // Show deals that already have a plan OR have been manually added during this session
+  const debtorDeals = allDealsData.filter(d => {
+    const hasPlan = d.installments && d.installments.length > 0;
+    const isManuallyAdded = manuallyAddedDealIds.includes(d.id);
+    return hasPlan || isManuallyAdded;
+  });
   
   if (!debtorDeals.length) {
-    listEl.innerHTML = '<div style="color:var(--text-tertiary);font-size:12px;padding:10px;text-align:center;">Qarzdorlar yo\'q</div>';
+    listEl.innerHTML = '<div style="color:var(--text-tertiary);font-size:12px;padding:10px;text-align:center;">Nasiya rejalari yo\'q</div>';
     document.getElementById('installmentPlanEditor').innerHTML = `
       <div class="empty-state" style="padding:60px 40px; text-align:center; margin:auto;">
-        <i class="fas fa-check-circle" style="font-size:28px; color:var(--success); margin-bottom:10px"></i>
-        <h4 style="margin:0; font-size:14px; color:var(--text-secondary)">Barcha qarzdorliklar yopilgan</h4>
+        <i class="fas fa-search" style="font-size:28px; color:var(--text-tertiary); margin-bottom:10px"></i>
+        <h4 style="margin:0; font-size:14px; color:var(--text-secondary)">Ro'yxat bo'sh</h4>
+        <p style="margin:4px 0 0; font-size:12px; color:var(--text-tertiary)">Nasiya rejasi tuzish uchun tepadan qidirib qo'shing</p>
       </div>
     `;
     return;
@@ -1262,6 +1350,7 @@ async function saveInstallmentPlan(dealId) {
     if (!r.ok) throw new Error();
     
     if (typeof showToast === 'function') showToast('To\'lov plani saqlandi', 'success');
+    manuallyAddedDealIds = manuallyAddedDealIds.filter(id => id !== dealId);
     loadFinancialData(); // Refresh metrics locally
   } catch(e) {
     if (typeof showToast === 'function') showToast('Saqlashda xatolik', 'error');

@@ -65,7 +65,8 @@ router.get('/', async (req, res, next) => {
       include: {
         client: { select: { id: true, name: true, company: true, phone: true, city: true } },
         manager: managerSelect,
-        stage: stageSelect
+        stage: stageSelect,
+        installments: { select: { id: true } }
       },
       orderBy: { createdAt: 'desc' }
     })
