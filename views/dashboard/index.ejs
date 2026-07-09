@@ -249,7 +249,7 @@
 
 <!-- ════════════ FINANCIAL METRICS MODAL ════════════ -->
 <div class="modal-overlay hidden" id="financialModal" style="z-index:1100">
-  <div class="modal-box" style="max-width:850px; max-height:85vh; display:flex; flex-direction:column; overflow:hidden; padding:0;">
+  <div class="modal-box" style="max-width:1100px; width:95%; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; padding:0;">
     <div class="modal-header" style="padding:16px 20px; border-bottom:1px solid var(--border);">
       <h2 style="display:flex; align-items:center; gap:8px;"><i class="fas fa-wallet" style="color:var(--accent)"></i> Moliyaviy Sozlamalar va Nasiya</h2>
       <button class="modal-close" onclick="closeFinancialModal()">&times;</button>
@@ -312,6 +312,10 @@
               <input type="text" id="addNasiyaSearchInput" class="form-control" placeholder="Yangi nasiya qo'shish (Mijoz yoki ID)..." style="font-size:11.5px; height:32px; padding:6px 10px;" oninput="onNasiyaSearchInput()">
               <div id="nasiyaSearchSuggestions" class="hidden" style="position: absolute; top: 34px; left: 0; right: 0; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; box-shadow: var(--shadow-lg); z-index: 100; max-height: 220px; overflow-y: auto;"></div>
             </div>
+
+            <button class="btn btn-secondary btn-sm" onclick="openQuickCreateNasiyaDealForm()" style="font-size:11px; height:30px; display:flex; align-items:center; justify-content:center; gap:4px; margin-bottom:8px; width:100%;">
+              <i class="fas fa-plus"></i> Qo'lda Yangi Sdelka Yaratish
+            </button>
 
             <div id="installmentDealsList" style="display:flex; flex-direction:column; gap:6px; overflow-y:auto; flex-grow:1;"></div>
           </div>
@@ -1193,6 +1197,133 @@ function renderInstallmentTab() {
 async function selectDealForInstallments(dealId) {
   selectedDealIdForInstallments = dealId;
   renderInstallmentTab();
+}
+
+function openQuickCreateNasiyaDealForm() {
+  const editorEl = document.getElementById('installmentPlanEditor');
+  editorEl.innerHTML = `
+    <div style="padding: 12px 14px; display: flex; flex-direction: column; gap: 12px; background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px;">
+      <h3 style="font-size: 14px; font-weight: 700; margin: 0; padding-bottom: 8px; border-bottom: 1px solid var(--border); color:var(--text-primary); display:flex; align-items:center; gap:6px;">
+        <i class="fas fa-plus-circle" style="color: var(--accent);"></i> Yangi Sdelka va Nasiya Rejasi Yaratish
+      </h3>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px;">
+        <div>
+          <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Mijoz Ismi <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="quickNasiyaClientName" class="form-control" placeholder="Masalan: Asadbek" style="height:32px; font-size:12px;">
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Telefon Raqami <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="quickNasiyaClientPhone" class="form-control" placeholder="Masalan: +998991234567" style="height:32px; font-size:12px;">
+        </div>
+      </div>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div>
+          <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Viloyat / Shahar</label>
+          <input type="text" id="quickNasiyaClientCity" class="form-control" placeholder="Masalan: Toshkent" style="height:32px; font-size:12px;">
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Mahsulot Nomi <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="quickNasiyaProductName" class="form-control" placeholder="Masalan: Oyoq massajor (1)" style="height:32px; font-size:12px;">
+        </div>
+      </div>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div>
+          <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Umumiy Summa <span style="color:var(--danger)">*</span></label>
+          <input type="number" id="quickNasiyaAmount" class="form-control" placeholder="Masalan: 1300000" style="height:32px; font-size:12px; font-weight:700;">
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Boshlang'ich To'lov</label>
+          <input type="number" id="quickNasiyaPaidAmount" class="form-control" value="0" style="height:32px; font-size:12px;">
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); padding-top: 12px; margin-top: 8px;">
+        <button class="btn btn-secondary btn-sm" onclick="cancelQuickNasiyaCreate()">Bekor qilish</button>
+        <button class="btn btn-primary btn-sm" onclick="saveQuickNasiyaCreate()" id="btnSaveQuickNasiya">
+          <i class="fas fa-check"></i> Yaratish va Plan Tuzish
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function cancelQuickNasiyaCreate() {
+  selectedDealIdForInstallments = null;
+  renderInstallmentTab();
+}
+
+async function saveQuickNasiyaCreate() {
+  const contactName = document.getElementById('quickNasiyaClientName').value.trim();
+  const contactPhone = document.getElementById('quickNasiyaClientPhone').value.trim();
+  const city = document.getElementById('quickNasiyaClientCity').value.trim();
+  const productName = document.getElementById('quickNasiyaProductName').value.trim();
+  const amount = Number(document.getElementById('quickNasiyaAmount').value) || 0;
+  const paidAmount = Number(document.getElementById('quickNasiyaPaidAmount').value) || 0;
+  
+  if (!contactName || !contactPhone || !productName || !amount) {
+    alert("Iltimos, yulduzcha (*) qo'yilgan barcha maydonlarni to'ldiring!");
+    return;
+  }
+  
+  const saveBtn = document.getElementById('btnSaveQuickNasiya');
+  saveBtn.disabled = true;
+  
+  try {
+    // 1. Fetch pipelines to get a default pipelineId and stageId
+    const pipelines = await dashFetch('/api/pipelines');
+    let pipelineId = null;
+    let stageId = null;
+    if (pipelines && pipelines.length > 0) {
+      pipelineId = pipelines[0].id;
+      if (pipelines[0].stages && pipelines[0].stages.length > 0) {
+        stageId = pipelines[0].stages[0].id;
+      }
+    }
+    
+    // 2. Create the deal via POST /api/deals
+    const r = await fetch('/api/deals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        productName,
+        amount,
+        paidAmount,
+        contactName,
+        contactPhone,
+        city,
+        pipelineId,
+        stageId,
+        status: 'new'
+      })
+    });
+    
+    if (!r.ok) {
+      const errData = await r.json();
+      throw new Error(errData.message || "Sdelka yaratishda xato");
+    }
+    
+    const newDeal = await r.json();
+    if (typeof showToast === 'function') showToast('Sdelka yaratildi. Endi nasiya planni tuzishingiz mumkin.', 'success');
+    
+    // Add to local manuallyAddedDealIds and load editor for this deal
+    manuallyAddedDealIds.push(newDeal.id);
+    
+    // Reload financial data from server (so the deal list is fully updated)
+    await loadFinancialData();
+    
+    // Automatically select the newly created deal for installments
+    selectedDealIdForInstallments = newDeal.id;
+    renderInstallmentTab();
+    
+  } catch(e) {
+    console.error(e);
+    alert("Xatolik yuz berdi: " + e.message);
+  } finally {
+    if (saveBtn) saveBtn.disabled = false;
+  }
 }
 
 async function renderInstallmentPlanEditor(dealId) {
