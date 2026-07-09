@@ -172,6 +172,8 @@
 </div>
 
 <script>
+const escHtml = s => String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const _esc = escHtml;
 let allTasks = [], currentFilter = 'all';
 
 async function loadTasks() {
@@ -366,7 +368,6 @@ function renderTasks() {
   html += renderTaskGroup(noDateTasks, "Sana belgilanmagan vazifalar", "#8E8E93");
 
   el.innerHTML = html;
-}
 }
 
 async function toggleTask(id, el) {
