@@ -509,27 +509,28 @@ async function loadDashboard() {
       tasksEl.innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-state-icon"><i class="fas fa-check-circle"></i></div><h3>Bugungi vazifalar yo\'q</h3></div>';
     } else {
       tasksEl.innerHTML = safeTasks.map(t => `
-        <div class="task-item" style="align-items: flex-start; padding: 12px 14px;">
-          <div class="task-check ${t.completed ? 'done' : ''}" onclick="toggleTask(${t.id}, this)" style="margin-top: 3px;">
+        <div class="task-item" style="align-items: flex-start; padding: 14px 16px; margin-bottom: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-secondary); transition: all 0.2s;">
+          <div class="task-check ${t.completed ? 'done' : ''}" onclick="toggleTask(${t.id}, this)" style="margin-top: 3px; cursor: pointer; flex-shrink: 0;">
             ${t.completed ? '<i class="fas fa-check" style="font-size:9px"></i>' : ''}
           </div>
-          <div class="task-info" style="flex-grow: 1;">
-            <div class="task-title ${t.completed ? 'done' : ''}" style="font-weight: 600; font-size: 13px; margin-bottom: 4px;">${escHtml(t?.title || 'Noma\'lum')}</div>
-            <div class="task-meta" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 4px;">
+          <div class="task-info" style="flex-grow: 1; margin-left: 10px;">
+            <div class="task-title ${t.completed ? 'done' : ''}" style="font-weight: 600; font-size: 13.5px; margin-bottom: 6px; line-height: 1.4; color: var(--text-primary);">${escHtml(t?.title || 'Noma\'lum')}</div>
+            <div class="task-meta" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 6px;">
               <span class="priority-dot ${t?.priority || 'medium'}"></span>
-              ${t?.dueDate ? '<span class="task-due" style="font-size: 11px;"><i class="fas fa-clock"></i> ' + fmtDate(t.dueDate) + '</span>' : ''}
-              ${t?.assignedTo ? `<span class="badge badge-gray" style="font-size: 10px; background: var(--bg-primary); padding: 1px 6px; border-radius: 4px;">${escHtml(t.assignedTo.fullName || t.assignedTo.email)}</span>` : ''}
+              ${t?.dueDate ? '<span class="task-due" style="font-size: 11px; font-weight: 500; color: var(--text-secondary);"><i class="fas fa-clock"></i> ' + fmtDate(t.dueDate) + '</span>' : ''}
+              ${t?.assignedTo ? `<span class="badge badge-gray" style="font-size: 10px; background: var(--bg-primary); padding: 2px 6px; border-radius: 4px; color: var(--text-secondary);">${escHtml(t.assignedTo.fullName || t.assignedTo.email)}</span>` : ''}
             </div>
-            <div class="task-meta" style="display: flex; flex-direction: column; gap: 2px;">
+            <div class="task-meta" style="display: flex; flex-direction: column; gap: 4px; border-top: 1px dashed var(--border); margin-top: 6px; padding-top: 6px;">
               ${t?.client ? `
-                <div style="color: var(--accent); font-size: 11.5px; font-weight: 600;">
-                  <i class="fas fa-user" style="font-size: 10px; opacity: 0.8;"></i> ${escHtml(t.client.name || '')}
-                  ${t.client.phone ? ` &bull; <a href="tel:${escHtml(t.client.phone)}" style="color: var(--accent); font-weight: 700;">${escHtml(t.client.phone)}</a>` : ''}
+                <div style="color: var(--accent); font-size: 12px; font-weight: 600; display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
+                  <i class="fas fa-user" style="font-size: 10.5px; opacity: 0.8; margin-right: 2px;"></i>${escHtml(t.client.name || '')}
+                  ${t.client.phone ? ` &bull; <a href="tel:${escHtml(t.client.phone)}" style="color: var(--accent); font-weight: 700; text-decoration: none;"><i class="fas fa-phone-alt" style="font-size: 9px; margin-right: 1px;"></i> ${escHtml(t.client.phone)}</a>` : ''}
+                  ${t.client.city ? ` &bull; <span class="badge" style="font-size: 10px; background: var(--accent)1A; color: var(--accent); border-radius: 4px; padding: 1px 5px; font-weight: 600; display: inline-flex; align-items: center; gap: 2px;"><i class="fas fa-map-marker-alt" style="font-size: 9px;"></i> ${escHtml(t.client.city)}</span>` : ''}
                 </div>` : ''
               }
               ${t?.deal ? `
-                <div style="color: var(--text-secondary); font-size: 11px;">
-                  <i class="fas fa-handshake" style="font-size: 10px; opacity: 0.8;"></i> ${escHtml(t.deal.productName || '')}
+                <div style="color: var(--text-secondary); font-size: 11.5px; display: flex; align-items: center; gap: 4px;">
+                  <i class="fas fa-handshake" style="font-size: 11px; opacity: 0.8; margin-right: 2px;"></i>${escHtml(t.deal.productName || '')}
                 </div>` : ''
               }
             </div>
