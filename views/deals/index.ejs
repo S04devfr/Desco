@@ -1076,8 +1076,9 @@ function dcardHtml(d) {
         <i class="fas fa-edit"></i>
       </div>
 
-      <div class="dcard-header" style="margin-bottom:10px; display:flex; flex-direction:column; align-items:flex-start; padding-right:24px;">
-        <span class="dcard-badge" style="background:${sc}1A; color:${sc}; padding:2px 6px; font-size:9.5px; border-radius:4px; font-weight:700; text-transform:uppercase; margin-bottom: 6px;">${sl}</span>
+      <div class="dcard-header" style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; padding-right:24px; width:100%;">
+        <span class="dcard-badge" style="background:${sc}1A; color:${sc}; padding:2px 6px; font-size:9.5px; border-radius:4px; font-weight:700; text-transform:uppercase;">${sl}</span>
+        <span style="font-size:11px; font-weight:700; color:var(--text-secondary); background:var(--bg-tertiary); padding:2px 6px; border-radius:4px; border:1px solid var(--border)">#${d.id}</span>
       </div>
       
       <!-- Labeled fields for easy operator reading -->
@@ -1668,7 +1669,7 @@ async function openDetail(id) {
       remainingNotes = otherLines.join('\n').trim();
     }
 
-    document.getElementById('detailTitle').textContent = _esc(deal.productName||deal.name);
+    document.getElementById('detailTitle').textContent = 'Sdelka #' + deal.id + ': ' + (deal.productName || deal.name);
     document.getElementById('detailBody').innerHTML = `
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
         <div>
