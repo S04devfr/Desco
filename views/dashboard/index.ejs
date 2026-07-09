@@ -188,7 +188,7 @@
       <h3><i class="fas fa-tasks" style="color:var(--accent);margin-right:6px"></i>Bugungi vazifalar</h3>
       <a href="/tasks" class="btn btn-ghost btn-sm" style="font-size:12px">Barchasi</a>
     </div>
-    <div id="todayTasks" class="task-list">
+    <div id="todayTasks" class="task-list" style="max-height: 520px; overflow-y: auto; padding-right: 4px;">
       <div style="padding:20px;text-align:center"><div class="spinner"></div></div>
     </div>
   </div>
@@ -504,11 +504,21 @@ async function loadDashboard() {
     }
 
     // Today's tasks rendering
-    const tasksEl = document.getElementById('todayTasks');
-    if (!safeTasks.length) {
-      tasksEl.innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-state-icon"><i class="fas fa-check-circle"></i></div><h3>Bugungi vazifalar yo\'q</h3></div>';
-    } else {
-      tasksEl.innerHTML = safeTasks.map(t => `
+    window.todayTasksList = safeTasks || [];
+    window.showAllTodayTasks = false;
+    window.renderDashboardTasks = function() {
+      const tasksEl = document.getElementById('todayTasks');
+      if (!tasksEl) return;
+      const tasks = window.todayTasksList;
+      if (!tasks.length) {
+        tasksEl.innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-state-icon"><i class="fas fa-check-circle"></i></div><h3>Bugungi vazifalar yo\'q</h3></div>';
+        return;
+      }
+
+      const limit = window.showAllTodayTasks ? tasks.length : 4;
+      const displayTasks = tasks.slice(0, limit);
+
+      let html = displayTasks.map(t => `
         <div class="task-item" style="align-items: flex-start; padding: 14px 16px; margin-bottom: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-secondary); transition: all 0.2s;">
           <div class="task-check ${t.completed ? 'done' : ''}" onclick="toggleTask(${t.id}, this)" style="margin-top: 3px; cursor: pointer; flex-shrink: 0;">
             ${t.completed ? '<i class="fas fa-check" style="font-size:9px"></i>' : ''}
@@ -537,7 +547,29 @@ async function loadDashboard() {
           </div>
         </div>
       `).join('');
-    }
+
+      if (tasks.length > 4 && !window.showAllTodayTasks) {
+        html += `
+          <div style="text-align: center; margin-top: 12px;">
+            <button class="btn btn-secondary btn-sm" onclick="window.showAllTodayTasks=true; window.renderDashboardTasks();" style="font-size: 12px; padding: 6px 16px; border-radius: 6px; font-weight: 600; width: 100%;">
+              Barchasini ko'rsatish (${tasks.length - 4} ta ko'proq) <i class="fas fa-chevron-down" style="margin-left: 4px; font-size: 10px;"></i>
+            </button>
+          </div>
+        `;
+      } else if (window.showAllTodayTasks && tasks.length > 4) {
+        html += `
+          <div style="text-align: center; margin-top: 12px;">
+            <button class="btn btn-secondary btn-sm" onclick="window.showAllTodayTasks=false; window.renderDashboardTasks();" style="font-size: 12px; padding: 6px 16px; border-radius: 6px; font-weight: 600; width: 100%;">
+              Kamroq ko'rsatish <i class="fas fa-chevron-up" style="margin-left: 4px; font-size: 10px;"></i>
+            </button>
+          </div>
+        `;
+      }
+
+      tasksEl.innerHTML = html;
+    };
+
+    window.renderDashboardTasks();
   } catch(e) {
     console.error('Dashboard yuk xatosi:', e);
     const kpiCards = document.getElementById('kpiCards');

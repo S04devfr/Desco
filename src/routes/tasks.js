@@ -14,12 +14,12 @@ async function enrichWithClient(tasks) {
     if (!ids.length) return tasks
     const ph = ids.map((_, idx) => `$${idx + 1}`).join(',')
     const rows = await prisma.$queryRawUnsafe(
-      `SELECT t.id as "taskId", t.clientId as "clientId", c.name as "clientName", c.company as "clientCompany", c.phone as "clientPhone", c.city as "clientCity",
-              t.dealId as "dealId", d.clientId as "dealClientId", dc.name as "dealClientName", dc.company as "dealClientCompany", dc.phone as "dealClientPhone", dc.city as "dealClientCity"
+      `SELECT t.id as "taskId", t."clientId" as "clientId", c.name as "clientName", c.company as "clientCompany", c.phone as "clientPhone", c.city as "clientCity",
+              t."dealId" as "dealId", d."clientId" as "dealClientId", dc.name as "dealClientName", dc.company as "dealClientCompany", dc.phone as "dealClientPhone", dc.city as "dealClientCity"
        FROM "Task" t 
-       LEFT JOIN "Client" c ON t.clientId = c.id
-       LEFT JOIN "Deal" d ON t.dealId = d.id
-       LEFT JOIN "Client" dc ON d.clientId = dc.id
+       LEFT JOIN "Client" c ON t."clientId" = c.id
+       LEFT JOIN "Deal" d ON t."dealId" = d.id
+       LEFT JOIN "Client" dc ON d."clientId" = dc.id
        WHERE t.id IN (${ph})`, ...ids
     )
     const map = {}
