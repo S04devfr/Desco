@@ -46,7 +46,7 @@ router.get('/:id', async (req, res, next) => {
 })
 
 // Create expense
-router.post('/', requireRole('admin'), async (req, res, next) => {
+router.post('/', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
     const { description, amount, category, date } = req.body
     if (!description || amount === undefined) {
@@ -70,7 +70,7 @@ router.post('/', requireRole('admin'), async (req, res, next) => {
 })
 
 // Update expense
-router.patch('/:id', requireRole('admin'), async (req, res, next) => {
+router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
     const { description, amount, category, date } = req.body
 
@@ -93,7 +93,7 @@ router.patch('/:id', requireRole('admin'), async (req, res, next) => {
 })
 
 // Delete expense
-router.delete('/:id', requireRole('admin'), async (req, res, next) => {
+router.delete('/:id', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
     await prisma.expense.delete({ where: { id: Number(req.params.id) } })
     res.json({ message: 'Xarajat o\'chirildi' })

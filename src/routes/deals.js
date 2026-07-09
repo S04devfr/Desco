@@ -70,7 +70,33 @@ router.get('/', async (req, res, next) => {
       orderBy: { createdAt: 'desc' }
     })
 
-    if (q) deals = deals.filter(d => d.productName?.toLowerCase().includes(q.toLowerCase()))
+    if (q) {
+      const searchLower = q.toLowerCase().trim();
+      const cleanId = searchLower.startsWith('#') ? searchLower.substring(1) : searchLower;
+      
+      deals = deals.filter(d => {
+        // 1. Match deal ID
+        if (String(d.id) === cleanId) return true;
+        
+        // 2. Match product name
+        if (d.productName?.toLowerCase().includes(searchLower)) return true;
+        
+        // 3. Match client name / phone / city
+        if (d.client) {
+          if (d.client.name?.toLowerCase().includes(searchLower)) return true;
+          if (d.client.phone?.toLowerCase().includes(searchLower)) return true;
+          if (d.client.city?.toLowerCase().includes(searchLower)) return true;
+        }
+        
+        // 4. Match manager name
+        if (d.manager) {
+          if (d.manager.fullName?.toLowerCase().includes(searchLower)) return true;
+          if (d.manager.email?.toLowerCase().includes(searchLower)) return true;
+        }
+        
+        return false;
+      });
+    }
     res.json(deals)
   } catch (error) { next(error) }
 })
