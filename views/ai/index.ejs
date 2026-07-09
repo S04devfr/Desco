@@ -232,7 +232,14 @@ body.dark-mode .ai-page {
   <div class="chat-box" id="chatBox">
     <div class="msg assistant">
       <div class="msg-bubble">Assalomu alaykum, <b><%= user ? user.fullName : '' %></b>! Men Desco AI yordamchisiman. 
-Sizning CRM tizimingizdagi joriy faol sdelkalar va mijozlar ma'lumotlarini tahlil qilib, savollaringizga javob bera olaman. Sizga qanday yordam bera olaman?</div>
+Sizning CRM tizimingizdagi joriy faol sdelkalar va mijozlar ma'lumotlarini tahlil qilib, savollaringizga javob bera olaman.<br><br>
+<b>Menga berishingiz mumkin bo'lgan ba'zi savollar / idealar:</b>
+<ul style="margin: 8px 0; padding-left: 20px; line-height: 1.6; font-size: 13px;">
+  <li><code>#385 haqida ma'lumot ber</code> — Sdelka ID raqami orqali mijoz ismi, telefoni, viloyati, sdelka bosqichi, qaysi menejer olganligi va izohini darhol ko'rsataman.</li>
+  <li><code>Hisobot chiqarib ber</code> — Sotuvlar, oylik tushumlar yoki qarzdorliklar bo'yicha tartibli hisobot tayyorlab, uni Excel (CSV) fayl qilib yuklab olishingiz uchun maxsus tugma taqdim etaman.</li>
+  <li><code>Bugun nechta yangi sdelka ochildi?</code> — Bugungi jami ochilgan sdelkalar tahlili.</li>
+  <li><code>Eng ko'p sotuv qilgan menejer kim?</code> — Menejerlar reytingini hisoblayman.</li>
+</ul></div>
       <div class="msg-time">Tizim xabari</div>
     </div>
     
@@ -280,13 +287,103 @@ function getTimeString() {
   return now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
 }
 
+function parseMarkdown(text) {
+  if (!text) return '';
+  
+  // 1. Normalize line breaks
+  let html = text.replace(/\\n/g, '\n');
+  
+  // 2. Parse Markdown tables (e.g. | col1 | col2 |)
+  const tableRegex = /((?:\|[^\n]*\|(?:\n|$))+)/g;
+  html = html.replace(tableRegex, (match) => {
+    const lines = match.trim().split('\n');
+    if (lines.length < 2) return match;
+    
+    let tableHtml = '<div class="table-container" style="overflow-x:auto; margin:16px 0; border:1px solid var(--border); border-radius:10px; background:var(--bg-secondary); box-shadow:var(--shadow-sm);"><table class="ai-report-table" style="width:100%; border-collapse:collapse; font-size:12.5px; text-align:left;">';
+    let hasHeader = false;
+    
+    lines.forEach((line, index) => {
+      if (line.trim().startsWith('|') && line.includes('---')) return; // skip separator row
+      
+      const cells = line.split('|').map(c => c.trim()).filter((c, i, arr) => i > 0 && i < arr.length - 1);
+      if (cells.length === 0) return;
+      
+      if (index === 0 || !hasHeader) {
+        tableHtml += '<thead style="background:var(--bg-tertiary); border-bottom:1px solid var(--border);"><tr>';
+        cells.forEach(cell => {
+          tableHtml += `<th style="padding:12px 14px; font-weight:700; color:var(--text-secondary);">${cell}</th>`;
+        });
+        tableHtml += '</tr></thead><tbody>';
+        hasHeader = true;
+      } else {
+        tableHtml += '<tr style="border-bottom:1px solid var(--border); transition:background 0.15s;" onmouseover="this.style.background=\'var(--bg-primary)\'" onmouseout="this.style.background=\'transparent\'">';
+        cells.forEach(cell => {
+          tableHtml += `<td style="padding:10px 14px; color:var(--text-primary);">${cell}</td>`;
+        });
+        tableHtml += '</tr>';
+      }
+    });
+    
+    if (hasHeader) tableHtml += '</tbody>';
+    tableHtml += '</table>';
+    
+    // Download CSV button
+    tableHtml += `
+      <div style="padding:10px 14px; background:var(--bg-tertiary); border-top:1px solid var(--border); display:flex; justify-content:flex-end;">
+        <button class="btn btn-primary btn-sm" onclick="downloadTableAsCSV(this)" style="font-size:11.5px; padding:6px 12px; border-radius:6px; font-weight:600; display:inline-flex; align-items:center; gap:6px;">
+          <i class="fas fa-file-excel"></i> Excel (CSV) yuklab olish
+        </button>
+      </div>
+    `;
+    tableHtml += '</div>';
+    return tableHtml;
+  });
+  
+  // 3. Bold styling
+  html = html.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+  
+  // 4. Linebreaks outside of parsed tables
+  html = html.replace(/\n/g, '<br>');
+  
+  return html;
+}
+
+function downloadTableAsCSV(button) {
+  const container = button.closest('.table-container');
+  const table = container.querySelector('table');
+  if (!table) return;
+  
+  let csvContent = "\uFEFF"; // UTF-8 BOM for Excel compatibility with Uzbek/Cyrillic characters
+  const rows = table.querySelectorAll('tr');
+  
+  rows.forEach(row => {
+    const cols = row.querySelectorAll('th, td');
+    const rowData = [];
+    cols.forEach(col => {
+      let text = col.innerText.replace(/"/g, '""').trim();
+      rowData.push(`"${text}"`);
+    });
+    csvContent += rowData.join(',') + "\r\n";
+  });
+  
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  link.setAttribute("href", url);
+  link.setAttribute("download", `desco_ai_hisobot_${new Date().toISOString().slice(0,10)}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
 function appendMessage(role, content) {
   const msgDiv = document.createElement('div');
   msgDiv.className = 'msg ' + role;
   
   const bubble = document.createElement('div');
   bubble.className = 'msg-bubble';
-  bubble.innerHTML = content.replace(/\\n/g, '<br>').replace(/\\*\\*(.*?)\\*\\*/g, '<b>$1</b>'); // Basic markdown for bold
+  bubble.innerHTML = parseMarkdown(content);
   
   const time = document.createElement('div');
   time.className = 'msg-time';
