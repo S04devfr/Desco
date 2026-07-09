@@ -1334,12 +1334,21 @@ async function renderInstallmentPlanEditor(dealId) {
   const remainingDebt = deal.amount - deal.paidAmount;
 
   editorEl.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed var(--border); padding-bottom:10px; margin-bottom:12px;">
-      <div>
-        <h3 style="font-size:14px; font-weight:700; margin:0;">${escHtml(deal.client?.name)} · ${escHtml(deal.productName)}</h3>
-        <p style="font-size:11px; color:var(--text-tertiary); margin:0;">Sdelka #${deal.id}</p>
+    <div style="display:grid; grid-template-columns:1fr 200px; gap:16px; border-bottom:1px dashed var(--border); padding-bottom:12px; margin-bottom:12px;">
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:11.5px; font-weight:700; color:var(--text-secondary); width:80px; flex-shrink:0;">Mijoz Ismi:</span>
+          <input type="text" id="editNasiyaClientName" class="form-control" value="${escHtml(deal.client?.name || '')}" style="height:28px; font-size:12.5px; font-weight:600; padding:0 6px;">
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:11.5px; font-weight:700; color:var(--text-secondary); width:80px; flex-shrink:0;">Mijoz Tel:</span>
+          <input type="text" id="editNasiyaClientPhone" class="form-control" value="${escHtml(deal.client?.phone || '')}" style="height:28px; font-size:12.5px; padding:0 6px;">
+        </div>
+        <div style="font-size:11px; color:var(--text-tertiary); margin-top:2px;">
+          Sdelka: <b>${escHtml(deal.productName)} (#${deal.id})</b>
+        </div>
       </div>
-      <div style="text-align:right">
+      <div style="text-align:right; display:flex; flex-direction:column; justify-content:center; align-items:flex-end;">
         <div style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase;">Qolgan Qarz</div>
         <div style="font-size:16px; font-weight:800; color:var(--danger)">${fmtMoney(remainingDebt)}</div>
       </div>
@@ -1365,9 +1374,14 @@ async function renderInstallmentPlanEditor(dealId) {
       <button class="btn btn-sm btn-ghost" onclick="addInstallmentRow()" style="border:1px dashed var(--border); font-size:12px;">
         <i class="fas fa-plus"></i> To'lov qo'shish
       </button>
-      <button class="btn btn-sm btn-primary" onclick="saveInstallmentPlan(${deal.id})" id="saveInstPlanBtn">
-        <i class="fas fa-save"></i> Planni Saqlash
-      </button>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-sm btn-danger" onclick="deleteInstallmentPlan(${deal.id})" style="font-size:12px;">
+          <i class="fas fa-trash-alt"></i> Planni O'chirish
+        </button>
+        <button class="btn btn-sm btn-primary" onclick="saveInstallmentPlan(${deal.id})" id="saveInstPlanBtn">
+          <i class="fas fa-save"></i> Planni Saqlash
+        </button>
+      </div>
     </div>
   `;
 
@@ -1473,6 +1487,22 @@ async function saveInstallmentPlan(dealId) {
   }
 
   try {
+    const deal = allDealsData.find(d => d.id === dealId);
+    
+    // 1. Update client name & phone if they changed
+    if (deal && deal.client && deal.client.id) {
+      const newName = document.getElementById('editNasiyaClientName').value.trim();
+      const newPhone = document.getElementById('editNasiyaClientPhone').value.trim();
+      if (newName && (newName !== deal.client.name || newPhone !== deal.client.phone)) {
+        await fetch('/api/clients/' + deal.client.id, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: newName, phone: newPhone })
+        });
+      }
+    }
+
+    // 2. Save installments
     const r = await fetch('/api/deals/' + dealId + '/installments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1487,6 +1517,28 @@ async function saveInstallmentPlan(dealId) {
     if (typeof showToast === 'function') showToast('Saqlashda xatolik', 'error');
   } finally {
     btn.disabled = false;
+  }
+}
+
+async function deleteInstallmentPlan(dealId) {
+  if (!confirm("Haqiqatan ham ushbu nasiya to'lov rejasini o'chirmoqchimisiz? (Bu barcha rejalashtirilgan oylik to'lovlarni o'chiradi)")) return;
+  
+  try {
+    const r = await fetch('/api/deals/' + dealId + '/installments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ installments: [] })
+    });
+    if (!r.ok) throw new Error();
+    
+    if (typeof showToast === 'function') showToast('Nasiya rejasi o\'chirildi', 'success');
+    
+    // Clear selection
+    selectedDealIdForInstallments = null;
+    manuallyAddedDealIds = manuallyAddedDealIds.filter(id => id !== dealId);
+    loadFinancialData();
+  } catch(e) {
+    if (typeof showToast === 'function') showToast('O\'chirishda xatolik', 'error');
   }
 }
 
