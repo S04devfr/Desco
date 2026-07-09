@@ -177,16 +177,53 @@ app.set('broadcast', (data) => {
 // Audit log jadvalini yaratish
 const { ensureAuditTable } = require('./middleware/auditLog');
 
+// Avtomatik ravishda eski dublikat (uncompleted) vazifalarni tozalash funksiyasi
+async function cleanupDuplicateTasks() {
+  try {
+    console.log('[Cleanup] Dublikat vazifalarni tozalash boshlandi...');
+    
+    // Barcha bajarilmagan va dealId ga ega vazifalarni olamiz (ID bo'yicha kamayish tartibida, yangilari tepada turadi)
+    const activeTasks = await prisma.task.findMany({
+      where: { completed: false, dealId: { not: null } },
+      orderBy: { id: 'desc' }
+    });
+    
+    const seenDeals = new Set();
+    const toDeleteIds = [];
+    
+    for (const task of activeTasks) {
+      if (seenDeals.has(task.dealId)) {
+        toDeleteIds.push(task.id);
+      } else {
+        seenDeals.add(task.dealId);
+      }
+    }
+    
+    if (toDeleteIds.length > 0) {
+      const result = await prisma.task.deleteMany({
+        where: { id: { in: toDeleteIds } }
+      });
+      console.log(`[Cleanup] ${result.count} ta eski dublikat vazifa muvaffaqiyatli o'chirildi.`);
+    } else {
+      console.log('[Cleanup] Dublikat vazifalar topilmadi.');
+    }
+  } catch (e) {
+    console.error('[Cleanup] Dublikatlarni tozalashda xato:', e);
+  }
+}
+
 runMigrations(prisma).then(async () => {
   await ensureAuditTable();
+  await cleanupDuplicateTasks();
   server.listen(PORT, () => {
     console.log(`
    ╔══════════════════════════════════════╗
    ║   DESCO CRM — Running on :${PORT}     ║
    ╚══════════════════════════════════════╝`);
   });
-}).catch(err => {
+}).catch(async (err) => {
   console.error('Migration xatosi:', err);
+  await cleanupDuplicateTasks();
   // Migratsiya muvaffaqiyatsiz bo'lsa ham server'ni ishga tushiramiz
   server.listen(PORT, () => {
     console.log(`DESCO CRM — Running on :${PORT} (migration errors ignored)`);

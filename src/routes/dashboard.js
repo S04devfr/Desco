@@ -143,6 +143,38 @@ router.get('/product-popularity', async (req, res, next) => {
   }
 })
 
+// clientId ni raw SQL orqali task'larga qo'shish (generated client bilmaydi)
+async function enrichWithClient(tasks) {
+  try {
+    const ids = tasks.map(t => t.id)
+    if (!ids.length) return tasks
+    const ph = ids.map(() => '?').join(',')
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT t.id as taskId, t.clientId, c.name as clientName, c.company as clientCompany, c.phone as clientPhone,
+              t.dealId, d.clientId as dealClientId, dc.name as dealClientName, dc.company as dealClientCompany, dc.phone as dealClientPhone
+       FROM "Task" t 
+       LEFT JOIN "Client" c ON t.clientId = c.id
+       LEFT JOIN "Deal" d ON t.dealId = d.id
+       LEFT JOIN "Client" dc ON d.clientId = dc.id
+       WHERE t.id IN (${ph})`, ...ids
+    )
+    const map = {}
+    for (const r of rows) map[Number(r.taskId)] = r
+    return tasks.map(t => {
+      const r = map[t.id]
+      const finalClientId = r?.clientId ? Number(r.clientId) : (r?.dealClientId ? Number(r.dealClientId) : null);
+      const finalClientName = r?.clientId ? r.clientName : r?.dealClientName;
+      const finalClientCompany = r?.clientId ? r.clientCompany : r?.dealClientCompany;
+      const finalClientPhone = r?.clientId ? r.clientPhone : r?.dealClientPhone;
+      return {
+        ...t,
+        clientId: finalClientId,
+        client: finalClientId ? { id: finalClientId, name: finalClientName, company: finalClientCompany, phone: finalClientPhone || null } : null
+      }
+    })
+  } catch (e) { return tasks }
+}
+
 // Today's tasks
 router.get('/today-tasks', async (req, res, next) => {
   try {
@@ -158,8 +190,17 @@ router.get('/today-tasks', async (req, res, next) => {
     }
     if (req.user?.role !== 'admin') where.assignedToId = req.userId
 
-    const tasks = await prisma.task.findMany({ where, orderBy: { dueDate: 'asc' } })
-    res.json(tasks)
+    const tasks = await prisma.task.findMany({
+      where,
+      include: {
+        assignedTo: { select: { id: true, fullName: true, email: true, role: true } },
+        deal: { select: { id: true, productName: true } }
+      },
+      orderBy: { dueDate: 'asc' }
+    })
+    
+    const enriched = await enrichWithClient(tasks);
+    res.json(enriched)
   } catch (error) {
     console.error('Tasks Error:', error);
     return res.status(200).json([]);

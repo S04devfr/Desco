@@ -173,12 +173,15 @@ const SENSITIVE_FIELDS = [
 
 function sanitizeObject(obj) {
   if (!obj || typeof obj !== 'object') return obj;
+  if (obj instanceof Date) return obj;
   if (Array.isArray(obj)) return obj.map(sanitizeObject);
 
   const clean = {};
   for (const [key, value] of Object.entries(obj)) {
     if (SENSITIVE_FIELDS.some(f => key.toLowerCase().includes(f.toLowerCase()))) {
       clean[key] = '[REDACTED]';
+    } else if (value instanceof Date) {
+      clean[key] = value;
     } else if (typeof value === 'object' && value !== null) {
       clean[key] = sanitizeObject(value);
     } else {
