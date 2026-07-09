@@ -151,7 +151,10 @@ router.get('/today-tasks', async (req, res, next) => {
 
     const where = {
       completed: false,
-      dueDate: { gte: startOfDay, lte: endOfDay }
+      OR: [
+        { dueDate: { gte: startOfDay, lte: endOfDay } },
+        { dueDate: null }
+      ]
     }
     if (req.user?.role !== 'admin') where.assignedToId = req.userId
 

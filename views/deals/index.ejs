@@ -1270,7 +1270,9 @@ async function onDrop(e, stageId) {
           title: 'Qayta aloqa',
           description: desc,
           dueDate: localDate,
-          dealId: deal.id
+          dueTime: '10:00',
+          dealId: deal.id,
+          clientId: deal.clientId || null
         })
       }).then(() => {
         _toast('Vazifa avtomatik yaratildi: Qayta aloqa', 'success');
@@ -1741,8 +1743,16 @@ function closeDetail() {
 
 async function createTaskForDeal(dealId, dealTitle) {
   try {
+    // Deal ma'lumotlarini olish (clientId uchun)
+    let clientId = null;
+    try {
+      const dealData = await apiFetch('/api/deals/' + dealId);
+      clientId = dealData.clientId || null;
+    } catch(e) {}
+
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
+    const localDate = new Date(tomorrow.getTime() - (tomorrow.getTimezoneOffset() * 60000)).toISOString().slice(0, 10);
     
     await apiFetch('/api/tasks', {
       method: 'POST',
@@ -1750,8 +1760,10 @@ async function createTaskForDeal(dealId, dealTitle) {
       body: JSON.stringify({
         title: dealTitle + ' bo\'yicha qayta aloqa',
         description: 'Mijoz bilan sdelka bo\'yicha bog\'lanish kerak',
-        dueDate: tomorrow.toISOString().substring(0,10),
-        dealId: dealId
+        dueDate: localDate,
+        dueTime: '10:00',
+        dealId: dealId,
+        clientId: clientId
       })
     });
     _toast('Vazifa muvaffaqiyatli yaratildi', 'success');

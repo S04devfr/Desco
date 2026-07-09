@@ -14,7 +14,7 @@ async function enrichWithClient(tasks) {
     if (!ids.length) return tasks
     const ph = ids.map(() => '?').join(',')
     const rows = await prisma.$queryRawUnsafe(
-      `SELECT t.id as taskId, t.clientId, c.name as clientName, c.company as clientCompany
+      `SELECT t.id as taskId, t.clientId, c.name as clientName, c.company as clientCompany, c.phone as clientPhone
        FROM "Task" t LEFT JOIN "Client" c ON t.clientId = c.id
        WHERE t.id IN (${ph})`, ...ids
     )
@@ -25,7 +25,7 @@ async function enrichWithClient(tasks) {
       return {
         ...t,
         clientId: r?.clientId ? Number(r.clientId) : null,
-        client: r?.clientId ? { id: Number(r.clientId), name: r.clientName, company: r.clientCompany } : null
+        client: r?.clientId ? { id: Number(r.clientId), name: r.clientName, company: r.clientCompany, phone: r.clientPhone || null } : null
       }
     })
   } catch (e) { return tasks }
