@@ -370,6 +370,95 @@ function renderTasks() {
   el.innerHTML = html;
 }
 
+let currentView = 'list';
+
+function setTasksView(view) {
+  currentView = view;
+  localStorage.setItem('tasks_view', view);
+
+  document.getElementById('btnList').classList.toggle('active', view === 'list');
+  document.getElementById('btnKanban').classList.toggle('active', view === 'kanban');
+
+  if (view === 'list') {
+    document.getElementById('taskListView').classList.remove('hidden');
+    document.getElementById('taskKanbanView').classList.add('hidden');
+    renderTasks();
+  } else {
+    document.getElementById('taskListView').classList.add('hidden');
+    document.getElementById('taskKanbanView').classList.remove('hidden');
+    renderTasksKanban();
+  }
+}
+window.setTasksView = setTasksView;
+
+function refreshView() {
+  if (currentView === 'list') {
+    renderTasks();
+  } else {
+    renderTasksKanban();
+  }
+}
+window.refreshView = refreshView;
+
+function renderTasksKanban() {
+  const tasks = getFilteredTasks();
+  const board = document.getElementById('taskKanbanBoard');
+  if (!board) return;
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+
+  const overdueTasks = [];
+  const todayTasks = [];
+  const tomorrowTasks = [];
+  const futureTasks = [];
+  const noDateTasks = [];
+
+  tasks.forEach(t => {
+    const due = t.dueDate ? new Date(t.dueDate) : null;
+    if (!due) {
+      noDateTasks.push(t);
+    } else {
+      const d = new Date(due); d.setHours(0,0,0,0);
+      if (d < today) {
+        overdueTasks.push(t);
+      } else if (d.getTime() === today.getTime()) {
+        todayTasks.push(t);
+      } else if (d.getTime() === tomorrow.getTime()) {
+        tomorrowTasks.push(t);
+      } else {
+        futureTasks.push(t);
+      }
+    }
+  });
+
+  const columnsData = [
+    { key: 'overdue', title: "Muddati o'tgan", color: "#FF3B30", tasks: overdueTasks },
+    { key: 'today', title: "Bugun", color: "#007AFF", tasks: todayTasks },
+    { key: 'tomorrow', title: "Ertaga", color: "#FF9500", tasks: tomorrowTasks },
+    { key: 'future', title: "Keyingi kunlar", color: "#5856D6", tasks: futureTasks },
+    { key: 'nodate', title: "Sana belgilanmagan", color: "#8E8E93", tasks: noDateTasks }
+  ];
+
+  board.innerHTML = columnsData.map(col => `
+    <div class="kanban-col" style="flex: 0 0 290px; width: 290px; display: flex; flex-direction: column; background: var(--bg-primary); border-radius: 12px; border: 1px solid var(--border); max-height: 75vh; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+      <div class="kanban-col-header" style="padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; background: var(--bg-secondary);">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: ${col.color};"></span>
+        <h4 style="margin: 0; font-size: 13.5px; font-weight: 700; color: var(--text-primary); flex-grow: 1;">${col.title}</h4>
+        <span class="badge" style="background: ${col.color}1A; color: ${col.color}; font-size: 10.5px; padding: 2px 7px; border-radius: 10px; font-weight: 700;">${col.tasks.length}</span>
+      </div>
+      <div class="kanban-col-body" style="padding: 12px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; flex-grow: 1;">
+        ${col.tasks.length === 0 ? `
+          <div style="padding: 30px 10px; text-align: center; color: var(--text-tertiary); font-size: 12.5px;">
+            <i class="fas fa-clipboard-check" style="font-size: 20px; opacity: 0.4; display: block; margin-bottom: 6px;"></i>
+            Vazifalar yo'q
+          </div>
+        ` : col.tasks.map(t => renderSingleTaskHtml(t)).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
 async function toggleTask(id, el) {
   const completed = !el.classList.contains('done');
   try {
@@ -478,13 +567,16 @@ async function deleteTask(id) {
 // this code runs (DOMContentLoaded only fires after the whole document,
 // including earlier synchronous <script> tags, has been parsed).
 function init() {
-  document.getElementById('filterPriority').addEventListener('change', renderTasks);
+  document.getElementById('filterPriority').addEventListener('change', window.refreshView);
   const searchEl = document.getElementById('taskSearch');
   const debounceFn = (typeof debounce === 'function') ? debounce : (fn, delay) => {
     let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn.apply(null, args), delay); };
   };
-  searchEl.addEventListener('input', debounceFn(renderTasks, 300));
+  searchEl.addEventListener('input', debounceFn(window.refreshView, 300));
   loadTasks();
+
+  const savedView = localStorage.getItem('tasks_view') || 'list';
+  window.setTasksView(savedView);
 
   const params = new URLSearchParams(window.location.search);
   const dealId = params.get('dealId');
