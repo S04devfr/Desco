@@ -114,7 +114,7 @@ router.post('/', async (req, res, next) => {
   try {
     const {
       productName, amount, paidAmount, status, notes, clientId, deadline, stageId, pipelineId,
-      contactName, contactPhone, contactEmail, companyName, companyAddress, city, costPrice
+      contactName, contactPhone, contactEmail, companyName, companyAddress, city, costPrice, createdAt
     } = req.body
     if (!productName) return res.status(400).json({ message: 'Mahsulot nomi majburiy' })
 
@@ -149,6 +149,7 @@ router.post('/', async (req, res, next) => {
         status: status || 'new',
         notes: notes || null,
         deadline: (deadline && !isNaN(new Date(deadline))) ? new Date(deadline) : null,
+        createdAt: (createdAt && !isNaN(new Date(createdAt))) ? new Date(createdAt) : new Date(),
         clientId: resolvedClientId,
         managerId: req.userId,
         stageId: stageId ? Number(stageId) : null,
@@ -210,7 +211,7 @@ router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => 
   try {
     const {
       productName, amount, paidAmount, status, notes, clientId, deadline, managerId, stageId, costPrice,
-      contactName, contactPhone, city
+      contactName, contactPhone, city, createdAt
     } = req.body
 
     const existing = await prisma.deal.findUnique({ where: { id: Number(req.params.id) } })
@@ -261,6 +262,9 @@ router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => 
     if (notes !== undefined) data.notes = notes
     if (resolvedClientId !== undefined) data.clientId = resolvedClientId
     if (deadline !== undefined) data.deadline = (deadline && !isNaN(new Date(deadline))) ? new Date(deadline) : null
+    if (createdAt !== undefined) {
+      data.createdAt = (createdAt && !isNaN(new Date(createdAt))) ? new Date(createdAt) : new Date();
+    }
     if (managerId !== undefined) {
       data.managerId = managerId ? Number(managerId) : null
     } else if (existing.managerId === null) {

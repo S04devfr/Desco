@@ -490,6 +490,11 @@
         </div>
 
         <div class="form-group">
+          <label class="form-label">Sdelka sanasi <span style="font-size:10px;font-weight:normal;color:#999">(Yaratilgan sana)</span></label>
+          <input type="datetime-local" id="f-createdAt" class="form-control">
+        </div>
+
+        <div class="form-group">
           <label class="form-label">Izoh</label>
           <textarea id="f-notes" class="form-control" rows="2" placeholder="Qo'shimcha ma'lumot…"></textarea>
         </div>
@@ -1509,6 +1514,7 @@ function openDealModal(defaultStageId, editId) {
   setVal('f-paidAmount', '');
   setVal('f-clientId', '');
   setVal('f-deadline', '');
+  setVal('f-createdAt', '');
   setVal('f-notes', '');
   setVal('f-contactName', '');
   setVal('f-contactPhone', '');
@@ -1549,6 +1555,18 @@ function openDealModal(defaultStageId, editId) {
       } else {
         setVal('f-deadline', '');
       }
+      if (deal?.createdAt) {
+        const cDate = new Date(deal.createdAt);
+        if (!isNaN(cDate.getTime())) {
+          const pad = (n) => String(n).padStart(2, '0');
+          const fmt = `${cDate.getFullYear()}-${pad(cDate.getMonth()+1)}-${pad(cDate.getDate())}T${pad(cDate.getHours())}:${pad(cDate.getMinutes())}`;
+          setVal('f-createdAt', fmt);
+        } else {
+          setVal('f-createdAt', '');
+        }
+      } else {
+        setVal('f-createdAt', '');
+      }
       if (stageEl) stageEl.value = deal?.stageId || '';
       setVal('f-notes', deal?.notes || '');
 
@@ -1582,6 +1600,7 @@ async function saveDeal() {
     amount:      Number(document.getElementById('f-amount').value) || 0,
     paidAmount:  Number(document.getElementById('f-paidAmount').value) || 0,
     deadline:    document.getElementById('f-deadline').value ? new Date(document.getElementById('f-deadline').value).toISOString() : null,
+    createdAt:   document.getElementById('f-createdAt').value ? new Date(document.getElementById('f-createdAt').value).toISOString() : null,
     stageId:     rawStageId,
     pipelineId:  _activePid,
     notes:       document.getElementById('f-notes').value.trim() || null,

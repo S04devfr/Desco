@@ -160,7 +160,7 @@
       <div class="stat-value skeleton" style="height:28px;width:80px"> </div>
     </div>
   </div>
-  <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')">
+  <div class="stat-card clickable" onclick="openProfitModal()">
     <div class="stat-icon green"><i class="fas fa-chart-line"></i></div>
     <div class="stat-info">
       <div class="stat-label">Sof foyda</div>
@@ -307,6 +307,83 @@
   </div>
 </div>
 
+<!-- ════════════ SOF FOYDA TAFSILOTLARI MODAL ════════════ -->
+<div class="modal-overlay hidden" id="profitModal" style="z-index:1100">
+  <div class="modal-box" style="max-width:980px; max-height:85vh; display:flex; flex-direction:column; overflow:hidden; padding:0;">
+    <div class="modal-header" style="padding:16px 20px; border-bottom:1px solid var(--border);">
+      <h2 style="display:flex; align-items:center; gap:8px;"><i class="fas fa-chart-line" style="color:#34C759"></i> Sof foyda va savdolar tafsiloti</h2>
+      <button class="modal-close" onclick="closeProfitModal()">&times;</button>
+    </div>
+
+    <!-- Modal Filter Bar -->
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding:12px 20px; background:var(--bg-secondary); flex-wrap:wrap; gap:12px; flex-shrink:0;">
+      <div style="display:flex; gap:6px; background:var(--bg-primary); padding:3px; border-radius:6px; border:1px solid var(--border)">
+        <button class="btn btn-sm" id="pmf-today" onclick="setProfitFilter('today')" style="padding:4px 10px; font-size:12px; border:none; cursor:pointer;">Bugun</button>
+        <button class="btn btn-sm" id="pmf-yesterday" onclick="setProfitFilter('yesterday')" style="padding:4px 10px; font-size:12px; border:none; cursor:pointer;">Kecha</button>
+        <button class="btn btn-sm" id="pmf-3day" onclick="setProfitFilter('day-before-yesterday')" style="padding:4px 10px; font-size:12px; border:none; cursor:pointer;">Kecha oldingi kun</button>
+        <button class="btn btn-sm" id="pmf-month" onclick="setProfitFilter('month')" style="padding:4px 10px; font-size:12px; border:none; cursor:pointer;">Shu oy</button>
+        <button class="btn btn-sm" id="pmf-all" onclick="setProfitFilter('all')" style="padding:4px 10px; font-size:12px; border:none; cursor:pointer;">Barchasi</button>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:12px; color:var(--text-secondary)">Custom:</span>
+        <input type="date" id="pmf-startDate" class="form-control" style="width:130px; height:30px; padding:0 8px; font-size:12px">
+        <span style="color:var(--text-tertiary)">-</span>
+        <input type="date" id="pmf-endDate" class="form-control" style="width:130px; height:30px; padding:0 8px; font-size:12px">
+        <button class="btn btn-primary btn-sm" onclick="setProfitFilter('range')" style="height:30px; padding:0 12px; font-size:12px"><i class="fas fa-filter"></i></button>
+      </div>
+    </div>
+
+    <!-- Summary metrics block inside Modal -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; padding:16px 20px; background:var(--bg-secondary); border-bottom:1px solid var(--border); flex-shrink:0;">
+      <div style="background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:2px;">
+        <span style="font-size:11px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase;">Jami Savdo</span>
+        <span id="pm-totalRevenue" style="font-size:16px; font-weight:700; color:var(--text-primary);">0 UZS</span>
+      </div>
+      <div style="background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:2px;">
+        <span style="font-size:11px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase;">Jami Tan Narxi</span>
+        <span id="pm-totalCostPrice" style="font-size:16px; font-weight:700; color:#5856D6;">0 UZS</span>
+      </div>
+      <div style="background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:2px;">
+        <span style="font-size:11px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase;">Jami Xarajatlar</span>
+        <span id="pm-totalExpenses" style="font-size:16px; font-weight:700; color:#FF9500;">0 UZS</span>
+      </div>
+      <div style="background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; padding:10px 14px; display:flex; flex-direction:column; gap:2px;">
+        <span style="font-size:11px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase;">Sof Foyda</span>
+        <span id="pm-netProfit" style="font-size:16px; font-weight:700; color:#34C759;">0 UZS</span>
+      </div>
+    </div>
+
+    <!-- Table of Sales details -->
+    <div class="modal-body" style="flex:1; overflow-y:auto; padding:20px; background:var(--bg-primary);">
+      <div style="border:1px solid var(--border); border-radius:10px; overflow:hidden; background:var(--bg-secondary);">
+        <table class="deals-tbl" style="width:100%; border-collapse:collapse;">
+          <thead>
+            <tr style="background:var(--bg-tertiary); border-bottom:1px solid var(--border);">
+              <th style="padding:12px 14px; font-size:11.5px; font-weight:700; text-align:left; color:var(--text-secondary)">Sana</th>
+              <th style="padding:12px 14px; font-size:11.5px; font-weight:700; text-align:left; color:var(--text-secondary)">Sdelka Nomi</th>
+              <th style="padding:12px 14px; font-size:11.5px; font-weight:700; text-align:left; color:var(--text-secondary)">Mijoz</th>
+              <th style="padding:12px 14px; font-size:11.5px; font-weight:700; text-align:right; color:var(--text-secondary)">Summa</th>
+              <th style="padding:12px 14px; font-size:11.5px; font-weight:700; text-align:right; color:var(--text-secondary)">To'landi</th>
+              <th style="padding:12px 14px; font-size:11.5px; font-weight:700; text-align:right; color:var(--text-secondary)">Tan Narxi</th>
+              <th style="padding:12px 14px; font-size:11.5px; font-weight:700; text-align:right; color:var(--text-secondary)">Foyda</th>
+              <th style="padding:12px 14px; font-size:11.5px; font-weight:700; text-align:left; color:var(--text-secondary)">Menejer</th>
+            </tr>
+          </thead>
+          <tbody id="profitTableBody">
+            <tr>
+              <td colspan="8" style="padding:40px; text-align:center; color:var(--text-tertiary)"><div class="spinner" style="margin:auto"></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="modal-footer" style="padding:12px 20px; background:var(--bg-secondary); border-top:1px solid var(--border); display:flex; justify-content:flex-end; flex-shrink:0;">
+      <button class="btn btn-secondary btn-sm" onclick="closeProfitModal()">Yopish</button>
+    </div>
+  </div>
+</div>
+
 <script>
 let salesChart, productChart;
 
@@ -436,7 +513,7 @@ async function loadDashboard() {
           <div class="stat-value">${fmtMoney(safeKpis.totalCostPrice ?? 0)}</div>
         </div>
       </div>
-      <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')">
+      <div class="stat-card clickable" onclick="openProfitModal()">
         <div class="stat-icon green"><i class="fas fa-chart-line"></i></div>
         <div class="stat-info">
           <div class="stat-label">Sof foyda</div>
@@ -623,6 +700,163 @@ async function toggleTask(id, el) {
       if (typeof window.updateSidebarTaskBadge === 'function') window.updateSidebarTaskBadge();
     }
   } catch(e) {}
+}
+
+// ── PROFIT MODAL LOGIC ──
+let profitDeals = [];
+let profitKpis = {};
+let profitFilter = 'all';
+
+function openProfitModal() {
+  document.getElementById('profitModal').classList.remove('hidden');
+  
+  // Set initial filter to match the main dashboard filter
+  const mainFilter = document.getElementById('dashFilter').value;
+  profitFilter = mainFilter;
+  
+  if (mainFilter === 'range') {
+    document.getElementById('pmf-startDate').value = document.getElementById('startDate').value;
+    document.getElementById('pmf-endDate').value = document.getElementById('endDate').value;
+  } else {
+    document.getElementById('pmf-startDate').value = '';
+    document.getElementById('pmf-endDate').value = '';
+  }
+
+  loadProfitData();
+}
+
+function closeProfitModal() {
+  document.getElementById('profitModal').classList.add('hidden');
+}
+
+function setProfitFilter(filter) {
+  profitFilter = filter;
+  if (filter !== 'range') {
+    document.getElementById('pmf-startDate').value = '';
+    document.getElementById('pmf-endDate').value = '';
+  }
+  loadProfitData();
+}
+
+async function loadProfitData() {
+  const tbody = document.getElementById('profitTableBody');
+  tbody.innerHTML = '<tr><td colspan="8" style="padding:40px; text-align:center; color:var(--text-tertiary)"><div class="spinner" style="margin:auto"></div></td></tr>';
+
+  try {
+    let urlParams = `filter=${profitFilter}`;
+    if (profitFilter === 'range') {
+      const sDate = document.getElementById('pmf-startDate').value;
+      const eDate = document.getElementById('pmf-endDate').value;
+      if (sDate && eDate) {
+        urlParams += `&startDate=${sDate}&endDate=${eDate}`;
+      }
+    }
+
+    // Fetch KPIs and Deals
+    const [kpis, deals] = await Promise.all([
+      dashFetch(`/api/dashboard/kpis?${urlParams}`),
+      dashFetch(`/api/deals`)
+    ]);
+
+    profitKpis = kpis || { totalRevenue:0, totalCostPrice:0, totalExpenses:0, netProfit:0 };
+    profitDeals = deals || [];
+
+    // Render Stats
+    document.getElementById('pm-totalRevenue').textContent = fmtMoney(profitKpis.totalRevenue);
+    document.getElementById('pm-totalCostPrice').textContent = fmtMoney(profitKpis.totalCostPrice);
+    document.getElementById('pm-totalExpenses').textContent = fmtMoney(profitKpis.totalExpenses);
+    document.getElementById('pm-netProfit').textContent = fmtMoney(profitKpis.netProfit);
+    document.getElementById('pm-netProfit').className = profitKpis.netProfit >= 0 ? 'text-success' : 'text-danger';
+
+    // Highlight active filter button
+    const btns = ['today', 'yesterday', 'day-before-yesterday', 'month', 'all'];
+    btns.forEach(b => {
+      const btnEl = document.getElementById(`pmf-${b === 'day-before-yesterday' ? '3day' : b}`);
+      if (btnEl) {
+        if (profitFilter === b) {
+          btnEl.style.background = 'var(--accent)';
+          btnEl.style.color = '#fff';
+        } else {
+          btnEl.style.background = 'none';
+          btnEl.style.color = 'var(--text-secondary)';
+        }
+      }
+    });
+
+    renderProfitTable();
+  } catch(e) {
+    console.error('Error loading profit details:', e);
+    tbody.innerHTML = '<tr><td colspan="8" style="padding:20px; text-align:center; color:var(--danger)">Ma\'lumotlarni yuklashda xatolik yuz berdi.</td></tr>';
+  }
+}
+
+function renderProfitTable() {
+  const tbody = document.getElementById('profitTableBody');
+
+  // Filter deals based on selected date range
+  let start = null, end = null;
+  const now = new Date();
+  
+  if (profitFilter === 'today') {
+    start = new Date(now); start.setHours(0,0,0,0);
+    end = new Date(now); end.setHours(23,59,59,999);
+  } else if (profitFilter === 'yesterday') {
+    start = new Date(now); start.setDate(start.getDate() - 1); start.setHours(0,0,0,0);
+    end = new Date(now); end.setDate(end.getDate() - 1); end.setHours(23,59,59,999);
+  } else if (profitFilter === 'day-before-yesterday') {
+    start = new Date(now); start.setDate(start.getDate() - 2); start.setHours(0,0,0,0);
+    end = new Date(now); end.setDate(end.getDate() - 2); end.setHours(23,59,59,999);
+  } else if (profitFilter === 'month') {
+    start = new Date(now); start.setDate(1); start.setHours(0,0,0,0);
+    end = new Date(now); end.setHours(23,59,59,999);
+  } else if (profitFilter === 'range') {
+    const sVal = document.getElementById('pmf-startDate').value;
+    const eVal = document.getElementById('pmf-endDate').value;
+    if (sVal && eVal) {
+      start = new Date(sVal); start.setHours(0,0,0,0);
+      end = new Date(eVal); end.setHours(23,59,59,999);
+    }
+  }
+
+  const filteredDeals = profitDeals.filter(d => {
+    // Show only won deals or deals that have positive paid amount to represent sales!
+    if (d.paidAmount <= 0 && d.status !== 'won') return false;
+    
+    if (start && end) {
+      const dDate = new Date(d.createdAt);
+      return dDate >= start && dDate <= end;
+    }
+    return true;
+  });
+
+  if (!filteredDeals.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="padding:30px; text-align:center; color:var(--text-tertiary)"><i class="fas fa-box-open" style="font-size:24px; opacity:0.4; display:block; margin-bottom:8px"></i>Ushbu davrda sotuvlar topilmadi</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filteredDeals.map(d => {
+    const dateFormatted = d.createdAt ? new Date(d.createdAt).toLocaleString('uz-UZ', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '-';
+    const profit = d.paidAmount - (d.costPrice || 0);
+    return `
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:10px 14px; font-size:12.5px; color:var(--text-tertiary)">${dateFormatted}</td>
+        <td style="padding:10px 14px; font-size:13px; font-weight:600; color:var(--text-primary)"><i class="fas fa-shopping-bag" style="color:var(--accent); margin-right:6px"></i>${escHtml(d.productName)}</td>
+        <td style="padding:10px 14px; font-size:12.5px;">
+          ${d.client ? `
+            <div style="font-weight:600; color:var(--text-primary)">${escHtml(d.client.name)}</div>
+            ${d.client.phone ? `<a href="tel:${escHtml(d.client.phone)}" style="font-size:11px; color:var(--accent); font-weight:500">${escHtml(d.client.phone)}</a>` : ''}
+          ` : '<span style="color:var(--text-tertiary)">-</span>'}
+        </td>
+        <td style="padding:10px 14px; font-size:12.5px; font-weight:600; text-align:right">${fmtMoney(d.amount)}</td>
+        <td style="padding:10px 14px; font-size:12.5px; font-weight:600; color:#34C759; text-align:right">${fmtMoney(d.paidAmount)}</td>
+        <td style="padding:10px 14px; font-size:12.5px; font-weight:600; color:#5856D6; text-align:right">${fmtMoney(d.costPrice || 0)}</td>
+        <td style="padding:10px 14px; font-size:12.5px; font-weight:700; color:${profit >= 0 ? '#34C759' : '#FF3B30'}; text-align:right">${fmtMoney(profit)}</td>
+        <td style="padding:10px 14px; font-size:12.5px;">
+          ${d.manager ? `<span class="badge" style="background:var(--accent)1A; color:var(--accent); font-size:10.5px; padding:2px 6px; border-radius:4px; font-weight:600">${escHtml(d.manager.fullName || d.manager.email)}</span>` : '<span style="color:var(--text-tertiary)">-</span>'}
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
 // ── FINANCIAL MODAL LOGIC ──
