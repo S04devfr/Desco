@@ -49,11 +49,20 @@ router.get('/:id', async (req, res, next) => {
 // Create client
 router.post('/', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
-    const { name, phone, email, company, notes, city } = req.body
+    const { name, phone, email, company, notes, city, debt } = req.body
     if (!name) return res.status(400).json({ message: 'Ism majburiy' })
 
     const client = await prisma.client.create({
-      data: { name, phone: phone || null, email: email || null, company: company || null, notes: notes || null, city: city || null, ownerId: req.userId },
+      data: {
+        name,
+        phone: phone || null,
+        email: email || null,
+        company: company || null,
+        notes: notes || null,
+        city: city || null,
+        debt: debt ? Number(debt) : 0,
+        ownerId: req.userId
+      },
       include: { owner: ownerSelect }
     })
     res.status(201).json(client)
