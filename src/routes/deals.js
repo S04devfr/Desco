@@ -311,22 +311,31 @@ router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => 
     })
 
     // Automation: Qayta aloqa yoki Vazifa
-    if (stageId !== undefined && deal.stage && (deal.stage.name.toLowerCase().includes('qayta aloqa') || deal.stage.name.toLowerCase().includes('vazifa'))) {
+    if (deal.stage && (deal.stage.name.toLowerCase().includes('qayta aloqa') || deal.stage.name.toLowerCase().includes('vazifa'))) {
       // Dublikat yaratmaslik: shu deal uchun bajarilmagan vazifa bormi tekshirish
       const existingTask = await prisma.task.findFirst({
         where: { dealId: deal.id, completed: false }
       });
+      const targetDate = deal.deadline ? new Date(deal.deadline) : new Date();
+      const taskDescription = deal.notes || "Avtomatik yaratilgan vazifa: Mijoz bilan kelishilgan ishlarni bajarish";
       if (!existingTask) {
-        const targetDate = deal.deadline ? new Date(deal.deadline) : new Date();
         await prisma.task.create({
           data: {
-            title: (existing.productName || 'Sdelka') + " bo'yicha vazifa",
-            description: "Avtomatik yaratilgan vazifa: Mijoz bilan kelishilgan ishlarni bajarish",
+            title: (deal.productName || 'Sdelka') + " bo'yicha vazifa",
+            description: taskDescription,
             dueDate: targetDate,
             dueTime: '10:00',
             dealId: deal.id,
             clientId: deal.clientId,
             assignedToId: req.userId
+          }
+        });
+      } else {
+        await prisma.task.update({
+          where: { id: existingTask.id },
+          data: {
+            description: taskDescription,
+            dueDate: targetDate
           }
         });
       }
@@ -452,17 +461,26 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
         const existingTask = await tx.task.findFirst({
           where: { dealId: id, completed: false }
         });
+        const targetDate = updated.deadline ? new Date(updated.deadline) : new Date();
+        const taskDescription = updated.notes || "Avtomatik yaratilgan vazifa: Mijoz bilan kelishilgan ishlarni bajarish";
         if (!existingTask) {
-          const targetDate = updated.deadline ? new Date(updated.deadline) : new Date();
           await tx.task.create({
             data: {
-              title: (existing.productName || 'Sdelka') + " bo'yicha vazifa",
-              description: "Avtomatik yaratilgan vazifa: Mijoz bilan kelishilgan ishlarni bajarish",
+              title: (updated.productName || 'Sdelka') + " bo'yicha vazifa",
+              description: taskDescription,
               dueDate: targetDate,
               dueTime: '10:00',
               dealId: id,
               clientId: updated.clientId,
               assignedToId: req.userId
+            }
+          });
+        } else {
+          await tx.task.update({
+            where: { id: existingTask.id },
+            data: {
+              description: taskDescription,
+              dueDate: targetDate
             }
           });
         }

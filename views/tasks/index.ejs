@@ -208,6 +208,66 @@
   </div>
 </div>
 
+<!-- VIEW DETAILS MODAL -->
+<div class="modal-overlay hidden" id="viewTaskModal" style="z-index: 1000;">
+  <div class="modal-box" style="max-width: 550px;">
+    <div class="modal-header" style="border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+      <h2>Vazifa tafsilotlari</h2>
+      <button class="modal-close" onclick="closeViewTaskModal()">&times;</button>
+    </div>
+    <div class="modal-body" style="padding-top: 16px; display:flex; flex-direction:column; gap:20px;">
+      
+      <!-- Task Section -->
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+          <h3 id="v-title" style="margin:0; font-size:16px; font-weight:700; color:var(--text-primary);">Vazifa nomi</h3>
+          <div id="v-status"></div>
+        </div>
+        <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:12px; font-size:13px; color:var(--text-primary); margin-bottom:12px;">
+          <div style="font-weight:600; color:var(--text-secondary); margin-bottom:4px;">Vazifa izohi:</div>
+          <div id="v-desc" style="white-space:pre-wrap; line-height:1.4;">Tavsif</div>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:12px; color:var(--text-secondary);">
+          <div><i class="far fa-calendar-alt" style="margin-right:6px; color:var(--accent);"></i><b>Muddati:</b> <span id="v-due">-</span></div>
+          <div><i class="fas fa-exclamation-circle" style="margin-right:6px; color:var(--accent);"></i><b>Muhimlik:</b> <span id="v-priority">-</span></div>
+          <div style="grid-column: span 2;"><i class="fas fa-user-tie" style="margin-right:6px; color:var(--accent);"></i><b>Mas'ul:</b> <span id="v-assigned">-</span></div>
+        </div>
+      </div>
+
+      <!-- Client Section -->
+      <div id="v-client-section" style="border-top:1px solid var(--border); padding-top:16px;">
+        <h4 style="margin:0 0 10px 0; font-size:13.5px; font-weight:700; color:var(--text-primary);"><i class="fas fa-user" style="margin-right:6px; color:var(--accent);"></i>Mijoz ma'lumotlari</h4>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:12.5px; color:var(--text-secondary); background:var(--bg-secondary); border:1px solid var(--border); padding:12px; border-radius:8px;">
+          <div><b>Ismi:</b> <span id="v-client-name">-</span></div>
+          <div><b>Telefon:</b> <span id="v-client-phone">-</span></div>
+          <div><b>Shahar:</b> <span id="v-client-city">-</span></div>
+          <div><b>Kompaniya:</b> <span id="v-client-company">-</span></div>
+        </div>
+      </div>
+
+      <!-- Deal Section -->
+      <div id="v-deal-section" style="border-top:1px solid var(--border); padding-top:16px;">
+        <h4 style="margin:0 0 10px 0; font-size:13.5px; font-weight:700; color:var(--text-primary);"><i class="fas fa-shopping-bag" style="margin-right:6px; color:var(--accent);"></i>Sdelka ma'lumotlari</h4>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:12.5px; color:var(--text-secondary); background:var(--bg-secondary); border:1px solid var(--border); padding:12px; border-radius:8px;">
+          <div><b>Mahsulot:</b> <span id="v-deal-product">-</span></div>
+          <div><b>Status:</b> <span id="v-deal-status">-</span></div>
+          <div><b>Summa:</b> <span id="v-deal-amount">0</span></div>
+          <div><b>To'landi:</b> <span id="v-deal-paid">0</span></div>
+          <div><b>Qoldiq qarz:</b> <span id="v-deal-debt">0</span></div>
+          <div style="grid-column: span 2; border-top: 1px solid var(--border); padding-top:8px; margin-top:4px;">
+            <div style="font-weight:600; color:var(--text-secondary); margin-bottom:4px;">Sdelkadagi izoh:</div>
+            <div id="v-deal-notes" style="white-space:pre-wrap; line-height:1.4; color:var(--text-primary);">Izoh</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer" style="border-top: 1px solid var(--border); padding-top: 12px; margin-top: 0;">
+      <button class="btn btn-secondary" onclick="closeViewTaskModal()">Yopish</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const escHtml = s => String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const _esc = escHtml;
@@ -300,55 +360,41 @@ function renderSingleTaskHtml(t) {
     }
   }
 
+  // Build clean client & product subtext
+  let detailsText = '';
+  if (t.client) {
+    detailsText += `<i class="fas fa-user" style="color: var(--accent); margin-right:4px; font-size: 11px;"></i> <span style="font-weight:600; color:var(--text-primary);">${_esc(t.client.name)}</span>`;
+    if (t.client.phone) {
+      detailsText += ` (<a href="tel:${_esc(t.client.phone)}" style="color: var(--accent); font-weight:700; text-decoration:none;">${_esc(t.client.phone)}</a>)`;
+    }
+  }
+  if (t.deal) {
+    if (detailsText) detailsText += ` &bull; `;
+    detailsText += `<i class="fas fa-shopping-bag" style="color: var(--text-tertiary); margin-right:4px; font-size: 11px;"></i> <span style="color:var(--text-secondary);">${_esc(t.deal.productName)}</span>`;
+  }
+
   return `
-    <div class="task-item" id="task-${t.id}" style="align-items: flex-start; padding: 14px 16px;">
-      <div class="task-check ${t.completed ? 'done' : ''}" onclick="toggleTask(${t.id}, this)" title="${t.completed ? 'Bajarilmagan' : 'Bajarildi'}" style="margin-top: 3px;">
+    <div class="task-item" id="task-${t.id}" style="align-items: center; padding: 12px 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-secondary); margin-bottom: 8px;">
+      <div class="task-check ${t.completed ? 'done' : ''}" onclick="toggleTask(${t.id}, this)" title="${t.completed ? 'Bajarilmagan' : 'Bajarildi'}" style="margin-right: 4px; margin-top: 0;">
         ${t.completed ? '<i class="fas fa-check" style="font-size:9px"></i>' : ''}
       </div>
-      <div class="task-info" style="flex-grow: 1;">
-        <div class="task-title ${t.completed ? 'done' : ''}" style="font-weight: 600; font-size: 13.5px; margin-bottom: 6px;">${_esc(t.title)}</div>
-        <div class="task-meta" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 6px;">
-          <span class="fs-12" style="color:var(--text-tertiary); font-weight:500;">${pLabel[t.priority]||''}</span>
-          ${dueHtml}
-          ${t.assignedTo ? `<span class="badge badge-gray" style="font-size: 10px; padding: 2px 6px; border-radius: 4px;">${_esc(t.assignedTo.fullName||t.assignedTo.email)}</span>` : ''}
-        </div>
-        ${(t.client || t.deal || t.dueTime) ? `
-          <div style="margin-top: 8px; padding: 8px 12px; background: var(--bg-primary); border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; width: 100%;">
-            ${t.client ? `
-              <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-                <div style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--text-primary);">
-                  <i class="fas fa-user" style="color: var(--accent); font-size: 11px;"></i> ${_esc(t.client.name)}
-                  ${t.client.phone ? `<span style="color: var(--text-tertiary); font-weight: 400;">&bull;</span> <a href="tel:${_esc(t.client.phone)}" style="color: var(--accent); font-weight: 700; text-decoration: none;">${_esc(t.client.phone)}</a>` : ''}
-                </div>
-                ${t.client.city ? `
-                  <span style="font-size: 10.5px; background: var(--accent)1A; color: var(--accent); font-weight: 600; padding: 2px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">
-                    <i class="fas fa-map-marker-alt" style="font-size: 9px;"></i> ${_esc(t.client.city)}
-                  </span>
-                ` : ''}
-              </div>
-            ` : ''}
-            
-            ${(t.deal || t.dueTime) ? `
-              <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-secondary); ${t.client ? 'border-top: 1px solid var(--border); padding-top: 6px; margin-top: 2px;' : ''} flex-wrap: wrap;">
-                ${t.deal ? `
-                  <span style="display: inline-flex; align-items: center; gap: 4px;">
-                    <i class="fas fa-shopping-bag" style="color: var(--text-tertiary); font-size: 10.5px;"></i> ${_esc(t.deal.productName)}
-                  </span>
-                ` : ''}
-                ${(t.deal && t.dueTime) ? `<span style="color: var(--text-tertiary);">&bull;</span>` : ''}
-                ${t.dueTime ? `
-                  <span style="color: #FF9500; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
-                    <i class="far fa-clock"></i> Soat: ${_esc(t.dueTime)}
-                  </span>
-                ` : ''}
-              </div>
-            ` : ''}
+      <div class="task-info" style="flex-grow: 1; display:flex; flex-direction:column; gap:4px;">
+        <div class="task-title ${t.completed ? 'done' : ''}" style="font-weight: 600; font-size: 14px; color:var(--text-primary);">${_esc(t.title)}</div>
+        ${detailsText ? `
+          <div style="font-size: 12px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            ${detailsText}
           </div>
         ` : ''}
+        <div class="task-meta" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 2px;">
+          <span style="font-size: 11px; font-weight:600; color:var(--text-secondary); background: var(--bg-primary); padding: 1px 6px; border-radius: 4px;">${pLabel[t.priority]||''}</span>
+          ${dueHtml}
+          ${t.assignedTo ? `<span class="badge badge-gray" style="font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 500;"><i class="fas fa-user-tie" style="margin-right:4px; font-size: 9px;"></i>${_esc(t.assignedTo.fullName||t.assignedTo.email)}</span>` : ''}
+        </div>
       </div>
-      <div style="display:flex;gap:4px;flex-shrink:0;margin-top:2px;">
-        <button class="btn btn-ghost btn-icon btn-sm" onclick="openTaskModal(${t.id})" title="Tahrirlash"><i class="fas fa-edit"></i></button>
-        <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="deleteTask(${t.id})" title="O'chirish"><i class="fas fa-trash"></i></button>
+      <div style="display:flex; gap:6px; flex-shrink:0;">
+        <button class="btn btn-ghost btn-icon btn-sm text-info" onclick="viewTaskDetails(${t.id})" title="Ko'rish" style="width:32px; height:32px; border-radius:50%; background:var(--bg-primary); border:1px solid var(--border); display:flex; align-items:center; justify-content:center;"><i class="fas fa-eye" style="font-size:12px;"></i></button>
+        <button class="btn btn-ghost btn-icon btn-sm" onclick="openTaskModal(${t.id})" title="Tahrirlash" style="width:32px; height:32px; border-radius:50%; background:var(--bg-primary); border:1px solid var(--border); display:flex; align-items:center; justify-content:center;"><i class="fas fa-edit" style="font-size:12px;"></i></button>
+        <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="deleteTask(${t.id})" title="O'chirish" style="width:32px; height:32px; border-radius:50%; background:var(--bg-primary); border:1px solid var(--border); display:flex; align-items:center; justify-content:center;"><i class="fas fa-trash" style="font-size:12px;"></i></button>
       </div>
     </div>
   `;
@@ -608,6 +654,84 @@ async function deleteTask(id) {
     await loadTasks();
     if (typeof window.updateSidebarTaskBadge === 'function') window.updateSidebarTaskBadge();
   } catch(e) { showToast('O\'chirishda xato', 'error'); }
+}
+
+const fmtMoney = (v) => {
+  return new Intl.NumberFormat('uz-UZ', { style: 'decimal' }).format(v || 0) + ' UZS';
+};
+
+function viewTaskDetails(id) {
+  const t = allTasks.find(x => x.id === id);
+  if (!t) return;
+
+  const pLabel = { high: '🔴 Yuqori', medium: '🟡 O\'rta', low: '🟢 Past' };
+  
+  // Format Date
+  let dateFormatted = 'Belgilanmagan';
+  if (t.dueDate) {
+    const d = new Date(t.dueDate);
+    if (!isNaN(d.getTime())) {
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      dateFormatted = `${dd}.${mm}.${yyyy}`;
+    }
+  }
+  
+  // Task fields
+  document.getElementById('v-title').textContent = t.title || '';
+  document.getElementById('v-desc').textContent = t.description || 'Kiritilmagan';
+  document.getElementById('v-due').textContent = dateFormatted + (t.dueTime ? ` Soat: ${t.dueTime}` : '');
+  document.getElementById('v-priority').textContent = pLabel[t.priority] || 'Past';
+  document.getElementById('v-assigned').textContent = t.assignedTo ? (t.assignedTo.fullName || t.assignedTo.email) : 'O\'zim';
+  document.getElementById('v-status').innerHTML = t.completed 
+    ? '<span class="badge badge-green" style="background:#22c55e20; color:#22c55e; font-weight:700; padding:2px 8px; border-radius:4px; font-size:11px;">Bajarilgan</span>' 
+    : '<span class="badge badge-orange" style="background:#ff950020; color:#ff9500; font-weight:700; padding:2px 8px; border-radius:4px; font-size:11px;">Kutilmoqda</span>';
+
+  // Client fields
+  if (t.client) {
+    document.getElementById('v-client-section').classList.remove('hidden');
+    document.getElementById('v-client-name').textContent = t.client.name || '-';
+    document.getElementById('v-client-phone').innerHTML = t.client.phone ? `<a href="tel:${t.client.phone}" style="color:var(--accent); font-weight:700;">${t.client.phone}</a>` : '-';
+    document.getElementById('v-client-city').textContent = t.client.city || '-';
+    document.getElementById('v-client-company').textContent = t.client.company || '-';
+  } else {
+    document.getElementById('v-client-section').classList.add('hidden');
+  }
+
+  // Deal fields
+  if (t.deal) {
+    document.getElementById('v-deal-section').classList.remove('hidden');
+    document.getElementById('v-deal-product').textContent = t.deal.productName || '-';
+    document.getElementById('v-deal-amount').textContent = t.deal.amount ? fmtMoney(t.deal.amount) : '0 UZS';
+    
+    // Calculate effective paid for display in the view modal
+    const getEffectivePaid = (d) => {
+      const stageName = (d.stage?.name || '').toLowerCase();
+      const isWon = d.status === 'won' || 
+                    stageName.includes('100%') || 
+                    stageName.includes('yutil') || 
+                    stageName.includes('won');
+      return isWon ? (d.amount || 0) : (d.paidAmount || 0);
+    };
+    
+    const effPaid = getEffectivePaid(t.deal);
+    document.getElementById('v-deal-paid').textContent = fmtMoney(effPaid);
+    const debt = Math.max((t.deal.amount || 0) - effPaid, 0);
+    document.getElementById('v-deal-debt').textContent = fmtMoney(debt);
+    
+    const statusLabels = { new: 'Yangi', negotiation: 'Muzokaralar', proposal: 'Taklif', won: 'Yutilgan', lost: "Yo'qotilgan" };
+    document.getElementById('v-deal-status').textContent = statusLabels[t.deal.status] || t.deal.status || 'Yangi';
+    document.getElementById('v-deal-notes').innerHTML = t.deal.notes ? `<i>${_esc(t.deal.notes)}</i>` : '<span style="color:var(--text-tertiary)">Izoh yo\'q</span>';
+  } else {
+    document.getElementById('v-deal-section').classList.add('hidden');
+  }
+
+  document.getElementById('viewTaskModal').classList.remove('hidden');
+}
+
+function closeViewTaskModal() {
+  document.getElementById('viewTaskModal').classList.add('hidden');
 }
 
 // ── INIT ──────────────────────────────────────────────────────

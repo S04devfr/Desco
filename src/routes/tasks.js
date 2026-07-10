@@ -61,7 +61,17 @@ router.get('/', async (req, res) => {
       where,
       include: {
         assignedTo: userSelect,
-        deal: { select: { id: true, productName: true } }
+        deal: {
+          select: {
+            id: true,
+            productName: true,
+            amount: true,
+            paidAmount: true,
+            status: true,
+            notes: true,
+            stage: { select: { id: true, name: true } }
+          }
+        }
       },
       orderBy: [{ completed: 'asc' }, { dueDate: 'asc' }]
     })
@@ -79,7 +89,7 @@ router.get('/:id', async (req, res, next) => {
   try {
     const task = await prisma.task.findUnique({
       where: { id: Number(req.params.id) },
-      include: { assignedTo: userSelect, deal: true }
+      include: { assignedTo: userSelect, deal: { include: { stage: { select: { id: true, name: true } } } } }
     })
     if (!task) return res.status(404).json({ message: 'Vazifa topilmadi' })
     const [enriched] = await enrichWithClient([task])
