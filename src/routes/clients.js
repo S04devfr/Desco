@@ -49,7 +49,7 @@ router.get('/:id', async (req, res, next) => {
 // Create client
 router.post('/', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
-    const { name, phone, email, company, notes, city, debt } = req.body
+    const { name, phone, email, company, notes, city, debt, debtDate, debtNotes } = req.body
     if (!name) return res.status(400).json({ message: 'Ism majburiy' })
 
     const client = await prisma.client.create({
@@ -61,6 +61,8 @@ router.post('/', requireRole('admin', 'manager'), async (req, res, next) => {
         notes: notes || null,
         city: city || null,
         debt: debt ? Number(debt) : 0,
+        debtDate: (debtDate && !isNaN(new Date(debtDate))) ? new Date(debtDate) : (debt ? new Date() : null),
+        debtNotes: debtNotes || null,
         ownerId: req.userId
       },
       include: { owner: ownerSelect }
@@ -74,7 +76,7 @@ router.post('/', requireRole('admin', 'manager'), async (req, res, next) => {
 // Update client
 router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
-    const { name, phone, email, company, notes, debt, city } = req.body
+    const { name, phone, email, company, notes, debt, city, debtDate, debtNotes } = req.body
 
     const data = {}
     if (name !== undefined) data.name = name
@@ -84,6 +86,8 @@ router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => 
     if (notes !== undefined) data.notes = notes
     if (debt !== undefined) data.debt = Number(debt) || 0
     if (city !== undefined) data.city = city
+    if (debtDate !== undefined) data.debtDate = (debtDate && !isNaN(new Date(debtDate))) ? new Date(debtDate) : null
+    if (debtNotes !== undefined) data.debtNotes = debtNotes
 
     const client = await prisma.client.update({
       where: { id: Number(req.params.id) },

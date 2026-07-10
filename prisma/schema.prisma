@@ -3,9 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -35,6 +34,8 @@ model Client {
   notes     String?
   city      String?
   debt      Float    @default(0)
+  debtDate  DateTime?
+  debtNotes String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

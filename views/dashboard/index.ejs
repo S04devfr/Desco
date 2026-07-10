@@ -350,7 +350,7 @@
         <!-- Quick Client Create Form -->
         <div id="quickClientCreateForm" class="hidden" style="margin-bottom:16px; padding:16px; background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; transition:all 0.2s;">
           <h4 style="margin:0 0 12px; font-size:13px; font-weight:700; color:var(--text-primary);"><i class="fas fa-plus-circle" style="color:var(--accent);"></i> Yangi Mijoz va Qarz Yaratish</h4>
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:12px;">
+          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-bottom:12px;">
             <div>
               <label style="font-size:11px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Mijoz Ismi <span style="color:var(--danger)">*</span></label>
               <input type="text" id="quickClientName" class="form-control" placeholder="Masalan: Ikromiddin" style="height:30px; font-size:12px;">
@@ -367,6 +367,14 @@
               <label style="font-size:11px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Qarz Summasi (Manual) <span style="color:var(--danger)">*</span></label>
               <input type="number" id="quickClientDebt" class="form-control" placeholder="Summa" style="height:30px; font-size:12px; font-weight:700;">
             </div>
+            <div>
+              <label style="font-size:11px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Qarz Berilgan Sana</label>
+              <input type="date" id="quickClientDebtDate" class="form-control" style="height:30px; font-size:12px;">
+            </div>
+            <div>
+              <label style="font-size:11px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Qarz Izohi</label>
+              <input type="text" id="quickClientDebtNotes" class="form-control" placeholder="Masalan: Maxsulot uchun" style="height:30px; font-size:12px;">
+            </div>
           </div>
           <div style="display:flex; justify-content:flex-end; gap:8px;">
             <button class="btn btn-secondary btn-sm" onclick="toggleQuickClientCreateForm(false)" style="height:28px; font-size:11.5px;">Bekor qilish</button>
@@ -382,8 +390,10 @@
                 <th style="padding:10px 12px; font-size:11px; font-weight:700;">Mijoz Ismi</th>
                 <th style="padding:10px 12px; font-size:11px; font-weight:700;">Telefon</th>
                 <th style="padding:10px 12px; font-size:11px; font-weight:700;">Viloyat</th>
-                <th style="padding:10px 12px; font-size:11px; font-weight:700; width:180px">Klient Qarz (Manual)</th>
-                <th style="padding:10px 12px; font-size:11px; font-weight:700; width:60px"></th>
+                <th style="padding:10px 12px; font-size:11px; font-weight:700; width:120px;">Berilgan Sana</th>
+                <th style="padding:10px 12px; font-size:11px; font-weight:700; width:150px">Klient Qarz (Manual)</th>
+                <th style="padding:10px 12px; font-size:11px; font-weight:700;">Izoh</th>
+                <th style="padding:10px 12px; font-size:11px; font-weight:700; width:50px"></th>
               </tr>
             </thead>
             <tbody id="clientDebtTableBody"></tbody>
@@ -1666,6 +1676,8 @@ function toggleQuickClientCreateForm(show) {
     document.getElementById('quickClientPhone').value = '';
     document.getElementById('quickClientCity').value = '';
     document.getElementById('quickClientDebt').value = '';
+    document.getElementById('quickClientDebtDate').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('quickClientDebtNotes').value = '';
   }
 }
 
@@ -1674,6 +1686,8 @@ async function saveQuickClientCreate() {
   const phone = document.getElementById('quickClientPhone').value.trim();
   const city = document.getElementById('quickClientCity').value.trim();
   const debt = Number(document.getElementById('quickClientDebt').value) || 0;
+  const debtDate = document.getElementById('quickClientDebtDate').value;
+  const debtNotes = document.getElementById('quickClientDebtNotes').value.trim();
   
   if (!name || !debt) {
     alert("Iltimos, Ism va Qarz summasini kiriting!");
@@ -1687,7 +1701,7 @@ async function saveQuickClientCreate() {
     const r = await fetch('/api/clients', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, phone, city, debt })
+      body: JSON.stringify({ name, phone, city, debt, debtDate, debtNotes })
     });
     if (!r.ok) {
       const err = await r.json();
@@ -1729,53 +1743,74 @@ function renderClientDebtTable() {
   );
 
   if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-tertiary)"><i class="fas fa-search" style="font-size:20px; opacity:0.4; display:block; margin-bottom:8px"></i>Qarzdor mijozlar topilmadi. Mijoz qidirib qo\'shing yoki yangi yarating.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-tertiary)"><i class="fas fa-search" style="font-size:20px; opacity:0.4; display:block; margin-bottom:8px"></i>Qarzdor mijozlar topilmadi. Mijoz qidirib qo\'shing yoki yangi yarating.</td></tr>';
     return;
   }
 
-  tbody.innerHTML = filtered.map(c => `
-    <tr style="border-bottom:1px solid var(--border)">
-      <td style="padding:10px 12px; font-size:12.5px; color:var(--text-tertiary)">#${c.id}</td>
-      <td style="padding:10px 12px; font-size:13px; font-weight:600">${escHtml(c.name)}</td>
-      <td style="padding:10px 12px; font-size:12.5px">${escHtml(c.phone || '—')}</td>
-      <td style="padding:10px 12px; font-size:12.5px">${escHtml(c.city || '—')}</td>
-      <td style="padding:6px 12px;">
-        <input type="number" class="spreadsheet-input" value="${c.debt || 0}"
-               onchange="saveClientDebt(${c.id}, this)" style="font-weight:700; width:150px;">
-      </td>
-      <td style="padding:6px 12px; text-align:center;">
-        <button class="btn btn-ghost btn-sm text-danger" onclick="deleteClientDebt(${c.id})" style="padding:4px 8px;" title="Qarzdorlikni o'chirish">
-          <i class="fas fa-trash-alt"></i>
-        </button>
-      </td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = filtered.map(c => {
+    const dateStr = c.debtDate ? c.debtDate.slice(0, 10) : '';
+    return `
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:10px 12px; font-size:12.5px; color:var(--text-tertiary)">#${c.id}</td>
+        <td style="padding:10px 12px; font-size:13px; font-weight:600">${escHtml(c.name)}</td>
+        <td style="padding:10px 12px; font-size:12.5px">${escHtml(c.phone || '—')}</td>
+        <td style="padding:10px 12px; font-size:12.5px">${escHtml(c.city || '—')}</td>
+        <td style="padding:6px 12px;">
+          <input type="date" class="spreadsheet-input" value="${dateStr}"
+                 onchange="saveClientDebtField(${c.id}, 'debtDate', this.value, this)" style="width:115px; font-size:12px; padding:0 6px; height:28px;">
+        </td>
+        <td style="padding:6px 12px;">
+          <input type="number" class="spreadsheet-input" value="${c.debt || 0}"
+                 onchange="saveClientDebtField(${c.id}, 'debt', this.value, this)" style="font-weight:700; width:120px; height:28px;">
+        </td>
+        <td style="padding:6px 12px;">
+          <input type="text" class="spreadsheet-input" value="${escHtml(c.debtNotes || '')}"
+                 onchange="saveClientDebtField(${c.id}, 'debtNotes', this.value, this)" style="font-size:12px; padding:0 6px; height:28px; width:140px;" placeholder="Izoh...">
+        </td>
+        <td style="padding:6px 12px; text-align:center;">
+          <button class="btn btn-ghost btn-sm text-danger" onclick="deleteClientDebt(${c.id})" style="padding:4px 8px;" title="Qarzdorlikni o'chirish">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
-async function saveClientDebt(id, inputEl) {
-  const val = Number(inputEl.value) || 0;
+async function saveClientDebtField(id, field, val, inputEl) {
   try {
-    inputEl.disabled = true;
+    if (inputEl) inputEl.disabled = true;
+    
+    const bodyData = {};
+    if (field === 'debt') bodyData.debt = Number(val) || 0;
+    else if (field === 'debtDate') bodyData.debtDate = val || null;
+    else if (field === 'debtNotes') bodyData.debtNotes = val || '';
+    
     const r = await fetch('/api/clients/' + id, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ debt: val })
+      body: JSON.stringify(bodyData)
     });
     if (!r.ok) throw new Error();
     
-    // Success feedback animation
-    inputEl.classList.add('success');
-    setTimeout(() => inputEl.classList.remove('success'), 1000);
+    if (inputEl) {
+      inputEl.classList.add('success');
+      setTimeout(() => inputEl.classList.remove('success'), 1000);
+    }
     
     // Update local data
     const c = allClientsData.find(x => x.id === id);
-    if (c) c.debt = val;
+    if (c) {
+      if (field === 'debt') c.debt = Number(val) || 0;
+      else if (field === 'debtDate') c.debtDate = val ? new Date(val).toISOString() : null;
+      else if (field === 'debtNotes') c.debtNotes = val;
+    }
     
     loadDashboard(); // Recalculate dashboard metrics
   } catch(e) {
     if (typeof showToast === 'function') showToast('Saqlashda xato', 'error');
   } finally {
-    inputEl.disabled = false;
+    if (inputEl) inputEl.disabled = false;
   }
 }
 
