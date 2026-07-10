@@ -69,6 +69,8 @@ router.get('/', async (req, res) => {
             paidAmount: true,
             status: true,
             notes: true,
+            pipelineId: true,
+            stageId: true,
             stage: { select: { id: true, name: true } }
           }
         }
@@ -100,7 +102,7 @@ router.get('/:id', async (req, res, next) => {
 // Create task
 router.post('/', async (req, res, next) => {
   try {
-    const { title, description, dueDate, dueTime, dealId, assignedToId, priority, clientId } = req.body
+    const { title, description, dueDate, dueTime, dealId, assignedToId, priority, clientId, stageId } = req.body
     if (!title) return res.status(400).json({ message: 'Sarlavha majburiy' })
 
     const task = await prisma.task.create({
@@ -125,6 +127,13 @@ router.post('/', async (req, res, next) => {
       } catch (e) { /* ignore */ }
     }
 
+    if (stageId && task.dealId) {
+      await prisma.deal.update({
+        where: { id: task.dealId },
+        data: { stageId: Number(stageId) }
+      });
+    }
+
     res.status(201).json(task)
   } catch (error) { next(error) }
 })
@@ -132,7 +141,7 @@ router.post('/', async (req, res, next) => {
 // Update task
 router.patch('/:id', async (req, res, next) => {
   try {
-    const { title, description, dueDate, dueTime, dealId, assignedToId, priority, completed, clientId } = req.body
+    const { title, description, dueDate, dueTime, dealId, assignedToId, priority, completed, clientId, stageId } = req.body
 
     const data = {}
     if (title !== undefined) data.title = title
@@ -163,6 +172,13 @@ router.patch('/:id', async (req, res, next) => {
           task.client = null
         }
       } catch (e) { /* ignore */ }
+    }
+
+    if (stageId && task.dealId) {
+      await prisma.deal.update({
+        where: { id: task.dealId },
+        data: { stageId: Number(stageId) }
+      });
     }
 
     res.json(task)

@@ -235,6 +235,13 @@
           </select>
         </div>
       </div>
+      <!-- Deal Stage Option (only shown if task is associated with a deal) -->
+      <div class="form-group hidden" id="taskDealStageGroup" style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 12px;">
+        <label class="form-label" style="font-weight: 700; color: var(--accent);"><i class="fas fa-shopping-bag" style="margin-right: 6px;"></i> Sdelka bosqichini o'zgartirish</label>
+        <select id="t-dealStage" class="form-control">
+          <option value="">— Bosqichni o'zgartirmaslik —</option>
+        </select>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeTaskModal()">Bekor qilish</button>
@@ -288,6 +295,7 @@
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:12.5px; color:var(--text-secondary); background:var(--bg-secondary); border:1px solid var(--border); padding:12px; border-radius:8px;">
           <div><b>Mahsulot:</b> <span id="v-deal-product">-</span></div>
           <div><b>Status:</b> <span id="v-deal-status">-</span></div>
+          <div><b>Bosqich:</b> <span id="v-deal-stage" class="badge badge-blue" style="font-weight:700; padding:1px 6px; border-radius:4px; font-size:11px;">-</span></div>
           <div><b>Summa:</b> <span id="v-deal-amount">0</span></div>
           <div><b>To'landi:</b> <span id="v-deal-paid">0</span></div>
           <div><b>Qoldiq qarz:</b> <span id="v-deal-debt">0</span></div>
@@ -407,7 +415,8 @@ function renderSingleTaskHtml(t) {
   }
   if (t.deal) {
     if (detailsText) detailsText += ` &bull; `;
-    detailsText += `<i class="fas fa-shopping-bag" style="color: var(--text-tertiary); margin-right:4px; font-size: 11px;"></i> <span style="color:var(--text-secondary);">${_esc(t.deal.productName)}</span>`;
+    const stageName = (t.deal.stage && t.deal.stage.name) ? t.deal.stage.name : 'Bosqichsiz';
+    detailsText += `<i class="fas fa-shopping-bag" style="color: var(--text-tertiary); margin-right:4px; font-size: 11px;"></i> <span style="color:var(--text-secondary);">${_esc(t.deal.productName)} (<span style="color:var(--accent); font-weight:600;">${_esc(stageName)}</span>)</span>`;
   }
 
   return `
@@ -623,6 +632,18 @@ async function openTaskModal(id, dealId, clientId, dealTitle) {
   document.getElementById('t-assignedTo').value = '';
   document.getElementById('taskModalTitle').textContent = id ? 'Vazifani tahrirlash' : 'Yangi vazifa';
 
+  // Reset and hide Deal Stage group by default
+  const stageGroup = document.getElementById('taskDealStageGroup');
+  const stageSelect = document.getElementById('t-dealStage');
+  if (stageGroup && stageSelect) {
+    stageGroup.classList.add('hidden');
+    stageSelect.innerHTML = '<option value="">— Bosqichni o\'zgartirmaslik —</option>';
+  }
+
+  let activeDealId = dealId || null;
+  let pipelineId = null;
+  let currentStageId = null;
+
   if (id) {
     try {
       const t = await fetch('/api/tasks/' + id).then(r => r.json());
@@ -634,15 +655,51 @@ async function openTaskModal(id, dealId, clientId, dealTitle) {
       document.getElementById('t-assignedTo').value = t.assignedToId || '';
       document.getElementById('t-dealId').value = t.dealId || '';
       document.getElementById('t-clientId').value = t.clientId || '';
+      activeDealId = t.dealId || null;
+      if (t.deal) {
+        pipelineId = t.deal.pipelineId;
+        currentStageId = t.deal.stageId || (t.deal.stage ? t.deal.stage.id : null);
+      }
     } catch(e) {}
-  } else if (dealTitle) {
-    document.getElementById('t-title').value = dealTitle + ' bo\'yicha qayta aloqa';
-    document.getElementById('t-description').value = 'Mijoz bilan sdelka bo\'yicha qayta aloqaga chiqish kerak';
-    const today = new Date();
-    const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().slice(0, 10);
-    document.getElementById('t-dueDate').value = localDate;
-    document.getElementById('t-dueTime').value = '10:00';
+  } else {
+    if (dealTitle) {
+      document.getElementById('t-title').value = dealTitle + ' bo\'yicha qayta aloqa';
+      document.getElementById('t-description').value = 'Mijoz bilan sdelka bo\'yicha qayta aloqaga chiqish kerak';
+      const today = new Date();
+      const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().slice(0, 10);
+      document.getElementById('t-dueDate').value = localDate;
+      document.getElementById('t-dueTime').value = '10:00';
+    }
+    if (activeDealId) {
+      try {
+        const d = await fetch('/api/deals/' + activeDealId).then(r => r.json());
+        pipelineId = d.pipelineId;
+        currentStageId = d.stageId;
+      } catch(e) {}
+    }
   }
+
+  // Populate Deal Stage if deal is associated and has a pipeline
+  if (pipelineId && stageGroup && stageSelect) {
+    try {
+      const stages = await fetch(`/api/pipelines/${pipelineId}/stages`).then(r => r.json());
+      if (stages && stages.length > 0) {
+        stageGroup.classList.remove('hidden');
+        stages.forEach(stg => {
+          const opt = document.createElement('option');
+          opt.value = stg.id;
+          opt.textContent = stg.name;
+          if (currentStageId && Number(currentStageId) === Number(stg.id)) {
+            opt.selected = true;
+          }
+          stageSelect.appendChild(opt);
+        });
+      }
+    } catch(e) {
+      console.error('Failed to load deal stages:', e);
+    }
+  }
+
   document.getElementById('taskModal').classList.remove('hidden');
 }
 
@@ -658,6 +715,9 @@ async function saveTask() {
   const btn = document.getElementById('taskSaveBtn');
   btn.disabled = true;
 
+  const stageSelect = document.getElementById('t-dealStage');
+  const stageId = (stageSelect && !stageSelect.parentElement.classList.contains('hidden') && stageSelect.value) ? Number(stageSelect.value) : null;
+
   const body = {
     title,
     description: document.getElementById('t-description').value || null,
@@ -666,7 +726,8 @@ async function saveTask() {
     priority: document.getElementById('t-priority').value,
     assignedToId: document.getElementById('t-assignedTo').value || null,
     dealId: document.getElementById('t-dealId').value ? Number(document.getElementById('t-dealId').value) : null,
-    clientId: document.getElementById('t-clientId').value ? Number(document.getElementById('t-clientId').value) : null
+    clientId: document.getElementById('t-clientId').value ? Number(document.getElementById('t-clientId').value) : null,
+    stageId
   };
 
   try {
@@ -759,6 +820,7 @@ function viewTaskDetails(id) {
     
     const statusLabels = { new: 'Yangi', negotiation: 'Muzokaralar', proposal: 'Taklif', won: 'Yutilgan', lost: "Yo'qotilgan" };
     document.getElementById('v-deal-status').textContent = statusLabels[t.deal.status] || t.deal.status || 'Yangi';
+    document.getElementById('v-deal-stage').textContent = t.deal.stage?.name || 'Bosqichsiz';
     document.getElementById('v-deal-notes').innerHTML = t.deal.notes ? `<i>${_esc(t.deal.notes)}</i>` : '<span style="color:var(--text-tertiary)">Izoh yo\'q</span>';
   } else {
     document.getElementById('v-deal-section').classList.add('hidden');
