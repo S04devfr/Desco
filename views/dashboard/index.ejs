@@ -941,8 +941,8 @@ function renderProfitTable() {
   }
 
   const filteredDeals = profitDeals.filter(d => {
-    // Only show won deals with positive amount that are 100% paid
-    if (d.status !== 'won' || d.amount <= 0 || d.amount - d.paidAmount > 0) return false;
+    // Only show priced deals that are 100% paid
+    if (d.amount <= 0 || d.amount - d.paidAmount > 0) return false;
     
     if (start && end) {
       const dDate = new Date(d.createdAt);
