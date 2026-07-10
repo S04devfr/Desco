@@ -461,7 +461,9 @@
           <div style="font-size:12px; font-weight:600; color:var(--text-tertiary); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px">Sdelka Tafsilotlari</div>
           <div class="form-group">
             <label class="form-label">Mahsulot nomi <span style="color:var(--danger)">*</span></label>
-            <input type="text" id="f-name" class="form-control" placeholder="Mahsulot yoki xizmat nomi">
+            <select id="f-name" class="form-control" onchange="onProductSelect(this)">
+              <option value="">— Mahsulot tanlang —</option>
+            </select>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
             <div class="form-group" style="margin-bottom:0">
@@ -717,7 +719,7 @@
     async function loadAll() {
       showLoading();
       try {
-        await Promise.all([loadPipelines(), loadManagers(), loadClients()]);
+        await Promise.all([loadPipelines(), loadManagers(), loadClients(), loadProductCatalog()]);
         await loadDeals();
       } catch (e) {
         console.error('[loadAll]', e);
@@ -874,6 +876,35 @@ async function loadClients() {
     sel.innerHTML = '<option value="">— Mijoz tanlang —</option>' +
       _clients.map(c => `<option value="${c.id}">${_esc(c.name)}${c.company?' — '+_esc(c.company):''}</option>`).join('');
   } catch(e) { /* clients not critical */ }
+}
+
+// ── Products ───────────────────────────────────────────────────
+let _productCatalog = [];
+async function loadProductCatalog() {
+  try {
+    const data = await apiFetch('/api/product-catalog');
+    _productCatalog = Array.isArray(data) ? data : [];
+    const sel = document.getElementById('f-name');
+    if (sel) {
+      const currentVal = sel.value;
+      sel.innerHTML = '<option value="">— Mahsulot tanlang —</option>' +
+        _productCatalog.map(p => `<option value="${_esc(p.name)}" data-price="${p.price}">${_esc(p.name)} (${p.price.toLocaleString()} so'm)</option>`).join('');
+      if (currentVal) sel.value = currentVal;
+    }
+  } catch(e) { /* products not critical */ }
+}
+
+function onProductSelect(select) {
+  const selectedOption = select.options[select.selectedIndex];
+  if (selectedOption) {
+    const price = selectedOption.getAttribute('data-price');
+    if (price && Number(price) > 0) {
+      const amountInput = document.getElementById('f-amount');
+      if (amountInput) {
+        amountInput.value = price;
+      }
+    }
+  }
 }
 
 // ── Deals ──────────────────────────────────────────────────────

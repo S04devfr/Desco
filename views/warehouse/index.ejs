@@ -1,5 +1,8 @@
-<%- include('../layouts/header', { title: "Ombor — DESCO CRM" }) %>
-<%- include('../layouts/sidebar', { activePage: 'warehouse' }) %>
+<%- include('../layouts/header', {
+  title: 'Ombor — DESCO CRM',
+  activePage: 'warehouse',
+  user: user
+}) %>
 
 <main class="main-content">
   <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
@@ -13,8 +16,8 @@
       <button class="btn btn-primary" onclick="openFillModal()">
         <i class="fas fa-plus"></i> Zaxira qo'shish
       </button>
-      <button class="btn btn-secondary" onclick="openTransferModal()">
-        <i class="fas fa-exchange-alt"></i> Ko'chirish
+      <button class="btn btn-secondary" onclick="openProductModal()">
+        <i class="fas fa-tags"></i> Mahsulot turlari
       </button>
     </div>
   </div>
@@ -91,9 +94,10 @@
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label">Mahsulot nomi <span style="color:var(--danger)">*</span></label>
-        <input type="text" id="fill-product" class="form-control" placeholder="Masalan: Massajor Pro Max" list="productSuggestions">
-        <datalist id="productSuggestions"></datalist>
+        <label class="form-label">Mahsulot turi <span style="color:var(--danger)">*</span></label>
+        <select id="fill-product" class="form-control">
+          <option value="">— Tanlang —</option>
+        </select>
       </div>
       <div class="form-group">
         <label class="form-label">Miqdor <span style="color:var(--danger)">*</span></label>
@@ -113,51 +117,27 @@
   </div>
 </div>
 
-<!-- TRANSFER MODAL -->
-<div class="modal-overlay hidden" id="transferModal">
-  <div class="modal-box" style="max-width:440px">
+<!-- PRODUCT TYPE MODAL -->
+<div class="modal-overlay hidden" id="productModal">
+  <div class="modal-box" style="max-width:520px">
     <div class="modal-header">
-      <h2><i class="fas fa-exchange-alt" style="color:var(--accent);margin-right:8px"></i>Omborlararo ko'chirish</h2>
-      <button class="modal-close" onclick="closeTransferModal()">&times;</button>
+      <h2><i class="fas fa-tags" style="color:var(--accent);margin-right:8px"></i>Mahsulot turlari</h2>
+      <button class="modal-close" onclick="closeProductModal()">&times;</button>
     </div>
     <div class="modal-body">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="form-group">
-          <label class="form-label">Qayerdan <span style="color:var(--danger)">*</span></label>
-          <select id="tr-from" class="form-control">
-            <option value="">— Tanlang —</option>
-            <option value="Toshkent">Toshkent</option>
-            <option value="Qo'qon">Qo'qon</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Qayerga <span style="color:var(--danger)">*</span></label>
-          <select id="tr-to" class="form-control">
-            <option value="">— Tanlang —</option>
-            <option value="Toshkent">Toshkent</option>
-            <option value="Qo'qon">Qo'qon</option>
-          </select>
-        </div>
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <input type="text" id="newProductName" class="form-control" placeholder="Yangi mahsulot nomi..." style="flex:1">
+        <input type="number" id="newProductPrice" class="form-control" placeholder="Narx" style="width:120px" min="0">
+        <button class="btn btn-primary" onclick="addProduct()" style="white-space:nowrap">
+          <i class="fas fa-plus"></i> Qo'shish
+        </button>
       </div>
-      <div class="form-group">
-        <label class="form-label">Mahsulot nomi <span style="color:var(--danger)">*</span></label>
-        <input type="text" id="tr-product" class="form-control" placeholder="Mahsulot nomi" list="productSuggestions2">
-        <datalist id="productSuggestions2"></datalist>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Miqdor <span style="color:var(--danger)">*</span></label>
-        <input type="number" id="tr-qty" class="form-control" placeholder="0" min="1">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Izoh</label>
-        <input type="text" id="tr-notes" class="form-control" placeholder="Ixtiyoriy izoh...">
+      <div id="productList" style="max-height:350px;overflow-y:auto">
+        <div style="text-align:center;padding:20px;color:var(--text-tertiary)"><div class="spinner"></div></div>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeTransferModal()">Bekor</button>
-      <button class="btn btn-primary" id="transferSaveBtn" onclick="saveTransfer()">
-        <i class="fas fa-paper-plane"></i> Ko'chirish
-      </button>
+      <button class="btn btn-secondary" onclick="closeProductModal()">Yopish</button>
     </div>
   </div>
 </div>
@@ -185,12 +165,19 @@
   }
   .stat-card .stat-label { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; }
   .stat-card .stat-value { font-size: 24px; font-weight: 800; }
+  .product-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px; border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  .product-item:hover { background: var(--bg-secondary); }
+  .product-item:last-child { border-bottom: none; }
 </style>
 
 <script>
   let _inventoryData = [];
   let _logsData = [];
-  let _productNames = [];
+  let _productCatalog = [];
 
   async function apiFetch(url, opts) {
     const r = await fetch(url, opts);
@@ -236,6 +223,12 @@
     return '<span class="stock-badge ' + cls + '">' + (labels[action] || action) + '</span>';
   }
 
+  function fmtPrice(n) {
+    if (!n) return '';
+    return Number(n).toLocaleString('uz-UZ') + " so'm";
+  }
+
+  // ── DATA LOADING ──
   async function loadData() {
     try {
       const data = await apiFetch('/api/warehouse');
@@ -244,12 +237,28 @@
       renderInventory();
       renderLogs();
       renderStats();
-      updateProductSuggestions();
     } catch(e) {
       _toast(e.message, 'error');
     }
   }
 
+  async function loadProducts() {
+    try {
+      const data = await apiFetch('/api/product-catalog');
+      _productCatalog = data || [];
+      updateProductSelect();
+      renderProductList();
+    } catch(e) { _toast(e.message, 'error'); }
+  }
+
+  function updateProductSelect() {
+    const sel = document.getElementById('fill-product');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— Tanlang —</option>' +
+      _productCatalog.map(p => '<option value="' + _esc(p.name) + '">' + _esc(p.name) + (p.price ? ' (' + fmtPrice(p.price) + ')' : '') + '</option>').join('');
+  }
+
+  // ── STATS ──
   function renderStats() {
     let totalToshkent = 0, totalQoqon = 0;
     _inventoryData.forEach(i => { totalToshkent += i.toshkent; totalQoqon += i.qoqon; });
@@ -276,6 +285,7 @@
     `;
   }
 
+  // ── INVENTORY TABLE ──
   function renderInventory() {
     const body = document.getElementById('inventoryBody');
     if (!_inventoryData.length) {
@@ -292,6 +302,7 @@
     `).join('');
   }
 
+  // ── LOGS TABLE ──
   function renderLogs() {
     const body = document.getElementById('logsBody');
     if (!_logsData.length) {
@@ -310,14 +321,6 @@
     `).join('');
   }
 
-  function updateProductSuggestions() {
-    _productNames = _inventoryData.map(i => i.productName);
-    ['productSuggestions', 'productSuggestions2'].forEach(id => {
-      const dl = document.getElementById(id);
-      if (dl) dl.innerHTML = _productNames.map(n => '<option value="' + _esc(n) + '">').join('');
-    });
-  }
-
   function switchTab(tab, btn) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
@@ -331,12 +334,12 @@
 
   async function saveFill() {
     const warehouse = document.getElementById('fill-warehouse').value;
-    const productName = document.getElementById('fill-product').value.trim();
+    const productName = document.getElementById('fill-product').value;
     const qty = parseInt(document.getElementById('fill-qty').value);
     const notes = document.getElementById('fill-notes').value.trim();
 
     if (!warehouse) { _toast('Omborni tanlang', 'error'); return; }
-    if (!productName) { _toast('Mahsulot nomini kiriting', 'error'); return; }
+    if (!productName) { _toast('Mahsulot turini tanlang', 'error'); return; }
     if (!qty || qty <= 0) { _toast('Miqdor 0 dan katta bo\'lishi kerak', 'error'); return; }
 
     const btn = document.getElementById('fillSaveBtn');
@@ -349,7 +352,6 @@
       });
       _toast("Zaxira qo'shildi", 'success');
       closeFillModal();
-      document.getElementById('fill-product').value = '';
       document.getElementById('fill-qty').value = '';
       document.getElementById('fill-notes').value = '';
       await loadData();
@@ -357,42 +359,67 @@
     finally { btn.disabled = false; }
   }
 
-  // ── Transfer Modal ──
-  function openTransferModal() { document.getElementById('transferModal').classList.remove('hidden'); }
-  function closeTransferModal() { document.getElementById('transferModal').classList.add('hidden'); }
+  // ── Product Type Modal ──
+  function openProductModal() {
+    document.getElementById('productModal').classList.remove('hidden');
+    loadProducts();
+  }
+  function closeProductModal() { document.getElementById('productModal').classList.add('hidden'); }
 
-  async function saveTransfer() {
-    const fromWarehouse = document.getElementById('tr-from').value;
-    const toWarehouse = document.getElementById('tr-to').value;
-    const productName = document.getElementById('tr-product').value.trim();
-    const qty = parseInt(document.getElementById('tr-qty').value);
-    const notes = document.getElementById('tr-notes').value.trim();
+  function renderProductList() {
+    const c = document.getElementById('productList');
+    if (!_productCatalog.length) {
+      c.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-tertiary)"><i class="fas fa-tags" style="font-size:24px;margin-bottom:8px;display:block"></i>Hozircha mahsulot turi yo\'q</div>';
+      return;
+    }
+    c.innerHTML = _productCatalog.map(p => `
+      <div class="product-item">
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--text-primary)">${_esc(p.name)}</div>
+          ${p.price ? '<div style="font-size:12px;color:var(--text-tertiary);margin-top:2px">' + fmtPrice(p.price) + '</div>' : ''}
+        </div>
+        <button class="btn btn-danger" style="padding:4px 10px;font-size:11px" onclick="deleteProduct(${p.id})">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    `).join('');
+  }
 
-    if (!fromWarehouse || !toWarehouse) { _toast('Omborlarni tanlang', 'error'); return; }
-    if (fromWarehouse === toWarehouse) { _toast('Bir xil omborga ko\'chirib bo\'lmaydi', 'error'); return; }
-    if (!productName) { _toast('Mahsulot nomini kiriting', 'error'); return; }
-    if (!qty || qty <= 0) { _toast('Miqdor 0 dan katta bo\'lishi kerak', 'error'); return; }
+  async function addProduct() {
+    const nameEl = document.getElementById('newProductName');
+    const priceEl = document.getElementById('newProductPrice');
+    const name = nameEl.value.trim();
+    const price = parseFloat(priceEl.value) || 0;
 
-    const btn = document.getElementById('transferSaveBtn');
-    btn.disabled = true;
+    if (!name) { _toast('Mahsulot nomi kerak', 'error'); nameEl.focus(); return; }
+
     try {
-      await apiFetch('/api/warehouse/transfer', {
+      await apiFetch('/api/product-catalog', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fromWarehouse, toWarehouse, productName, qty, notes })
+        body: JSON.stringify({ name, price })
       });
-      _toast("Ko'chirish muvaffaqiyatli", 'success');
-      closeTransferModal();
-      document.getElementById('tr-product').value = '';
-      document.getElementById('tr-qty').value = '';
-      document.getElementById('tr-notes').value = '';
-      await loadData();
+      _toast("Mahsulot turi qo'shildi", 'success');
+      nameEl.value = '';
+      priceEl.value = '';
+      await loadProducts();
     } catch(e) { _toast(e.message, 'error'); }
-    finally { btn.disabled = false; }
+  }
+
+  async function deleteProduct(id) {
+    if (!confirm("Bu mahsulot turini o'chirasizmi?")) return;
+    try {
+      await apiFetch('/api/product-catalog/' + id, { method: 'DELETE' });
+      _toast("O'chirildi", 'success');
+      await loadProducts();
+    } catch(e) { _toast(e.message, 'error'); }
   }
 
   // ── Init ──
-  document.addEventListener('DOMContentLoaded', loadData);
+  document.addEventListener('DOMContentLoaded', () => {
+    loadData();
+    loadProducts();
+  });
 </script>
 
 <%- include('../layouts/footer') %>

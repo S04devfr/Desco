@@ -195,6 +195,32 @@ router.post('/', async (req, res, next) => {
     const broadcast = req.app.get('broadcast');
     if (broadcast) broadcast({ type: 'deal_created', dealId: deal.id, deal });
     
+    // ── WAREHOUSE STOCK DECREMENT (On Creation) ──
+    try {
+      const NON_SHIP_KEYWORDS = ['yangi', 'muzokara', 'taklif', 'kutish', 'qayta aloqa', 'negativ', 'rad', 'otkaz', 'lost', 'fail', "yo'qotilgan"];
+      function isShippingStage(name) {
+        if (!name) return false;
+        const lower = name.toLowerCase();
+        return !NON_SHIP_KEYWORDS.some(kw => lower.includes(kw));
+      }
+      const newStageName = deal.stage?.name || '';
+      const isShipping = isShippingStage(newStageName);
+      
+      if (isShipping && deal.warehouse && !deal.stockDecremented) {
+        // Decrement stock
+        await prisma.warehouseStock.upsert({
+          where: { warehouse_productName: { warehouse: deal.warehouse, productName: deal.productName } },
+          update: { stock: { decrement: 1 } },
+          create: { warehouse: deal.warehouse, productName: deal.productName, stock: -1 }
+        });
+        await prisma.warehouseLog.create({
+          data: { warehouse: deal.warehouse, productName: deal.productName, changeQty: -1, action: 'ship', dealId: deal.id, notes: 'Sdelka #' + deal.id + ' — sotuv (yaratilganda)', userName: req.session?.user?.fullName || null }
+        });
+        await prisma.deal.update({ where: { id: deal.id }, data: { stockDecremented: true } });
+        deal.stockDecremented = true;
+      }
+    } catch(stockErr) { console.error('[Stock decrement on create]', stockErr); }
+
     res.status(201).json(deal)
   } catch (error) { next(error) }
 })
