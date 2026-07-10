@@ -1728,18 +1728,49 @@ function renderClientDebtTable() {
   const tbody = document.getElementById('clientDebtTableBody');
   const filterQuery = document.getElementById('clientDebtSearch').value.toLowerCase();
   
-  // Only show clients that already have a manual debt OR have been manually added/searched
-  const debtorClients = allClientsData.filter(c => {
-    const hasDebt = c.debt && c.debt > 0;
-    const isManuallyAdded = manuallyAddedClientIds.includes(c.id);
-    return hasDebt || isManuallyAdded;
+  const allDebts = [];
+  
+  // 1. Add manual client debts
+  allClientsData.forEach(c => {
+    if ((c.debt && c.debt > 0) || manuallyAddedClientIds.includes(c.id)) {
+      allDebts.push({
+        type: 'manual',
+        id: c.id,
+        name: c.name,
+        phone: c.phone,
+        city: c.city,
+        date: c.debtDate ? c.debtDate.slice(0, 10) : '',
+        amount: c.debt || 0,
+        notes: c.debtNotes || '',
+        isEditable: true
+      });
+    }
+  });
+  
+  // 2. Add deal debts (Nasiya)
+  allDealsData.forEach(d => {
+    const debt = d.amount - d.paidAmount;
+    if (debt > 0) {
+      allDebts.push({
+        type: 'nasiya',
+        id: d.id,
+        name: d.client?.name || 'Noma\'lum',
+        phone: d.client?.phone || '',
+        city: d.client?.city || '',
+        date: d.createdAt ? d.createdAt.slice(0, 10) : '',
+        amount: debt,
+        notes: `${d.productName || 'Sdelka'} qarzi`,
+        isEditable: false
+      });
+    }
   });
 
-  const filtered = debtorClients.filter(c => 
-    (c.name || '').toLowerCase().includes(filterQuery) ||
-    (c.phone || '').toLowerCase().includes(filterQuery) ||
-    (c.city || '').toLowerCase().includes(filterQuery) ||
-    String(c.id) === filterQuery
+  const filtered = allDebts.filter(item => 
+    (item.name || '').toLowerCase().includes(filterQuery) ||
+    (item.phone || '').toLowerCase().includes(filterQuery) ||
+    (item.city || '').toLowerCase().includes(filterQuery) ||
+    (item.notes || '').toLowerCase().includes(filterQuery) ||
+    String(item.id) === filterQuery
   );
 
   if (!filtered.length) {
@@ -1747,34 +1778,63 @@ function renderClientDebtTable() {
     return;
   }
 
-  tbody.innerHTML = filtered.map(c => {
-    const dateStr = c.debtDate ? c.debtDate.slice(0, 10) : '';
-    return `
-      <tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:10px 12px; font-size:12.5px; color:var(--text-tertiary)">#${c.id}</td>
-        <td style="padding:10px 12px; font-size:13px; font-weight:600">${escHtml(c.name)}</td>
-        <td style="padding:10px 12px; font-size:12.5px">${escHtml(c.phone || '—')}</td>
-        <td style="padding:10px 12px; font-size:12.5px">${escHtml(c.city || '—')}</td>
-        <td style="padding:6px 12px;">
-          <input type="date" class="spreadsheet-input" value="${dateStr}"
-                 onchange="saveClientDebtField(${c.id}, 'debtDate', this.value, this)" style="width:115px; font-size:12px; padding:0 6px; height:28px;">
-        </td>
-        <td style="padding:6px 12px;">
-          <input type="number" class="spreadsheet-input" value="${c.debt || 0}"
-                 onchange="saveClientDebtField(${c.id}, 'debt', this.value, this)" style="font-weight:700; width:120px; height:28px;">
-        </td>
-        <td style="padding:6px 12px;">
-          <input type="text" class="spreadsheet-input" value="${escHtml(c.debtNotes || '')}"
-                 onchange="saveClientDebtField(${c.id}, 'debtNotes', this.value, this)" style="font-size:12px; padding:0 6px; height:28px; width:140px;" placeholder="Izoh...">
-        </td>
-        <td style="padding:6px 12px; text-align:center;">
-          <button class="btn btn-ghost btn-sm text-danger" onclick="deleteClientDebt(${c.id})" style="padding:4px 8px;" title="Qarzdorlikni o'chirish">
-            <i class="fas fa-trash-alt"></i>
-          </button>
-        </td>
-      </tr>
-    `;
+  tbody.innerHTML = filtered.map(item => {
+    if (item.type === 'nasiya') {
+      return `
+        <tr style="border-bottom:1px solid var(--border); background:rgba(255, 149, 0, 0.03);">
+          <td style="padding:10px 12px; font-size:12.5px; color:var(--text-tertiary)">#${item.id}</td>
+          <td style="padding:10px 12px; font-size:13px; font-weight:600">${escHtml(item.name)}</td>
+          <td style="padding:10px 12px; font-size:12.5px">${escHtml(item.phone || '—')}</td>
+          <td style="padding:10px 12px; font-size:12.5px">${escHtml(item.city || '—')}</td>
+          <td style="padding:10px 12px; font-size:12.5px; color:var(--text-secondary)">${item.date}</td>
+          <td style="padding:10px 12px; font-size:12.5px;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-weight:700; color:var(--danger);">${fmtMoney(item.amount)}</span>
+              <span style="font-size:10.0px; padding:2px 5px; background:#FF950020; color:#FF9500; border-radius:4px; font-weight:700; white-space:nowrap;"><i class="fas fa-calendar-alt"></i> Nasiya</span>
+            </div>
+          </td>
+          <td style="padding:10px 12px; font-size:12px; color:var(--text-secondary)">${escHtml(item.notes)}</td>
+          <td style="padding:10px 12px; text-align:center;">
+            <button class="btn btn-ghost btn-sm text-accent" onclick="openNasiyaPlanForDeal(${item.id})" style="padding:4px 8px;" title="Nasiya rejasini boshqarish">
+              <i class="fas fa-external-link-alt"></i>
+            </button>
+          </td>
+        </tr>
+      `;
+    } else {
+      return `
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:10px 12px; font-size:12.5px; color:var(--text-tertiary)">#${item.id}</td>
+          <td style="padding:10px 12px; font-size:13px; font-weight:600">${escHtml(item.name)}</td>
+          <td style="padding:10px 12px; font-size:12.5px">${escHtml(item.phone || '—')}</td>
+          <td style="padding:10px 12px; font-size:12.5px">${escHtml(item.city || '—')}</td>
+          <td style="padding:6px 12px;">
+            <input type="date" class="spreadsheet-input" value="${item.date}"
+                   onchange="saveClientDebtField(${item.id}, 'debtDate', this.value, this)" style="width:115px; font-size:12px; padding:0 6px; height:28px;">
+          </td>
+          <td style="padding:6px 12px;">
+            <input type="number" class="spreadsheet-input" value="${item.amount || 0}"
+                   onchange="saveClientDebtField(${item.id}, 'debt', this.value, this)" style="font-weight:700; width:120px; height:28px;">
+          </td>
+          <td style="padding:6px 12px;">
+            <input type="text" class="spreadsheet-input" value="${escHtml(item.notes)}"
+                   onchange="saveClientDebtField(${item.id}, 'debtNotes', this.value, this)" style="font-size:12px; padding:0 6px; height:28px; width:140px;" placeholder="Izoh...">
+          </td>
+          <td style="padding:6px 12px; text-align:center;">
+            <button class="btn btn-ghost btn-sm text-danger" onclick="deleteClientDebt(${item.id})" style="padding:4px 8px;" title="Qarzdorlikni o'chirish">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </td>
+        </tr>
+      `;
+    }
   }).join('');
+}
+
+function openNasiyaPlanForDeal(dealId) {
+  switchFinTab('installments');
+  selectedDealIdForInstallments = dealId;
+  renderInstallmentTab();
 }
 
 async function saveClientDebtField(id, field, val, inputEl) {
