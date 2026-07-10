@@ -109,6 +109,9 @@ model Deal {
   activities ActivityLog[]
   installments Installment[]
 
+  warehouse        String?
+  stockDecremented Boolean   @default(false)
+
   @@index([stageId])
   @@index([managerId])
 }
@@ -237,4 +240,27 @@ model IshonchFilial {
   notes      String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+model WarehouseStock {
+  id          Int      @id @default(autoincrement())
+  warehouse   String
+  productName String
+  stock       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([warehouse, productName])
+}
+
+model WarehouseLog {
+  id          Int      @id @default(autoincrement())
+  warehouse   String
+  productName String
+  changeQty   Int
+  action      String
+  notes       String?
+  dealId      Int?
+  userName    String?
+  createdAt   DateTime @default(now())
 }

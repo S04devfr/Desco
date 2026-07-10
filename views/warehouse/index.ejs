@@ -1,0 +1,398 @@
+<%- include('../layouts/header', { title: "Ombor — DESCO CRM" }) %>
+<%- include('../layouts/sidebar', { activePage: 'warehouse' }) %>
+
+<main class="main-content">
+  <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+    <div>
+      <h1 style="font-size:22px;font-weight:700;margin:0;display:flex;align-items:center;gap:10px">
+        <i class="fas fa-warehouse" style="color:var(--accent)"></i> Ombor boshqaruvi
+      </h1>
+      <p style="font-size:13px;color:var(--text-tertiary);margin:4px 0 0">Toshkent va Qo'qon omborlaridagi zaxira holati</p>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" onclick="openFillModal()">
+        <i class="fas fa-plus"></i> Zaxira qo'shish
+      </button>
+      <button class="btn btn-secondary" onclick="openTransferModal()">
+        <i class="fas fa-exchange-alt"></i> Ko'chirish
+      </button>
+    </div>
+  </div>
+
+  <!-- Umumiy statistika -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px" id="statsCards">
+  </div>
+
+  <!-- Tabs -->
+  <div style="display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0">
+    <button class="tab-btn active" onclick="switchTab('inventory', this)" style="padding:8px 16px;font-size:13px;font-weight:600;border:none;background:none;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px">
+      <i class="fas fa-boxes"></i> Zaxira
+    </button>
+    <button class="tab-btn" onclick="switchTab('logs', this)" style="padding:8px 16px;font-size:13px;font-weight:600;border:none;background:none;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px">
+      <i class="fas fa-history"></i> Tarix
+    </button>
+  </div>
+
+  <!-- Inventory Table -->
+  <div id="tab-inventory">
+    <div class="card" style="overflow:hidden">
+      <table class="data-table" style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">Mahsulot</th>
+            <th style="text-align:center;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">Toshkent</th>
+            <th style="text-align:center;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">Qo'qon</th>
+            <th style="text-align:center;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">Jami</th>
+          </tr>
+        </thead>
+        <tbody id="inventoryBody">
+          <tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-tertiary)"><div class="spinner"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Logs Table -->
+  <div id="tab-logs" style="display:none">
+    <div class="card" style="overflow:hidden">
+      <table class="data-table" style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">Sana</th>
+            <th style="text-align:left;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">Mahsulot</th>
+            <th style="text-align:center;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">Ombor</th>
+            <th style="text-align:center;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">Miqdor</th>
+            <th style="text-align:center;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">Harakat</th>
+            <th style="text-align:left;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">Izoh</th>
+          </tr>
+        </thead>
+        <tbody id="logsBody">
+          <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-tertiary)"><div class="spinner"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- FILL MODAL -->
+<div class="modal-overlay hidden" id="fillModal">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-header">
+      <h2><i class="fas fa-plus-circle" style="color:var(--success);margin-right:8px"></i>Zaxira qo'shish</h2>
+      <button class="modal-close" onclick="closeFillModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Ombor <span style="color:var(--danger)">*</span></label>
+        <select id="fill-warehouse" class="form-control">
+          <option value="">— Tanlang —</option>
+          <option value="Toshkent">Toshkent</option>
+          <option value="Qo'qon">Qo'qon</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mahsulot nomi <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="fill-product" class="form-control" placeholder="Masalan: Massajor Pro Max" list="productSuggestions">
+        <datalist id="productSuggestions"></datalist>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Miqdor <span style="color:var(--danger)">*</span></label>
+        <input type="number" id="fill-qty" class="form-control" placeholder="0" min="1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Izoh</label>
+        <input type="text" id="fill-notes" class="form-control" placeholder="Ixtiyoriy izoh...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeFillModal()">Bekor</button>
+      <button class="btn btn-primary" id="fillSaveBtn" onclick="saveFill()">
+        <i class="fas fa-save"></i> Saqlash
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TRANSFER MODAL -->
+<div class="modal-overlay hidden" id="transferModal">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-header">
+      <h2><i class="fas fa-exchange-alt" style="color:var(--accent);margin-right:8px"></i>Omborlararo ko'chirish</h2>
+      <button class="modal-close" onclick="closeTransferModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group">
+          <label class="form-label">Qayerdan <span style="color:var(--danger)">*</span></label>
+          <select id="tr-from" class="form-control">
+            <option value="">— Tanlang —</option>
+            <option value="Toshkent">Toshkent</option>
+            <option value="Qo'qon">Qo'qon</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Qayerga <span style="color:var(--danger)">*</span></label>
+          <select id="tr-to" class="form-control">
+            <option value="">— Tanlang —</option>
+            <option value="Toshkent">Toshkent</option>
+            <option value="Qo'qon">Qo'qon</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mahsulot nomi <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="tr-product" class="form-control" placeholder="Mahsulot nomi" list="productSuggestions2">
+        <datalist id="productSuggestions2"></datalist>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Miqdor <span style="color:var(--danger)">*</span></label>
+        <input type="number" id="tr-qty" class="form-control" placeholder="0" min="1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Izoh</label>
+        <input type="text" id="tr-notes" class="form-control" placeholder="Ixtiyoriy izoh...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeTransferModal()">Bekor</button>
+      <button class="btn btn-primary" id="transferSaveBtn" onclick="saveTransfer()">
+        <i class="fas fa-paper-plane"></i> Ko'chirish
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .tab-btn.active {
+    color: var(--accent) !important;
+    border-bottom-color: var(--accent) !important;
+  }
+  .stock-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 36px; padding: 4px 10px; border-radius: 8px;
+    font-size: 14px; font-weight: 700;
+  }
+  .stock-ok { background: rgba(52,199,89,0.12); color: #34C759; }
+  .stock-low { background: rgba(255,149,0,0.12); color: #FF9500; }
+  .stock-zero { background: rgba(255,59,48,0.12); color: #FF3B30; }
+  .action-fill { background: rgba(52,199,89,0.12); color: #34C759; }
+  .action-ship { background: rgba(255,59,48,0.12); color: #FF3B30; }
+  .action-transfer { background: rgba(0,122,255,0.12); color: #007AFF; }
+  .action-return { background: rgba(255,149,0,0.12); color: #FF9500; }
+  .stat-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px 20px; display: flex; flex-direction: column; gap: 4px;
+  }
+  .stat-card .stat-label { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-card .stat-value { font-size: 24px; font-weight: 800; }
+</style>
+
+<script>
+  let _inventoryData = [];
+  let _logsData = [];
+  let _productNames = [];
+
+  async function apiFetch(url, opts) {
+    const r = await fetch(url, opts);
+    if (!r.ok) {
+      let msg = 'Xatolik';
+      try { const j = await r.json(); msg = j.message || msg; } catch(e) { msg = await r.text(); }
+      throw new Error(msg);
+    }
+    return r.json();
+  }
+
+  function _toast(msg, type) {
+    if (typeof showToast === 'function') { showToast(msg, type); return; }
+    const c = document.getElementById('toastContainer');
+    if (!c) return;
+    const t = document.createElement('div');
+    t.className = 'toast toast-' + (type || 'info');
+    t.innerHTML = '<span>' + msg + '</span>';
+    t.style.cssText = 'margin-top:8px;padding:10px 16px;border-radius:8px;font-size:13px;color:#fff;background:' +
+      (type === 'error' ? '#FF3B30' : type === 'success' ? '#34C759' : '#007AFF');
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  function _esc(s) { return s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function _dateTime(d) {
+    if (!d) return '';
+    const dt = new Date(d);
+    if (isNaN(dt)) return '';
+    return dt.toLocaleDateString('uz-UZ', { day:'2-digit', month:'2-digit', year:'2-digit' }) +
+      ' ' + dt.toLocaleTimeString('uz-UZ', { hour:'2-digit', minute:'2-digit' });
+  }
+
+  function stockBadge(val) {
+    const cls = val <= 0 ? 'stock-zero' : val <= 5 ? 'stock-low' : 'stock-ok';
+    return '<span class="stock-badge ' + cls + '">' + val + '</span>';
+  }
+
+  function actionBadge(action) {
+    const labels = { fill: "To'ldirish", ship: 'Chiqarish', transfer: "Ko'chirish", return: 'Qaytarish' };
+    const cls = 'action-' + action;
+    return '<span class="stock-badge ' + cls + '">' + (labels[action] || action) + '</span>';
+  }
+
+  async function loadData() {
+    try {
+      const data = await apiFetch('/api/warehouse');
+      _inventoryData = data.inventory || [];
+      _logsData = data.logs || [];
+      renderInventory();
+      renderLogs();
+      renderStats();
+      updateProductSuggestions();
+    } catch(e) {
+      _toast(e.message, 'error');
+    }
+  }
+
+  function renderStats() {
+    let totalToshkent = 0, totalQoqon = 0;
+    _inventoryData.forEach(i => { totalToshkent += i.toshkent; totalQoqon += i.qoqon; });
+    const totalAll = totalToshkent + totalQoqon;
+    const productCount = _inventoryData.length;
+
+    document.getElementById('statsCards').innerHTML = `
+      <div class="stat-card">
+        <span class="stat-label">Jami zaxira</span>
+        <span class="stat-value" style="color:var(--accent)">${totalAll}</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Toshkent</span>
+        <span class="stat-value" style="color:#34C759">${totalToshkent}</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Qo'qon</span>
+        <span class="stat-value" style="color:#FF9500">${totalQoqon}</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Mahsulot turlari</span>
+        <span class="stat-value" style="color:var(--text-primary)">${productCount}</span>
+      </div>
+    `;
+  }
+
+  function renderInventory() {
+    const body = document.getElementById('inventoryBody');
+    if (!_inventoryData.length) {
+      body.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-tertiary)"><i class="fas fa-box-open" style="font-size:32px;margin-bottom:8px;display:block"></i>Hozircha mahsulot yo\'q</td></tr>';
+      return;
+    }
+    body.innerHTML = _inventoryData.map(item => `
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:12px 16px;font-size:14px;font-weight:600;color:var(--text-primary)">${_esc(item.productName)}</td>
+        <td style="padding:12px 16px;text-align:center">${stockBadge(item.toshkent)}</td>
+        <td style="padding:12px 16px;text-align:center">${stockBadge(item.qoqon)}</td>
+        <td style="padding:12px 16px;text-align:center"><span class="stock-badge" style="background:rgba(99,102,241,0.12);color:#6366F1;font-size:15px">${item.total}</span></td>
+      </tr>
+    `).join('');
+  }
+
+  function renderLogs() {
+    const body = document.getElementById('logsBody');
+    if (!_logsData.length) {
+      body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-tertiary)"><i class="fas fa-history" style="font-size:32px;margin-bottom:8px;display:block"></i>Hozircha tarix yo\'q</td></tr>';
+      return;
+    }
+    body.innerHTML = _logsData.map(log => `
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:10px 16px;font-size:12px;color:var(--text-secondary)">${_dateTime(log.createdAt)}</td>
+        <td style="padding:10px 16px;font-size:13px;font-weight:500">${_esc(log.productName)}</td>
+        <td style="padding:10px 16px;text-align:center;font-size:12px">${_esc(log.warehouse)}</td>
+        <td style="padding:10px 16px;text-align:center;font-weight:700;color:${log.changeQty > 0 ? '#34C759' : '#FF3B30'}">${log.changeQty > 0 ? '+' : ''}${log.changeQty}</td>
+        <td style="padding:10px 16px;text-align:center">${actionBadge(log.action)}</td>
+        <td style="padding:10px 16px;font-size:12px;color:var(--text-secondary)">${_esc(log.notes || '')}${log.userName ? ' <span style="opacity:0.6">(' + _esc(log.userName) + ')</span>' : ''}</td>
+      </tr>
+    `).join('');
+  }
+
+  function updateProductSuggestions() {
+    _productNames = _inventoryData.map(i => i.productName);
+    ['productSuggestions', 'productSuggestions2'].forEach(id => {
+      const dl = document.getElementById(id);
+      if (dl) dl.innerHTML = _productNames.map(n => '<option value="' + _esc(n) + '">').join('');
+    });
+  }
+
+  function switchTab(tab, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-inventory').style.display = tab === 'inventory' ? '' : 'none';
+    document.getElementById('tab-logs').style.display = tab === 'logs' ? '' : 'none';
+  }
+
+  // ── Fill Modal ──
+  function openFillModal() { document.getElementById('fillModal').classList.remove('hidden'); }
+  function closeFillModal() { document.getElementById('fillModal').classList.add('hidden'); }
+
+  async function saveFill() {
+    const warehouse = document.getElementById('fill-warehouse').value;
+    const productName = document.getElementById('fill-product').value.trim();
+    const qty = parseInt(document.getElementById('fill-qty').value);
+    const notes = document.getElementById('fill-notes').value.trim();
+
+    if (!warehouse) { _toast('Omborni tanlang', 'error'); return; }
+    if (!productName) { _toast('Mahsulot nomini kiriting', 'error'); return; }
+    if (!qty || qty <= 0) { _toast('Miqdor 0 dan katta bo\'lishi kerak', 'error'); return; }
+
+    const btn = document.getElementById('fillSaveBtn');
+    btn.disabled = true;
+    try {
+      await apiFetch('/api/warehouse/fill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ warehouse, productName, qty, notes })
+      });
+      _toast("Zaxira qo'shildi", 'success');
+      closeFillModal();
+      document.getElementById('fill-product').value = '';
+      document.getElementById('fill-qty').value = '';
+      document.getElementById('fill-notes').value = '';
+      await loadData();
+    } catch(e) { _toast(e.message, 'error'); }
+    finally { btn.disabled = false; }
+  }
+
+  // ── Transfer Modal ──
+  function openTransferModal() { document.getElementById('transferModal').classList.remove('hidden'); }
+  function closeTransferModal() { document.getElementById('transferModal').classList.add('hidden'); }
+
+  async function saveTransfer() {
+    const fromWarehouse = document.getElementById('tr-from').value;
+    const toWarehouse = document.getElementById('tr-to').value;
+    const productName = document.getElementById('tr-product').value.trim();
+    const qty = parseInt(document.getElementById('tr-qty').value);
+    const notes = document.getElementById('tr-notes').value.trim();
+
+    if (!fromWarehouse || !toWarehouse) { _toast('Omborlarni tanlang', 'error'); return; }
+    if (fromWarehouse === toWarehouse) { _toast('Bir xil omborga ko\'chirib bo\'lmaydi', 'error'); return; }
+    if (!productName) { _toast('Mahsulot nomini kiriting', 'error'); return; }
+    if (!qty || qty <= 0) { _toast('Miqdor 0 dan katta bo\'lishi kerak', 'error'); return; }
+
+    const btn = document.getElementById('transferSaveBtn');
+    btn.disabled = true;
+    try {
+      await apiFetch('/api/warehouse/transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fromWarehouse, toWarehouse, productName, qty, notes })
+      });
+      _toast("Ko'chirish muvaffaqiyatli", 'success');
+      closeTransferModal();
+      document.getElementById('tr-product').value = '';
+      document.getElementById('tr-qty').value = '';
+      document.getElementById('tr-notes').value = '';
+      await loadData();
+    } catch(e) { _toast(e.message, 'error'); }
+    finally { btn.disabled = false; }
+  }
+
+  // ── Init ──
+  document.addEventListener('DOMContentLoaded', loadData);
+</script>
+
+<%- include('../layouts/footer') %>

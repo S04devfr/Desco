@@ -85,9 +85,9 @@ app.use('/api/pipeline-stages', require('./routes/pipeline'));
 app.use('/api/pipelines',       require('./routes/pipelines'));
 app.use('/api/settings',        require('./routes/settings'));
 app.use('/api/instagram',       require('./routes/instagram'));
-app.use('/api/webhooks',        require('./routes/webhook'));
 app.use('/api/webhook',         require('./routes/webhook'));
 app.use('/api/ai',              require('./routes/ai'));
+app.use('/api/warehouse',       require('./routes/warehouse'));
 
 // ── PUBLIC LEGAL PAGES (no auth required — Meta App Review uchun) ──
 app.use('/', require('./routes/legal'));
@@ -111,6 +111,7 @@ app.get('/extra/branches', requireAuth, requireRole('admin', 'manager'), (req, r
 app.get('/tasks',    requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('tasks/index',    { user: req.session.user, activePage: 'tasks' }));
 app.get('/instagram', requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('instagram/index', { user: req.session.user, activePage: 'instagram' }));
 app.get('/ai',        requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('ai/index',        { user: req.session.user, activePage: 'ai' }));
+app.get('/warehouse', requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('warehouse/index', { user: req.session.user, activePage: 'warehouse' }));
 app.get('/nasiya',   requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('deals/index',    { user: req.session.user, activePage: 'nasiya' }));
 app.get('/nasiya/list', requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('nasiya/index', { user: req.session.user, activePage: 'nasiya-' + req.query.stage, subPage: req.query.stage }));
 app.get('/design-system', requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('design-system/index', { user: req.session.user, activePage: 'design-system' }));
