@@ -212,20 +212,6 @@ async function cleanupDuplicateTasks() {
   }
 }
 
-const { exec } = require('child_process');
-
-console.log('🔄 [Startup] Executing Prisma DB Push in background...');
-exec('npx prisma db push --accept-data-loss', (error, stdout, stderr) => {
-  if (error) {
-    console.error(`❌ [Prisma DB Push Error]: ${error.message}`);
-    return;
-  }
-  if (stderr) {
-    console.log(`⚠️ [Prisma DB Push Stderr]: ${stderr}`);
-  }
-  console.log(`✅ [Prisma DB Push Success]: ${stdout}`);
-});
-
 runMigrations(prisma).then(async () => {
   await ensureAuditTable();
   await cleanupDuplicateTasks();
