@@ -82,15 +82,15 @@ router.get('/kpis', async (req, res, next) => {
     const expenseWhere = where.OR ? { createdAt: { gte: where.OR[0].createdAt.gte, lte: where.OR[0].createdAt.lte } } : {};
     const expenses = await prisma.expense.findMany({ where: expenseWhere });
 
-    const totalOrders = deals.filter(d => d.amount - d.paidAmount <= 0).length
-    const totalRevenue = deals.filter(d => d.amount - d.paidAmount <= 0).reduce((sum, d) => sum + d.paidAmount, 0)
+    const totalOrders = deals.filter(d => d.status === 'won' && d.amount > 0 && d.amount - d.paidAmount <= 0).length
+    const totalRevenue = deals.filter(d => d.status === 'won' && d.amount > 0 && d.amount - d.paidAmount <= 0).reduce((sum, d) => sum + d.paidAmount, 0)
     const totalDebt = deals.reduce((sum, d) => sum + Math.max(d.amount - d.paidAmount, 0), 0)
     
     let totalExpenses = 0, totalCostPrice = 0, netProfit = 0, totalClientDebt = 0;
     
     if (isAdmin) {
       totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0)
-      totalCostPrice = deals.filter(d => d.amount - d.paidAmount <= 0).reduce((sum, d) => sum + (d.costPrice || 0), 0)
+      totalCostPrice = deals.filter(d => d.status === 'won' && d.amount > 0 && d.amount - d.paidAmount <= 0).reduce((sum, d) => sum + (d.costPrice || 0), 0)
       netProfit = totalRevenue - totalCostPrice - totalExpenses
       const clients = await prisma.client.findMany({ select: { debt: true } })
       totalClientDebt = clients.reduce((sum, c) => sum + (c.debt || 0), 0)
