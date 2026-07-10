@@ -98,6 +98,43 @@
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
   }
+
+  /* Task Action Buttons Styling */
+  .task-action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .task-action-btn.btn-view {
+    background: rgba(10, 132, 255, 0.15);
+    color: #0A84FF;
+  }
+  .task-action-btn.btn-view:hover {
+    background: rgba(10, 132, 255, 0.28);
+    transform: scale(1.08);
+  }
+  .task-action-btn.btn-edit {
+    background: rgba(255, 149, 0, 0.15);
+    color: #FF9500;
+  }
+  .task-action-btn.btn-edit:hover {
+    background: rgba(255, 149, 0, 0.28);
+    transform: scale(1.08);
+  }
+  .task-action-btn.btn-delete {
+    background: rgba(255, 59, 48, 0.15);
+    color: #FF3B30;
+  }
+  .task-action-btn.btn-delete:hover {
+    background: rgba(255, 59, 48, 0.28);
+    transform: scale(1.08);
+  }
 </style>
 
 <div class="page-header">
@@ -355,7 +392,7 @@ function renderSingleTaskHtml(t) {
       const dd = String(d.getDate()).padStart(2, '0');
       const mm = String(d.getMonth() + 1).padStart(2, '0');
       const yyyy = d.getFullYear();
-      const dateFormatted = `${dd}.${mm}.${yyyy}` + (t.dueTime ? ` ${t.dueTime}` : '');
+      const dateFormatted = `${dd}.${mm}.${yyyy} ${t.dueTime || '10:00'}`;
       dueHtml = `<span class="task-due ${dueClass}"><i class="fas fa-clock"></i> ${dateFormatted}</span>`;
     }
   }
@@ -392,9 +429,9 @@ function renderSingleTaskHtml(t) {
         </div>
       </div>
       <div style="display:flex; gap:6px; flex-shrink:0;">
-        <button class="btn btn-ghost btn-icon btn-sm text-info" onclick="viewTaskDetails(${t.id})" title="Ko'rish" style="width:32px; height:32px; border-radius:50%; background:var(--bg-primary); border:1px solid var(--border); display:flex; align-items:center; justify-content:center;"><i class="fas fa-eye" style="font-size:12px;"></i></button>
-        <button class="btn btn-ghost btn-icon btn-sm" onclick="openTaskModal(${t.id})" title="Tahrirlash" style="width:32px; height:32px; border-radius:50%; background:var(--bg-primary); border:1px solid var(--border); display:flex; align-items:center; justify-content:center;"><i class="fas fa-edit" style="font-size:12px;"></i></button>
-        <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="deleteTask(${t.id})" title="O'chirish" style="width:32px; height:32px; border-radius:50%; background:var(--bg-primary); border:1px solid var(--border); display:flex; align-items:center; justify-content:center;"><i class="fas fa-trash" style="font-size:12px;"></i></button>
+        <button class="task-action-btn btn-view" onclick="viewTaskDetails(${t.id})" title="Ko'rish"><i class="fas fa-eye" style="font-size:12px;"></i></button>
+        <button class="task-action-btn btn-edit" onclick="openTaskModal(${t.id})" title="Tahrirlash"><i class="fas fa-edit" style="font-size:12px;"></i></button>
+        <button class="task-action-btn btn-delete" onclick="deleteTask(${t.id})" title="O'chirish"><i class="fas fa-trash" style="font-size:12px;"></i></button>
       </div>
     </div>
   `;
