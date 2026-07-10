@@ -940,9 +940,19 @@ function renderProfitTable() {
     }
   }
 
+  const getEffectivePaid = (d) => {
+    const stageName = (d.stage?.name || '').toLowerCase();
+    const isWon = d.status === 'won' || 
+                  stageName.includes('100%') || 
+                  stageName.includes('yutil') || 
+                  stageName.includes('won');
+    return isWon ? (d.amount || 0) : (d.paidAmount || 0);
+  };
+
   const filteredDeals = profitDeals.filter(d => {
-    // Only show priced deals that are 100% paid
-    if (d.amount <= 0 || d.amount - d.paidAmount > 0) return false;
+    const effectivePaid = getEffectivePaid(d);
+    // Only show priced deals that are 100% paid effectively
+    if (d.amount <= 0 || d.amount - effectivePaid > 0) return false;
     
     if (start && end) {
       const dDate = new Date(d.createdAt);
@@ -958,7 +968,8 @@ function renderProfitTable() {
 
   tbody.innerHTML = filteredDeals.map(d => {
     const dateFormatted = d.createdAt ? new Date(d.createdAt).toLocaleString('uz-UZ', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '-';
-    const profit = d.paidAmount - (d.costPrice || 0);
+    const effectivePaid = getEffectivePaid(d);
+    const profit = effectivePaid - (d.costPrice || 0);
     return `
       <tr style="border-bottom:1px solid var(--border)">
         <td style="padding:10px 14px; font-size:12.5px; color:var(--text-tertiary)">${dateFormatted}</td>
@@ -970,7 +981,7 @@ function renderProfitTable() {
           ` : '<span style="color:var(--text-tertiary)">-</span>'}
         </td>
         <td style="padding:10px 14px; font-size:12.5px; font-weight:600; text-align:right">${fmtMoney(d.amount)}</td>
-        <td style="padding:10px 14px; font-size:12.5px; font-weight:600; color:#34C759; text-align:right">${fmtMoney(d.paidAmount)}</td>
+        <td style="padding:10px 14px; font-size:12.5px; font-weight:600; color:#34C759; text-align:right">${fmtMoney(effectivePaid)}</td>
         <td style="padding:10px 14px; font-size:12.5px; font-weight:600; color:#5856D6; text-align:right">${fmtMoney(d.costPrice || 0)}</td>
         <td style="padding:10px 14px; font-size:12.5px; font-weight:700; color:${profit >= 0 ? '#34C759' : '#FF3B30'}; text-align:right">${fmtMoney(profit)}</td>
         <td style="padding:10px 14px; font-size:12.5px;">

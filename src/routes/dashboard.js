@@ -77,14 +77,23 @@ router.get('/kpis', async (req, res, next) => {
       where.managerId = req.userId;
     }
     
-    const deals = await prisma.deal.findMany({ where });
+    const deals = await prisma.deal.findMany({ where, include: { stage: true } });
     // Expenses only use createdAt
     const expenseWhere = where.OR ? { createdAt: { gte: where.OR[0].createdAt.gte, lte: where.OR[0].createdAt.lte } } : {};
     const expenses = await prisma.expense.findMany({ where: expenseWhere });
 
+    const getEffectivePaid = (d) => {
+      const stageName = (d.stage?.name || '').toLowerCase();
+      const isWon = d.status === 'won' || 
+                    stageName.includes('100%') || 
+                    stageName.includes('yutil') || 
+                    stageName.includes('won');
+      return isWon ? (d.amount || 0) : (d.paidAmount || 0);
+    };
+
     const totalOrders = deals.length
-    const totalRevenue = deals.reduce((sum, d) => sum + (d.paidAmount || 0), 0)
-    const totalDebt = deals.reduce((sum, d) => sum + Math.max((d.amount || 0) - (d.paidAmount || 0), 0), 0)
+    const totalRevenue = deals.reduce((sum, d) => sum + getEffectivePaid(d), 0)
+    const totalDebt = deals.reduce((sum, d) => sum + Math.max((d.amount || 0) - getEffectivePaid(d), 0), 0)
     
     let totalExpenses = 0, totalCostPrice = 0, netProfit = 0, totalClientDebt = 0;
     
