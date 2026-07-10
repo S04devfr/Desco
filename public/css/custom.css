@@ -6,41 +6,41 @@
 
 /* ── CSS VARIABLES (Curated HSL & Cosmic SaaS) ── */
 :root {
-  /* Rich Dark Theme by default */
-  --bg-primary:    #080C14; /* Deep outer-space dark blue */
-  --bg-secondary:  #0F1626; /* Sleek card black-blue */
-  --bg-tertiary:   #1D263A; /* Input & borders hover bg */
+  /* Soft Slate/Navy Dark Theme - Extremely Eye-Comfortable */
+  --bg-primary:    #121620; /* Soft charcoal-navy (reduces glare) */
+  --bg-secondary:  #1A202C; /* Muted card navy-gray */
+  --bg-tertiary:   #2D3748; /* Borders and input background */
   
-  --accent:        #6366F1; /* Curated Indigo */
-  --accent-hover:  #4F46E5;
-  --accent-soft:   rgba(99,102,241,0.12);
+  --accent:        #5A67D8; /* Soft Indigo (not oversaturated, eye-friendly) */
+  --accent-hover:  #4C51BF;
+  --accent-soft:   rgba(90, 103, 216, 0.12);
 
-  --text-primary:   #F8FAFC; 
-  --text-secondary: #94A3B8; 
-  --text-tertiary:  #64748B; 
+  --text-primary:   #E2E8F0; /* Soft off-white (instead of bright white) */
+  --text-secondary: #A0AEC0; /* Comfort gray */
+  --text-tertiary:  #718096; /* Muted gray */
   --text-on-accent: #FFFFFF;
 
-  --success:     #10B981;
-  --success-bg:  rgba(16, 185, 129, 0.12);
-  --warning:     #F59E0B;
-  --warning-bg:  rgba(245, 158, 11, 0.12);
-  --danger:      #EF4444;
-  --danger-bg:   rgba(239, 68, 68, 0.12);
-  --info:        #3B82F6;
-  --info-bg:     rgba(59, 130, 246, 0.12);
+  --success:     #38A169; /* Soft green */
+  --success-bg:  rgba(56, 161, 105, 0.1);
+  --warning:     #DD6B20; /* Soft orange */
+  --warning-bg:  rgba(221, 107, 32, 0.1);
+  --danger:      #E53E3E; /* Soft red */
+  --danger-bg:   rgba(229, 62, 62, 0.1);
+  --info:        #3182CE; /* Soft blue */
+  --info-bg:     rgba(49, 130, 206, 0.1);
 
-  --border:      rgba(255, 255, 255, 0.06); /* Thin glass line */
-  --border-hover:rgba(255, 255, 255, 0.12);
+  --border:      rgba(255, 255, 255, 0.05); /* Extremely soft border */
+  --border-hover:rgba(255, 255, 255, 0.1);
 
   --radius-sm:   10px;  /* Buttons, inputs */
   --radius-md:   14px;  /* Cards */
   --radius-lg:   20px;  /* Modals */
   --radius-full: 9999px;
 
-  --shadow-sm:  0 2px 4px rgba(0,0,0,0.12);
-  --shadow-md:  0 8px 16px rgba(0,0,0,0.25);
-  --shadow-lg:  0 20px 40px rgba(0,0,0,0.45);
-  --shadow-hover: 0 12px 28px rgba(99,102,241,0.15);
+  --shadow-sm:  0 2px 4px rgba(0,0,0,0.1);
+  --shadow-md:  0 8px 16px rgba(0,0,0,0.18);
+  --shadow-lg:  0 20px 40px rgba(0,0,0,0.25);
+  --shadow-hover: 0 12px 28px rgba(90, 103, 216, 0.1);
 
   --sidebar-w:   260px;
   --topbar-h:    64px;
@@ -106,7 +106,7 @@ body {
 .sidebar {
   width: var(--sidebar-w); min-width: var(--sidebar-w);
   height: 100vh;
-  background: #060910; /* Darker premium obsidian shade */
+  background: #111520; /* Softer, eye-comfortable sidebar background instead of pitch black */
   border-right: 1px solid var(--border);
   display: flex; flex-direction: column;
   overflow: hidden; position: relative; z-index: 100; flex-shrink: 0;
@@ -387,7 +387,7 @@ select.form-control { cursor: pointer; }
 /* ── MODALS (Premium Blur Backdrop) ── */
 .modal-overlay {
   position: fixed; inset: 0; z-index: 1000;
-  background: rgba(4, 6, 12, 0.75); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  background: rgba(18, 22, 32, 0.75); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
   display: flex; align-items: center; justify-content: center;
   padding: 24px; animation: fadeIn 0.2s ease;
 }
