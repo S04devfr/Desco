@@ -941,8 +941,8 @@ function renderProfitTable() {
   }
 
   const filteredDeals = profitDeals.filter(d => {
-    // Show only won deals or deals that have positive paid amount to represent sales!
-    if (d.paidAmount <= 0 && d.status !== 'won') return false;
+    // Only show fully paid deals (representing settled sales)
+    if (d.amount - d.paidAmount > 0) return false;
     
     if (start && end) {
       const dDate = new Date(d.createdAt);
