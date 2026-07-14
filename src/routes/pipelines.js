@@ -72,9 +72,13 @@ router.patch('/:id', async (req, res, next) => {
     if (name        !== undefined) data.name        = name.trim()
     if (description !== undefined) data.description = description ? description.trim() : null
     if (color       !== undefined) data.color       = color
-    if (isDefault) {
-      await prisma.pipeline.updateMany({ where: { id: { not: id } }, data: { isDefault: false } })
-      data.isDefault = true
+    if (isDefault !== undefined) {
+      if (isDefault) {
+        await prisma.pipeline.updateMany({ where: { id: { not: id } }, data: { isDefault: false } })
+        data.isDefault = true
+      } else {
+        data.isDefault = false
+      }
     }
     const p = await prisma.pipeline.update({
       where: { id }, data,

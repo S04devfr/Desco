@@ -104,7 +104,17 @@ router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => 
 // Delete client
 router.delete('/:id', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
-    await prisma.client.delete({ where: { id: Number(req.params.id) } })
+    const clientId = Number(req.params.id);
+
+    // Avval tegishli sdelkalar borligini tekshirish
+    const dealCount = await prisma.deal.count({ where: { clientId } });
+    if (dealCount > 0) {
+      return res.status(400).json({
+        message: `Bu mijozga ${dealCount} ta sdelka biriktirilgan. Avval sdelkalarni o'chiring yoki boshqa mijozga o'tkazing.`
+      });
+    }
+
+    await prisma.client.delete({ where: { id: clientId } })
     res.json({ message: 'Mijoz o\'chirildi' })
   } catch (error) {
     if (error.code === 'P2025') return res.status(404).json({ message: 'Mijoz topilmadi' })

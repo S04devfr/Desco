@@ -18,11 +18,13 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  deals       Deal[]
-  tasks       Task[]
-  expenses    Expense[]
-  clients     Client[]
-  activities  ActivityLog[]
+  deals          Deal[]
+  tasks          Task[]
+  expenses       Expense[]
+  clients        Client[]
+  activities     ActivityLog[]
+  managerSalary  ManagerSalary?
+  managerFines   ManagerFine[]
 }
 
 model Client {
@@ -105,15 +107,41 @@ model Deal {
   pipelineId Int?
   pipeline   Pipeline? @relation(fields: [pipelineId], references: [id])
 
-  tasks      Task[]
-  activities ActivityLog[]
+  tasks        Task[]
+  activities   ActivityLog[]
   installments Installment[]
-
+  deliveryLog  DeliveryLog?
   warehouse        String?
   stockDecremented Boolean   @default(false)
 
   @@index([stageId])
   @@index([managerId])
+}
+
+// ── YETKAZIB BERISH KUZATUVI ──
+model DeliveryLog {
+  id            Int       @id @default(autoincrement())
+  dealId        Int       @unique
+  deal          Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  shopirName    String?
+  dispatchDate  DateTime  @default(now())
+  deliveredDate DateTime?
+  destination   String?
+
+  status        String    @default("dispatched")    // dispatched | delivered | returned | cancelled
+  paymentStatus String    @default("unpaid")        // unpaid | partial | paid
+  collectedAmount Float   @default(0)
+  paymentNotes  String?
+
+  updatedBy     String?
+  notes         String?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([status])
+  @@index([paymentStatus])
 }
 
 model ActivityLog {
@@ -264,3 +292,35 @@ model WarehouseLog {
   userName    String?
   createdAt   DateTime @default(now())
 }
+
+// ── MARKETING & TARGET ──
+model MarketingLog {
+  id        Int      @id @default(autoincrement())
+  date      DateTime
+  channel   String   // instagram, facebook, google, tiktok, other
+  campaign  String?  // kampaniya nomi / reklamasi
+  spent     Float    @default(0)
+  leads     Int      @default(0)
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ── HODIMLAR OYLIK ──
+model ManagerSalary {
+  id         Int   @id @default(autoincrement())
+  managerId  Int   @unique
+  baseSalary Float @default(0)
+  manager    User  @relation(fields: [managerId], references: [id])
+}
+
+model ManagerFine {
+  id        Int      @id @default(autoincrement())
+  managerId Int
+  amount    Float    @default(0)
+  reason    String?
+  month     String   // "2025-01"
+  createdAt DateTime @default(now())
+  manager   User     @relation(fields: [managerId], references: [id])
+}
+

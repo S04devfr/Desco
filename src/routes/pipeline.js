@@ -68,11 +68,16 @@ router.delete('/:id', async (req, res, next) => {
 router.post('/reorder', async (req, res, next) => {
   try {
     const { ids } = req.body
-    if (!Array.isArray(ids)) return res.status(400).json({ message: 'ids array kerak' })
+    if (!Array.isArray(ids) || !ids.length) return res.status(400).json({ message: 'ids array kerak' })
     await Promise.all(ids.map((id, i) =>
       prisma.pipelineStage.update({ where: { id: Number(id) }, data: { order: i + 1 } })
     ))
-    const pipelineId = await getDefaultPipelineId()
+    // Reorder qilingan stage'ning haqiqiy pipelineId ini olamiz
+    const firstStage = await prisma.pipelineStage.findUnique({
+      where: { id: Number(ids[0]) },
+      select: { pipelineId: true }
+    })
+    const pipelineId = firstStage?.pipelineId ?? await getDefaultPipelineId()
     res.json(await getStages(pipelineId))
   } catch (err) { next(err) }
 })

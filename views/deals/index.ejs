@@ -1301,8 +1301,14 @@ async function onDrop(e, stageId) {
     Object.assign(deal, updated);
     _toast('Bosqich o\'zgartirildi', 'success');
 
-    // Avtomatizatsiya: Vazifalar bosqichiga o'tganda avtomatik Vazifa yaratish
+    // Avtomatizatsiya: Bosqich bo'yicha maxsus amallar
     const targetStage = _stages.find(s => s.id === newStageId);
+
+    // Nasiya Desco: muddatli to'lov modal
+    if (targetStage && /nasiya.?desco/i.test(targetStage.name)) {
+      openNasiyaDescoModal(deal);
+    }
+
     if (targetStage && targetStage.name && targetStage.name.toLowerCase() === 'vazifalar') {
       const clientInfo = deal.client ? (deal.client.name + ' ' + (deal.client.phone || '')).trim() : "Mijoz noma'lum";
       const desc = 'Mahsulot: ' + (deal.productName || deal.name || 'Noma\'lum') + '\\nMijoz: ' + clientInfo;
@@ -1912,6 +1918,14 @@ async function moveDeal(dealId, stageId) {
     }
     
     _toast('Bosqich o\'zgartirildi', 'success');
+
+    // Nasiya Desco: muddatli to'lov modal
+    const tStage = _stages.find(s => s.id === Number(stageId));
+    if (tStage && /nasiya.?desco/i.test(tStage.name)) {
+      const deal = _deals.find(d => d.id === dealId);
+      if (deal) openNasiyaDescoModal(deal);
+    }
+
     closeDetail();
   } catch(e) { _toast(e.message, 'error'); }
 }
@@ -2190,5 +2204,171 @@ function updateLiveClock() {
 setInterval(updateLiveClock, 1000);
 updateLiveClock(); // initial call
 // ───────────────────────────────────────────────────────────────
+
+// ── Nasiya Desco: Muddatli to'lov modal (Kanban trigger) ──────
+let _ndDeal = null;
+
+function openNasiyaDescoModal(deal) {
+  _ndDeal = deal;
+  const m = document.getElementById('ndModal');
+  if (!m) return;
+
+  document.getElementById('ndClientName').textContent = deal.client?.name || "Noma'lum";
+  document.getElementById('ndClientPhone').textContent = deal.client?.phone || '—';
+  document.getElementById('ndProduct').textContent = deal.productName || '—';
+  document.getElementById('ndTotal').textContent = Number(deal.amount || 0).toLocaleString() + ' so\'m';
+  document.getElementById('ndMonths').value = '';
+  document.getElementById('ndMonthly').value = '';
+  document.getElementById('ndStartDate').value = new Date().toISOString().slice(0,10);
+  document.getElementById('ndDownPayment').value = '';
+  document.getElementById('ndNotes').value = deal.notes || '';
+  document.getElementById('ndSchedulePreview').style.display = 'none';
+
+  // Auto-fill if installments exist
+  if (deal.installments && deal.installments.length > 0) {
+    const insts = deal.installments;
+    document.getElementById('ndMonths').value = insts.length;
+    document.getElementById('ndMonthly').value = insts[0]?.amount || '';
+    if (insts[0]?.dueDate) document.getElementById('ndStartDate').value = insts[0].dueDate.slice(0,10);
+    ndUpdatePreview();
+  }
+
+  m.style.display = 'flex';
+}
+
+function closeNdModal() {
+  document.getElementById('ndModal').style.display = 'none';
+  _ndDeal = null;
+}
+
+function ndCalcMonthly() {
+  const months = parseInt(document.getElementById('ndMonths').value) || 0;
+  const total = _ndDeal?.amount || 0;
+  const down = parseFloat(document.getElementById('ndDownPayment').value) || 0;
+  if (months > 0 && total > 0) {
+    document.getElementById('ndMonthly').value = Math.ceil((total - down) / months);
+  }
+  ndUpdatePreview();
+}
+
+function ndUpdatePreview() {
+  const months = parseInt(document.getElementById('ndMonths').value) || 0;
+  const monthly = parseFloat(document.getElementById('ndMonthly').value) || 0;
+  const startStr = document.getElementById('ndStartDate').value;
+  const preview = document.getElementById('ndSchedulePreview');
+  const tbody = document.getElementById('ndScheduleBody');
+  if (!months || !monthly || !startStr) { preview.style.display = 'none'; return; }
+  preview.style.display = 'block';
+  const start = new Date(startStr);
+  let rows = '';
+  for (let i = 0; i < Math.min(months, 24); i++) {
+    const d = new Date(start); d.setMonth(d.getMonth() + i);
+    rows += `<tr><td style="padding:5px 10px;border-bottom:1px solid var(--border-light);">${d.toLocaleDateString('uz-UZ',{day:'2-digit',month:'2-digit',year:'2-digit'})}</td><td style="padding:5px 10px;border-bottom:1px solid var(--border-light);text-align:right;font-weight:600;">${Number(monthly).toLocaleString()} so'm</td></tr>`;
+  }
+  tbody.innerHTML = rows;
+}
+
+async function saveNdInstallments() {
+  if (!_ndDeal) return;
+  const months = parseInt(document.getElementById('ndMonths').value) || 0;
+  const monthly = parseFloat(document.getElementById('ndMonthly').value) || 0;
+  const startStr = document.getElementById('ndStartDate').value;
+  const down = parseFloat(document.getElementById('ndDownPayment').value) || 0;
+  const notes = document.getElementById('ndNotes').value.trim();
+
+  if (!months || !monthly || !startStr) { _toast('Necha oy va oylik to\'lovni kiriting', 'error'); return; }
+
+  const btn = document.getElementById('ndSaveBtn');
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+  try {
+    const start = new Date(startStr);
+    const installments = [];
+    if (down > 0) {
+      installments.push({ productName: _ndDeal.productName || '', month: 'Boshlang\'ich', amount: down, paid: false, dueDate: start.toISOString() });
+    }
+    for (let i = 0; i < months; i++) {
+      const d = new Date(start); d.setMonth(d.getMonth() + i);
+      installments.push({ productName: _ndDeal.productName || '', month: `${i+1}-oy`, amount: monthly, paid: false, dueDate: d.toISOString(), notes: i === 0 ? notes : '' });
+    }
+
+    await apiFetch('/api/deals/' + _ndDeal.id + '/installments', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ installments })
+    });
+    if (notes) {
+      await apiFetch('/api/deals/' + _ndDeal.id, {
+        method: 'PATCH', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ notes })
+      });
+    }
+    closeNdModal();
+    _toast('Muddatli to\'lov jadvali saqlandi!', 'success');
+  } catch(e) {
+    _toast('Xatolik: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Saqlash';
+  }
+}
   </script>
+
+<!-- Nasiya Desco Modal -->
+<div id="ndModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeNdModal()">
+  <div class="modal-dialog" style="max-width:500px;">
+    <div class="modal-header">
+      <h3 class="modal-title"><i class="fas fa-calendar-alt text-brand"></i> Nasiya Desco — Muddatli to'lov</h3>
+      <button class="modal-close" onclick="closeNdModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" style="padding:20px; display:flex; flex-direction:column; gap:14px;">
+      <div style="background:var(--surface-input); border:1px solid var(--border); border-radius:10px; padding:12px 16px;">
+        <div style="font-weight:600; font-size:14px;" id="ndClientName">—</div>
+        <div style="font-size:12px; color:var(--text-500);" id="ndClientPhone">—</div>
+        <div style="font-size:12px; color:var(--text-500); margin-top:4px;">
+          <span id="ndProduct" style="font-weight:500; color:var(--text-700)">—</span> &nbsp;|&nbsp;
+          Jami: <span id="ndTotal" style="font-weight:600; color:var(--brand)">—</span>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label class="form-label">Necha oyga <span style="color:red">*</span></label>
+          <input type="number" id="ndMonths" class="form-control" placeholder="12" min="1" max="60" oninput="ndCalcMonthly()">
+        </div>
+        <div>
+          <label class="form-label">Oylik to'lov (so'm)</label>
+          <input type="number" id="ndMonthly" class="form-control" placeholder="0" oninput="ndUpdatePreview()">
+        </div>
+        <div>
+          <label class="form-label">Boshlash sanasi</label>
+          <input type="date" id="ndStartDate" class="form-control" oninput="ndUpdatePreview()">
+        </div>
+        <div>
+          <label class="form-label">Boshlang'ich to'lov</label>
+          <input type="number" id="ndDownPayment" class="form-control" placeholder="0" oninput="ndCalcMonthly()">
+        </div>
+      </div>
+      <div>
+        <label class="form-label">Izoh</label>
+        <input type="text" id="ndNotes" class="form-control" placeholder="Qo'shimcha ma'lumot...">
+      </div>
+      <div id="ndSchedulePreview" style="display:none;">
+        <div style="font-size:12px; font-weight:600; color:var(--text-500); margin-bottom:6px; text-transform:uppercase; letter-spacing:.5px;">To'lov jadvali</div>
+        <div style="max-height:150px; overflow-y:auto; border:1px solid var(--border); border-radius:8px;">
+          <table style="width:100%; font-size:12px; border-collapse:collapse;">
+            <thead><tr style="background:var(--surface-input);">
+              <th style="padding:6px 10px; text-align:left; border-bottom:1px solid var(--border);">Sana</th>
+              <th style="padding:6px 10px; text-align:right; border-bottom:1px solid var(--border);">Summa</th>
+            </tr></thead>
+            <tbody id="ndScheduleBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeNdModal()">Keyinroq</button>
+      <button class="btn btn-primary" id="ndSaveBtn" onclick="saveNdInstallments()">
+        <i class="fas fa-save"></i> Saqlash
+      </button>
+    </div>
+  </div>
+</div>
   <%- include('../layouts/footer') %>

@@ -61,7 +61,7 @@ async function runMigrations(prisma) {
         const stageExists = await prisma.pipelineStage.findFirst({
           where: {
             pipelineId: pipeline.id,
-            name: { equals: ns.name, mode: 'insensitive' }
+            name: ns.name
           }
         })
         if (!stageExists) {
@@ -112,6 +112,106 @@ async function runMigrations(prisma) {
       console.log('✅ Admin user mavjud')
     }
   } catch (e) { console.log('ℹ️  Admin user:', e.message?.slice(0, 80)) }
+
+  // 5. Zakazlar Holati Pipeline — to'g'ri delivery bosqichlari bilan
+  try {
+    const DLV_STAGES = [
+      { name: 'Qabul qilindi',     color: '#1565C0', order: 1 },
+      { name: 'Tayyorlanmoqda',    color: '#6A1B9A', order: 2 },
+      { name: "Yo'lga chiqdi",     color: '#E65100', order: 3 },
+      { name: 'Yetib bordi',       color: '#2E7D32', order: 4 },
+      { name: "To'lov kutilmoqda", color: '#C62828', order: 5 },
+      { name: "To'lov olindi",     color: '#00796B', order: 6 },
+    ]
+    const DLV_NAMES = DLV_STAGES.map(s => s.name)
+
+    // "zakaz" so'zini o'z ichiga olgan har qanday nomli pipeline
+    let dlvPipeline = await prisma.pipeline.findFirst({
+      where: { name: { contains: 'zakaz' } },
+      include: { stages: { orderBy: { order: 'asc' } } }
+    })
+
+    if (!dlvPipeline) {
+      dlvPipeline = await prisma.pipeline.create({
+        data: { name: 'Zakazlar Holati', isDefault: false, color: '#FF9500', order: 2 }
+      })
+      dlvPipeline.stages = []
+      console.log('✅ Zakazlar Holati pipeline yaratildi')
+    }
+
+    const existingNames = (dlvPipeline.stages || []).map(s => s.name)
+    const hasWrongStages = existingNames.some(n => !DLV_NAMES.includes(n))
+
+    if (hasWrongStages) {
+      // Noto'g'ri stages (default Yangi/Muzokaralar...) o'chirib to'g'rilarini qo'yamiz
+      await prisma.pipelineStage.deleteMany({ where: { pipelineId: dlvPipeline.id } })
+      for (const s of DLV_STAGES) {
+        await prisma.pipelineStage.create({ data: { ...s, pipelineId: dlvPipeline.id } })
+      }
+      console.log('✅ Zakazlar Holati bosqichlari tuzatildi')
+    } else if (existingNames.length < DLV_STAGES.length) {
+      for (const s of DLV_STAGES) {
+        if (!existingNames.includes(s.name)) {
+          await prisma.pipelineStage.create({ data: { ...s, pipelineId: dlvPipeline.id } })
+        }
+      }
+      console.log('✅ Zakazlar Holati bosqichlari qo\'shildi')
+    } else {
+      console.log('✅ Zakazlar Holati bosqichlari to\'g\'ri')
+    }
+  } catch (e) { console.log('ℹ️  Zakazlar Holati pipeline:', e.message?.slice(0, 80)) }
+
+  // ── 6. ManagerSalary va ManagerFine jadvallarini tekshirish ──
+  try {
+    await prisma.managerSalary.findFirst()
+    console.log('✅ ManagerSalary jadvali mavjud')
+  } catch (e) {
+    try {
+      await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "ManagerSalary" (
+        "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        "managerId" INTEGER NOT NULL UNIQUE,
+        "baseSalary" REAL NOT NULL DEFAULT 0,
+        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "ManagerSalary_managerId_fkey" FOREIGN KEY ("managerId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+      )`)
+      await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "ManagerFine" (
+        "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        "managerId" INTEGER NOT NULL,
+        "month" TEXT NOT NULL,
+        "amount" REAL NOT NULL DEFAULT 0,
+        "reason" TEXT,
+        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "ManagerFine_managerId_fkey" FOREIGN KEY ("managerId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+      )`)
+      console.log('✅ ManagerSalary va ManagerFine jadvallari yaratildi')
+    } catch (err) { console.log('⚠️  ManagerSalary/Fine jadval:', err.message?.slice(0, 80)) }
+  }
+
+  // UserActivityLog — menejer online vaqtini kuzatish
+  try {
+    await prisma.$executeRawUnsafe(`SELECT 1 FROM "UserActivityLog" LIMIT 1`)
+    console.log('✅ UserActivityLog jadvali mavjud')
+  } catch (e) {
+    try {
+      await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "UserActivityLog" (
+        "id"           INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        "userId"       INTEGER NOT NULL,
+        "date"         TEXT NOT NULL,
+        "sessionStart" TEXT NOT NULL,
+        "lastPing"     TEXT NOT NULL,
+        "durationMin"  INTEGER NOT NULL DEFAULT 0,
+        "isActive"     INTEGER NOT NULL DEFAULT 1,
+        "createdAt"    TEXT NOT NULL,
+        "updatedAt"    TEXT NOT NULL,
+        CONSTRAINT "UAL_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+      )`)
+      await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_ual_userId_date" ON "UserActivityLog"("userId","date")`)
+      await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_ual_lastPing"    ON "UserActivityLog"("lastPing")`)
+      console.log('✅ UserActivityLog jadvali yaratildi')
+    } catch (err) { console.log('⚠️  UserActivityLog:', err.message?.slice(0, 80)) }
+  }
 
   console.log('✅ DB migration tugadi')
 }

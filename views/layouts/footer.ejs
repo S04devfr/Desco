@@ -3,5 +3,41 @@
 </div>
 <div id="toastContainer"></div>
 <script src="/js/main.js"></script>
+
+<!-- ── FAOLLIK KUZATUVI (Heartbeat) ── -->
+<script>
+(function() {
+  var PING_URL    = '/api/activity/ping';
+  var INTERVAL_MS = 2 * 60 * 1000;  // har 2 daqiqa
+  var _timer      = null;
+  var _paused     = false;
+
+  function ping() {
+    if (_paused) return;
+    fetch(PING_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin'
+    }).catch(function() {});  // xatolarni jim o'tkazamiz
+  }
+
+  // Sahifa ko'rinmasa (boshqa tab) — pause
+  document.addEventListener('visibilitychange', function() {
+    _paused = document.hidden;
+    if (!_paused) ping();  // qaytganda darhol ping
+  });
+
+  // Birinchi ping — 5 soniyadan keyin (sahifa yuklansin)
+  setTimeout(function() {
+    ping();
+    _timer = setInterval(ping, INTERVAL_MS);
+  }, 5000);
+
+  // Sahifa yopilganda to'xtatamiz
+  window.addEventListener('beforeunload', function() {
+    clearInterval(_timer);
+  });
+})();
+</script>
 </body>
 </html>

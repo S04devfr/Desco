@@ -141,11 +141,11 @@ function webhookIPWhitelist(req, res, next) {
   const isAllowed = FACEBOOK_IP_RANGES.some(cidr => isIPInCIDR(clientIP, cidr));
 
   if (!isAllowed) {
-    console.warn(`[IP Whitelist] ⚠ Ruxsatsiz IP: ${clientIP} — POST /api/webhook. Test rejimi uchun o'tkazib yuborilmoqda.`);
-    // return res.status(403).json({
-    //   error: 'Forbidden',
-    //   message: 'This IP address is not authorized to send webhook requests.'
-    // });
+    console.warn(`[IP Whitelist] ⚠ Ruxsatsiz IP: ${clientIP} — POST /api/webhook bloklandi.`);
+    return res.status(403).json({
+      error: 'Forbidden',
+      message: 'This IP address is not authorized to send webhook requests.'
+    });
   }
 
   console.log(`[IP Whitelist] ✓ Facebook IP tasdiqlandi: ${clientIP}`);

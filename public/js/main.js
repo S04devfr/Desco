@@ -7,7 +7,7 @@ function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   localStorage.setItem('crm-theme', theme);
   const icon = document.getElementById('themeIcon');
-  if (icon) icon.className = theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+  if (icon) icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
 }
 
 function toggleTheme() {

@@ -1,32 +1,32 @@
 <aside class="sidebar">
-  <div class="sidebar-logo">
-    <div class="sidebar-logo-icon" style="background: var(--accent); color: white; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); font-size: 16px;"><i class="fas fa-layer-group"></i></div>
-    <div>
-      <h1>Desco<span style="color:var(--accent)">.crm</span></h1>
-    </div>
-  </div>
 
+  <!-- Logo -->
+  <a href="/" class="sidebar-logo">
+    <div class="sidebar-logo-icon"><i class="fas fa-layer-group"></i></div>
+    <div class="sidebar-logo-text">Desco<span>.crm</span></div>
+  </a>
+
+  <!-- Navigation -->
   <nav class="sidebar-nav">
+
     <a href="/" class="<%= activePage === 'dashboard' ? 'active' : '' %>">
       <span class="nav-icon"><i class="fas fa-chart-line"></i></span>
       <span class="nav-label">Tahlil</span>
     </a>
+
     <a href="/deals" class="<%= activePage === 'deals' ? 'active' : '' %>">
       <span class="nav-icon"><i class="fas fa-handshake"></i></span>
       <span class="nav-label">Sdelkalar</span>
     </a>
 
-    <!-- Nasiya Submenu -->
-    <div class="sidebar-submenu-container" style="margin-bottom: 4px;">
+    <!-- Nasiya submenu -->
+    <div class="sidebar-submenu-container">
       <div class="sidebar-submenu-header <%= activePage.startsWith('nasiya') ? 'active' : '' %>" onclick="toggleSubmenu(this)">
         <span class="nav-icon"><i class="fas fa-wallet"></i></span>
         <span class="nav-label">Nasiya</span>
         <i class="fas fa-chevron-right arrow-icon"></i>
       </div>
       <div class="sidebar-submenu-items">
-        <a href="/nasiya/list?stage=shopir" class="sub-item <%= activePage === 'nasiya-shopir' ? 'active' : '' %>">
-          <span class="sub-dot" style="background:#3B82F6"></span> Shopirdagi pul
-        </a>
         <a href="/nasiya/list?stage=desco" class="sub-item <%= activePage === 'nasiya-desco' ? 'active' : '' %>">
           <span class="sub-dot" style="background:#10B981"></span> Nasiya Desco
         </a>
@@ -43,148 +43,91 @@
       <span class="nav-icon"><i class="fas fa-users"></i></span>
       <span class="nav-label">Mijozlar</span>
     </a>
+
     <a href="/tasks" class="<%= activePage === 'tasks' ? 'active' : '' %>">
       <span class="nav-icon"><i class="fas fa-check-circle"></i></span>
       <span class="nav-label">Vazifalar</span>
-      <span id="sidebar-task-badge" class="nav-badge" style="display: none;">0</span>
+      <span id="sidebar-task-badge" class="nav-badge hidden">0</span>
     </a>
+
     <a href="/expenses" class="<%= activePage === 'expenses' ? 'active' : '' %>">
       <span class="nav-icon"><i class="fas fa-receipt"></i></span>
       <span class="nav-label">Xarajatlar</span>
     </a>
+
     <a href="/warehouse" class="<%= activePage === 'warehouse' ? 'active' : '' %>">
       <span class="nav-icon"><i class="fas fa-warehouse"></i></span>
       <span class="nav-label">Ombor</span>
     </a>
+
     <a href="/instagram" class="<%= activePage === 'instagram' ? 'active' : '' %>">
       <span class="nav-icon"><i class="fab fa-instagram" style="color:#E1306C"></i></span>
       <span class="nav-label">Instagram</span>
     </a>
-    
-    <!-- Qo'shimcha Submenu -->
-    <div class="sidebar-submenu-container" style="margin-bottom: 4px;">
+
+    <!-- Qo'shimcha submenu -->
+    <div class="sidebar-submenu-container">
       <div class="sidebar-submenu-header <%= activePage.startsWith('extra') ? 'active' : '' %>" onclick="toggleSubmenu(this)">
         <span class="nav-icon"><i class="fas fa-plus-circle"></i></span>
         <span class="nav-label">Qo'shimcha</span>
         <i class="fas fa-chevron-right arrow-icon"></i>
       </div>
       <div class="sidebar-submenu-items">
-        <a href="/extra/drivers" class="sub-item <%= activePage === 'extra-drivers' ? 'active' : '' %>">
+        <a href="/extra/drivers"  class="sub-item <%= activePage === 'extra-drivers'   ? 'active' : '' %>">
           <span class="sub-dot" style="background:#6366F1"></span> Shopirlar
         </a>
-        <a href="/extra/branches" class="sub-item <%= activePage === 'extra-branches' ? 'active' : '' %>">
+        <a href="/extra/branches" class="sub-item <%= activePage === 'extra-branches'  ? 'active' : '' %>">
           <span class="sub-dot" style="background:#A855F7"></span> Ishonch filiallari
         </a>
       </div>
     </div>
 
-    <div class="nav-divider" style="height: 1px; background: var(--border); margin: 12px 0;"></div>
-    
+    <div class="nav-divider"></div>
+
     <a href="/ai" class="<%= activePage === 'ai' ? 'active' : '' %>">
-      <span class="nav-icon"><i class="fas fa-robot" style="color: var(--accent);"></i></span>
+      <span class="nav-icon"><i class="fas fa-robot" style="color:var(--brand)"></i></span>
       <span class="nav-label">Desco AI</span>
     </a>
+
     <a href="/settings" class="<%= activePage === 'settings' ? 'active' : '' %>">
       <span class="nav-icon"><i class="fas fa-cog"></i></span>
       <span class="nav-label">Sozlamalar</span>
     </a>
+
   </nav>
 
+  <!-- Bottom user section -->
   <div class="sidebar-bottom">
-    <div class="sidebar-user">
-      <div class="sidebar-user-avatar"><%= user && user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U' %></div>
+    <div class="sidebar-user" onclick="window.location.href='/settings'">
+      <div class="sidebar-user-avatar">
+        <%= user && user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U' %>
+      </div>
       <div class="sidebar-user-info">
         <div class="name"><%= user ? user.fullName : '' %></div>
         <div class="role"><%= user && user.role === 'admin' ? 'Administrator' : 'Manager' %></div>
       </div>
     </div>
-    <button onclick="logout()" style="width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 14px; font-weight: 500; transition: var(--transition); border-radius: var(--radius-sm); margin-top: 8px;">
-      <i class="fas fa-sign-out-alt" style="width: 20px; font-size: 16px;"></i>
+    <button class="sidebar-logout-btn" onclick="logout()">
+      <span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span>
       <span>Chiqish</span>
     </button>
   </div>
-</aside>
 
-<style>
-.sidebar-submenu-header {
-  display: flex; align-items: center; gap: 12px; padding: 0 16px; height: 44px;
-  color: var(--text-secondary); cursor: pointer; font-size: 14px; font-weight: 500;
-  border-radius: var(--radius-sm); transition: var(--transition); position: relative;
-}
-.sidebar-submenu-header:hover {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-}
-.sidebar-submenu-header.active {
-  background: var(--accent);
-  color: var(--text-on-accent) !important;
-  border-left: 3px solid #818CF8;
-}
-.sidebar-submenu-header.active .nav-icon {
-  color: var(--text-on-accent) !important;
-}
-.sidebar-submenu-header .arrow-icon {
-  font-size: 10px; margin-left: auto; transition: transform 0.2s;
-}
-.sidebar-submenu-items {
-  display: none; flex-direction: column; gap: 4px; padding-left: 16px; margin-top: 4px;
-}
-.sub-item {
-  padding: 8px 12px; font-size: 13px; border-radius: var(--radius-sm);
-  display: flex; align-items: center; gap: 10px;
-  color: var(--text-secondary); text-decoration: none; transition: var(--transition);
-}
-.sub-item:hover {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-}
-.sub-item.active {
-  background: var(--accent-soft) !important;
-  color: var(--accent) !important;
-  font-weight: 600;
-}
-.sub-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-}
-.sidebar-submenu-header.open .arrow-icon {
-  transform: rotate(90deg);
-}
-.sidebar-bottom button:hover {
-  background: var(--danger-bg);
-  color: var(--danger);
-}
-.sidebar-bottom button:hover i {
-  color: var(--danger);
-}
-.nav-badge {
-  background: var(--danger); color: white; padding: 2px 6px; border-radius: var(--radius-full); font-size: 10px; font-weight: bold; margin-left: auto;
-}
-</style>
+</aside>
 
 <script>
 function toggleSubmenu(header) {
-  const container = header.parentElement;
-  const items = container.querySelector('.sidebar-submenu-items');
-  const arrow = header.querySelector('.arrow-icon');
-  
-  if (items.style.display === 'none' || !items.style.display) {
-    items.style.display = 'flex';
-    header.classList.add('open');
-  } else {
-    items.style.display = 'none';
-    header.classList.remove('open');
-  }
+  const items = header.nextElementSibling;
+  const isOpen = items.classList.contains('open');
+  items.classList.toggle('open', !isOpen);
+  header.classList.toggle('open', !isOpen);
 }
 
-// Auto-open active submenus on page load
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.sidebar-submenu-container').forEach(container => {
-    const hasActiveSub = container.querySelector('.sub-item.active');
-    if (hasActiveSub) {
-      const items = container.querySelector('.sidebar-submenu-items');
-      const header = container.querySelector('.sidebar-submenu-header');
-      if (items) items.style.display = 'flex';
-      if (header) header.classList.add('open');
+    if (container.querySelector('.sub-item.active')) {
+      container.querySelector('.sidebar-submenu-items')?.classList.add('open');
+      container.querySelector('.sidebar-submenu-header')?.classList.add('open');
     }
   });
 });

@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const prisma = require('../config/database');
-const { requireRole } = require('../middleware/auth');
+const { protect, requireRole } = require('../middleware/auth');
+
+// Barcha warehouse endpointlari autentifikatsiya talab qiladi
+router.use(protect);
 
 // ── GET /api/warehouse — Barcha mahsulotlarni omborlar kesimida olish ──
 router.get('/', requireRole('admin', 'manager'), async (req, res) => {
@@ -15,31 +18,32 @@ router.get('/', requireRole('admin', 'manager'), async (req, res) => {
       })
     ]);
 
-    // Mahsulotlar ro'yxatini yaratish (ProductCatalog + WarehouseStock)
+    // Barcha ombor nomlarini dinamik aniqlash (hardcode yo'q)
+    const allWarehouses = [...new Set(stocks.map(s => s.warehouse))].sort();
+
     const stockMap = {};
     stocks.forEach(s => {
       if (!stockMap[s.productName]) {
-        stockMap[s.productName] = { toshkent: 0, qoqon: 0 };
+        stockMap[s.productName] = {};
+        allWarehouses.forEach(w => { stockMap[s.productName][w] = 0; });
       }
-      if (s.warehouse === 'Toshkent') stockMap[s.productName].toshkent = s.stock;
-      if (s.warehouse === "Qo'qon") stockMap[s.productName].qoqon = s.stock;
+      stockMap[s.productName][s.warehouse] = s.stock;
     });
 
     // ProductCatalog'dan kelgan mahsulotlarni ham qo'shish
     products.forEach(p => {
       if (!stockMap[p.name]) {
-        stockMap[p.name] = { toshkent: 0, qoqon: 0 };
+        stockMap[p.name] = {};
+        allWarehouses.forEach(w => { stockMap[p.name][w] = 0; });
       }
     });
 
-    const inventory = Object.entries(stockMap).map(([name, data]) => ({
-      productName: name,
-      toshkent: data.toshkent,
-      qoqon: data.qoqon,
-      total: data.toshkent + data.qoqon
-    })).sort((a, b) => a.productName.localeCompare(b.productName));
+    const inventory = Object.entries(stockMap).map(([name, warehouseData]) => {
+      const total = Object.values(warehouseData).reduce((s, v) => s + (v || 0), 0);
+      return { productName: name, warehouses: warehouseData, total };
+    }).sort((a, b) => a.productName.localeCompare(b.productName));
 
-    res.json({ inventory, logs });
+    res.json({ inventory, logs, warehouses: allWarehouses });
   } catch (err) {
     console.error('[Warehouse GET]', err);
     res.status(500).json({ message: err.message });
@@ -50,21 +54,22 @@ router.get('/', requireRole('admin', 'manager'), async (req, res) => {
 router.post('/fill', requireRole('admin', 'manager'), async (req, res) => {
   try {
     const { warehouse, productName, qty, notes } = req.body;
-    if (!warehouse || !productName || !qty || qty <= 0) {
-      return res.status(400).json({ message: "Ombor, mahsulot va miqdor majburiy" });
+    const parsedQty = parseInt(qty);
+    if (!warehouse || !productName || isNaN(parsedQty) || parsedQty <= 0) {
+      return res.status(400).json({ message: "Ombor, mahsulot va to'g'ri miqdor majburiy" });
     }
 
     await prisma.warehouseStock.upsert({
       where: { warehouse_productName: { warehouse, productName } },
       update: { stock: { increment: parseInt(qty) } },
-      create: { warehouse, productName, stock: parseInt(qty) }
+      create: { warehouse, productName, stock: parsedQty }
     });
 
     await prisma.warehouseLog.create({
       data: {
         warehouse,
         productName,
-        changeQty: parseInt(qty),
+        changeQty: parsedQty,
         action: 'fill',
         notes: notes || null,
         userName: req.session?.user?.fullName || null

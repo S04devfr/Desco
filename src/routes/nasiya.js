@@ -11,17 +11,10 @@ router.get('/list-deals', async (req, res, next) => {
     const { stage } = req.query;
     if (!stage) return res.status(400).json({ message: 'Stage parametru majburiy' });
 
-    // Map stages that contain key terms
-    // E.g. "shopir" matches "Shopirdagi pul"
-    const stages = await prisma.pipelineStage.findMany({
-      where: {
-        name: {
-          contains: stage,
-          mode: 'insensitive'
-        }
-      },
-      select: { id: true }
-    });
+    // SQLite case-insensitive uchun LOWER() orqali qidiramiz
+    const allStages = await prisma.pipelineStage.findMany({ select: { id: true, name: true } });
+    const stageLow = stage.toLowerCase();
+    const stages = allStages.filter(s => s.name.toLowerCase().includes(stageLow));
 
     const stageIds = stages.map(s => s.id);
 
@@ -49,11 +42,15 @@ router.get('/list-deals', async (req, res, next) => {
 router.post('/quick-add', async (req, res, next) => {
   try {
     const { stage, clientName, clientPhone, productName, amount } = req.body;
-    
+
+    // Input validatsiya
+    if (!stage || typeof stage !== 'string') return res.status(400).json({ message: 'Bosqich (stage) majburiy' });
+    if (!clientName || !clientName.trim()) return res.status(400).json({ message: 'Mijoz ismi majburiy' });
+    if (!clientPhone || !clientPhone.trim()) return res.status(400).json({ message: 'Mijoz telefoni majburiy' });
+
     // Find the stage
-    const stageRecord = await prisma.pipelineStage.findFirst({
-      where: { name: { contains: stage, mode: 'insensitive' } }
-    });
+    const allSt = await prisma.pipelineStage.findMany({ select: { id: true, name: true, pipelineId: true } });
+    const stageRecord = allSt.find(s => s.name.toLowerCase().includes(stage.toLowerCase()));
     
     if (!stageRecord) return res.status(400).json({ message: "Bosqich topilmadi" });
 
@@ -74,7 +71,7 @@ router.post('/quick-add', async (req, res, next) => {
         clientId: client.id,
         stageId: stageRecord.id,
         pipelineId: stageRecord.pipelineId,
-        managerId: req.userId
+        managerId: typeof req.userId === 'number' ? req.userId : null
       }
     });
 

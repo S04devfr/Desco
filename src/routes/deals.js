@@ -1,24 +1,12 @@
-const express = require('express')
+const express = require('express') // v2 fixed
 const prisma = require('../config/database')
 const { protect, requireRole } = require('../middleware/auth')
 
 const router = express.Router()
 
-router.get('/fix-unclaim', async (req, res) => {
-  try {
-    const stages = await prisma.pipelineStage.findMany({ where: { name: { contains: 'Yangi', mode: 'insensitive' } } });
-    const stageIds = stages.map(s => s.id);
-    const result = await prisma.deal.updateMany({
-      where: { managerId: { not: null }, stageId: { in: stageIds } },
-      data: { managerId: null }
-    });
-    res.json({ message: 'Success', count: result.count });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
 router.use(protect)
+
+// NOTE: /fix-unclaim o'chirildi — autentifikatsiyasiz ishlayotgan xavfli debug script edi
 
 
 
@@ -488,10 +476,8 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
         
         // Automation: Nasiya
         if (newStage && newStage.name.toLowerCase().includes('nasiya')) {
-          const nasiyaPipeline = await tx.pipeline.findFirst({
-            where: { name: { contains: 'nasiya', mode: 'insensitive' } },
-            include: { stages: { orderBy: { order: 'asc' } } }
-          });
+          const allPipelines = await tx.pipeline.findMany({ include: { stages: { orderBy: { order: 'asc' } } } });
+          const nasiyaPipeline = allPipelines.find(p => p.name.toLowerCase().includes('nasiya'));
           if (nasiyaPipeline && nasiyaPipeline.stages.length > 0 && nasiyaPipeline.id !== txDeal.pipelineId) {
             finalStageId = nasiyaPipeline.stages[0].id;
             finalPipelineId = nasiyaPipeline.id;
@@ -552,11 +538,11 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
         }
       }
 
-      const broadcast = req.app.get('broadcast');
-      if (broadcast) broadcast({ type: 'deal_updated', dealId: updated.id, deal: updated });
-
       return updated
     })
+    // Transaction muvaffaqiyatli bo'lgandan KEYIN broadcast (rollback da yolg'on event chiqmasligi uchun)
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) broadcast({ type: 'deal_updated', dealId: deal.id, deal });
     // ── WAREHOUSE STOCK DECREMENT / ROLLBACK (Stage change) ──
     try {
       const NON_SHIP_KEYWORDS = ['yangi', 'muzokara', 'taklif', 'kutish', 'qayta aloqa', 'negativ', 'rad', 'otkaz', 'lost', 'fail', "yo'qotilgan"];

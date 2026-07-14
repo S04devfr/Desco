@@ -15,18 +15,34 @@ const prisma = require('../config/database');
  */
 async function ensureAuditTable() {
   try {
-    await prisma.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS "audit_logs" (
-        "id"         SERIAL PRIMARY KEY,
-        "action"     VARCHAR(100) NOT NULL,
-        "details"    TEXT,
-        "userId"     INTEGER,
-        "userEmail"  VARCHAR(255),
-        "ipAddress"  VARCHAR(50),
-        "userAgent"  VARCHAR(500),
-        "createdAt"  TIMESTAMP DEFAULT NOW()
-      );
-    `);
+    const isSQLite = process.env.DATABASE_URL && (process.env.DATABASE_URL.includes('.db') || process.env.DATABASE_URL.startsWith('file:'));
+    if (isSQLite) {
+      await prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS "audit_logs" (
+          "id"         INTEGER PRIMARY KEY AUTOINCREMENT,
+          "action"     VARCHAR(100) NOT NULL,
+          "details"    TEXT,
+          "userId"     INTEGER,
+          "userEmail"  VARCHAR(255),
+          "ipAddress"  VARCHAR(50),
+          "userAgent"  VARCHAR(500),
+          "createdAt"  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+    } else {
+      await prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS "audit_logs" (
+          "id"         SERIAL PRIMARY KEY,
+          "action"     VARCHAR(100) NOT NULL,
+          "details"    TEXT,
+          "userId"     INTEGER,
+          "userEmail"  VARCHAR(255),
+          "ipAddress"  VARCHAR(50),
+          "userAgent"  VARCHAR(500),
+          "createdAt"  TIMESTAMP DEFAULT NOW()
+        );
+      `);
+    }
     console.log('[Audit] ✓ audit_logs jadvali tayyor');
   } catch (err) {
     console.warn('[Audit] Jadval yaratishda xato (muhim emas):', err.message);
@@ -49,16 +65,31 @@ async function logAudit(action, details = '', userId = null, userEmail = null, i
     const safeDetails = details ? String(details).substring(0, 2000) : '';
     const safeAgent = userAgent ? String(userAgent).substring(0, 500) : '';
 
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO "audit_logs" ("action", "details", "userId", "userEmail", "ipAddress", "userAgent")
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      action,
-      safeDetails,
-      userId,
-      userEmail,
-      ipAddress || '',
-      safeAgent
-    );
+    const isSQLite = process.env.DATABASE_URL && (process.env.DATABASE_URL.includes('.db') || process.env.DATABASE_URL.startsWith('file:'));
+
+    if (isSQLite) {
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "audit_logs" ("action", "details", "userId", "userEmail", "ipAddress", "userAgent")
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        action,
+        safeDetails,
+        userId,
+        userEmail,
+        ipAddress || '',
+        safeAgent
+      );
+    } else {
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "audit_logs" ("action", "details", "userId", "userEmail", "ipAddress", "userAgent")
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        action,
+        safeDetails,
+        userId,
+        userEmail,
+        ipAddress || '',
+        safeAgent
+      );
+    }
   } catch (err) {
     // Audit log xatosi tizimni to'xtatmasligi kerak
     console.warn(`[Audit] Log yozishda xato: ${err.message}`);

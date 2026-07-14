@@ -12,11 +12,12 @@ async function enrichWithClient(tasks) {
   try {
     const ids = tasks.map(t => t.id)
     if (!ids.length) return tasks
-    const ph = ids.map((_, idx) => `$${idx + 1}`).join(',')
+    // SQLite uchun ? placeholder (PostgreSQL $n emas)
+    const ph = ids.map(() => '?').join(',')
     const rows = await prisma.$queryRawUnsafe(
       `SELECT t.id as "taskId", t."clientId" as "clientId", c.name as "clientName", c.company as "clientCompany", c.phone as "clientPhone", c.city as "clientCity",
               t."dealId" as "dealId", d."clientId" as "dealClientId", dc.name as "dealClientName", dc.company as "dealClientCompany", dc.phone as "dealClientPhone", dc.city as "dealClientCity"
-       FROM "Task" t 
+       FROM "Task" t
        LEFT JOIN "Client" c ON t."clientId" = c.id
        LEFT JOIN "Deal" d ON t."dealId" = d.id
        LEFT JOIN "Client" dc ON d."clientId" = dc.id
@@ -57,7 +58,7 @@ router.get('/', async (req, res) => {
     if (priority) where.priority = priority
     if (dealId) where.dealId = Number(dealId)
 
-    const tasks = await prisma.task?.findMany?.({
+    const tasks = await prisma.task.findMany({
       where,
       include: {
         assignedTo: userSelect,
@@ -113,15 +114,15 @@ router.post('/', async (req, res, next) => {
         dueTime: dueTime || null,
         priority: priority || 'medium',
         dealId: dealId ? Number(dealId) : null,
-        assignedToId: assignedToId ? Number(assignedToId) : req.userId
+        assignedToId: assignedToId ? Number(assignedToId) : (typeof req.userId === 'number' ? req.userId : null)
       },
       include: { assignedTo: userSelect, deal: { select: { id: true, productName: true } } }
     })
 
     if (clientId) {
       try {
-        await prisma.$executeRawUnsafe('UPDATE "Task" SET "clientId"=$1 WHERE id=$2', Number(clientId), task.id)
-        const cl = await prisma.$queryRawUnsafe('SELECT id, name, company FROM "Client" WHERE id=$1', Number(clientId))
+        await prisma.$executeRawUnsafe('UPDATE "Task" SET "clientId"=? WHERE id=?', Number(clientId), task.id)
+        const cl = await prisma.$queryRawUnsafe('SELECT id, name, company FROM "Client" WHERE id=?', Number(clientId))
         task.clientId = Number(clientId)
         task.client = cl[0] || null
       } catch (e) { /* ignore */ }
@@ -162,9 +163,9 @@ router.patch('/:id', async (req, res, next) => {
     if (clientId !== undefined) {
       try {
         const cid = clientId ? Number(clientId) : null
-        await prisma.$executeRawUnsafe('UPDATE "Task" SET "clientId"=$1 WHERE id=$2', cid, task.id)
+        await prisma.$executeRawUnsafe('UPDATE "Task" SET "clientId"=? WHERE id=?', cid, task.id)
         if (cid) {
-          const cl = await prisma.$queryRawUnsafe('SELECT id, name, company FROM "Client" WHERE id=$1', cid)
+          const cl = await prisma.$queryRawUnsafe('SELECT id, name, company FROM "Client" WHERE id=?', cid)
           task.clientId = cid
           task.client = cl[0] || null
         } else {

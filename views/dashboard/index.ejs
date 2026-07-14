@@ -3,151 +3,17 @@
   activePage: 'dashboard',
   user: user}) %>
 
-<style>
-/* Stats card enhancements */
-.stat-card.clickable {
-  cursor: pointer;
-  position: relative;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.stat-card.clickable:hover {
-  transform: translateY(-4px);
-  border-color: var(--accent);
-  box-shadow: var(--shadow-hover);
-}
-.stat-card.clickable::after {
-  content: "\f304";
-  font-family: "Font Awesome 5 Free";
-  font-weight: 900;
-  position: absolute;
-  top: 10px;
-  right: 12px;
-  font-size: 10px;
-  color: var(--text-tertiary);
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-.stat-card.clickable:hover::after {
-  opacity: 1;
-}
-
-.stat-value {
-  font-size: 24px !important;
-  font-weight: 700;
-  line-height: 1.2;
-  margin-bottom: 4px;
-  display: flex;
-  align-items: baseline;
-  flex-wrap: nowrap;
-}
-.currency-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-tertiary);
-  margin-left: 5px;
-  text-transform: uppercase;
-}
-.stat-card {
-  padding: 16px 20px !important;
-  min-height: 100px;
-  display: flex;
-  align-items: center;
-}
-.stat-info {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  overflow: hidden;
-}
-.stat-label {
-  font-size: 13px;
-  margin-bottom: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.stat-sub {
-  font-size: 11px;
-  color: var(--text-tertiary);
-  white-space: nowrap;
-}
-
-/* Financial Tab Navigation */
-.financial-tab-btn {
-  border-bottom: 2px solid transparent !important;
-  color: var(--text-secondary);
-  border-radius: 0 !important;
-  font-weight: 500;
-  transition: all 0.15s;
-}
-.financial-tab-btn.active {
-  color: var(--accent) !important;
-  border-bottom: 2px solid var(--accent) !important;
-  font-weight: 600;
-}
-.fin-tab-content.hidden {
-  display: none !important;
-}
-
-/* Inline Inputs styling */
-.spreadsheet-input {
-  border: 1px solid transparent;
-  background: transparent;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
-  width: 100%;
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: all 0.15s;
-}
-.spreadsheet-input:hover {
-  background: var(--bg-primary);
-  border-color: var(--border);
-}
-.spreadsheet-input:focus {
-  background: var(--bg-secondary);
-  border-color: var(--accent);
-  outline: none;
-  box-shadow: 0 0 0 2px var(--accent-soft);
-}
-.spreadsheet-input.success {
-  border-color: var(--success) !important;
-  background-color: var(--success-bg) !important;
-}
-
-/* Installment Plan UI */
-.inst-deal-item {
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  cursor: pointer;
-  transition: all 0.15s;
-  font-size: 12.5px;
-}
-.inst-deal-item:hover {
-  background: var(--bg-tertiary);
-}
-.inst-deal-item.active {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-</style>
-
 <div class="page-header">
   <div>
-    <h1>Tahlil</h1>
+    <h1>Dashboard</h1>
     <p>Umumiy ko'rsatkichlar va statistika</p>
   </div>
-  <div class="page-header-actions" style="display:flex; align-items:center; gap:8px;">
-    <!-- Date Filter Picker -->
+  <div class="page-header-actions flex items-center gap-2 flex-wrap">
     <div id="dateRangeContainer" style="display:none; align-items:center; gap:6px;">
       <input type="date" id="startDate" class="form-control" style="width:130px;height:32px;font-size:12px;padding:0 8px;">
       <span style="font-size:12px;color:var(--text-secondary)">-</span>
       <input type="date" id="endDate" class="form-control" style="width:130px;height:32px;font-size:12px;padding:0 8px;">
     </div>
-    
     <select id="dashFilter" class="form-control" style="width:auto;display:inline-block;height:32px;font-size:13px;" onchange="onFilterChange()">
       <option value="all">Barcha vaqt</option>
       <option value="today">Bugun</option>
@@ -159,140 +25,368 @@
     <button class="btn btn-secondary btn-sm" onclick="loadDashboard()">
       <i class="fas fa-sync-alt"></i> Yangilash
     </button>
+    <a id="exportCsvBtn" href="/api/export/excel?filter=month" class="btn btn-secondary btn-sm" style="display:flex;align-items:center;gap:5px;">
+      <i class="fas fa-file-excel" style="color:#34C759"></i> Excel eksport
+    </a>
   </div>
 </div>
 
-<!-- KPI STATS -->
-<div class="stats-grid" id="kpiCards" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
-  <div class="stat-card clickable" onclick="openFinancialModal('installments')">
-    <div class="stat-icon blue"><i class="fas fa-handshake"></i></div>
-    <div class="stat-info">
-      <div class="stat-label"><%= (typeof user !== 'undefined' && user && user.role === 'admin') ? 'Jami sdelkalar' : 'Mening sdelkalarim' %></div>
-      <div class="stat-value skeleton" style="height:28px;width:60px"> </div>
-    </div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon green"><i class="fas fa-coins"></i></div>
-    <div class="stat-info">
-      <div class="stat-label"><%= (typeof user !== 'undefined' && user && user.role === 'admin') ? "Umumiy to'langan" : "Mening savdo summam" %></div>
-      <div class="stat-value skeleton" style="height:28px;width:80px"> </div>
-    </div>
-  </div>
-  
-  <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
-  <div class="stat-card clickable" onclick="openFinancialModal('client-debts')">
-    <div class="stat-icon red"><i class="fas fa-users"></i></div>
-    <div class="stat-info">
-      <div class="stat-label">Klientlardan qarz</div>
-      <div class="stat-value skeleton" style="height:28px;width:80px"> </div>
-    </div>
-  </div>
-  <div class="stat-card" style="cursor: pointer" onclick="window.location.href='/expenses'">
-    <div class="stat-icon orange"><i class="fas fa-minus-circle"></i></div>
-    <div class="stat-info">
-      <div class="stat-label">Xarajatlar</div>
-      <div class="stat-value skeleton" style="height:28px;width:80px"> </div>
-    </div>
-  </div>
-  <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')">
-    <div class="stat-icon purple"><i class="fas fa-tags"></i></div>
-    <div class="stat-info">
-      <div class="stat-label">Tan narxi</div>
-      <div class="stat-value skeleton" style="height:28px;width:80px"> </div>
-    </div>
-  </div>
-  <div class="stat-card clickable" onclick="openProfitModal()">
-    <div class="stat-icon green"><i class="fas fa-chart-line"></i></div>
-    <div class="stat-info">
-      <div class="stat-label">Sof foyda</div>
-      <div class="stat-value skeleton" style="height:28px;width:80px"> </div>
-    </div>
-  </div>
-  <% } %>
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- BO'LIM 1: TAHLIL -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="section-header">
+  <div class="section-bar brand"></div>
+  <h2 class="section-title"><i class="fas fa-chart-line text-brand"></i>Tahlil</h2>
+  <div class="section-line"></div>
 </div>
 
-<!-- CHARTS + TASKS -->
-<div class="dashboard-grid">
+<!-- QATOR 1: Asosiy moliyaviy raqamlar -->
+<div class="stats-grid mb-4" id="kpiRow1">
+  <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-spinner fa-spin"></i></div><div class="stat-info"><div class="stat-label">Yuklanmoqda...</div></div></div>
+</div>
+
+<!-- QATOR 2: Kanallar va jarayonlar -->
+<div class="stats-grid mb-6" id="kpiRow2">
+  <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-spinner fa-spin"></i></div><div class="stat-info"><div class="stat-label">Yuklanmoqda...</div></div></div>
+</div>
+
+<% const isAdmin = typeof user !== 'undefined' && user && user.role === 'admin'; %>
+
+<!-- ADVANCED METRICS GRID (FUNNEL & GEOGRAPHIC) -->
+<div class="dashboard-grid-2">
+  <!-- HubSpot style Conversion Funnel -->
   <div class="card">
-    <div class="card-header">
-      <h3><i class="fas fa-chart-bar" style="color:var(--accent);margin-right:6px"></i>Menejerlar bo'yicha savdo</h3>
+    <div class="card-header flex justify-between items-center">
+      <h3 class="section-title"><i class="fas fa-filter text-brand"></i>Savdo Voronkasi</h3>
+      <span class="badge badge-brand">Konversiya</span>
     </div>
     <div class="card-body">
-      <div class="chart-wrap">
-        <canvas id="salesChart"></canvas>
+      <div id="funnelContainer" class="funnel-container">
+        <div class="empty-state" style="padding:40px;"><div class="spinner" style="margin:auto;"></div></div>
       </div>
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-header">
-      <h3><i class="fas fa-tasks" style="color:var(--accent);margin-right:6px"></i>Bugungi vazifalar</h3>
-      <a href="/tasks" class="btn btn-ghost btn-sm" style="font-size:12px">Barchasi</a>
+  <!-- Marketing / Target Section -->
+  <div class="card" id="marketingSection">
+    <div class="card-header flex justify-between items-center">
+      <h3 class="section-title"><i class="fas fa-bullhorn text-brand"></i>Marketing va Target</h3>
+      <% if (isAdmin) { %>
+      <button class="btn btn-sm btn-primary" onclick="openMarketingModal()">
+        <i class="fas fa-plus"></i> Kunlik ma'lumot
+      </button>
+      <% } %>
     </div>
-    <div id="todayTasks" class="task-list" style="max-height: 520px; overflow-y: auto; padding-right: 4px;">
-      <div style="padding:20px;text-align:center"><div class="spinner"></div></div>
+    <!-- Marketing body — flex column ichida -->
+    <div class="mkt-inner">
+      <!-- Summary stats -->
+      <div id="marketingSummary" class="mkt-stats-row">
+        <div class="mkt-stat"><span class="mkt-stat-label">Jami xarajat</span><span class="mkt-stat-val" id="mktTotalSpent">—</span></div>
+        <div class="mkt-stat"><span class="mkt-stat-label">Jami lead</span><span class="mkt-stat-val" id="mktTotalLeads">—</span></div>
+        <div class="mkt-stat"><span class="mkt-stat-label">CPL (1 lead)</span><span class="mkt-stat-val" id="mktCpl">—</span></div>
+      </div>
+      <!-- Channel breakdown -->
+      <div id="mktChannelContainer" class="mkt-channel-row"></div>
+      <!-- Recent logs table -->
+      <div class="mkt-table-wrap">
+        <table class="deals-tbl">
+          <thead>
+            <tr>
+              <th>Sana</th>
+              <th>Kanal</th>
+              <th>Kampaniya</th>
+              <th class="tr">Xarajat</th>
+              <th class="tc">Lead</th>
+              <th class="tr">CPL</th>
+              <% if (isAdmin) { %><th></th><% } %>
+            </tr>
+          </thead>
+          <tbody id="mktLogsBody">
+            <tr><td colspan="7" class="tc" style="padding:20px;"><div class="spinner" style="margin:auto;"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- PRODUCT CHART -->
-<div class="card mt-4">
-  <div class="card-header">
-    <h3><i class="fas fa-box" style="color:var(--accent);margin-right:6px"></i>Mahsulotlar bo'yicha</h3>
-  </div>
-  <div class="card-body">
-    <div class="chart-wrap" style="height:200px">
-      <canvas id="productChart"></canvas>
+<% if (isAdmin) { %>
+<!-- ═══════════════════════════════════════════════════════
+     MENEJERLAR — SAVDO GRAFIGI + OYLIK/KPI (yonma-yon)
+════════════════════════════════════════════════════════ -->
+<div class="card mb-6" id="managerKpiSection">
+  <div class="card-header flex justify-between items-center">
+    <div class="flex items-center" style="gap:10px;">
+      <h3 class="section-title"><i class="fas fa-users-cog text-brand"></i>Menejerlar — Savdo & Oylik/KPI</h3>
+    </div>
+    <div class="mgr-formula-badge">
+      <i class="fas fa-calculator"></i>
+      Asosiy maosh &plus; (Won &times; 100 000) &minus; Jarima
     </div>
   </div>
+  <!-- Split layout: chart left | table right -->
+  <div class="mgr-split-layout">
+
+    <!-- LEFT: bar chart -->
+    <div class="mgr-chart-panel">
+      <div class="mgr-panel-label"><i class="fas fa-chart-bar"></i> Savdo hajmi (so'm)</div>
+      <div class="mgr-chart-wrap">
+        <canvas id="salesChart"></canvas>
+      </div>
+    </div>
+
+    <!-- divider -->
+    <div class="mgr-divider"></div>
+
+    <!-- RIGHT: KPI/salary table -->
+    <div class="mgr-table-panel">
+      <div class="mgr-panel-label"><i class="fas fa-calculator"></i> Oylik hisob-kitob</div>
+      <div class="mgr-table-scroll">
+        <table class="deals-tbl mgr-kpi-tbl">
+          <thead>
+            <tr>
+              <th>Menejer</th>
+              <th class="tc" style="width:60px;">Holat</th>
+              <th class="tc" style="width:72px;">Bugun</th>
+              <th class="tc">Won</th>
+              <th class="tc">Win%</th>
+              <th class="tr kpi-th-plus">+ Asosiy maosh</th>
+              <th class="tr kpi-th-plus">+ KPI bonus</th>
+              <th class="tc kpi-th-minus">− Jarima</th>
+              <th class="tr kpi-th-total">= Jami to'lov</th>
+            </tr>
+          </thead>
+          <tbody id="managerKpiTableBody">
+            <tr><td colspan="9" class="tc kpi-empty"><div class="spinner" style="margin:auto;"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Fine Modal -->
+<div id="fineModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeFineModal()">
+  <div class="modal-dialog" style="max-width:420px;">
+    <div class="modal-header flex justify-between items-center">
+      <h3><i class="fas fa-exclamation-triangle text-danger" style="margin-right:8px;"></i>Jarima qo'shish</h3>
+      <button class="modal-close" onclick="closeFineModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" style="display:flex; flex-direction:column; gap:14px;">
+      <input type="hidden" id="fineManagerId">
+      <div>
+        <label class="form-label">Menejer</label>
+        <input type="text" id="fineManagerName" class="form-control" readonly>
+      </div>
+      <div>
+        <label class="form-label">Jarima summasi (so'm)</label>
+        <input type="number" id="fineAmount" class="form-control" placeholder="100000" min="0" step="10000">
+      </div>
+      <div>
+        <label class="form-label">Sabab</label>
+        <input type="text" id="fineReason" class="form-control" placeholder="Masalan: kechikish, qoidabuzarlik...">
+      </div>
+    </div>
+    <div class="modal-footer flex justify-end gap-2">
+      <button class="btn btn-secondary" onclick="closeFineModal()">Bekor</button>
+      <button class="btn btn-danger" onclick="submitFine()"><i class="fas fa-save"></i> Saqlash</button>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<!-- CHARTS GRID: Mahsulot ulushi + Nasiya balansi -->
+<div class="dashboard-grid-2">
+  <!-- Product Trading Chart -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="section-title"><i class="fas fa-chart-pie text-brand"></i>Mahsulotlar ulushi</h3>
+      <span id="productTotalBadge" class="badge badge-info" style="font-size:11px;"></span>
+    </div>
+    <div class="card-body" style="padding:0;">
+      <div id="productEmpty" style="display:none;height:240px;align-items:center;justify-content:center;color:var(--text-tertiary);font-size:13px;flex-direction:column;gap:6px;">
+        <i class="fas fa-box-open" style="font-size:28px;opacity:.3;"></i>
+        <span>Ma'lumot yo'q</span>
+      </div>
+      <div id="productTrading" style="display:flex;flex-direction:column;">
+        <!-- Donut + center stat -->
+        <div style="position:relative;height:180px;display:flex;align-items:center;justify-content:center;padding:10px 16px 0;">
+          <canvas id="productChart"></canvas>
+          <div id="productCenter" style="position:absolute;text-align:center;pointer-events:none;">
+            <div id="productCenterPct" style="font-size:22px;font-weight:800;color:var(--text-primary);line-height:1;"></div>
+            <div id="productCenterName" style="font-size:10px;color:var(--text-secondary);margin-top:2px;max-width:80px;word-break:break-word;"></div>
+          </div>
+        </div>
+        <!-- Trading rows list -->
+        <div id="productList" style="padding:8px 14px 12px;display:flex;flex-direction:column;gap:5px;overflow-y:auto;max-height:180px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nasiya Tariffs Breakdown -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="section-title"><i class="fas fa-coins" style="color:#FF9500;"></i>Nasiya va Shopir Balansi</h3>
+    </div>
+    <div class="card-body flex-col gap-3">
+      <div id="nasiyaBreakdownContainer" style="display:flex; flex-direction:column; gap:10px;">
+        <div class="empty-state" style="padding:40px;"><div class="spinner" style="margin:auto;"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- BO'LIM 2: UMUMIY STATISTIKALAR -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="section-header mt">
+  <div class="section-bar green"></div>
+  <h2 class="section-title"><i class="fas fa-chart-pie" style="color:#34C759;"></i>Umumiy Statistikalar</h2>
+  <div class="section-line"></div>
+</div>
+
+<div class="stats-grid mb-6">
+
+  <!-- Menejerlar statistikasi -->
+  <div class="stat-card clickable" onclick="document.getElementById('managerKpiSection')?.scrollIntoView({behavior:'smooth'})">
+    <div class="stat-icon blue"><i class="fas fa-users-cog"></i></div>
+    <div class="stat-info">
+      <div class="stat-label">Menejerlar statistikasi</div>
+      <div id="statMgrTotal" class="stat-value">—</div>
+      <div id="statMgrSub" class="stat-sub">Menejerlar soni</div>
+    </div>
+  </div>
+
+  <!-- Mijozlar qiziqishi -->
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="fas fa-smile"></i></div>
+    <div class="stat-info">
+      <div class="stat-label">Mijozlar qiziqishi</div>
+      <div id="statSatisfaction" class="stat-value" style="color:#34C759;">—%</div>
+      <div id="statComplaintSub" class="stat-sub">Mamnuniyat darajasi</div>
+    </div>
+  </div>
+
+  <!-- Otkaz va chiqimlar -->
+  <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')">
+    <div class="stat-icon red"><i class="fas fa-times-circle"></i></div>
+    <div class="stat-info">
+      <div class="stat-label">Otkaz va chiqimlar</div>
+      <div id="statCanceled" class="stat-value" style="color:#FF3B30;">—</div>
+      <div id="statCanceledSub" class="stat-sub">Rad etilgan sdelkalar</div>
+    </div>
+  </div>
+
+  <!-- To'liq hisobot Excel -->
+  <div class="stat-card clickable" id="exportCard" onclick="exportCSV()" style="background:linear-gradient(135deg, rgba(52,199,89,0.06), transparent);">
+    <div class="stat-icon green"><i class="fas fa-file-excel" style="color:#34C759;"></i></div>
+    <div class="stat-info">
+      <div class="stat-label">To'liq hisobot</div>
+      <div class="stat-value" style="font-size:16px; color:#34C759;">Excel yuklab olish</div>
+      <div class="stat-sub">Barcha sdelkalar CSV formatda</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- BO'LIM 3: CRM — Tizimga tezkor kirish -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="section-header mt">
+  <div class="section-bar purple"></div>
+  <h2 class="section-title"><i class="fas fa-th-large" style="color:#5856D6;"></i>CRM — Tezkor Kirish</h2>
+  <div class="section-line"></div>
+</div>
+
+<div class="quick-nav-grid">
+
+  <a href="/deals" class="quick-nav-card">
+    <div class="card">
+      <div class="card-body" style="padding:20px; text-align:center;">
+        <div class="quick-nav-icon" style="background:rgba(79,70,229,0.1);">
+          <i class="fas fa-handshake" style="color:var(--brand);"></i>
+        </div>
+        <div class="quick-nav-title">Sdelkalar</div>
+        <div class="quick-nav-sub">Buyurtmalar va voronka</div>
+        <div id="crmDealCount" class="quick-nav-count" style="color:var(--brand);">—</div>
+      </div>
+    </div>
+  </a>
+
+  <a href="/clients" class="quick-nav-card">
+    <div class="card">
+      <div class="card-body" style="padding:20px; text-align:center;">
+        <div class="quick-nav-icon" style="background:rgba(52,199,89,0.1);">
+          <i class="fas fa-users" style="color:#34C759;"></i>
+        </div>
+        <div class="quick-nav-title">Mijozlar</div>
+        <div class="quick-nav-sub">Mijozlar va qarzlar</div>
+        <div id="crmClientCount" class="quick-nav-count" style="color:#34C759;">—</div>
+      </div>
+    </div>
+  </a>
+
+  <a href="/warehouse" class="quick-nav-card">
+    <div class="card">
+      <div class="card-body" style="padding:20px; text-align:center;">
+        <div class="quick-nav-icon" style="background:rgba(88,86,214,0.1);">
+          <i class="fas fa-warehouse" style="color:#5856D6;"></i>
+        </div>
+        <div class="quick-nav-title">Ombor</div>
+        <div class="quick-nav-sub">Mahsulotlar va zaxira</div>
+        <div id="crmWarehouseCount" class="quick-nav-count" style="color:#5856D6;">—</div>
+      </div>
+    </div>
+  </a>
+
 </div>
 
 <!-- ════════════ FINANCIAL METRICS MODAL ════════════ -->
-<div class="modal-overlay hidden" id="financialModal" style="z-index:1100">
+<div class="modal-overlay hidden" id="financialModal" style="z-index:1100;">
   <div class="modal-box" style="max-width:1100px; width:95%; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; padding:0;">
-    <div class="modal-header" style="padding:16px 20px; border-bottom:1px solid var(--border);">
-      <h2 style="display:flex; align-items:center; gap:8px;"><i class="fas fa-wallet" style="color:var(--accent)"></i> Moliyaviy Sozlamalar va Nasiya</h2>
+    <div class="modal-header">
+      <h2 class="flex items-center gap-2"><i class="fas fa-wallet text-brand"></i> Moliyaviy Sozlamalar va Nasiya</h2>
       <button class="modal-close" onclick="closeFinancialModal()">&times;</button>
     </div>
-    
+
     <!-- Tab headers -->
-    <div style="display:flex; border-bottom:1px solid var(--border); padding:0 16px; background:var(--bg-secondary); flex-shrink:0;">
-      <button class="btn financial-tab-btn active" id="tab-cost-prices-btn" onclick="switchFinTab('cost-prices')" style="border-radius:0; border:none; padding:12px 16px; background:none; font-size:13px; cursor:pointer;">
-        <i class="fas fa-tags" style="margin-right:6px"></i> Mahsulotlar Tan Narxi
+    <div class="flex" style="border-bottom:1px solid var(--border); padding:0 16px; background:var(--surface-card); flex-shrink:0;">
+      <button class="btn financial-tab-btn active" id="tab-cost-prices-btn" onclick="switchFinTab('cost-prices')">
+        <i class="fas fa-tags" style="margin-right:6px;"></i> Mahsulotlar Tan Narxi
       </button>
-      <button class="btn financial-tab-btn" id="tab-installments-btn" onclick="switchFinTab('installments')" style="border-radius:0; border:none; padding:12px 16px; background:none; font-size:13px; cursor:pointer;">
-        <i class="fas fa-calendar-alt" style="margin-right:6px"></i> Nasiya Rejalari
+      <button class="btn financial-tab-btn" id="tab-installments-btn" onclick="switchFinTab('installments')">
+        <i class="fas fa-calendar-alt" style="margin-right:6px;"></i> Nasiya Rejalari
       </button>
-      <button class="btn financial-tab-btn" id="tab-client-debts-btn" onclick="switchFinTab('client-debts')" style="border-radius:0; border:none; padding:12px 16px; background:none; font-size:13px; cursor:pointer;">
-        <i class="fas fa-users" style="margin-right:6px"></i> Klientlardan Qarz (Manual)
+      <button class="btn financial-tab-btn" id="tab-client-debts-btn" onclick="switchFinTab('client-debts')">
+        <i class="fas fa-users" style="margin-right:6px;"></i> Klientlardan Qarz
       </button>
     </div>
 
-    <div class="modal-body" style="flex:1; overflow-y:auto; padding:20px; background:var(--bg-primary);">
+    <div class="modal-body" style="flex:1; overflow-y:auto;">
       <!-- Tab 1: Product Catalog -->
       <div class="fin-tab-content" id="tab-cost-prices">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:16px;">
+        <div class="flex justify-between items-center mb-4" style="gap:16px; flex-wrap:wrap;">
           <div>
-            <p style="font-size:12.5px; color:var(--text-secondary); margin:0;">Mahsulotlar va ularning narxlarini boshqarish.</p>
-            <button class="btn btn-primary btn-sm mt-2" onclick="openAddProductModal()"><i class="fas fa-plus"></i> Yangi mahsulot qo'shish</button>
+            <p class="text-sm text-secondary" style="margin:0 0 8px;">Mahsulotlar va ularning narxlarini boshqarish.</p>
+            <button class="btn btn-primary btn-sm" onclick="openAddProductModal()"><i class="fas fa-plus"></i> Yangi mahsulot</button>
           </div>
-          <div style="display:flex; gap:10px;">
-            <input type="text" id="dealAttachSearch" class="form-control" placeholder="Mijoz (sdelka) qidirish..." style="width:200px; height:32px; font-size:12px">
-            <select id="catalogSelect" class="form-control" style="width:200px; height:32px; font-size:12px">
+          <div class="flex gap-2">
+            <input type="text" id="dealAttachSearch" class="form-control" placeholder="Mijoz (sdelka) qidirish..." style="width:200px; height:32px; font-size:12px;">
+            <select id="catalogSelect" class="form-control" style="width:200px; height:32px; font-size:12px;">
               <option value="">Mahsulotni tanlang...</option>
             </select>
             <button class="btn btn-success btn-sm" onclick="attachProductToDeal()"><i class="fas fa-link"></i> Biriktirish</button>
           </div>
         </div>
-        <div style="max-height:350px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; background:var(--bg-secondary);">
-          <table class="deals-tbl" style="width:100%">
+        <div style="max-height:350px; overflow-y:auto; border:1px solid var(--border); border-radius:var(--r-md);">
+          <table class="deals-tbl" style="width:100%;">
             <thead>
-              <tr style="background:var(--bg-tertiary);">
-                <th style="padding:10px 12px; font-size:11px; font-weight:700;">ID</th>
-                <th style="padding:10px 12px; font-size:11px; font-weight:700;">Mahsulot Nomi</th>
-                <th style="padding:10px 12px; font-size:11px; font-weight:700;">Narxi</th>
-                <th style="padding:10px 12px; font-size:11px; font-weight:700;">Izoh</th>
-                <th style="padding:10px 12px; font-size:11px; font-weight:700; width:60px"></th>
+              <tr>
+                <th>ID</th>
+                <th>Mahsulot Nomi</th>
+                <th>Narxi</th>
+                <th>Izoh</th>
+                <th style="width:60px;"></th>
               </tr>
             </thead>
             <tbody id="costTableBody"></tbody>
@@ -487,6 +581,7 @@
 
 <script>
 let salesChart, productChart;
+const USER_ROLE = '<%= typeof user !== "undefined" && user ? user.role : "" %>';
 
 // Dynamic filter handlers
 function onFilterChange() {
@@ -555,6 +650,38 @@ function fmtDate(d) {
   return `${dd}.${mm}.${yyyy}`;
 }
 
+// Export Excel (multi-sheet professional)
+function exportCSV() {
+  const filter = document.getElementById('dashFilter')?.value || 'month';
+  let url = '/api/export/excel?filter=' + filter;
+  if (filter === 'range') {
+    const s = document.getElementById('startDate')?.value;
+    const e = document.getElementById('endDate')?.value;
+    if (s && e) url += '&startDate=' + s + '&endDate=' + e;
+  }
+  // Show loading state
+  const card = document.getElementById('exportCard');
+  if (card) {
+    card.style.opacity = '0.6';
+    card.style.pointerEvents = 'none';
+    setTimeout(() => { card.style.opacity = '1'; card.style.pointerEvents = ''; }, 3000);
+  }
+  window.location.href = url;
+}
+
+// Update export button URL when filter changes
+function updateExportUrl() {
+  const filter = document.getElementById('dashFilter')?.value || 'month';
+  let url = '/api/export/excel?filter=' + filter;
+  if (filter === 'range') {
+    const s = document.getElementById('startDate')?.value;
+    const e = document.getElementById('endDate')?.value;
+    if (s && e) url += '&startDate=' + s + '&endDate=' + e;
+  }
+  const btn = document.getElementById('exportCsvBtn');
+  if (btn) btn.href = url;
+}
+
 // Main loader
 async function loadDashboard() {
   try {
@@ -567,72 +694,440 @@ async function loadDashboard() {
         urlParams += '&startDate=' + start + '&endDate=' + end;
       }
     }
+    updateExportUrl();
 
-    const [kpis, salesData, productData, tasks] = await Promise.all([
-      dashFetch('/api/dashboard/kpis?' + urlParams).catch(e => { console.error(e); return {}; }),
-      dashFetch('/api/dashboard/sales-by-manager?' + urlParams).catch(e => { console.error(e); return []; }),
-      dashFetch('/api/dashboard/product-popularity?' + urlParams).catch(e => { console.error(e); return []; }),
-      dashFetch('/api/dashboard/today-tasks').catch(e => { console.error(e); return []; })
+    const [kpis, salesData, productData, igStats, pipelineStats, clientInsights, mktSummary, activityStats] = await Promise.all([
+      dashFetch('/api/dashboard/kpis?' + urlParams).catch(() => ({})),
+      dashFetch('/api/dashboard/sales-by-manager?' + urlParams).catch(() => []),
+      dashFetch('/api/dashboard/product-popularity?' + urlParams).catch(() => []),
+      dashFetch('/api/dashboard/instagram-stats?' + urlParams).catch(() => ({})),
+      dashFetch('/api/dashboard/pipeline-stats?' + urlParams).catch(() => []),
+      dashFetch('/api/dashboard/client-insights?' + urlParams).catch(() => ({})),
+      dashFetch('/api/marketing/summary?' + urlParams).catch(() => ({ totalSpent:0, totalLeads:0, cpl:0, byChannel:[], logs:[] })),
+      dashFetch('/api/activity/stats').catch(() => ({ managers: [], daily: [] }))
     ]);
 
-    // Safe default for KPI stats
     const safeKpis = kpis || {};
+    const netProfitVal = safeKpis.netProfit ?? 0;
+    const profitClass = netProfitVal >= 0 ? 'text-success' : 'text-danger';
+    const cplVal = safeKpis.cpl ?? 0;
+    const roiVal = safeKpis.marketingRoi ?? 0;
 
-    // KPI Cards rendering
-    document.getElementById('kpiCards').innerHTML = `
-      <div class="stat-card clickable" onclick="openFinancialModal('installments')">
-        <div class="stat-icon blue"><i class="fas fa-handshake"></i></div>
+    // ══════════════════════════════════════════
+    // QATOR 1: Leadlar | Zakazlar | Tan narx | Sof foyda | Klientlar qarzi
+    // ══════════════════════════════════════════
+    let row1Html = `
+      <div class="stat-card clickable" onclick="window.location.href='/deals'">
+        <div class="stat-icon blue"><i class="fas fa-bullseye"></i></div>
         <div class="stat-info">
-          <div class="stat-label"><%= (typeof user !== 'undefined' && user && user.role === 'admin') ? 'Jami sdelkalar' : 'Mening sdelkalarim' %></div>
+          <div class="stat-label">Leadlar</div>
           <div class="stat-value">${safeKpis.totalOrders ?? 0}</div>
-          <div class="stat-sub">Yutilgan: ${safeKpis.won ?? 0} · Yo'qotilgan: ${safeKpis.lost ?? 0}</div>
+          <div class="stat-sub">Jami kirgan buyurtmalar</div>
         </div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card clickable" onclick="openFinancialModal('installments')">
+        <div class="stat-icon green"><i class="fas fa-shopping-cart"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Zakazlar</div>
+          <div class="stat-value">${safeKpis.won ?? 0}</div>
+          <div class="stat-sub">Yopilgan (Won): ${renderCardMoney(safeKpis.totalRevenue ?? 0)}</div>
+        </div>
+      </div>
+    `;
+
+    if (USER_ROLE === 'admin') {
+      row1Html += `
+        <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')">
+          <div class="stat-icon purple"><i class="fas fa-tags"></i></div>
+          <div class="stat-info">
+            <div class="stat-label">Tan narx</div>
+            <div class="stat-value">${renderCardMoney(safeKpis.totalCostPrice ?? 0)}</div>
+            <div class="stat-sub">Jami mahsulot tannarxi</div>
+          </div>
+        </div>
+        <div class="stat-card clickable" onclick="openProfitModal()">
+          <div class="stat-icon green"><i class="fas fa-chart-line"></i></div>
+          <div class="stat-info">
+            <div class="stat-label">Sof foyda</div>
+            <div class="stat-value ${profitClass}">${renderCardMoney(netProfitVal)}</div>
+            <div class="stat-sub">Savdo − Tannarx − Xarajat</div>
+          </div>
+        </div>
+        <div class="stat-card clickable" onclick="openFinancialModal('client-debts')">
+          <div class="stat-icon red"><i class="fas fa-hand-holding-usd"></i></div>
+          <div class="stat-info">
+            <div class="stat-label">Klientlardagi Qarz</div>
+            <div class="stat-value">${renderCardMoney(safeKpis.totalClientDebt ?? 0)}</div>
+            <div class="stat-sub">To'lanmagan qoldiq</div>
+          </div>
+        </div>
+      `;
+    }
+
+    document.getElementById('kpiRow1').innerHTML = row1Html;
+
+    // ══════════════════════════════════════════
+    // QATOR 2: Marketing | Xodimlar/KPI | Nasiya | Instagram | Zakazlar holati
+    // ══════════════════════════════════════════
+    const igData = igStats || {};
+    const nasiya = (safeKpis.nasiyaDesco?.amount || 0) + (safeKpis.nasiyaIshonch?.amount || 0) + (safeKpis.nasiyaBaraka?.amount || 0);
+    const nasiyaCount = (safeKpis.nasiyaDesco?.count || 0) + (safeKpis.nasiyaIshonch?.count || 0) + (safeKpis.nasiyaBaraka?.count || 0);
+    const topStage = Array.isArray(pipelineStats) && pipelineStats.length
+      ? pipelineStats.sort((a, b) => b.count - a.count)[0]
+      : null;
+
+    let row2Html = `
+      <div class="stat-card clickable" onclick="window.location.href='/expenses'">
+        <div class="stat-icon orange"><i class="fas fa-bullhorn"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Marketing / Target</div>
+          <div class="stat-value">${renderCardMoney((mktSummary?.totalSpent ?? 0) || (safeKpis.totalMarketingExpenses ?? 0))}</div>
+          <div class="stat-sub">Lead: ${mktSummary?.totalLeads ?? 0} ta · CPL: ${fmtMoney(cplVal)} · ROI: ${roiVal.toFixed(0)}%</div>
+        </div>
+      </div>
+
+      <div class="stat-card clickable" onclick="document.getElementById('managerKpiSection')?.scrollIntoView({behavior:'smooth'})">
+        <div class="stat-icon blue"><i class="fas fa-users-cog"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Xodimlar / Maosh / KPI</div>
+          <div class="stat-value">${(safeKpis.managersList?.length ?? 0)}</div>
+          <div class="stat-sub">Faol menejerlar · KPI kalkulyator ↓</div>
+        </div>
+      </div>
+
+      <div class="stat-card clickable" onclick="window.location.href='/nasiya/list?stage=nasiya'">
         <div class="stat-icon green"><i class="fas fa-coins"></i></div>
         <div class="stat-info">
-          <div class="stat-label"><%= (typeof user !== 'undefined' && user && user.role === 'admin') ? "Umumiy to'langan" : "Mening savdo summam" %></div>
-          <div class="stat-value">${renderCardMoney(safeKpis.totalRevenue ?? 0)}</div>
+          <div class="stat-label">Nasiya / Savdo / Qarzdorlar</div>
+          <div class="stat-value">${renderCardMoney(nasiya)}</div>
+          <div class="stat-sub">Soni: ${nasiyaCount} ta nasiya · Shopir: ${fmtMoney(safeKpis.shopir?.amount ?? 0)}</div>
         </div>
       </div>
-      <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
-      <div class="stat-card clickable" onclick="openFinancialModal('client-debts')">
-        <div class="stat-icon red"><i class="fas fa-users"></i></div>
-        <div class="stat-info">
-          <div class="stat-label">Klientlardan qarz</div>
-          <div class="stat-value">${renderCardMoney(safeKpis.totalClientDebt ?? 0)}</div>
-        </div>
-      </div>
-      <div class="stat-card" style="cursor: pointer" onclick="window.location.href='/expenses'">
-        <div class="stat-icon orange"><i class="fas fa-minus-circle"></i></div>
+
+      <div class="stat-card clickable" onclick="window.location.href='/expenses'">
+        <div class="stat-icon red"><i class="fas fa-receipt"></i></div>
         <div class="stat-info">
           <div class="stat-label">Xarajatlar</div>
           <div class="stat-value">${renderCardMoney(safeKpis.totalExpenses ?? 0)}</div>
+          <div class="stat-sub">${(() => {
+            const cats = safeKpis.expenseByCategory || {};
+            const parts = Object.entries(cats).slice(0,3).map(([k,v]) => k + ': ' + fmtMoney(v));
+            return parts.length ? parts.join(' · ') : 'Hali xarajat yoq';
+          })()}</div>
         </div>
       </div>
-      <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')">
-        <div class="stat-icon purple"><i class="fas fa-tags"></i></div>
-        <div class="stat-info">
-          <div class="stat-label">Tan narxi</div>
-          <div class="stat-value">${renderCardMoney(safeKpis.totalCostPrice ?? 0)}</div>
+
+      <div class="stat-card clickable" onclick="window.location.href='/deals'" style="padding:14px 16px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <div class="stat-icon blue" style="margin:0;flex-shrink:0;"><i class="fas fa-layer-group"></i></div>
+          <div>
+            <div class="stat-label" style="margin:0;">Zakazlar holati</div>
+            <div style="font-size:13px;font-weight:700;color:var(--text-primary);">${(safeKpis.totalOrders ?? 0)} ta jami</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          ${(function() {
+            var stgs = Array.isArray(pipelineStats) ? pipelineStats.slice().sort(function(a,b){return b.count-a.count;}).slice(0,4) : [];
+            if (!stgs.length) return '<div style="font-size:11px;color:var(--text-muted);">Bosqich yo\'q</div>';
+            var total = stgs.reduce(function(s,st){return s+st.count;},0) || 1;
+            var colors = ['#007AFF','#34C759','#FF9500','#FF3B30'];
+            return stgs.map(function(st,i) {
+              var pct = Math.round((st.count/total)*100);
+              var c = colors[i] || '#888';
+              return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">'
+                + '<div style="width:7px;height:7px;border-radius:50%;background:' + c + ';flex-shrink:0;"></div>'
+                + '<div style="flex:1;font-size:10.5px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escHtml(st.name) + '</div>'
+                + '<div style="font-size:10.5px;font-weight:700;color:var(--text-primary);min-width:16px;text-align:right;">' + st.count + '</div>'
+                + '<div style="width:36px;height:4px;background:var(--surface-elevated);border-radius:2px;flex-shrink:0;margin-left:4px;">'
+                +   '<div style="width:' + pct + '%;height:100%;background:' + c + ';border-radius:2px;"></div>'
+                + '</div>'
+              + '</div>';
+            }).join('');
+          })()}
         </div>
       </div>
-      <div class="stat-card clickable" onclick="openProfitModal()">
-        <div class="stat-icon green"><i class="fas fa-chart-line"></i></div>
-        <div class="stat-info">
-          <div class="stat-label">Sof foyda</div>
-          <div class="stat-value ${(safeKpis.netProfit ?? 0) >= 0 ? 'text-success' : 'text-danger'}">${renderCardMoney(safeKpis.netProfit ?? 0)}</div>
-        </div>
-      </div>
-      <% } %>
     `;
 
-    // Safe defaults in case API fails
+    document.getElementById('kpiRow2').innerHTML = row2Html;
+
+    // ══════════════════════════════════════════
+    // UMUMIY STATISTIKALAR bo'limi yangilash
+    // ══════════════════════════════════════════
+    const ins = clientInsights || {};
+    const mgrList = safeKpis.managersList || [];
+
+    const mgrEl = document.getElementById('statMgrTotal');
+    if (mgrEl) mgrEl.textContent = mgrList.length + ' ta';
+    const mgrSubEl = document.getElementById('statMgrSub');
+    if (mgrSubEl) mgrSubEl.textContent = 'Eng yaxshi: ' + (mgrList[0]?.name || '—');
+
+    const satEl = document.getElementById('statSatisfaction');
+    if (satEl) {
+      satEl.textContent = (ins.satisfactionRate ?? 0) + '%';
+      satEl.style.color = (ins.satisfactionRate ?? 0) >= 50 ? '#34C759' : '#FF9500';
+    }
+    const cmpEl = document.getElementById('statComplaintSub');
+    if (cmpEl) cmpEl.textContent = `Qiziqish: ${ins.interested ?? 0} ta · Shikoyat: ${ins.complaints ?? 0} ta`;
+
+    const cncEl = document.getElementById('statCanceled');
+    if (cncEl) cncEl.textContent = (safeKpis.totalCanceledCount ?? 0) + ' ta';
+    const cncSubEl = document.getElementById('statCanceledSub');
+    if (cncSubEl) cncSubEl.textContent = `Summasi: ${fmtMoney(safeKpis.totalCanceledValue ?? 0)} · ${(safeKpis.cancellationRate ?? 0).toFixed(0)}% rad`;
+
+    // ══════════════════════════════════════════
+    // CRM bo'limi — sdelka/mijoz soni
+    // ══════════════════════════════════════════
+    const dealCountEl = document.getElementById('crmDealCount');
+    if (dealCountEl) dealCountEl.textContent = (safeKpis.totalOrders ?? 0) + ' ta';
+
+    // Mijoz va ombor sonini async olamiz
+    dashFetch('/api/clients').then(clients => {
+      const clEl = document.getElementById('crmClientCount');
+      if (clEl) clEl.textContent = (Array.isArray(clients) ? clients.length : 0) + ' ta';
+    }).catch(() => {});
+
+    dashFetch('/api/warehouse').then(wh => {
+      const items = wh?.inventory || [];
+      const total = items.reduce((s, i) => s + (i.total || 0), 0);
+      const whEl = document.getElementById('crmWarehouseCount');
+      if (whEl) whEl.textContent = total + ' ta';
+    }).catch(() => {});
+
+    // ── Render Funnel (new design: track + fill) ──
+    const funnel = safeKpis.funnelStages || { leads: 0, negotiation: 0, Nasiya: 0, won: 0 };
+    const pctNeg = funnel.leads > 0 ? ((funnel.negotiation / funnel.leads) * 100) : 0;
+    const pctWon = funnel.leads > 0 ? ((funnel.won / funnel.leads) * 100) : 0;
+
+    const funnelSteps = [
+      { label: 'Barcha leadlar',   count: funnel.leads,       pct: 100,              color: 'linear-gradient(90deg,#4F46E5,#6366F1)' },
+      { label: 'Muzokaralar',      count: funnel.negotiation, pct: pctNeg,           color: 'linear-gradient(90deg,#0EA5E9,#38BDF8)' },
+      { label: 'Yutilgan (Sotuv)', count: funnel.won,         pct: pctWon,           color: 'linear-gradient(90deg,#10B981,#34D399)' },
+    ];
+
+    document.getElementById('funnelContainer').innerHTML = funnelSteps.map((s, i) => `
+      <div class="funnel-step">
+        <div class="funnel-track">
+          <div class="funnel-fill" style="width:${Math.max(s.pct, 12)}%; background:${s.color};">
+            <span class="funnel-fill-label">${i + 1}. ${s.label}</span>
+            <span class="funnel-fill-count">${s.count} ta</span>
+          </div>
+        </div>
+        <span class="funnel-pct">${s.pct.toFixed(0)}%</span>
+      </div>
+    `).join('');
+
+    // ── Render Marketing section ──
+    const mkt = mktSummary || { totalSpent:0, totalLeads:0, cpl:0, byChannel:[], logs:[] };
+    const mktSpentEl = document.getElementById('mktTotalSpent');
+    const mktLeadsEl = document.getElementById('mktTotalLeads');
+    const mktCplEl   = document.getElementById('mktCpl');
+    if (mktSpentEl) mktSpentEl.textContent = fmtMoney(mkt.totalSpent || 0);
+    if (mktLeadsEl) mktLeadsEl.textContent = (mkt.totalLeads || 0) + ' ta';
+    if (mktCplEl)   mktCplEl.textContent   = fmtMoney(mkt.cpl || 0);
+
+    const channelColors = { instagram:'#E1306C', facebook:'#1877F2', google:'#EA4335', tiktok:'#010101', other:'#8E8E93' };
+    const channelContainer = document.getElementById('mktChannelContainer');
+    if (channelContainer && mkt.byChannel && mkt.byChannel.length) {
+      channelContainer.innerHTML = mkt.byChannel.map(c => {
+        const col = channelColors[c.channel] || '#6366F1';
+        const label = c.channel.charAt(0).toUpperCase() + c.channel.slice(1);
+        return `<div class="mkt-channel-chip" style="--ch:${col}">
+          <span class="mkt-ch-dot"></span>
+          <span class="mkt-ch-name">${label}</span>
+          <span class="mkt-ch-stats">${fmtMoney(c.spent)} · ${c.leads} lead · CPL ${fmtMoney(c.cpl)}</span>
+        </div>`;
+      }).join('');
+    }
+
+    const mktLogsBody = document.getElementById('mktLogsBody');
+    if (mktLogsBody) {
+      const logs = mkt.logs || [];
+      if (!logs.length) {
+        mktLogsBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-500)">Hali ma\'lumot yo\'q — + tugmasini bosing</td></tr>';
+      } else {
+        mktLogsBody.innerHTML = logs.map(l => {
+          const cpl2 = l.leads > 0 ? l.spent / l.leads : 0;
+          const col  = channelColors[l.channel] || '#6366F1';
+          return `<tr>
+            <td class="mkt-log-date">${new Date(l.date).toLocaleDateString('uz-UZ')}</td>
+            <td><span class="mkt-ch-tag" style="--ch:${col}">${l.channel}</span></td>
+            <td class="mkt-log-camp">${escHtml(l.campaign||'—')}</td>
+            <td class="tr mkt-log-amt">${fmtMoney(l.spent)}</td>
+            <td class="tc mkt-log-leads">${l.leads}</td>
+            <td class="tr mkt-log-cpl">${fmtMoney(cpl2)}</td>
+            <td class="tr mkt-log-del">
+              <button class="btn btn-ghost btn-icon-sm" style="color:var(--danger)" onclick="deleteMktLog(${l.id})" title="O'chirish"><i class="fas fa-trash" style="font-size:10px;"></i></button>
+            </td>
+          </tr>`;
+        }).join('');
+      }
+    }
+
+    // ── Render Manager KPI + Salary table ──
+    const kpiBody = document.getElementById('managerKpiTableBody');
+    if (kpiBody) {
+      const managers = safeKpis.managersList || [];
+      if (managers.length === 0) {
+        kpiBody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-500)">Hozircha menejer ma\'lumotlari yo\'q</td></tr>';
+      } else {
+        // Activity stats map: userId -> {online, todayMin, todayHours}
+        const actMgrs = (activityStats && activityStats.managers) ? activityStats.managers : [];
+        const actMap  = {};
+        actMgrs.forEach(function(a){ actMap[a.userId] = a; });
+
+        // Har bir menejer uchun hisob-kitob
+        const rows = managers.map(m => {
+          const baseSalary  = m.baseSalary || 0;
+          const kpiBonus    = m.kpiBonus || (m.wonCount * 100000);
+          const totalFines  = m.totalFines || 0;
+          const totalPay    = baseSalary + kpiBonus - totalFines;
+          const winRate     = (m.winRate || 0).toFixed(0);
+          const initials    = (m.name||'?').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+          const winBadge    = winRate >= 60 ? 'badge-success' : winRate >= 35 ? 'badge-warning' : 'badge-danger';
+          const perf        = winRate >= 60 ? 'high' : winRate >= 35 ? 'mid' : 'low';
+          const finesDetail = (m.fines && m.fines.length)
+            ? m.fines.map(f => '<div class="kpi-fine-item">−'+fmtMoney(f.amount)+(f.reason ? ' · '+escHtml(f.reason) : '')+'</div>').join('')
+            : '';
+          // Activity
+          const act       = actMap[m.id] || {};
+          const isOnline  = act.online === true;
+          const todayMin  = act.todayMin || 0;
+          const todayH    = Math.floor(todayMin / 60);
+          const todayM    = todayMin % 60;
+          const todayStr  = todayMin > 0 ? (todayH > 0 ? todayH+'s ' : '') + todayM+'d' : '—';
+          const onlineDot = isOnline
+            ? '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:#34C759;font-weight:600;"><span style="width:8px;height:8px;border-radius:50%;background:#34C759;display:inline-block;box-shadow:0 0 6px #34C75966;animation:pulse-green 2s infinite;"></span>Online</span>'
+            : '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--text-muted);"><span style="width:8px;height:8px;border-radius:50%;background:var(--text-muted);display:inline-block;opacity:0.5;"></span>Offline</span>';
+          return '<tr class="kpi-row" data-perf="'+perf+'">'
+            + '<td class="kpi-mgr-cell">'
+            +   '<div class="kpi-avatar">'+initials+'</div>'
+            +   '<span class="kpi-mgr-name">'+escHtml(m.name)+'</span>'
+            + '</td>'
+            + '<td class="tc" style="white-space:nowrap;">'+onlineDot+'</td>'
+            + '<td class="tc" style="font-size:11px;font-weight:600;color:'+(todayMin>0?'var(--text-primary)':'var(--text-muted)')+';white-space:nowrap;">'+todayStr+'</td>'
+            + '<td class="tc">'
+            +   '<div class="kpi-won">'+m.wonCount+'</div>'
+            +   '<div class="kpi-total-deals">/ '+m.totalCount+' jami</div>'
+            + '</td>'
+            + '<td class="tc"><span class="badge '+winBadge+' kpi-win-badge">'+winRate+'%</span></td>'
+            + '<td class="tr"><input type="number" class="calc-input" value="'+baseSalary+'" step="100000" onchange="saveBaseSalary('+m.id+', this.value)"></td>'
+            + '<td class="tr kpi-bonus-cell">'
+            +   '<div class="kpi-bonus-val">'+fmtMoney(kpiBonus)+'</div>'
+            +   '<div class="kpi-bonus-sub">'+m.wonCount+' × 100 000</div>'
+            + '</td>'
+            + '<td class="tc kpi-fine-cell">'
+            +   (totalFines > 0
+                  ? '<div class="kpi-fine-total">−'+fmtMoney(totalFines)+'</div>'+finesDetail
+                  : '<span class="kpi-no-fine">—</span>')
+            +   '<button class="kpi-add-fine" onclick="openFineModal('+m.id+',\''+escHtml(m.name)+'\')"><i class="fas fa-plus"></i> Jarima</button>'
+            + '</td>'
+            + '<td class="tr"><span class="kpi-payout" id="payout-'+m.id+'">'+fmtMoney(totalPay)+'</span></td>'
+            + '</tr>';
+        });
+
+        // Jami byudjet qatori
+        const grandTotal = managers.reduce(function(s, m) {
+          const base = m.baseSalary || 0;
+          const kpi  = m.kpiBonus || (m.wonCount * 100000);
+          const fine = m.totalFines || 0;
+          return s + base + kpi - fine;
+        }, 0);
+        const totalRow = '<tr class="kpi-total-row">'
+          + '<td colspan="5" class="kpi-total-label"><i class="fas fa-sigma" style="margin-right:5px;color:var(--brand);"></i>Jami maosh byudjeti</td>'
+          + '<td colspan="3"></td>'
+          + '<td class="tr"><span class="kpi-payout">'+fmtMoney(grandTotal)+'</span></td>'
+          + '</tr>';
+
+        kpiBody.innerHTML = rows.join('') + totalRow;
+      }
+    }
+
+    // Save base salary to DB
+    window.saveBaseSalary = async function(managerId, val, inputEl) {
+      try {
+        const r = await fetch('/api/marketing/salary/' + managerId, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ baseSalary: Number(val) || 0 })
+        });
+        if (!r.ok) throw new Error();
+        if (typeof showToast === 'function') showToast('Maosh saqlandi', 'success');
+      } catch(e) {
+        if (typeof showToast === 'function') showToast('Saqlashda xato', 'error');
+      }
+    };
+
+    window.openFineModal = function(id, name) {
+      document.getElementById('fineManagerId').value = id;
+      document.getElementById('fineManagerName').value = name;
+      document.getElementById('fineAmount').value = '';
+      document.getElementById('fineReason').value = '';
+      document.getElementById('fineModal').style.display = 'flex';
+    };
+    window.closeFineModal = function() {
+      document.getElementById('fineModal').style.display = 'none';
+    };
+    window.submitFine = async function() {
+      const managerId = document.getElementById('fineManagerId').value;
+      const amount    = Number(document.getElementById('fineAmount').value) || 0;
+      const reason    = document.getElementById('fineReason').value.trim();
+      if (!amount) { alert("Jarima summasi kiriting"); return; }
+      try {
+        const r = await fetch('/api/marketing/fine', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ managerId, amount, reason })
+        });
+        if (!r.ok) throw new Error();
+        closeFineModal();
+        if (typeof showToast === 'function') showToast('Jarima qo\'shildi', 'success');
+        loadDashboard();
+      } catch(e) {
+        if (typeof showToast === 'function') showToast('Xatolik', 'error');
+      }
+    };
+
+    // ── Render Nasiya breakdown Tariffs ──
+    const des = safeKpis.nasiyaDesco || { count: 0, amount: 0 };
+    const ish = safeKpis.nasiyaIshonch || { count: 0, amount: 0 };
+    const bar = safeKpis.nasiyaBaraka || { count: 0, amount: 0 };
+    const shp = safeKpis.shopir || { count: 0, amount: 0 };
+
+    document.getElementById('nasiyaBreakdownContainer').innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--bg-secondary); border-radius:8px; border:1px solid var(--border)">
+        <span style="font-weight:600; font-size:13px"><i class="fas fa-handshake" style="color:#34C759; margin-right:6px"></i> Nasiya Desco (O'zimizniki)</span>
+        <div style="text-align:right">
+          <div style="font-weight:800; color:var(--text-primary); font-size:14px">${fmtMoney(des.amount)}</div>
+          <div style="font-size:10px; color:var(--text-tertiary)">Soni: ${des.count} ta buyurtma</div>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--bg-secondary); border-radius:8px; border:1px solid var(--border)">
+        <span style="font-weight:600; font-size:13px"><i class="fas fa-building" style="color:#FF9500; margin-right:6px"></i> Nasiya Ishonch</span>
+        <div style="text-align:right">
+          <div style="font-weight:800; color:var(--text-primary); font-size:14px">${fmtMoney(ish.amount)}</div>
+          <div style="font-size:10px; color:var(--text-tertiary)">Soni: ${ish.count} ta buyurtma</div>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--bg-secondary); border-radius:8px; border:1px solid var(--border)">
+        <span style="font-weight:600; font-size:13px"><i class="fas fa-store" style="color:#FF3B30; margin-right:6px"></i> Nasiya Baraka</span>
+        <div style="text-align:right">
+          <div style="font-weight:800; color:var(--text-primary); font-size:14px">${fmtMoney(bar.amount)}</div>
+          <div style="font-size:10px; color:var(--text-tertiary)">Soni: ${bar.count} ta buyurtma</div>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--bg-secondary); border-radius:8px; border:1px solid var(--border)">
+        <span style="font-weight:600; font-size:13px"><i class="fas fa-truck-moving" style="color:#007AFF; margin-right:6px"></i> Shopirdagi pullar</span>
+        <div style="text-align:right">
+          <div style="font-weight:800; color:var(--text-primary); font-size:14px">${fmtMoney(shp.amount)}</div>
+          <div style="font-size:10px; color:var(--text-tertiary)">Soni: ${shp.count} ta buyurtma</div>
+        </div>
+      </div>
+    `;
+
+    // ── Render Charts ──
     const safeSalesData = Array.isArray(salesData) ? salesData : [];
     const safeProductData = Array.isArray(productData) ? productData : [];
-    const safeTasks = Array.isArray(tasks) ? tasks : [];
 
-    // Charts rendering
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
     const textColor = isDark ? '#98989d' : '#6e6e73';
@@ -666,115 +1161,78 @@ async function loadDashboard() {
 
     if (productChart) productChart.destroy();
     const top = safeProductData.slice(0, 8);
-    const colors = ['#007AFF','#34C759','#FF9500','#FF3B30','#5856D6','#00C7BE','#FF2D55','#AC8E68'];
-    
+    const COLORS = ['#007AFF','#34C759','#FF9500','#FF3B30','#5856D6','#00C7BE','#FF2D55','#AC8E68'];
+    const fmtS = v => v >= 1e9 ? (v/1e9).toFixed(1)+'B' : v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : v.toString();
+
+    const emptyEl = document.getElementById('productEmpty');
+    const tradingEl = document.getElementById('productTrading');
+    const listEl = document.getElementById('productList');
+    const totalBadge = document.getElementById('productTotalBadge');
+    const centerPct = document.getElementById('productCenterPct');
+    const centerName = document.getElementById('productCenterName');
+
     if (top.length === 0) {
-      document.getElementById('productChart').parentElement.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:13px;">Ma\'lumot yo\'q</div>';
+      if (emptyEl) { emptyEl.style.display = 'flex'; }
+      if (tradingEl) { tradingEl.style.display = 'none'; }
     } else {
+      if (emptyEl) emptyEl.style.display = 'none';
+      if (tradingEl) tradingEl.style.display = 'flex';
+      const grandTotal = top.reduce((s,d) => s + (d.totalAmount||0), 0);
+      if (totalBadge) totalBadge.textContent = fmtS(grandTotal) + " so'm";
+
+      // Default center: top product
+      if (centerPct) centerPct.textContent = (top[0].pct||0) + '%';
+      if (centerName) centerName.textContent = (top[0].product||'').split(' ').slice(0,2).join(' ');
+
       productChart = new Chart(document.getElementById('productChart'), {
         type: 'doughnut',
         data: {
           labels: top.map(d => d.product || 'Noma\'lum'),
-          datasets: [{ data: top.map(d => d.count || 0), backgroundColor: colors, borderWidth: 0 }]
+          datasets: [{ data: top.map(d => d.totalAmount||0), backgroundColor: COLORS.slice(0,top.length), borderWidth: 2, borderColor: 'var(--surface-card, #1e293b)', hoverOffset: 6 }]
         },
         options: {
           responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { position: 'right', labels: { color: textColor, boxWidth: 12, padding: 14, font: { size: 12 } } } }
+          cutout: '68%',
+          plugins: { legend: { display: false }, tooltip: {
+            callbacks: { label: ctx => ' ' + ctx.label + ': ' + fmtS(ctx.parsed) + ' so\'m' }
+          }},
+          onHover: (evt, elements) => {
+            if (elements.length && centerPct && centerName) {
+              const i = elements[0].index;
+              centerPct.textContent = (top[i].pct||0) + '%';
+              centerName.textContent = (top[i].product||'').split(' ').slice(0,2).join(' ');
+            }
+          }
         }
       });
-    }
 
-    // Today's tasks rendering
-    window.todayTasksList = safeTasks || [];
-    window.showAllTodayTasks = false;
-    window.renderDashboardTasks = function() {
-      const tasksEl = document.getElementById('todayTasks');
-      if (!tasksEl) return;
-      const tasks = window.todayTasksList;
-      if (!tasks.length) {
-        tasksEl.innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-state-icon"><i class="fas fa-check-circle"></i></div><h3>Bugungi vazifalar yo\'q</h3></div>';
-        return;
-      }
-
-      const limit = window.showAllTodayTasks ? tasks.length : 4;
-      const displayTasks = tasks.slice(0, limit);
-
-      let html = displayTasks.map(t => `
-        <div class="task-item" style="align-items: flex-start; padding: 14px 16px; margin-bottom: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-secondary); transition: all 0.2s;">
-          <div class="task-check ${t.completed ? 'done' : ''}" onclick="toggleTask(${t.id}, this)" style="margin-top: 3px; cursor: pointer; flex-shrink: 0;">
-            ${t.completed ? '<i class="fas fa-check" style="font-size:9px"></i>' : ''}
-          </div>
-          <div class="task-info" style="flex-grow: 1; margin-left: 10px;">
-            <div class="task-title ${t.completed ? 'done' : ''}" style="font-weight: 600; font-size: 13.5px; margin-bottom: 6px; line-height: 1.4; color: var(--text-primary);">${escHtml(t?.title || 'Noma\'lum')}</div>
-            <div class="task-meta" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 6px;">
-              <span class="priority-dot ${t?.priority || 'medium'}"></span>
-              ${t?.dueDate ? '<span class="task-due" style="font-size: 11px; font-weight: 500; color: var(--text-secondary);"><i class="fas fa-clock"></i> ' + fmtDate(t.dueDate) + '</span>' : ''}
-              ${t?.assignedTo ? `<span class="badge badge-gray" style="font-size: 10px; background: var(--bg-primary); padding: 2px 6px; border-radius: 4px; color: var(--text-secondary);">${escHtml(t.assignedTo.fullName || t.assignedTo.email)}</span>` : ''}
-            </div>
-            ${(t.client || t.deal || t.dueTime) ? `
-              <div style="margin-top: 8px; padding: 8px 12px; background: var(--bg-primary); border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; width: 100%;">
-                ${t.client ? `
-                  <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-                    <div style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--text-primary); text-align: left;">
-                      <i class="fas fa-user" style="color: var(--accent); font-size: 11px;"></i> ${escHtml(t.client.name)}
-                      ${t.client.phone ? `<span style="color: var(--text-tertiary); font-weight: 400;">&bull;</span> <a href="tel:${escHtml(t.client.phone)}" style="color: var(--accent); font-weight: 700; text-decoration: none;">${escHtml(t.client.phone)}</a>` : ''}
-                    </div>
-                    ${t.client.city ? `
-                      <span style="font-size: 10.5px; background: var(--accent)1A; color: var(--accent); font-weight: 600; padding: 2px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">
-                        <i class="fas fa-map-marker-alt" style="font-size: 9px;"></i> ${escHtml(t.client.city)}
-                      </span>
-                    ` : ''}
-                  </div>
-                ` : ''}
-                
-                ${(t.deal || t.dueTime) ? `
-                  <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-secondary); ${t.client ? 'border-top: 1px solid var(--border); padding-top: 6px; margin-top: 2px;' : ''} flex-wrap: wrap; text-align: left;">
-                    ${t.deal ? `
-                      <span style="display: inline-flex; align-items: center; gap: 4px;">
-                        <i class="fas fa-shopping-bag" style="color: var(--text-tertiary); font-size: 10.5px;"></i> ${escHtml(t.deal.productName)}
-                      </span>
-                    ` : ''}
-                    ${(t.deal && t.dueTime) ? `<span style="color: var(--text-tertiary);">&bull;</span>` : ''}
-                    ${t.dueTime ? `
-                      <span style="color: #FF9500; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
-                        <i class="far fa-clock"></i> Soat: ${escHtml(t.dueTime)}
-                      </span>
-                    ` : ''}
-                  </div>
-                ` : ''}
+      // Trading rows
+      if (listEl) {
+        listEl.innerHTML = top.map((d,i) => {
+          const bar = d.pct || 0;
+          return `<div style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:3px 4px;border-radius:6px;transition:background .15s"
+            onmouseenter="this.style.background='var(--brand-soft)'"
+            onmouseleave="this.style.background='transparent'">
+            <span style="width:8px;height:8px;border-radius:50%;background:${COLORS[i]};flex-shrink:0;"></span>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:11.5px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(d.product||'')}</div>
+              <div style="height:3px;background:var(--border);border-radius:2px;margin-top:3px;">
+                <div style="height:3px;border-radius:2px;background:${COLORS[i]};width:${bar}%;transition:width .4s"></div>
               </div>
-            ` : ''}
-          </div>
-        </div>
-      `).join('');
-
-      if (tasks.length > 4 && !window.showAllTodayTasks) {
-        html += `
-          <div style="text-align: center; margin-top: 12px;">
-            <button class="btn btn-secondary btn-sm" onclick="window.showAllTodayTasks=true; window.renderDashboardTasks();" style="font-size: 12px; padding: 6px 16px; border-radius: 6px; font-weight: 600; width: 100%;">
-              Barchasini ko'rsatish (${tasks.length - 4} ta ko'proq) <i class="fas fa-chevron-down" style="margin-left: 4px; font-size: 10px;"></i>
-            </button>
-          </div>
-        `;
-      } else if (window.showAllTodayTasks && tasks.length > 4) {
-        html += `
-          <div style="text-align: center; margin-top: 12px;">
-            <button class="btn btn-secondary btn-sm" onclick="window.showAllTodayTasks=false; window.renderDashboardTasks();" style="font-size: 12px; padding: 6px 16px; border-radius: 6px; font-weight: 600; width: 100%;">
-              Kamroq ko'rsatish <i class="fas fa-chevron-up" style="margin-left: 4px; font-size: 10px;"></i>
-            </button>
-          </div>
-        `;
+            </div>
+            <div style="text-align:right;flex-shrink:0;">
+              <div style="font-size:11px;font-weight:700;color:var(--text-primary)">${bar}%</div>
+              <div style="font-size:10px;color:var(--text-secondary)">${d.count}ta · ${fmtS(d.totalAmount||0)}</div>
+            </div>
+          </div>`;
+        }).join('');
       }
-
-      tasksEl.innerHTML = html;
-    };
-
-    window.renderDashboardTasks();
+    }
   } catch(e) {
     console.error('Dashboard yuk xatosi:', e);
-    const kpiCards = document.getElementById('kpiCards');
-    if (kpiCards) {
-      kpiCards.innerHTML = `
+    const row1 = document.getElementById('kpiRow1');
+    if (row1) {
+      row1.innerHTML = `
         <div class="stat-card" style="grid-column:1/-1">
           <div class="stat-icon red"><i class="fas fa-exclamation-triangle"></i></div>
           <div class="stat-info">
@@ -785,19 +1243,8 @@ async function loadDashboard() {
         </div>
       `;
     }
-    // Clear chart spinners
-    const salesChartEl = document.getElementById('salesChart');
-    if (salesChartEl && salesChartEl.parentElement) {
-      salesChartEl.parentElement.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:13px;">Yuklashda xato (Ma\'lumot yo\'q)</div>';
-    }
-    const productChartEl = document.getElementById('productChart');
-    if (productChartEl && productChartEl.parentElement) {
-      productChartEl.parentElement.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:13px;">Yuklashda xato (Ma\'lumot yo\'q)</div>';
-    }
-    const tasksEl = document.getElementById('todayTasks');
-    if (tasksEl) {
-      tasksEl.innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-state-icon"><i class="fas fa-exclamation-circle"></i></div><h3>Yuklashda xato</h3></div>';
-    }
+    const row2 = document.getElementById('kpiRow2');
+    if (row2) row2.innerHTML = '';
   } finally {
     const refreshBtn = document.querySelector('button[onclick="loadDashboard()"]');
     if (refreshBtn) {
@@ -1924,8 +2371,134 @@ setTimeout(() => {
     refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Yangilash';
   }
 }, 2000);
+// ── Marketing Modal ──
+window.openMarketingModal = function() {
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById('mktDate').value = today;
+  document.getElementById('mktChannel').value = 'instagram';
+  document.getElementById('mktCampaign').value = '';
+  document.getElementById('mktSpent').value = '';
+  document.getElementById('mktLeads').value = '';
+  document.getElementById('mktNotes').value = '';
+  document.getElementById('marketingModal').style.display = 'flex';
+};
+window.closeMarketingModal = function() {
+  document.getElementById('marketingModal').style.display = 'none';
+};
+window.submitMarketingLog = async function() {
+  const body = {
+    date:     document.getElementById('mktDate').value,
+    channel:  document.getElementById('mktChannel').value,
+    campaign: document.getElementById('mktCampaign').value.trim() || null,
+    spent:    Number(document.getElementById('mktSpent').value) || 0,
+    leads:    Number(document.getElementById('mktLeads').value) || 0,
+    notes:    document.getElementById('mktNotes').value.trim() || null
+  };
+  if (!body.date || !body.channel) { alert("Sana va kanal majburiy"); return; }
+  try {
+    const r = await fetch('/api/marketing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error();
+    closeMarketingModal();
+    if (typeof showToast === 'function') showToast('Ma\'lumot qo\'shildi', 'success');
+    loadDashboard();
+  } catch(e) {
+    if (typeof showToast === 'function') showToast('Xatolik yuz berdi', 'error');
+  }
+};
+window.deleteMktLog = async function(id) {
+  if (!confirm("O'chirishni tasdiqlaysizmi?")) return;
+  try {
+    const r = await fetch('/api/marketing/' + id, { method: 'DELETE' });
+    if (!r.ok) throw new Error();
+    if (typeof showToast === 'function') showToast('O\'chirildi', 'success');
+    loadDashboard();
+  } catch(e) {
+    if (typeof showToast === 'function') showToast('Xatolik', 'error');
+  }
+};
 
 // Start
 loadDashboard();
+</script>
+
+<!-- Marketing Add Modal -->
+<div id="marketingModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeMarketingModal()">
+  <div class="modal-dialog" style="max-width:460px;">
+    <div class="modal-header">
+      <h3 class="modal-title"><i class="fas fa-bullhorn text-brand"></i> Kunlik marketing ma'lumoti</h3>
+      <button class="modal-close" onclick="closeMarketingModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" style="padding:20px; display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+      <div style="grid-column:1/-1;">
+        <label class="form-label">Sana *</label>
+        <input type="date" id="mktDate" class="form-control">
+      </div>
+      <div>
+        <label class="form-label">Kanal *</label>
+        <select id="mktChannel" class="form-control">
+          <option value="instagram">Instagram</option>
+          <option value="facebook">Facebook</option>
+          <option value="google">Google</option>
+          <option value="tiktok">TikTok</option>
+          <option value="other">Boshqa</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Kampaniya nomi</label>
+        <input type="text" id="mktCampaign" class="form-control" placeholder="Masalan: Yoz aksiyasi">
+      </div>
+      <div>
+        <label class="form-label">Xarajat (so'm) *</label>
+        <input type="number" id="mktSpent" class="form-control" placeholder="0" min="0" step="1000">
+      </div>
+      <div>
+        <label class="form-label">Kelgan leadlar soni</label>
+        <input type="number" id="mktLeads" class="form-control" placeholder="0" min="0">
+      </div>
+      <div style="grid-column:1/-1;">
+        <label class="form-label">Izoh</label>
+        <input type="text" id="mktNotes" class="form-control" placeholder="Qo'shimcha ma'lumot...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeMarketingModal()">Bekor</button>
+      <button class="btn btn-primary" onclick="submitMarketingLog()"><i class="fas fa-plus"></i> Qo'shish</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Dashboard real-time yangilanish (WebSocket) ──
+(function() {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  let _ws, _retryTimer, _debounce;
+
+  function connect() {
+    _ws = new WebSocket(proto + '//' + location.host);
+    _ws.onmessage = (evt) => {
+      try {
+        const data = JSON.parse(evt.data);
+        if (['deal_created','deal_updated','deal_deleted'].includes(data.type)) {
+          clearTimeout(_debounce);
+          _debounce = setTimeout(() => {
+            if (typeof loadDashboard === 'function') loadDashboard();
+          }, 800); // 800ms debounce — bir nechta event kelsa bitta refresh
+        }
+      } catch(_) {}
+    };
+    _ws.onclose = () => {
+      clearTimeout(_retryTimer);
+      _retryTimer = setTimeout(connect, 4000); // 4s dan keyin qayta ulanish
+    };
+    _ws.onerror = () => _ws.close();
+  }
+
+  // Sahifa yuklangandan keyin ulan
+  window.addEventListener('load', connect);
+})();
 </script>
 <%- include('../layouts/footer') %>

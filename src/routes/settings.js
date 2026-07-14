@@ -89,11 +89,12 @@ router.patch('/profile', async (req, res, next) => {
 // ── USERS (admin) ──
 router.get('/users', async (req, res, next) => {
   try {
-    // Admin bo'lmasa ham user listini qaytaramiz (deals filter uchun)
-    const users = await prisma.user.findMany({
-      select: { id: true, email: true, fullName: true, role: true, isActive: true, createdAt: true },
-      orderBy: { createdAt: 'asc' }
-    })
+    // Faqat asosiy ma'lumotlar barcha rollarga, to'liq ma'lumot faqat adminga
+    const isAdmin = req.user?.role === 'admin'
+    const select = isAdmin
+      ? { id: true, email: true, fullName: true, role: true, isActive: true, createdAt: true }
+      : { id: true, fullName: true, role: true }
+    const users = await prisma.user.findMany({ select, orderBy: { createdAt: 'asc' } })
     res.json(users)
   } catch (error) { next(error) }
 })
@@ -155,7 +156,14 @@ router.delete('/users/:id', async (req, res, next) => {
     if (req.user?.role !== 'admin') return res.status(403).json({ message: 'Faqat admin uchun' })
     const id = Number(req.params.id)
     if (id === req.userId) return res.status(400).json({ message: "O'zingizni o'chira olmaysiz" })
-    await prisma.user.delete({ where: { id } })
+    // Bog'liq yozuvlarni tozalash (FK violation oldini olish)
+    await prisma.$transaction([
+      prisma.managerSalary.deleteMany({ where: { managerId: id } }),
+      prisma.managerFine.deleteMany({ where: { managerId: id } }),
+      prisma.deal.updateMany({ where: { managerId: id }, data: { managerId: null } }),
+      prisma.task.updateMany({ where: { assignedToId: id }, data: { assignedToId: null } }),
+      prisma.user.delete({ where: { id } })
+    ])
     res.json({ message: "Foydalanuvchi o'chirildi" })
   } catch (error) {
     if (error.code === 'P2025') return res.status(404).json({ message: 'Foydalanuvchi topilmadi' })

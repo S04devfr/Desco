@@ -70,6 +70,9 @@ app.use('/api', rateLimiter(200, 60000));    // API uchun global rate limit: 200
 // ── API ROUTES ──
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
+// ── ONE-TIME: Seed data ──
+
+
 app.use('/api/auth',            require('./routes/auth'));
 app.use('/api/dashboard',       require('./routes/dashboard'));
 app.use('/api/deals',           require('./routes/deals'));
@@ -88,6 +91,10 @@ app.use('/api/instagram',       require('./routes/instagram'));
 app.use('/api/webhook',         require('./routes/webhook'));
 app.use('/api/ai',              require('./routes/ai'));
 app.use('/api/warehouse',       require('./routes/warehouse'));
+app.use('/api/marketing',       require('./routes/marketing'));
+app.use('/api/delivery',        require('./routes/delivery'));
+app.use('/api/export',          require('./routes/export'));
+app.use('/api/activity',        require('./routes/activity'));
 
 // ── PUBLIC LEGAL PAGES (no auth required — Meta App Review uchun) ──
 app.use('/', require('./routes/legal'));
@@ -161,7 +168,14 @@ const prisma = require('./config/database');
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, req) => {
+  // Session cookie'dan userId ni tekshirish
+  const cookieHeader = req.headers.cookie || '';
+  const sessionIdMatch = cookieHeader.match(/connect\.sid=([^;]+)/);
+  if (!sessionIdMatch) {
+    ws.close(1008, 'Unauthorized');
+    return;
+  }
   ws.on('error', console.error);
 });
 
@@ -178,33 +192,36 @@ app.set('broadcast', (data) => {
 // Audit log jadvalini yaratish
 const { ensureAuditTable } = require('./middleware/auditLog');
 
-// Avtomatik ravishda eski dublikat (uncompleted) vazifalarni tozalash funksiyasi
+// Haqiqiy dublikatlarni tozalash: bir xil title va dealId bo'lgan faqat takroriy vazifalarni o'chirish
+// (Har restartda BARCHA vazifalarni o'chirish o'rniga faqat nomi va deali bir xil bo'lgan takroriylarni o'chiradi)
 async function cleanupDuplicateTasks() {
   try {
-    console.log('[Cleanup] Dublikat vazifalarni tozalash boshlandi...');
-    
-    // Barcha bajarilmagan va dealId ga ega vazifalarni olamiz (ID bo'yicha kamayish tartibida, yangilari tepada turadi)
+    console.log('[Cleanup] Dublikat vazifalarni tekshirish...');
+
     const activeTasks = await prisma.task.findMany({
       where: { completed: false, dealId: { not: null } },
-      orderBy: { id: 'desc' }
+      orderBy: { id: 'desc' },
+      select: { id: true, dealId: true, title: true }
     });
-    
-    const seenDeals = new Set();
+
+    // Bir xil dealId + title kombinatsiyasi uchun dublikatlarni topish
+    const seen = new Set();
     const toDeleteIds = [];
-    
+
     for (const task of activeTasks) {
-      if (seenDeals.has(task.dealId)) {
+      const key = `${task.dealId}:${task.title}`;
+      if (seen.has(key)) {
         toDeleteIds.push(task.id);
       } else {
-        seenDeals.add(task.dealId);
+        seen.add(key);
       }
     }
-    
+
     if (toDeleteIds.length > 0) {
       const result = await prisma.task.deleteMany({
         where: { id: { in: toDeleteIds } }
       });
-      console.log(`[Cleanup] ${result.count} ta eski dublikat vazifa muvaffaqiyatli o'chirildi.`);
+      console.log(`[Cleanup] ${result.count} ta haqiqiy dublikat vazifa o'chirildi.`);
     } else {
       console.log('[Cleanup] Dublikat vazifalar topilmadi.');
     }
@@ -216,8 +233,9 @@ async function cleanupDuplicateTasks() {
 const { execSync } = require('child_process');
 
 try {
-  console.log('🔄 [Startup] Executing Prisma DB Push synchronously...');
-  const output = execSync('npx prisma db push --accept-data-loss', { stdio: 'pipe' });
+  console.log('🔄 [Startup] Executing Prisma DB Push...');
+  // OGOHLANTIRISH: --accept-data-loss o'chirildi — bu flag production'da ma'lumotlarni o'chirib yuborishi mumkin edi
+  const output = execSync('npx prisma db push', { stdio: 'pipe' });
   console.log(`✅ [Prisma DB Push Success]: ${output.toString()}`);
 } catch (error) {
   console.error(`❌ [Prisma DB Push Error]: ${error.message}`);

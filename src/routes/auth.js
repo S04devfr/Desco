@@ -11,8 +11,8 @@ const router = express.Router()
 // ── BRUTE FORCE HIMOYASI ──
 // 5 ta noto'g'ri urinishdan keyin 15 daqiqa bloklash
 const loginAttempts = new Map();
-const MAX_ATTEMPTS = 100; // Operarotlar adashib parolni ko'p kiritib yuborsa ham qotib qolmasligi uchun ko'paytirildi
-const LOCKOUT_MS = 10 * 1000; // 10 soniya
+const MAX_ATTEMPTS = 5;           // 5 marta noto'g'ri parol
+const LOCKOUT_MS = 15 * 60 * 1000; // 15 daqiqa blok
 
 function checkBruteForce(email) {
   const record = loginAttempts.get(email);
@@ -179,7 +179,7 @@ router.post('/login', rateLimiter(20, 60000), async (req, res, next) => {
   }
 })
 
-// Logout route
+// Logout route (POST — API)
 router.post('/logout', (req, res, next) => {
   const userId = req.session?.userId;
   const email = req.session?.user?.email;
@@ -194,21 +194,6 @@ router.post('/logout', (req, res, next) => {
     res.json({ message: 'Chiqish muvaffaqiyatli' })
   })
 })
-
-// Current user
-router.get('/me', protect, async (req, res, next) => {
-  try {
-    const user = await prisma.user.findUnique({ where: { id: req.userId } })
-    if (!user) {
-      return res.status(404).json({ message: 'Foydalanuvchi topilmadi' })
-    }
-    res.json({ user: buildUserPayload(user) })
-  } catch (error) {
-    next(error)
-  }
-})
-
-module.exports = router
 
 // GET /auth/logout (page redirect)
 router.get('/logout', (req, res) => {
@@ -235,3 +220,18 @@ router.post('/change-password', protect, async (req, res, next) => {
     res.json({ message: "Parol muvaffaqiyatli o'zgartirildi" })
   } catch (error) { next(error) }
 })
+
+// Current user
+router.get('/me', protect, async (req, res, next) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.userId } })
+    if (!user) {
+      return res.status(404).json({ message: 'Foydalanuvchi topilmadi' })
+    }
+    res.json({ user: buildUserPayload(user) })
+  } catch (error) {
+    next(error)
+  }
+})
+
+module.exports = router

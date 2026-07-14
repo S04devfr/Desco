@@ -229,11 +229,15 @@
   }
 
   // ── DATA LOADING ──
+  let _warehouses = [];
+
   async function loadData() {
     try {
       const data = await apiFetch('/api/warehouse');
       _inventoryData = data.inventory || [];
       _logsData = data.logs || [];
+      _warehouses = data.warehouses || [];
+      renderTableHeader();
       renderInventory();
       renderLogs();
       renderStats();
@@ -259,49 +263,68 @@
   }
 
   // ── STATS ──
+  const STAT_COLORS = ['#34C759','#FF9500','#007AFF','#FF3B30','#5856D6'];
   function renderStats() {
-    let totalToshkent = 0, totalQoqon = 0;
-    _inventoryData.forEach(i => { totalToshkent += i.toshkent; totalQoqon += i.qoqon; });
-    const totalAll = totalToshkent + totalQoqon;
-    const productCount = _inventoryData.length;
+    const wTotals = {};
+    _warehouses.forEach(w => { wTotals[w] = 0; });
+    let totalAll = 0;
+    _inventoryData.forEach(item => {
+      _warehouses.forEach(w => {
+        const v = (item.warehouses && item.warehouses[w]) || 0;
+        wTotals[w] = (wTotals[w] || 0) + v;
+        totalAll += v;
+      });
+    });
+
+    const warehouseCards = _warehouses.map((w, i) => `
+      <div class="stat-card">
+        <span class="stat-label">${_esc(w)}</span>
+        <span class="stat-value" style="color:${STAT_COLORS[i % STAT_COLORS.length]}">${wTotals[w] || 0}</span>
+      </div>`).join('');
 
     document.getElementById('statsCards').innerHTML = `
       <div class="stat-card">
         <span class="stat-label">Jami zaxira</span>
         <span class="stat-value" style="color:var(--accent)">${totalAll}</span>
       </div>
-      <div class="stat-card">
-        <span class="stat-label">Toshkent</span>
-        <span class="stat-value" style="color:#34C759">${totalToshkent}</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-label">Qo'qon</span>
-        <span class="stat-value" style="color:#FF9500">${totalQoqon}</span>
-      </div>
+      ${warehouseCards}
       <div class="stat-card">
         <span class="stat-label">Mahsulot turlari</span>
-        <span class="stat-value" style="color:var(--text-primary)">${productCount}</span>
+        <span class="stat-value" style="color:var(--text-primary)">${_inventoryData.length}</span>
       </div>
     `;
   }
 
   // ── INVENTORY TABLE ──
-  function renderInventory() {
-    const body = document.getElementById('inventoryBody');
-    if (!_inventoryData.length) {
-      body.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-tertiary)"><i class="fas fa-box-open" style="font-size:32px;margin-bottom:8px;display:block"></i>Hozircha mahsulot yo\'q</td></tr>';
-      return;
-    }
-    body.innerHTML = _inventoryData.map(item => `
-      <tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:12px 16px;font-size:14px;font-weight:600;color:var(--text-primary)">${_esc(item.productName)}</td>
-        <td style="padding:12px 16px;text-align:center">${stockBadge(item.toshkent)}</td>
-        <td style="padding:12px 16px;text-align:center">${stockBadge(item.qoqon)}</td>
-        <td style="padding:12px 16px;text-align:center"><span class="stock-badge" style="background:rgba(99,102,241,0.12);color:#6366F1;font-size:15px">${item.total}</span></td>
-      </tr>
-    `).join('');
+  // ── TABLE HEADER — dinamik ──
+  function renderTableHeader() {
+    const thead = document.querySelector('#tab-inventory thead tr');
+    if (!thead) return;
+    const wCols = _warehouses.map(w =>
+      '<th style="text-align:center;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">' + _esc(w) + '</th>'
+    ).join('');
+    thead.innerHTML = '<th style="text-align:left;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">Mahsulot</th>' +
+      wCols +
+      '<th style="text-align:center;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">Jami</th>';
   }
 
+  function renderInventory() {
+    const body = document.getElementById('inventoryBody');
+    const colspan = _warehouses.length + 2;
+    if (!_inventoryData.length) {
+      body.innerHTML = '<tr><td colspan="' + colspan + '" style="text-align:center;padding:40px;color:var(--text-tertiary)"><i class="fas fa-box-open" style="font-size:32px;margin-bottom:8px;display:block"></i>Hozircha mahsulot yo\'q</td></tr>';
+      return;
+    }
+    body.innerHTML = _inventoryData.map(function(item) {
+      const wCells = _warehouses.map(function(w) {
+        const val = (item.warehouses && item.warehouses[w] != null) ? item.warehouses[w] : 0;
+        return '<td style="padding:12px 16px;text-align:center">' + stockBadge(val) + '</td>';
+      }).join('');
+      return '<tr style="border-bottom:1px solid var(--border)"><td style="padding:12px 16px;font-size:14px;font-weight:600;color:var(--text-primary)">' + _esc(item.productName) + '</td>' + wCells + '<td style="padding:12px 16px;text-align:center"><span class="stock-badge" style="background:rgba(99,102,241,0.12);color:#6366F1;font-size:15px">' + (item.total || 0) + '</span></td></tr>';
+    }).join('');
+  }
+
+  
   // ── LOGS TABLE ──
   function renderLogs() {
     const body = document.getElementById('logsBody');
