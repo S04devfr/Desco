@@ -6,7 +6,7 @@
  */
 const router  = require('express').Router()
 const prisma  = require('../config/database')
-const { protect } = require('../middleware/auth')
+const { protect, requireRole } = require('../middleware/auth')
 
 router.use(protect)
 
@@ -92,7 +92,7 @@ router.get('/online', async (req, res) => {
 
 // ── GET /stats ────────────────────────────────────────────────────────────────
 // Per-manager breakdown: today + last 7 days total minutes
-router.get('/stats', async (req, res) => {
+router.get('/stats', requireRole('admin'), async (req, res) => {
   try {
     const today      = toUzDate(new Date())
     const weekAgo    = toUzDate(new Date(Date.now() - 6 * 24 * 60 * 60 * 1000))

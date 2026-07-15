@@ -5,9 +5,10 @@
 const router = require('express').Router()
 const XLSX   = require('xlsx')
 const prisma = require('../config/database')
-const { protect } = require('../middleware/auth')
+const { protect, requireRole } = require('../middleware/auth')
 
 router.use(protect)
+router.use(requireRole('admin'))
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 const fmt  = (n) => Number(n || 0).toLocaleString('uz-UZ')

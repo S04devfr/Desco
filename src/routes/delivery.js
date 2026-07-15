@@ -4,6 +4,7 @@ const { protect, requireRole } = require('../middleware/auth')
 
 const router = express.Router()
 router.use(protect)
+router.use(requireRole('admin', 'manager'))
 
 // ── deal + client info selector ──
 const dealInclude = {

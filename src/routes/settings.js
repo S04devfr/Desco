@@ -1,7 +1,7 @@
 const express = require('express')
 const bcrypt = require('bcryptjs')
 const prisma = require('../config/database')
-const { protect } = require('../middleware/auth')
+const { protect, requireRole } = require('../middleware/auth')
 
 const router = express.Router()
 router.use(protect)
@@ -22,7 +22,7 @@ router.get('/company', async (req, res, next) => {
   } catch (error) { next(error) }
 })
 
-router.patch('/company', async (req, res, next) => {
+router.patch('/company', requireRole('admin'), async (req, res, next) => {
   try {
     const { companyName, currency, logoUrl } = req.body
     const existing = await prisma.companySettings.findFirst()

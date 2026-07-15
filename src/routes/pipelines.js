@@ -2,7 +2,7 @@
  * /api/pipelines  —  Prisma ORM
  */
 const express = require('express')
-const { protect } = require('../middleware/auth')
+const { protect, requireRole } = require('../middleware/auth')
 const prisma = require('../config/database')
 
 const router = express.Router()
@@ -30,7 +30,7 @@ router.get('/:id', async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
-router.post('/', async (req, res, next) => {
+router.post('/', requireRole('admin'), async (req, res, next) => {
   try {
     const { name, description, color } = req.body
     if (!name || !name.trim()) return res.status(400).json({ message: 'Voronka nomi majburiy' })
@@ -62,7 +62,7 @@ router.post('/', async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
-router.patch('/:id', async (req, res, next) => {
+router.patch('/:id', requireRole('admin'), async (req, res, next) => {
   try {
     const id = Number(req.params.id)
     const existing = await prisma.pipeline.findUnique({ where: { id } })
@@ -88,7 +88,7 @@ router.patch('/:id', async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', requireRole('admin'), async (req, res, next) => {
   try {
     const id = Number(req.params.id)
     const existing = await prisma.pipeline.findUnique({ where: { id } })

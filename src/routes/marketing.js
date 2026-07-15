@@ -4,6 +4,7 @@ const { protect, requireRole } = require('../middleware/auth')
 
 const router = express.Router()
 router.use(protect)
+router.use(requireRole('admin'))
 
 // ── GET all marketing logs (filterlash mumkin) ──
 router.get('/', async (req, res) => {
