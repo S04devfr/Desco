@@ -905,14 +905,16 @@ async function loadDashboard() {
     }).catch(() => {});
 
     // ── Render Funnel (new design: track + fill) ──
-    const funnel = safeKpis.funnelStages || { leads: 0, negotiation: 0, Nasiya: 0, won: 0 };
-    const pctNeg = funnel.leads > 0 ? ((funnel.negotiation / funnel.leads) * 100) : 0;
-    const pctWon = funnel.leads > 0 ? ((funnel.won / funnel.leads) * 100) : 0;
+    const funnel = safeKpis.funnelStages || { yangi: 0, won: 0, lost: 0, total: 0 };
+    const total = funnel.total || 1;
+    const pctYangi = (funnel.yangi / total) * 100;
+    const pctWon = (funnel.won / total) * 100;
+    const pctLost = (funnel.lost / total) * 100;
 
     const funnelSteps = [
-      { label: 'Barcha leadlar',   count: funnel.leads,       pct: 100,              color: 'linear-gradient(90deg,#4F46E5,#6366F1)' },
-      { label: 'Muzokaralar',      count: funnel.negotiation, pct: pctNeg,           color: 'linear-gradient(90deg,#0EA5E9,#38BDF8)' },
-      { label: 'Yutilgan (Sotuv)', count: funnel.won,         pct: pctWon,           color: 'linear-gradient(90deg,#10B981,#34D399)' },
+      { label: 'Yangi',          count: funnel.yangi, pct: pctYangi, color: 'linear-gradient(90deg,#4F46E5,#6366F1)' },
+      { label: '100% to\'lov',    count: funnel.won,   pct: pctWon,   color: 'linear-gradient(90deg,#10B981,#34D399)' },
+      { label: 'Otmen zakazlar', count: funnel.lost,  pct: pctLost,  color: 'linear-gradient(90deg,#FF3B30,#FF453A)' },
     ];
 
     document.getElementById('funnelContainer').innerHTML = funnelSteps.map((s, i) => `
