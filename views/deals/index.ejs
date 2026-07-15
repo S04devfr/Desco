@@ -128,8 +128,23 @@
   }
   .kb-col-title { display:flex; align-items:center; gap:7px; font-size:13px; font-weight:600; margin-bottom:3px; }
   .kb-col-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-  .kb-col-meta { font-size:11px; color:var(--text-tertiary); }
+  .kb-col-meta { font-size:11px; color:var(--text-tertiary); display:flex; justify-content:space-between; align-items:center; }
   .kb-col-meta span { color:var(--text-secondary); font-weight:600; }
+  .kb-col-sort-select {
+    font-size: 10px;
+    color: var(--text-secondary);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 3px;
+    outline: none;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .kb-col-sort-select:hover {
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+  }
 
   .kb-cards { flex:1; overflow-y:auto; padding:6px; min-height:120px; transition:background 0.12s; }
   .kb-cards::-webkit-scrollbar { width:3px; }
@@ -667,6 +682,7 @@
     let _pipelines = [];
     let _stages = [];   // active pipeline stages
     let _deals = [];
+    let _stageSorts = {}; // stageId -> 'newest' | 'oldest'
     let _managers = [];
     let _clients = [];
     let _activePid = null;
@@ -974,10 +990,18 @@ function renderKanban() {
   const unassigned = _deals.filter(d => !d.stageId);
 
   board.innerHTML = _stages.map((s, idx) => {
-    const sDeals = _deals.filter(d => d.stageId === s.id);
+    let sDeals = _deals.filter(d => d.stageId === s.id);
     const total  = sDeals.reduce((a, d) => a + (Number(d.amount)||0), 0);
     const isFirst = idx === 0;
     const editable = _editMode && !s.__mock;
+
+    // Apply sorting
+    const sortOrder = _stageSorts[s.id] || 'newest';
+    if (sortOrder === 'newest') {
+      sDeals.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    } else if (sortOrder === 'oldest') {
+      sDeals.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    }
 
     const hdrHtml = editable ? `
       <div class="kb-col-hdr-edit">
@@ -989,14 +1013,24 @@ function renderKanban() {
           <i class="fas fa-trash" style="font-size:11px"></i>
         </span>
       </div>
-      <div class="kb-col-meta" style="margin-top:4px"><span>${sDeals.length}</span> sdelka · <span>${_fmt(total,true)}</span></div>
+      <div class="kb-col-meta" style="margin-top:4px">
+        <div><span>${sDeals.length}</span> sdelka · <span>${_fmt(total,true)}</span></div>
+        <select class="kb-col-sort-select" onchange="changeStageSort(${s.id}, this.value)" onclick="event.stopPropagation()">
+          <option value="newest" ${sortOrder === 'newest' ? 'selected' : ''}>Eng yangi</option>
+          <option value="oldest" ${sortOrder === 'oldest' ? 'selected' : ''}>Eng eski</option>
+        </select>
+      </div>
     ` : `
       <div class="kb-col-title">
         <div class="kb-col-dot" style="background:${s.color||'#007AFF'}"></div>
         ${_esc(s.name)}
       </div>
       <div class="kb-col-meta">
-        <span>${sDeals.length}</span> sdelka · <span>${_fmt(total,true)}</span>
+        <div><span>${sDeals.length}</span> sdelka · <span>${_fmt(total,true)}</span></div>
+        <select class="kb-col-sort-select" onchange="changeStageSort(${s.id}, this.value)" onclick="event.stopPropagation()">
+          <option value="newest" ${sortOrder === 'newest' ? 'selected' : ''}>Eng yangi</option>
+          <option value="oldest" ${sortOrder === 'oldest' ? 'selected' : ''}>Eng eski</option>
+        </select>
       </div>
     `;
 
@@ -1398,6 +1432,11 @@ function toggleEditMode() {
   _editMode = !_editMode;
   document.getElementById('btnEditMode').classList.toggle('active', _editMode);
   document.getElementById('kbEditBanner').classList.toggle('hidden', !_editMode);
+  renderKanban();
+}
+
+function changeStageSort(stageId, value) {
+  _stageSorts[stageId] = value;
   renderKanban();
 }
 
