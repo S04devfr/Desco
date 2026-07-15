@@ -9,63 +9,63 @@
    1. DESIGN TOKENS
 ───────────────────────────────────────────────────── */
 :root {
-  /* Brand */
-  --brand:        #4F46E5;
-  --brand-hover:  #4338CA;
-  --brand-soft:   rgba(79, 70, 229, 0.08);
-  --brand-glow:   rgba(79, 70, 229, 0.18);
+  /* Brand (Apple Blue) */
+  --brand:        #007AFF;
+  --brand-hover:  #0062CC;
+  --brand-soft:   rgba(0, 122, 255, 0.08);
+  --brand-glow:   rgba(0, 122, 255, 0.18);
 
   /* Surfaces (Light) */
-  --surface-base:   #F4F5F8;
+  --surface-base:   #F2F2F7;
   --surface-card:   #FFFFFF;
-  --surface-input:  #F0F1F5;
+  --surface-input:  #E5E5EA;
 
-  /* Sidebar */
-  --sidebar-bg:          #1A1D2E;
-  --sidebar-border:      rgba(255,255,255,0.08);
-  --sidebar-hover:       rgba(255,255,255,0.07);
-  --sidebar-active:      rgba(99,102,241,0.85);
-  --sidebar-text:        rgba(255,255,255,0.55);
+  /* Sidebar (macOS style light sidebar) */
+  --sidebar-bg:          #E5E5EA;
+  --sidebar-border:      rgba(0,0,0,0.08);
+  --sidebar-hover:       rgba(0,0,0,0.04);
+  --sidebar-active:      #007AFF;
+  --sidebar-text:        #3C3C43;
   --sidebar-text-active: #FFFFFF;
 
   /* Text */
-  --text-900: #0D0F1A;
-  --text-700: #374151;
-  --text-500: #6B7280;
-  --text-300: #9CA3AF;
+  --text-900: #1C1C1E;
+  --text-700: #2C2C2E;
+  --text-500: #3C3C43;
+  --text-300: #8E8E93;
 
-  /* Semantic */
-  --success:        #059669;
-  --success-bg:     #ECFDF5;
-  --success-border: #A7F3D0;
-  --warning:        #D97706;
-  --warning-bg:     #FFFBEB;
-  --warning-border: #FDE68A;
-  --danger:         #DC2626;
-  --danger-bg:      #FEF2F2;
-  --danger-border:  #FECACA;
-  --info:           #2563EB;
-  --info-bg:        #EFF6FF;
-  --info-border:    #BFDBFE;
+  /* Semantic (Apple SF Colors) */
+  --success:        #34C759;
+  --success-bg:     #EBF9EB;
+  --success-border: rgba(52, 199, 89, 0.25);
+  --warning:        #FF9500;
+  --warning-bg:     #FFF5E6;
+  --warning-border: rgba(255, 149, 0, 0.25);
+  --danger:         #FF3B30;
+  --danger-bg:      #FFEBEA;
+  --danger-border:  rgba(255, 59, 48, 0.25);
+  --info:           #007AFF;
+  --info-bg:        #E6F2FF;
+  --info-border:    rgba(0, 122, 255, 0.25);
 
   /* Borders */
-  --border:        rgba(0,0,0,0.07);
+  --border:        rgba(0,0,0,0.06);
   --border-strong: rgba(0,0,0,0.12);
 
-  /* Shadows */
-  --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.04);
-  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
-  --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.08), 0 10px 10px -5px rgba(0,0,0,0.03);
-  --shadow-brand: 0 4px 14px rgba(79,70,229,0.25);
+  /* Shadows (Apple diffuse style) */
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.03);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
+  --shadow-xl: 0 16px 48px rgba(0,0,0,0.12);
+  --shadow-brand: 0 4px 14px rgba(0,122,255,0.2);
 
-  /* Radius */
-  --r-xs:   4px;
-  --r-sm:   8px;
-  --r-md:   12px;
-  --r-lg:   16px;
-  --r-xl:   20px;
+  /* Radius (Rounded like iOS/macOS) */
+  --r-xs:   6px;
+  --r-sm:   10px;
+  --r-md:   14px;
+  --r-lg:   18px;
+  --r-xl:   24px;
   --r-full: 9999px;
 
   /* Layout */
@@ -99,32 +99,53 @@
 }
 
 [data-theme="dark"] {
-  --surface-base:  #191C2B;
-  --surface-card:  #212438;
-  --surface-input: #2A2D42;
+  /* Brand (Apple Blue Dark) */
+  --brand:        #0A84FF;
+  --brand-hover:  #0062CC;
+  --brand-soft:   rgba(10, 132, 255, 0.12);
+  --brand-glow:   rgba(10, 132, 255, 0.22);
 
-  --text-900: #EDEEF8;
-  --text-700: #C4C8DC;
-  --text-500: #8A91A8;
-  --text-300: #5C6280;
+  /* Surfaces (Apple Dark True Black) */
+  --surface-base:  #000000;
+  --surface-card:  #1C1C1E;
+  --surface-input: #2C2C2E;
 
-  --border:        rgba(255,255,255,0.09);
-  --border-strong: rgba(255,255,255,0.15);
+  /* Sidebar (macOS style dark sidebar) */
+  --sidebar-bg:          #161618;
+  --sidebar-border:      rgba(255,255,255,0.06);
+  --sidebar-hover:       rgba(255,255,255,0.04);
+  --sidebar-active:      #0A84FF;
+  --sidebar-text:        #AEAEB2;
+  --sidebar-text-active: #FFFFFF;
 
-  --success-bg:     rgba(5,150,105,0.1);
-  --success-border: rgba(5,150,105,0.25);
-  --warning-bg:     rgba(217,119,6,0.1);
-  --warning-border: rgba(217,119,6,0.25);
-  --danger-bg:      rgba(220,38,38,0.1);
-  --danger-border:  rgba(220,38,38,0.25);
-  --info-bg:        rgba(37,99,235,0.1);
-  --info-border:    rgba(37,99,235,0.25);
+  /* Text */
+  --text-900: #FFFFFF;
+  --text-700: #EBEBF5;
+  --text-500: #AEAEB2;
+  --text-300: #636366;
 
-  --shadow-xs: 0 1px 2px rgba(0,0,0,0.35);
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.45);
-  --shadow-md: 0 4px 8px rgba(0,0,0,0.4);
-  --shadow-lg: 0 10px 20px rgba(0,0,0,0.45);
-  --shadow-xl: 0 20px 40px rgba(0,0,0,0.5);
+  /* Semantic (Apple SF Colors Dark) */
+  --success:        #30D158;
+  --success-bg:     rgba(48, 209, 88, 0.1);
+  --success-border: rgba(48, 209, 88, 0.25);
+  --warning:        #FF9F0A;
+  --warning-bg:     rgba(255, 159, 10, 0.1);
+  --warning-border: rgba(255, 159, 10, 0.25);
+  --danger:         #FF453A;
+  --danger-bg:      rgba(255, 69, 58, 0.1);
+  --danger-border:  rgba(255, 69, 58, 0.25);
+  --info:           #0A84FF;
+  --info-bg:        rgba(10, 132, 255, 0.1);
+  --info-border:    rgba(10, 132, 255, 0.25);
+
+  --border:        rgba(255,255,255,0.07);
+  --border-strong: rgba(255,255,255,0.12);
+
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.25);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.3);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.35);
+  --shadow-xl: 0 16px 48px rgba(0,0,0,0.4);
 
   /* Legacy dark overrides */
   --bg-primary:    var(--surface-base);
@@ -1966,12 +1987,56 @@ a.quick-nav-card .card:hover {
   .sidebar.mobile-open { left: 0; box-shadow: var(--shadow-xl); }
   .mobile-menu-toggle  { display: flex !important; }
   .topbar-search       { display: none; }
-  .page-content        { padding: 16px; }
+  .page-content        { padding: 12px; }
   .stats-grid          { grid-template-columns: repeat(2, 1fr); }
   .input-row           { grid-template-columns: 1fr; }
+  .kanban-col {
+    width: 85vw !important;
+    min-width: 85vw !important;
+  }
+  .modal-content {
+    width: 95%;
+    margin: 5% auto;
+    padding: 16px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  table.deals-tbl, table.data-table, table.table, table.ai-report-table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
 }
 
 @media (max-width: 480px) {
   .stats-grid { grid-template-columns: 1fr; }
-  .page-header { flex-direction: column; align-items: flex-start; }
+  .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .page-header .flex { width: 100%; justify-content: space-between; flex-wrap: wrap; }
+  .kanban-col { width: 90vw !important; min-width: 90vw !important; }
+}
+
+/* ─────────────────────────────────────────────────────
+   30. MOBILE OVERLAY & RESPONSIVE TABLES
+───────────────────────────────────────────────────── */
+.sidebar-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(2px);
+  z-index: 150;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-base) var(--ease);
+}
+.sidebar-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
