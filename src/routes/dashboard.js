@@ -294,7 +294,8 @@ router.get('/kpis', async (req, res, next) => {
       geographicSales: [],
       pipelineForecastValue: 0,
       managersList: [],
-      funnelStages: { leads: 0, negotiation: 0, Nasiya: 0, won: 0 }
+      funnelStages: { leads: 0, negotiation: 0, Nasiya: 0, won: 0 },
+      error: error.message + "\n" + error.stack
     });
   }
 })

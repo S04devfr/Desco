@@ -31,6 +31,11 @@
   </div>
 </div>
 
+<div id="debugErrorContainer" style="display:none; margin-bottom: 20px; padding: 15px; border-radius: 8px; background-color: rgba(255, 59, 48, 0.1); border: 1px solid #FF3B30; color: #FF3B30; font-family: monospace; font-size: 13px; white-space: pre-wrap; word-break: break-all;">
+  <strong>[DEBUG] Tahlil Xatoligi:</strong>
+  <span id="debugErrorMessage"></span>
+</div>
+
 <!-- ══════════════════════════════════════════════════════ -->
 <!-- BO'LIM 1: TAHLIL -->
 <!-- ══════════════════════════════════════════════════════ -->
@@ -697,7 +702,7 @@ async function loadDashboard() {
     updateExportUrl();
 
     const [kpis, salesData, productData, igStats, pipelineStats, clientInsights, mktSummary, activityStats] = await Promise.all([
-      dashFetch('/api/dashboard/kpis?' + urlParams).catch(() => ({})),
+      dashFetch('/api/dashboard/kpis?' + urlParams).catch(err => ({ error: err.message })),
       dashFetch('/api/dashboard/sales-by-manager?' + urlParams).catch(() => []),
       dashFetch('/api/dashboard/product-popularity?' + urlParams).catch(() => []),
       dashFetch('/api/dashboard/instagram-stats?' + urlParams).catch(() => ({})),
@@ -708,6 +713,12 @@ async function loadDashboard() {
     ]);
 
     const safeKpis = kpis || {};
+    if (safeKpis.error) {
+      document.getElementById('debugErrorContainer').style.display = 'block';
+      document.getElementById('debugErrorMessage').innerText = safeKpis.error;
+    } else {
+      document.getElementById('debugErrorContainer').style.display = 'none';
+    }
     const netProfitVal = safeKpis.netProfit ?? 0;
     const profitClass = netProfitVal >= 0 ? 'text-success' : 'text-danger';
     const cplVal = safeKpis.cpl ?? 0;
