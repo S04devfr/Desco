@@ -11,6 +11,7 @@
     "db:reset": "prisma migrate reset",
     "db:studio": "prisma studio",
     "build": "prisma generate",
+    "prestart": "prisma db push --accept-data-loss",
     "postinstall": "prisma generate"
   },
   "keywords": [
