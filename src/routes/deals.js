@@ -355,6 +355,12 @@ router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => 
           }
         });
       }
+    } else {
+      // Boshqa bosqichga o'tkazilganda bajarilmagan vazifalarni yakunlash (qayta aloqa yopildi)
+      await prisma.task.updateMany({
+        where: { dealId: deal.id, completed: false },
+        data: { completed: true }
+      });
     }
 
     const statusLabels = { new: 'Yangi', negotiation: 'Muzokaralar', proposal: 'Taklif', won: 'Yutilgan', lost: "Yo'qotilgan" }
@@ -536,6 +542,12 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
             }
           });
         }
+      } else {
+        // Boshqa bosqichga o'tkazilganda bajarilmagan vazifalarni yakunlash (qayta aloqa yopildi)
+        await tx.task.updateMany({
+          where: { dealId: id, completed: false },
+          data: { completed: true }
+        });
       }
 
       return updated
