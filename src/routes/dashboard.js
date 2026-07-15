@@ -64,7 +64,7 @@ router.get('/kpis', async (req, res, next) => {
       where.managerId = req.userId;
     }
     
-    const deals = await prisma.deal.findMany({ where, include: { stage: true, client: true, manager: { select: { id: true, fullName: true, email: true } } } });
+    const deals = await prisma.deal.findMany({ where, include: { stage: true, client: true, manager: { select: { id: true, fullName: true, email: true, role: true } } } });
     // Expenses only use createdAt
     const expenseWhere = where.OR ? { createdAt: { gte: where.OR[0].createdAt.gte, lte: where.OR[0].createdAt.lte } } : {};
     const expenses = await prisma.expense.findMany({ where: expenseWhere });
@@ -184,8 +184,11 @@ router.get('/kpis', async (req, res, next) => {
     // ── 6. Managers Detailed Performance KPIs ──
     const managerPerformance = {};
     deals.forEach(d => {
-      const managerName = d.manager ? (d.manager.fullName || d.manager.email) : 'Belgilanmagan';
-      const managerId = d.managerId || 0;
+      if (!d.manager) return; // Skip unassigned ("Belgilanmagan")
+      if (d.manager.role === 'admin') return; // Skip admin/developer like "Muhammadyusuf"
+
+      const managerName = d.manager.fullName || d.manager.email || 'Menejer';
+      const managerId = d.managerId;
       if (!managerPerformance[managerName]) {
         managerPerformance[managerName] = {
           id: managerId,
@@ -306,10 +309,19 @@ router.get('/sales-by-manager', async (req, res, next) => {
     const isAdmin = req.user && req.user.role === 'admin';
     const where = buildWhere(req.query.filter, req);
     if (!isAdmin) where.managerId = req.userId;
-    const deals = await prisma.deal.findMany({ where, include: { manager: true } })
+    const deals = await prisma.deal.findMany({ 
+      where, 
+      include: { 
+        manager: { 
+          select: { id: true, fullName: true, role: true } 
+        } 
+      } 
+    })
     const totals = {}
     for (const deal of deals) {
-      const name = deal.manager ? deal.manager.fullName : 'Belgilanmagan'
+      if (!deal.manager) continue; // Skip unassigned ("Belgilanmagan")
+      if (deal.manager.role === 'admin') continue; // Skip admin
+      const name = deal.manager.fullName || 'Menejer'
       totals[name] = (totals[name] || 0) + deal.amount
     }
     res.json(Object.entries(totals).map(([manager, totalSales]) => ({ manager, totalSales })))
