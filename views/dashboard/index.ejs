@@ -1197,145 +1197,147 @@ async function loadDashboard() {
       }
     };
 
-    // ── Render Nasiya breakdown Tariffs ──
-    const des = safeKpis.nasiyaDesco || { count: 0, amount: 0 };
-    const ish = safeKpis.nasiyaIshonch || { count: 0, amount: 0 };
-    const bar = safeKpis.nasiyaBaraka || { count: 0, amount: 0 };
-    const shp = safeKpis.shopir || { count: 0, amount: 0 };
+    if (USER_ROLE === 'admin') {
+      // ── Render Nasiya breakdown Tariffs ──
+      const des = safeKpis.nasiyaDesco || { count: 0, amount: 0 };
+      const ish = safeKpis.nasiyaIshonch || { count: 0, amount: 0 };
+      const bar = safeKpis.nasiyaBaraka || { count: 0, amount: 0 };
+      const shp = safeKpis.shopir || { count: 0, amount: 0 };
 
-    document.getElementById('nasiyaBreakdownContainer').innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--bg-secondary); border-radius:8px; border:1px solid var(--border)">
-        <span style="font-weight:600; font-size:13px"><i class="fas fa-handshake" style="color:#34C759; margin-right:6px"></i> Nasiya Desco (O'zimizniki)</span>
-        <div style="text-align:right">
-          <div style="font-weight:800; color:var(--text-primary); font-size:14px">${fmtMoney(des.amount)}</div>
-          <div style="font-size:10px; color:var(--text-tertiary)">Soni: ${des.count} ta buyurtma</div>
+      document.getElementById('nasiyaBreakdownContainer').innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--bg-secondary); border-radius:8px; border:1px solid var(--border)">
+          <span style="font-weight:600; font-size:13px"><i class="fas fa-handshake" style="color:#34C759; margin-right:6px"></i> Nasiya Desco (O'zimizniki)</span>
+          <div style="text-align:right">
+            <div style="font-weight:800; color:var(--text-primary); font-size:14px">${fmtMoney(des.amount)}</div>
+            <div style="font-size:10px; color:var(--text-tertiary)">Soni: ${des.count} ta buyurtma</div>
+          </div>
         </div>
-      </div>
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--bg-secondary); border-radius:8px; border:1px solid var(--border)">
-        <span style="font-weight:600; font-size:13px"><i class="fas fa-building" style="color:#FF9500; margin-right:6px"></i> Nasiya Ishonch</span>
-        <div style="text-align:right">
-          <div style="font-weight:800; color:var(--text-primary); font-size:14px">${fmtMoney(ish.amount)}</div>
-          <div style="font-size:10px; color:var(--text-tertiary)">Soni: ${ish.count} ta buyurtma</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--bg-secondary); border-radius:8px; border:1px solid var(--border)">
+          <span style="font-weight:600; font-size:13px"><i class="fas fa-building" style="color:#FF9500; margin-right:6px"></i> Nasiya Ishonch</span>
+          <div style="text-align:right">
+            <div style="font-weight:800; color:var(--text-primary); font-size:14px">${fmtMoney(ish.amount)}</div>
+            <div style="font-size:10px; color:var(--text-tertiary)">Soni: ${ish.count} ta buyurtma</div>
+          </div>
         </div>
-      </div>
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--bg-secondary); border-radius:8px; border:1px solid var(--border)">
-        <span style="font-weight:600; font-size:13px"><i class="fas fa-store" style="color:#FF3B30; margin-right:6px"></i> Nasiya Baraka</span>
-        <div style="text-align:right">
-          <div style="font-weight:800; color:var(--text-primary); font-size:14px">${fmtMoney(bar.amount)}</div>
-          <div style="font-size:10px; color:var(--text-tertiary)">Soni: ${bar.count} ta buyurtma</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--bg-secondary); border-radius:8px; border:1px solid var(--border)">
+          <span style="font-weight:600; font-size:13px"><i class="fas fa-store" style="color:#FF3B30; margin-right:6px"></i> Nasiya Baraka</span>
+          <div style="text-align:right">
+            <div style="font-weight:800; color:var(--text-primary); font-size:14px">${fmtMoney(bar.amount)}</div>
+            <div style="font-size:10px; color:var(--text-tertiary)">Soni: ${bar.count} ta buyurtma</div>
+          </div>
         </div>
-      </div>
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--bg-secondary); border-radius:8px; border:1px solid var(--border)">
-        <span style="font-weight:600; font-size:13px"><i class="fas fa-truck-moving" style="color:#007AFF; margin-right:6px"></i> Shopirdagi pullar</span>
-        <div style="text-align:right">
-          <div style="font-weight:800; color:var(--text-primary); font-size:14px">${fmtMoney(shp.amount)}</div>
-          <div style="font-size:10px; color:var(--text-tertiary)">Soni: ${shp.count} ta buyurtma</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--bg-secondary); border-radius:8px; border:1px solid var(--border)">
+          <span style="font-weight:600; font-size:13px"><i class="fas fa-truck-moving" style="color:#007AFF; margin-right:6px"></i> Shopirdagi pullar</span>
+          <div style="text-align:right">
+            <div style="font-weight:800; color:var(--text-primary); font-size:14px">${fmtMoney(shp.amount)}</div>
+            <div style="font-size:10px; color:var(--text-tertiary)">Soni: ${shp.count} ta buyurtma</div>
+          </div>
         </div>
-      </div>
-    `;
+      `;
 
-    // ── Render Charts ──
-    const safeSalesData = Array.isArray(salesData) ? salesData : [];
-    const safeProductData = Array.isArray(productData) ? productData : [];
+      // ── Render Charts ──
+      const safeSalesData = Array.isArray(salesData) ? salesData : [];
+      const safeProductData = Array.isArray(productData) ? productData : [];
 
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-    const textColor = isDark ? '#98989d' : '#6e6e73';
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+      const textColor = isDark ? '#98989d' : '#6e6e73';
 
-    if (salesChart) salesChart.destroy();
-    
-    if (safeSalesData.length === 0) {
-      document.getElementById('salesChart').parentElement.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:13px;">Ma\'lumot yo\'q</div>';
-    } else {
-      salesChart = new Chart(document.getElementById('salesChart'), {
-        type: 'bar',
-        data: {
-          labels: safeSalesData.map(d => d.manager || 'Noma\'lum'),
-          datasets: [{
-            label: "Savdo (so'm)",
-            data: safeSalesData.map(d => d.totalSales || 0),
-            backgroundColor: 'rgba(0,122,255,0.7)',
-            borderRadius: 8, borderSkipped: false
-          }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: { grid: { color: gridColor }, ticks: { color: textColor, callback: v => fmtShort(v) } },
-            x: { grid: { display: false }, ticks: { color: textColor } }
-          }
-        }
-      });
-    }
-
-    if (productChart) productChart.destroy();
-    const top = safeProductData.slice(0, 8);
-    const COLORS = ['#007AFF','#34C759','#FF9500','#FF3B30','#5856D6','#00C7BE','#FF2D55','#AC8E68'];
-    const fmtS = v => v >= 1e9 ? (v/1e9).toFixed(1)+'B' : v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : v.toString();
-
-    const emptyEl = document.getElementById('productEmpty');
-    const tradingEl = document.getElementById('productTrading');
-    const listEl = document.getElementById('productList');
-    const totalBadge = document.getElementById('productTotalBadge');
-    const centerPct = document.getElementById('productCenterPct');
-    const centerName = document.getElementById('productCenterName');
-
-    if (top.length === 0) {
-      if (emptyEl) { emptyEl.style.display = 'flex'; }
-      if (tradingEl) { tradingEl.style.display = 'none'; }
-    } else {
-      if (emptyEl) emptyEl.style.display = 'none';
-      if (tradingEl) tradingEl.style.display = 'flex';
-      const grandTotal = top.reduce((s,d) => s + (d.totalAmount||0), 0);
-      if (totalBadge) totalBadge.textContent = fmtS(grandTotal) + " so'm";
-
-      // Default center: top product
-      if (centerPct) centerPct.textContent = (top[0].pct||0) + '%';
-      if (centerName) centerName.textContent = (top[0].product||'').split(' ').slice(0,2).join(' ');
-
-      productChart = new Chart(document.getElementById('productChart'), {
-        type: 'doughnut',
-        data: {
-          labels: top.map(d => d.product || 'Noma\'lum'),
-          datasets: [{ data: top.map(d => d.totalAmount||0), backgroundColor: COLORS.slice(0,top.length), borderWidth: 2, borderColor: 'var(--surface-card, #1e293b)', hoverOffset: 6 }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          cutout: '68%',
-          plugins: { legend: { display: false }, tooltip: {
-            callbacks: { label: ctx => ' ' + ctx.label + ': ' + fmtS(ctx.parsed) + ' so\'m' }
-          }},
-          onHover: (evt, elements) => {
-            if (elements.length && centerPct && centerName) {
-              const i = elements[0].index;
-              centerPct.textContent = (top[i].pct||0) + '%';
-              centerName.textContent = (top[i].product||'').split(' ').slice(0,2).join(' ');
+      if (salesChart) salesChart.destroy();
+      
+      if (safeSalesData.length === 0) {
+        document.getElementById('salesChart').parentElement.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:13px;">Ma\'lumot yo\'q</div>';
+      } else {
+        salesChart = new Chart(document.getElementById('salesChart'), {
+          type: 'bar',
+          data: {
+            labels: safeSalesData.map(d => d.manager || 'Noma\'lum'),
+            datasets: [{
+              label: "Savdo (so'm)",
+              data: safeSalesData.map(d => d.totalSales || 0),
+              backgroundColor: 'rgba(0,122,255,0.7)',
+              borderRadius: 8, borderSkipped: false
+            }]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { grid: { color: gridColor }, ticks: { color: textColor, callback: v => fmtShort(v) } },
+              x: { grid: { display: false }, ticks: { color: textColor } }
             }
           }
-        }
-      });
+        });
+      }
 
-      // Trading rows
-      if (listEl) {
-        listEl.innerHTML = top.map((d,i) => {
-          const bar = d.pct || 0;
-          return `<div style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:3px 4px;border-radius:6px;transition:background .15s"
-            onmouseenter="this.style.background='var(--brand-soft)'"
-            onmouseleave="this.style.background='transparent'">
-            <span style="width:8px;height:8px;border-radius:50%;background:${COLORS[i]};flex-shrink:0;"></span>
-            <div style="flex:1;min-width:0;">
-              <div style="font-size:11.5px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(d.product||'')}</div>
-              <div style="height:3px;background:var(--border);border-radius:2px;margin-top:3px;">
-                <div style="height:3px;border-radius:2px;background:${COLORS[i]};width:${bar}%;transition:width .4s"></div>
+      if (productChart) productChart.destroy();
+      const top = safeProductData.slice(0, 8);
+      const COLORS = ['#007AFF','#34C759','#FF9500','#FF3B30','#5856D6','#00C7BE','#FF2D55','#AC8E68'];
+      const fmtS = v => v >= 1e9 ? (v/1e9).toFixed(1)+'B' : v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : v.toString();
+
+      const emptyEl = document.getElementById('productEmpty');
+      const tradingEl = document.getElementById('productTrading');
+      const listEl = document.getElementById('productList');
+      const totalBadge = document.getElementById('productTotalBadge');
+      const centerPct = document.getElementById('productCenterPct');
+      const centerName = document.getElementById('productCenterName');
+
+      if (top.length === 0) {
+        if (emptyEl) { emptyEl.style.display = 'flex'; }
+        if (tradingEl) { tradingEl.style.display = 'none'; }
+      } else {
+        if (emptyEl) emptyEl.style.display = 'none';
+        if (tradingEl) tradingEl.style.display = 'flex';
+        const grandTotal = top.reduce((s,d) => s + (d.totalAmount||0), 0);
+        if (totalBadge) totalBadge.textContent = fmtS(grandTotal) + " so'm";
+
+        // Default center: top product
+        if (centerPct) centerPct.textContent = (top[0].pct||0) + '%';
+        if (centerName) centerName.textContent = (top[0].product||'').split(' ').slice(0,2).join(' ');
+
+        productChart = new Chart(document.getElementById('productChart'), {
+          type: 'doughnut',
+          data: {
+            labels: top.map(d => d.product || 'Noma\'lum'),
+            datasets: [{ data: top.map(d => d.totalAmount||0), backgroundColor: COLORS.slice(0,top.length), borderWidth: 2, borderColor: 'var(--surface-card, #1e293b)', hoverOffset: 6 }]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            cutout: '68%',
+            plugins: { legend: { display: false }, tooltip: {
+              callbacks: { label: ctx => ' ' + ctx.label + ': ' + fmtS(ctx.parsed) + ' so\'m' }
+            }},
+            onHover: (evt, elements) => {
+              if (elements.length && centerPct && centerName) {
+                const i = elements[0].index;
+                centerPct.textContent = (top[i].pct||0) + '%';
+                centerName.textContent = (top[i].product||'').split(' ').slice(0,2).join(' ');
+              }
+            }
+          }
+        });
+
+        // Trading rows
+        if (listEl) {
+          listEl.innerHTML = top.map((d,i) => {
+            const bar = d.pct || 0;
+            return `<div style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:3px 4px;border-radius:6px;transition:background .15s"
+              onmouseenter="this.style.background='var(--brand-soft)'"
+              onmouseleave="this.style.background='transparent'">
+              <span style="width:8px;height:8px;border-radius:50%;background:${COLORS[i]};flex-shrink:0;"></span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:11.5px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(d.product||'')}</div>
+                <div style="height:3px;background:var(--border);border-radius:2px;margin-top:3px;">
+                  <div style="height:3px;border-radius:2px;background:${COLORS[i]};width:${bar}%;transition:width .4s"></div>
+                </div>
               </div>
-            </div>
-            <div style="text-align:right;flex-shrink:0;">
-              <div style="font-size:11px;font-weight:700;color:var(--text-primary)">${bar}%</div>
-              <div style="font-size:10px;color:var(--text-secondary)">${d.count}ta · ${fmtS(d.totalAmount||0)}</div>
-            </div>
-          </div>`;
-        }).join('');
+              <div style="text-align:right;flex-shrink:0;">
+                <div style="font-size:11px;font-weight:700;color:var(--text-primary)">${bar}%</div>
+                <div style="font-size:10px;color:var(--text-secondary)">${d.count}ta · ${fmtS(d.totalAmount||0)}</div>
+              </div>
+            </div>`;
+          }).join('');
+        }
       }
     }
   } catch(e) {
