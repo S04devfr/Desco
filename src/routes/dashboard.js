@@ -95,12 +95,12 @@ router.get('/kpis', async (req, res, next) => {
     
     let totalExpenses = 0, totalCostPrice = 0, netProfit = 0, totalClientDebt = 0;
     let totalMarketingExpenses = 0;
+    let expenseByCategory = {};
     
     if (isAdmin) {
       totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
       totalMarketingExpenses = expenses.filter(e => e.category === 'marketing').reduce((sum, e) => sum + e.amount, 0);
       // Kategoriyalar bo'yicha xarajat breakdown
-      const expenseByCategory = {};
       expenses.forEach(e => {
         const cat = e.category || 'other';
         expenseByCategory[cat] = (expenseByCategory[cat] || 0) + e.amount;
