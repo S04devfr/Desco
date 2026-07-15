@@ -121,8 +121,13 @@ router.get('/kpis', async (req, res, next) => {
       const dr = where.OR[0]?.updatedAt || where.OR[0]?.createdAt
       if (dr) mktLeadsWhere.date = dr
     }
-    const mktLeadsAgg = await prisma.marketingLog.aggregate({ _sum: { leads: true }, where: mktLeadsWhere })
-    const totalLeadsCreated = mktLeadsAgg._sum.leads || deals.length // fallback to deals count
+    let totalLeadsCreated = deals.length;
+    try {
+      const mktLeadsAgg = await prisma.marketingLog.aggregate({ _sum: { leads: true }, where: mktLeadsWhere });
+      totalLeadsCreated = mktLeadsAgg._sum.leads || deals.length; // fallback to deals count
+    } catch(e) {
+      // Table might not exist yet
+    }
     const cpl = totalLeadsCreated > 0 ? (totalMarketingExpenses / totalLeadsCreated) : 0;
     const marketingRoi = totalMarketingExpenses > 0 ? ((netProfit / totalMarketingExpenses) * 100) : 0;
 
