@@ -131,19 +131,22 @@
   .kb-col-meta { font-size:11px; color:var(--text-tertiary); display:flex; justify-content:space-between; align-items:center; }
   .kb-col-meta span { color:var(--text-secondary); font-weight:600; }
   .kb-col-sort-select {
-    font-size: 10px;
-    color: var(--text-secondary);
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 1px 3px;
+    font-size: 10.5px;
+    color: var(--accent);
+    background: var(--bg-primary);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-radius: 6px;
+    padding: 2px 6px;
     outline: none;
     cursor: pointer;
-    font-weight: 500;
+    font-weight: 600;
+    transition: all 0.15s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
   }
   .kb-col-sort-select:hover {
-    border-color: var(--border-hover);
-    color: var(--text-primary);
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent);
   }
 
   .kb-cards { flex:1; overflow-y:auto; padding:6px; min-height:120px; transition:background 0.12s; }
@@ -1003,6 +1006,13 @@ function renderKanban() {
       sDeals.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
     }
 
+    const sortSelectHtml = isFirst ? `
+      <select class="kb-col-sort-select" onchange="changeStageSort(${s.id}, this.value)" onclick="event.stopPropagation()">
+        <option value="newest" ${sortOrder === 'newest' ? 'selected' : ''}>Eng yangi</option>
+        <option value="oldest" ${sortOrder === 'oldest' ? 'selected' : ''}>Eng eski</option>
+      </select>
+    ` : '';
+
     const hdrHtml = editable ? `
       <div class="kb-col-hdr-edit">
         <i class="fas fa-grip-vertical" title="Tartibni o'zgartirish uchun tutib torting"></i>
@@ -1015,10 +1025,7 @@ function renderKanban() {
       </div>
       <div class="kb-col-meta" style="margin-top:4px">
         <div><span>${sDeals.length}</span> sdelka · <span>${_fmt(total,true)}</span></div>
-        <select class="kb-col-sort-select" onchange="changeStageSort(${s.id}, this.value)" onclick="event.stopPropagation()">
-          <option value="newest" ${sortOrder === 'newest' ? 'selected' : ''}>Eng yangi</option>
-          <option value="oldest" ${sortOrder === 'oldest' ? 'selected' : ''}>Eng eski</option>
-        </select>
+        ${sortSelectHtml}
       </div>
     ` : `
       <div class="kb-col-title">
@@ -1027,10 +1034,7 @@ function renderKanban() {
       </div>
       <div class="kb-col-meta">
         <div><span>${sDeals.length}</span> sdelka · <span>${_fmt(total,true)}</span></div>
-        <select class="kb-col-sort-select" onchange="changeStageSort(${s.id}, this.value)" onclick="event.stopPropagation()">
-          <option value="newest" ${sortOrder === 'newest' ? 'selected' : ''}>Eng yangi</option>
-          <option value="oldest" ${sortOrder === 'oldest' ? 'selected' : ''}>Eng eski</option>
-        </select>
+        ${sortSelectHtml}
       </div>
     `;
 
