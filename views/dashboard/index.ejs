@@ -724,8 +724,11 @@ async function loadDashboard() {
     const cplVal = safeKpis.cpl ?? 0;
     const roiVal = safeKpis.marketingRoi ?? 0;
 
+    const nasiya = (safeKpis.nasiyaDesco?.amount || 0) + (safeKpis.nasiyaIshonch?.amount || 0) + (safeKpis.nasiyaBaraka?.amount || 0);
+    const nasiyaCount = (safeKpis.nasiyaDesco?.count || 0) + (safeKpis.nasiyaIshonch?.count || 0) + (safeKpis.nasiyaBaraka?.count || 0);
+
     // ══════════════════════════════════════════
-    // QATOR 1: Leadlar | Zakazlar | Tan narx | Sof foyda | Klientlar qarzi
+    // QATOR 1: Leadlar | Zakazlar | Nasiya/Savdo/Qarzdorlar | Klientlardagi Qarz (admin) | Zakazlar holati
     // ══════════════════════════════════════════
     let row1Html = `
       <div class="stat-card clickable" onclick="window.location.href='/deals'">
@@ -744,26 +747,18 @@ async function loadDashboard() {
           <div class="stat-sub">Yopilgan (Won): ${renderCardMoney(safeKpis.totalRevenue ?? 0)}</div>
         </div>
       </div>
+      <div class="stat-card clickable" onclick="window.location.href='/nasiya/list?stage=nasiya'">
+        <div class="stat-icon green"><i class="fas fa-coins"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Nasiya / Savdo / Qarzdorlar</div>
+          <div class="stat-value">${renderCardMoney(nasiya)}</div>
+          <div class="stat-sub">Soni: ${nasiyaCount} ta nasiya · Shopir: ${fmtMoney(safeKpis.shopir?.amount ?? 0)}</div>
+        </div>
+      </div>
     `;
 
     if (USER_ROLE === 'admin') {
       row1Html += `
-        <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')">
-          <div class="stat-icon purple"><i class="fas fa-tags"></i></div>
-          <div class="stat-info">
-            <div class="stat-label">Tan narx</div>
-            <div class="stat-value">${renderCardMoney(safeKpis.totalCostPrice ?? 0)}</div>
-            <div class="stat-sub">Jami mahsulot tannarxi</div>
-          </div>
-        </div>
-        <div class="stat-card clickable" onclick="openProfitModal()">
-          <div class="stat-icon green"><i class="fas fa-chart-line"></i></div>
-          <div class="stat-info">
-            <div class="stat-label">Sof foyda</div>
-            <div class="stat-value ${profitClass}">${renderCardMoney(netProfitVal)}</div>
-            <div class="stat-sub">Savdo − Tannarx − Xarajat</div>
-          </div>
-        </div>
         <div class="stat-card clickable" onclick="openFinancialModal('client-debts')">
           <div class="stat-icon red"><i class="fas fa-hand-holding-usd"></i></div>
           <div class="stat-info">
@@ -775,59 +770,7 @@ async function loadDashboard() {
       `;
     }
 
-    document.getElementById('kpiRow1').innerHTML = row1Html;
-
-    // ══════════════════════════════════════════
-    // QATOR 2: Marketing | Xodimlar/KPI | Nasiya | Instagram | Zakazlar holati
-    // ══════════════════════════════════════════
-    const igData = igStats || {};
-    const nasiya = (safeKpis.nasiyaDesco?.amount || 0) + (safeKpis.nasiyaIshonch?.amount || 0) + (safeKpis.nasiyaBaraka?.amount || 0);
-    const nasiyaCount = (safeKpis.nasiyaDesco?.count || 0) + (safeKpis.nasiyaIshonch?.count || 0) + (safeKpis.nasiyaBaraka?.count || 0);
-    const topStage = Array.isArray(pipelineStats) && pipelineStats.length
-      ? pipelineStats.sort((a, b) => b.count - a.count)[0]
-      : null;
-
-    let row2Html = `
-      <div class="stat-card clickable" onclick="window.location.href='/expenses'">
-        <div class="stat-icon orange"><i class="fas fa-bullhorn"></i></div>
-        <div class="stat-info">
-          <div class="stat-label">Marketing / Target</div>
-          <div class="stat-value">${renderCardMoney((mktSummary?.totalSpent ?? 0) || (safeKpis.totalMarketingExpenses ?? 0))}</div>
-          <div class="stat-sub">Lead: ${mktSummary?.totalLeads ?? 0} ta · CPL: ${fmtMoney(cplVal)} · ROI: ${roiVal.toFixed(0)}%</div>
-        </div>
-      </div>
-
-      <div class="stat-card clickable" onclick="document.getElementById('managerKpiSection')?.scrollIntoView({behavior:'smooth'})">
-        <div class="stat-icon blue"><i class="fas fa-users-cog"></i></div>
-        <div class="stat-info">
-          <div class="stat-label">Xodimlar / Maosh / KPI</div>
-          <div class="stat-value">${(safeKpis.managersList?.length ?? 0)}</div>
-          <div class="stat-sub">Faol menejerlar · KPI kalkulyator ↓</div>
-        </div>
-      </div>
-
-      <div class="stat-card clickable" onclick="window.location.href='/nasiya/list?stage=nasiya'">
-        <div class="stat-icon green"><i class="fas fa-coins"></i></div>
-        <div class="stat-info">
-          <div class="stat-label">Nasiya / Savdo / Qarzdorlar</div>
-          <div class="stat-value">${renderCardMoney(nasiya)}</div>
-          <div class="stat-sub">Soni: ${nasiyaCount} ta nasiya · Shopir: ${fmtMoney(safeKpis.shopir?.amount ?? 0)}</div>
-        </div>
-      </div>
-
-      <div class="stat-card clickable" onclick="window.location.href='/expenses'">
-        <div class="stat-icon red"><i class="fas fa-receipt"></i></div>
-        <div class="stat-info">
-          <div class="stat-label">Xarajatlar</div>
-          <div class="stat-value">${renderCardMoney(safeKpis.totalExpenses ?? 0)}</div>
-          <div class="stat-sub">${(() => {
-            const cats = safeKpis.expenseByCategory || {};
-            const parts = Object.entries(cats).slice(0,3).map(([k,v]) => k + ': ' + fmtMoney(v));
-            return parts.length ? parts.join(' · ') : 'Hali xarajat yoq';
-          })()}</div>
-        </div>
-      </div>
-
+    row1Html += `
       <div class="stat-card clickable" onclick="window.location.href='/deals'" style="padding:14px 16px;">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
           <div class="stat-icon blue" style="margin:0;flex-shrink:0;"><i class="fas fa-layer-group"></i></div>
@@ -858,6 +801,66 @@ async function loadDashboard() {
         </div>
       </div>
     `;
+
+    document.getElementById('kpiRow1').innerHTML = row1Html;
+
+    // ══════════════════════════════════════════
+    // QATOR 2: Marketing/Target | Xodimlar/Maosh/KPI | Tan narx (admin) | Harajatlar (admin) | Sof foyda (admin)
+    // ══════════════════════════════════════════
+    let row2Html = `
+      <div class="stat-card clickable" onclick="window.location.href='/expenses'">
+        <div class="stat-icon orange"><i class="fas fa-bullhorn"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Marketing / Target</div>
+          <div class="stat-value">${renderCardMoney((mktSummary?.totalSpent ?? 0) || (safeKpis.totalMarketingExpenses ?? 0))}</div>
+          <div class="stat-sub">Lead: ${mktSummary?.totalLeads ?? 0} ta · CPL: ${fmtMoney(cplVal)} · ROI: ${roiVal.toFixed(0)}%</div>
+        </div>
+      </div>
+
+      <div class="stat-card clickable" onclick="document.getElementById('managerKpiSection')?.scrollIntoView({behavior:'smooth'})">
+        <div class="stat-icon blue"><i class="fas fa-users-cog"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Xodimlar / Maosh / KPI</div>
+          <div class="stat-value">${(safeKpis.managersList?.length ?? 0)}</div>
+          <div class="stat-sub">Faol menejerlar · KPI kalkulyator ↓</div>
+        </div>
+      </div>
+    `;
+
+    if (USER_ROLE === 'admin') {
+      row2Html += `
+        <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')">
+          <div class="stat-icon purple"><i class="fas fa-tags"></i></div>
+          <div class="stat-info">
+            <div class="stat-label">Tan narx</div>
+            <div class="stat-value">${renderCardMoney(safeKpis.totalCostPrice ?? 0)}</div>
+            <div class="stat-sub">Jami mahsulot tannarxi</div>
+          </div>
+        </div>
+
+        <div class="stat-card clickable" onclick="window.location.href='/expenses'">
+          <div class="stat-icon red"><i class="fas fa-receipt"></i></div>
+          <div class="stat-info">
+            <div class="stat-label">Harajatlar</div>
+            <div class="stat-value">${renderCardMoney(safeKpis.totalExpenses ?? 0)}</div>
+            <div class="stat-sub">${(() => {
+              const cats = safeKpis.expenseByCategory || {};
+              const parts = Object.entries(cats).slice(0,3).map(([k,v]) => k + ': ' + fmtMoney(v));
+              return parts.length ? parts.join(' · ') : 'Hali xarajat yoq';
+            })()}</div>
+          </div>
+        </div>
+
+        <div class="stat-card clickable" onclick="openProfitModal()">
+          <div class="stat-icon green"><i class="fas fa-chart-line"></i></div>
+          <div class="stat-info">
+            <div class="stat-label">Sof foyda</div>
+            <div class="stat-value ${profitClass}">${renderCardMoney(netProfitVal)}</div>
+            <div class="stat-sub">Savdo − Tannarx − Xarajat</div>
+          </div>
+        </div>
+      `;
+    }
 
     document.getElementById('kpiRow2').innerHTML = row2Html;
 
