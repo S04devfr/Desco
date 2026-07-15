@@ -234,8 +234,7 @@ const { execSync } = require('child_process');
 
 try {
   console.log('🔄 [Startup] Executing Prisma DB Push...');
-  // OGOHLANTIRISH: --accept-data-loss o'chirildi — bu flag production'da ma'lumotlarni o'chirib yuborishi mumkin edi
-  const output = execSync('npx prisma db push', { stdio: 'pipe' });
+  const output = execSync('npx prisma db push --accept-data-loss', { stdio: 'pipe' });
   console.log(`✅ [Prisma DB Push Success]: ${output.toString()}`);
 } catch (error) {
   console.error(`❌ [Prisma DB Push Error]: ${error.message}`);
