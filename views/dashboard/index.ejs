@@ -819,28 +819,28 @@ async function loadDashboard() {
     // ══════════════════════════════════════════
     // QATOR 2: Marketing/Target | Xodimlar/Maosh/KPI | Tan narx (admin) | Harajatlar (admin) | Sof foyda (admin)
     // ══════════════════════════════════════════
-    let row2Html = `
-      <div class="stat-card clickable" onclick="window.location.href='/expenses'">
-        <div class="stat-icon orange"><i class="fas fa-bullhorn"></i></div>
-        <div class="stat-info">
-          <div class="stat-label">Marketing / Target</div>
-          <div class="stat-value">${renderCardMoney((mktSummary?.totalSpent ?? 0) || (safeKpis.totalMarketingExpenses ?? 0))}</div>
-          <div class="stat-sub">Lead: ${mktSummary?.totalLeads ?? 0} ta · CPL: ${fmtMoney(cplVal)} · ROI: ${roiVal.toFixed(0)}%</div>
-        </div>
-      </div>
-
-      <div class="stat-card clickable" onclick="document.getElementById('managerKpiSection')?.scrollIntoView({behavior:'smooth'})">
-        <div class="stat-icon blue"><i class="fas fa-users-cog"></i></div>
-        <div class="stat-info">
-          <div class="stat-label">Xodimlar / Maosh / KPI</div>
-          <div class="stat-value">${(safeKpis.managersList?.length ?? 0)}</div>
-          <div class="stat-sub">Faol menejerlar · KPI kalkulyator ↓</div>
-        </div>
-      </div>
-    `;
+    let row2Html = '';
 
     if (USER_ROLE === 'admin') {
-      row2Html += `
+      row2Html = `
+        <div class="stat-card clickable" onclick="window.location.href='/expenses'">
+          <div class="stat-icon orange"><i class="fas fa-bullhorn"></i></div>
+          <div class="stat-info">
+            <div class="stat-label">Marketing / Target</div>
+            <div class="stat-value">${renderCardMoney((mktSummary?.totalSpent ?? 0) || (safeKpis.totalMarketingExpenses ?? 0))}</div>
+            <div class="stat-sub">Lead: ${mktSummary?.totalLeads ?? 0} ta · CPL: ${fmtMoney(cplVal)} · ROI: ${roiVal.toFixed(0)}%</div>
+          </div>
+        </div>
+
+        <div class="stat-card clickable" onclick="document.getElementById('managerKpiSection')?.scrollIntoView({behavior:'smooth'})">
+          <div class="stat-icon blue"><i class="fas fa-users-cog"></i></div>
+          <div class="stat-info">
+            <div class="stat-label">Xodimlar / Maosh / KPI</div>
+            <div class="stat-value">${(safeKpis.managersList?.length ?? 0)}</div>
+            <div class="stat-sub">Faol menejerlar · KPI kalkulyator ↓</div>
+          </div>
+        </div>
+
         <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')">
           <div class="stat-icon purple"><i class="fas fa-tags"></i></div>
           <div class="stat-info">
