@@ -290,7 +290,7 @@ body {
 }
 .topbar-search input:focus {
   border-color: var(--brand);
-  background: #fff;
+  background: var(--surface-card);
   box-shadow: 0 0 0 3px var(--brand-soft);
 }
 
@@ -351,7 +351,7 @@ body {
 
 /* Secondary — outline */
 .btn-secondary {
-  background: #fff;
+  background: var(--surface-card);
   color: var(--text-700);
   border: 1px solid var(--border-strong);
   box-shadow: var(--shadow-xs);
@@ -804,7 +804,7 @@ body {
 .client-card:hover { border-color: var(--brand); box-shadow: var(--shadow-md); transform: translateY(-2px); }
 .client-avatar { background: #EFF6FF; color: var(--brand); border: 1px solid #BFDBFE; border-radius: 9px; }
 
-.filter-bar { background: #fff; border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--shadow-xs); }
+.filter-bar { background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--shadow-xs); }
 
 .skeleton {
   background: linear-gradient(90deg, var(--surface-input) 25%, var(--border) 50%, var(--surface-input) 75%);
