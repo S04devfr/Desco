@@ -208,6 +208,51 @@
     </div>
   </div>
 </div>
+
+<!-- Client Debt Edit/Create Modal -->
+<div id="clientDebtModal" class="modal-overlay" style="display:none; z-index:1100;" onclick="if(event.target===this)closeClientDebtModal()">
+  <div class="modal-dialog" style="max-width:480px;">
+    <div class="modal-header flex justify-between items-center">
+      <h3 id="clientDebtModalTitle"><i class="fas fa-hand-holding-usd text-brand" style="margin-right:8px;"></i>Qarzdorlikni tahrirlash</h3>
+      <button class="modal-close" onclick="closeClientDebtModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" style="display:flex; flex-direction:column; gap:14px;">
+      <input type="hidden" id="debtClientId">
+      <div>
+        <label class="form-label">Mijoz ismi <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="debtClientName" class="form-control" placeholder="Mijoz ismi">
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label class="form-label">Telefon raqami</label>
+          <input type="text" id="debtClientPhone" class="form-control" placeholder="+998901234567">
+        </div>
+        <div>
+          <label class="form-label">Viloyat / Shahar</label>
+          <input type="text" id="debtClientCity" class="form-control" placeholder="Toshkent">
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label class="form-label">Qarz summasi (so'm) <span style="color:var(--danger)">*</span></label>
+          <input type="number" id="debtClientAmount" class="form-control" placeholder="1000000" min="0" step="10000">
+        </div>
+        <div>
+          <label class="form-label">Qarz berilgan sana</label>
+          <input type="date" id="debtClientDate" class="form-control">
+        </div>
+      </div>
+      <div>
+        <label class="form-label">Qarz izohi</label>
+        <input type="text" id="debtClientNotes" class="form-control" placeholder="Izoh...">
+      </div>
+    </div>
+    <div class="modal-footer flex justify-end gap-2" style="padding-top:14px; border-top:1px solid var(--border);">
+      <button class="btn btn-secondary" onclick="closeClientDebtModal()">Bekor qilish</button>
+      <button class="btn btn-primary" onclick="submitClientDebtForm()"><i class="fas fa-save"></i> Saqlash</button>
+    </div>
+  </div>
+</div>
 <% } %>
 
 <% if (isAdmin) { %>
@@ -450,47 +495,12 @@
               <input type="text" id="addClientDebtSearchInput" class="form-control" placeholder="Mijoz qo'shish (Ism yoki ID)..." style="height:32px; font-size:12px;" oninput="onClientDebtSearchInput()">
               <div id="clientDebtSuggestions" class="hidden" style="position: absolute; top: 34px; left: 0; right: 0; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; box-shadow: var(--shadow-lg); z-index: 100; max-height: 220px; overflow-y: auto;"></div>
             </div>
-            <button class="btn btn-secondary btn-sm" onclick="toggleQuickClientCreateForm()" style="height:32px; font-size:12px; display:flex; align-items:center; gap:4px;">
+            <button class="btn btn-secondary btn-sm" onclick="openQuickClientCreate()" style="height:32px; font-size:12px; display:flex; align-items:center; gap:4px;">
               <i class="fas fa-user-plus"></i> Qo'lda Yangi Mijoz Yaratish
             </button>
           </div>
           
           <input type="text" id="clientDebtSearch" class="form-control" placeholder="Mijozlarni filtrlash..." style="width:200px; height:32px; font-size:12px" oninput="renderClientDebtTable()">
-        </div>
-
-        <!-- Quick Client Create Form -->
-        <div id="quickClientCreateForm" class="hidden" style="margin-bottom:16px; padding:16px; background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; transition:all 0.2s;">
-          <h4 style="margin:0 0 12px; font-size:13px; font-weight:700; color:var(--text-primary);"><i class="fas fa-plus-circle" style="color:var(--accent);"></i> Yangi Mijoz va Qarz Yaratish</h4>
-          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-bottom:12px;">
-            <div>
-              <label style="font-size:11px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Mijoz Ismi <span style="color:var(--danger)">*</span></label>
-              <input type="text" id="quickClientName" class="form-control" placeholder="Masalan: Ikromiddin" style="height:30px; font-size:12px;">
-            </div>
-            <div>
-              <label style="font-size:11px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Telefon Raqami</label>
-              <input type="text" id="quickClientPhone" class="form-control" placeholder="+998901234567" style="height:30px; font-size:12px;">
-            </div>
-            <div>
-              <label style="font-size:11px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Viloyat / Shahar</label>
-              <input type="text" id="quickClientCity" class="form-control" placeholder="Toshkent" style="height:30px; font-size:12px;">
-            </div>
-            <div>
-              <label style="font-size:11px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Qarz Summasi (Manual) <span style="color:var(--danger)">*</span></label>
-              <input type="number" id="quickClientDebt" class="form-control" placeholder="Summa" style="height:30px; font-size:12px; font-weight:700;">
-            </div>
-            <div>
-              <label style="font-size:11px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Qarz Berilgan Sana</label>
-              <input type="date" id="quickClientDebtDate" class="form-control" style="height:30px; font-size:12px;">
-            </div>
-            <div>
-              <label style="font-size:11px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Qarz Izohi</label>
-              <input type="text" id="quickClientDebtNotes" class="form-control" placeholder="Masalan: Maxsulot uchun" style="height:30px; font-size:12px;">
-            </div>
-          </div>
-          <div style="display:flex; justify-content:flex-end; gap:8px;">
-            <button class="btn btn-secondary btn-sm" onclick="toggleQuickClientCreateForm(false)" style="height:28px; font-size:11.5px;">Bekor qilish</button>
-            <button class="btn btn-primary btn-sm" onclick="saveQuickClientCreate()" id="btnSaveQuickClient" style="height:28px; font-size:11.5px;">Saqlash</button>
-          </div>
         </div>
 
         <div style="max-height:300px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; background:var(--bg-secondary);">
@@ -2202,7 +2212,7 @@ function onClientDebtSearchInput() {
   suggestionsEl.innerHTML = matches.map(c => {
     const hasDebt = c.debt && c.debt > 0;
     return `
-      <div class="suggestion-item" onclick="addClientToDebtList(${c.id})" style="padding:8px 10px; cursor:pointer; border-bottom:1px solid var(--border); transition:background 0.15s; text-align:left;" onmouseover="this.style.background='var(--bg-primary)'" onmouseout="this.style.background='transparent'">
+      <div class="suggestion-item" onclick="openClientDebtModalForCreate(${c.id})" style="padding:8px 10px; cursor:pointer; border-bottom:1px solid var(--border); transition:background 0.15s; text-align:left;" onmouseover="this.style.background='var(--bg-primary)'" onmouseout="this.style.background='transparent'">
         <div style="font-weight:600; font-size:12px; color:var(--text-primary); display:flex; justify-content:space-between; align-items:center;">
           <span>${escHtml(c.name || 'Mijoz')} (#${c.id})</span>
           ${hasDebt ? `<span style="font-size:10px; color:var(--danger); font-weight:700;">Qarz: ${fmtMoney(c.debt)}</span>` : '<span style="font-size:10px; color:var(--accent); font-weight:700;">+ Qo\'shish</span>'}
@@ -2216,82 +2226,112 @@ function onClientDebtSearchInput() {
   suggestionsEl.classList.remove('hidden');
 }
 
-function addClientToDebtList(clientId) {
-  const input = document.getElementById('addClientDebtSearchInput');
+window.openClientDebtModalForCreate = function(clientId) {
+  const client = allClientsData.find(c => c.id === clientId);
+  if (!client) return;
+
   const suggestionsEl = document.getElementById('clientDebtSuggestions');
-  
-  input.value = '';
-  suggestionsEl.innerHTML = '';
-  suggestionsEl.classList.add('hidden');
-  
-  if (!manuallyAddedClientIds.includes(clientId)) {
-    manuallyAddedClientIds.push(clientId);
+  const searchInput = document.getElementById('addClientDebtSearchInput');
+  if (suggestionsEl) {
+    suggestionsEl.innerHTML = '';
+    suggestionsEl.classList.add('hidden');
   }
-  
-  renderClientDebtTable();
-}
+  if (searchInput) searchInput.value = '';
 
-function toggleQuickClientCreateForm(show) {
-  const form = document.getElementById('quickClientCreateForm');
-  if (show === undefined) {
-    form.classList.toggle('hidden');
-  } else if (show) {
-    form.classList.remove('hidden');
-  } else {
-    form.classList.add('hidden');
-  }
-  
-  if (!form.classList.contains('hidden')) {
-    document.getElementById('quickClientName').value = '';
-    document.getElementById('quickClientPhone').value = '';
-    document.getElementById('quickClientCity').value = '';
-    document.getElementById('quickClientDebt').value = '';
-    document.getElementById('quickClientDebtDate').value = new Date().toISOString().slice(0, 10);
-    document.getElementById('quickClientDebtNotes').value = '';
-  }
-}
+  document.getElementById('debtClientId').value = client.id;
+  document.getElementById('debtClientName').value = client.name || '';
+  document.getElementById('debtClientPhone').value = client.phone || '';
+  document.getElementById('debtClientCity').value = client.city || '';
+  document.getElementById('debtClientAmount').value = '';
+  document.getElementById('debtClientDate').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('debtClientNotes').value = '';
 
-async function saveQuickClientCreate() {
-  const name = document.getElementById('quickClientName').value.trim();
-  const phone = document.getElementById('quickClientPhone').value.trim();
-  const city = document.getElementById('quickClientCity').value.trim();
-  const debt = Number(document.getElementById('quickClientDebt').value) || 0;
-  const debtDate = document.getElementById('quickClientDebtDate').value;
-  const debtNotes = document.getElementById('quickClientDebtNotes').value.trim();
-  
-  if (!name || !debt) {
-    alert("Iltimos, Ism va Qarz summasini kiriting!");
-    return;
-  }
-  
-  const btn = document.getElementById('btnSaveQuickClient');
-  btn.disabled = true;
-  
+  document.getElementById('clientDebtModalTitle').innerHTML = '<i class="fas fa-hand-holding-usd text-brand" style="margin-right:8px;"></i>Qarzdorlik qo\'shish';
+  document.getElementById('clientDebtModal').style.display = 'flex';
+};
+
+window.openQuickClientCreate = function() {
+  document.getElementById('debtClientId').value = '';
+  document.getElementById('debtClientName').value = '';
+  document.getElementById('debtClientPhone').value = '';
+  document.getElementById('debtClientCity').value = '';
+  document.getElementById('debtClientAmount').value = '';
+  document.getElementById('debtClientDate').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('debtClientNotes').value = '';
+
+  document.getElementById('clientDebtModalTitle').innerHTML = '<i class="fas fa-user-plus text-brand" style="margin-right:8px;"></i>Yangi mijoz va qarz yaratish';
+  document.getElementById('clientDebtModal').style.display = 'flex';
+};
+
+window.closeClientDebtModal = function() {
+  document.getElementById('clientDebtModal').style.display = 'none';
+};
+
+window.submitClientDebtForm = async function() {
+  const id = document.getElementById('debtClientId').value;
+  const name = document.getElementById('debtClientName').value.trim();
+  const phone = document.getElementById('debtClientPhone').value.trim();
+  const city = document.getElementById('debtClientCity').value.trim();
+  const debt = Number(document.getElementById('debtClientAmount').value) || 0;
+  const debtDate = document.getElementById('debtClientDate').value;
+  const debtNotes = document.getElementById('debtClientNotes').value.trim();
+
+  if (!name) { alert("Mijoz ismini kiriting!"); return; }
+  if (debt <= 0) { alert("Iltimos, to'g'ri qarz summasini kiriting!"); return; }
+
+  const saveBtn = document.querySelector('#clientDebtModal .btn-primary');
+  if (saveBtn) saveBtn.disabled = true;
+
   try {
-    const r = await fetch('/api/clients', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, phone, city, debt, debtDate, debtNotes })
-    });
+    const payload = { name, phone, city, debt, debtDate, debtNotes };
+    let r;
+    if (id) {
+      r = await fetch('/api/clients/' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } else {
+      r = await fetch('/api/clients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    }
+
     if (!r.ok) {
       const err = await r.json();
       throw new Error(err.message || 'Saqlashda xato');
     }
-    const newClient = await r.json();
-    if (typeof showToast === 'function') showToast('Mijoz muvaffaqiyatli yaratildi', 'success');
-    
-    manuallyAddedClientIds.push(newClient.id);
-    toggleQuickClientCreateForm(false);
-    
-    // Reload local financial lists
+
+    if (typeof showToast === 'function') showToast('Muvaffaqiyatli saqlandi', 'success');
+    closeClientDebtModal();
+
     await loadFinancialData();
     renderClientDebtTable();
+    loadDashboard();
   } catch(e) {
     alert("Xatolik yuz berdi: " + e.message);
   } finally {
-    btn.disabled = false;
+    if (saveBtn) saveBtn.disabled = false;
   }
-}
+};
+
+window.openClientDebtModalForEdit = function(clientId) {
+  const client = allClientsData.find(c => c.id === clientId);
+  if (!client) return;
+
+  document.getElementById('debtClientId').value = client.id;
+  document.getElementById('debtClientName').value = client.name || '';
+  document.getElementById('debtClientPhone').value = client.phone || '';
+  document.getElementById('debtClientCity').value = client.city || '';
+  document.getElementById('debtClientAmount').value = client.debt || '';
+  document.getElementById('debtClientDate').value = client.debtDate ? client.debtDate.slice(0, 10) : '';
+  document.getElementById('debtClientNotes').value = client.debtNotes || '';
+
+  document.getElementById('clientDebtModalTitle').innerHTML = '<i class="fas fa-edit text-brand" style="margin-right:8px;"></i>Qarzdorlikni tahrirlash';
+  document.getElementById('clientDebtModal').style.display = 'flex';
+};
 
 // Tab 3: Client Manual Debt rendering & updating
 function renderClientDebtTable() {
@@ -2302,7 +2342,7 @@ function renderClientDebtTable() {
   
   // 1. Add manual client debts
   allClientsData.forEach(c => {
-    if ((c.debt && c.debt > 0) || manuallyAddedClientIds.includes(c.id)) {
+    if (c.debt && c.debt > 0) {
       allDebts.push({
         type: 'manual',
         id: c.id,
@@ -2378,22 +2418,18 @@ function renderClientDebtTable() {
           <td style="padding:10px 12px; font-size:13px; font-weight:600">${escHtml(item.name)}</td>
           <td style="padding:10px 12px; font-size:12.5px">${escHtml(item.phone || '—')}</td>
           <td style="padding:10px 12px; font-size:12.5px">${escHtml(item.city || '—')}</td>
-          <td style="padding:6px 12px;">
-            <input type="date" class="spreadsheet-input" value="${item.date}"
-                   onchange="saveClientDebtField(${item.id}, 'debtDate', this.value, this)" style="width:115px; font-size:12px; padding:0 6px; height:28px;">
-          </td>
-          <td style="padding:6px 12px;">
-            <input type="number" class="spreadsheet-input" value="${item.amount || 0}"
-                   onchange="saveClientDebtField(${item.id}, 'debt', this.value, this)" style="font-weight:700; width:120px; height:28px;">
-          </td>
-          <td style="padding:6px 12px;">
-            <input type="text" class="spreadsheet-input" value="${escHtml(item.notes)}"
-                   onchange="saveClientDebtField(${item.id}, 'debtNotes', this.value, this)" style="font-size:12px; padding:0 6px; height:28px; width:140px;" placeholder="Izoh...">
-          </td>
-          <td style="padding:6px 12px; text-align:center;">
-            <button class="btn btn-ghost btn-sm text-danger" onclick="deleteClientDebt(${item.id})" style="padding:4px 8px;" title="Qarzdorlikni o'chirish">
-              <i class="fas fa-trash-alt"></i>
-            </button>
+          <td style="padding:10px 12px; font-size:12.5px; color:var(--text-secondary)">${item.date ? new Date(item.date).toLocaleDateString('uz-UZ') : '—'}</td>
+          <td style="padding:10px 12px; font-size:12.5px; font-weight:700; color:var(--danger)">${fmtMoney(item.amount)}</td>
+          <td style="padding:10px 12px; font-size:12px; color:var(--text-secondary)">${escHtml(item.notes || '—')}</td>
+          <td style="padding:10px 12px; text-align:center;">
+            <div style="display:flex; justify-content:center; gap:4px;">
+              <button class="btn btn-ghost btn-sm text-accent" onclick="openClientDebtModalForEdit(${item.id})" style="padding:4px 8px;" title="Tahrirlash">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn btn-ghost btn-sm text-danger" onclick="deleteClientDebt(${item.id})" style="padding:4px 8px;" title="Qarzdorlikni o'chirish">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </div>
           </td>
         </tr>
       `;
@@ -2407,43 +2443,6 @@ function openNasiyaPlanForDeal(dealId) {
   renderInstallmentTab();
 }
 
-async function saveClientDebtField(id, field, val, inputEl) {
-  try {
-    if (inputEl) inputEl.disabled = true;
-    
-    const bodyData = {};
-    if (field === 'debt') bodyData.debt = Number(val) || 0;
-    else if (field === 'debtDate') bodyData.debtDate = val || null;
-    else if (field === 'debtNotes') bodyData.debtNotes = val || '';
-    
-    const r = await fetch('/api/clients/' + id, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(bodyData)
-    });
-    if (!r.ok) throw new Error();
-    
-    if (inputEl) {
-      inputEl.classList.add('success');
-      setTimeout(() => inputEl.classList.remove('success'), 1000);
-    }
-    
-    // Update local data
-    const c = allClientsData.find(x => x.id === id);
-    if (c) {
-      if (field === 'debt') c.debt = Number(val) || 0;
-      else if (field === 'debtDate') c.debtDate = val ? new Date(val).toISOString() : null;
-      else if (field === 'debtNotes') c.debtNotes = val;
-    }
-    
-    loadDashboard(); // Recalculate dashboard metrics
-  } catch(e) {
-    if (typeof showToast === 'function') showToast('Saqlashda xato', 'error');
-  } finally {
-    if (inputEl) inputEl.disabled = false;
-  }
-}
-
 async function deleteClientDebt(clientId) {
   if (!confirm("Ushbu mijozning manual qarzdorlik summasini butunlay o'chirmoqchimisiz?")) return;
   
@@ -2451,17 +2450,19 @@ async function deleteClientDebt(clientId) {
     const r = await fetch('/api/clients/' + clientId, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ debt: 0 })
+      body: JSON.stringify({ debt: 0, debtDate: null, debtNotes: null })
     });
     if (!r.ok) throw new Error();
     
     if (typeof showToast === 'function') showToast('Qarzdorlik o\'chirildi', 'success');
     
-    // Update local database lists
     const c = allClientsData.find(x => x.id === clientId);
-    if (c) c.debt = 0;
+    if (c) {
+      c.debt = 0;
+      c.debtDate = null;
+      c.debtNotes = null;
+    }
     
-    manuallyAddedClientIds = manuallyAddedClientIds.filter(id => id !== clientId);
     loadFinancialData();
     renderClientDebtTable();
   } catch(e) {
