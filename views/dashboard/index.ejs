@@ -514,7 +514,8 @@
                 <th style="padding:10px 12px; font-size:11px; font-weight:700; width:120px;">Berilgan Sana</th>
                 <th style="padding:10px 12px; font-size:11px; font-weight:700; width:150px">Klient Qarz (Manual)</th>
                 <th style="padding:10px 12px; font-size:11px; font-weight:700;">Izoh</th>
-                <th style="padding:10px 12px; font-size:11px; font-weight:700; width:50px"></th>
+                <th style="padding:10px 12px; font-size:11px; font-weight:700; width:120px;">Qo'shgan Menejer</th>
+                <th style="padding:10px 12px; font-size:11px; font-weight:700; width:80px"></th>
               </tr>
             </thead>
             <tbody id="clientDebtTableBody"></tbody>
@@ -2352,6 +2353,7 @@ function renderClientDebtTable() {
         date: c.debtDate ? c.debtDate.slice(0, 10) : '',
         amount: c.debt || 0,
         notes: c.debtNotes || '',
+        managerName: c.owner?.fullName || 'Admin',
         isEditable: true
       });
     }
@@ -2370,6 +2372,7 @@ function renderClientDebtTable() {
         date: d.createdAt ? d.createdAt.slice(0, 10) : '',
         amount: debt,
         notes: `${d.productName || 'Sdelka'} qarzi`,
+        managerName: d.manager?.fullName || '—',
         isEditable: false
       });
     }
@@ -2380,11 +2383,12 @@ function renderClientDebtTable() {
     (item.phone || '').toLowerCase().includes(filterQuery) ||
     (item.city || '').toLowerCase().includes(filterQuery) ||
     (item.notes || '').toLowerCase().includes(filterQuery) ||
+    (item.managerName || '').toLowerCase().includes(filterQuery) ||
     String(item.id) === filterQuery
   );
 
   if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-tertiary)"><i class="fas fa-search" style="font-size:20px; opacity:0.4; display:block; margin-bottom:8px"></i>Qarzdor mijozlar topilmadi. Mijoz qidirib qo\'shing yoki yangi yarating.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-tertiary)"><i class="fas fa-search" style="font-size:20px; opacity:0.4; display:block; margin-bottom:8px"></i>Qarzdor mijozlar topilmadi. Mijoz qidirib qo\'shing yoki yangi yarating.</td></tr>';
     return;
   }
 
@@ -2404,6 +2408,7 @@ function renderClientDebtTable() {
             </div>
           </td>
           <td style="padding:10px 12px; font-size:12px; color:var(--text-secondary)">${escHtml(item.notes)}</td>
+          <td style="padding:10px 12px; font-size:12.5px; font-weight:600; color:var(--text-primary)">${escHtml(item.managerName)}</td>
           <td style="padding:10px 12px; text-align:center;">
             <div style="display:flex; justify-content:center; gap:4px;">
               <button class="btn btn-ghost btn-sm text-accent" onclick="openNasiyaPlanForDeal(${item.id})" style="padding:4px 8px;" title="Nasiya rejasini boshqarish / Tahrirlash">
@@ -2426,6 +2431,7 @@ function renderClientDebtTable() {
           <td style="padding:10px 12px; font-size:12.5px; color:var(--text-secondary)">${item.date ? new Date(item.date).toLocaleDateString('uz-UZ') : '—'}</td>
           <td style="padding:10px 12px; font-size:12.5px; font-weight:700; color:var(--danger)">${fmtMoney(item.amount)}</td>
           <td style="padding:10px 12px; font-size:12px; color:var(--text-secondary)">${escHtml(item.notes || '—')}</td>
+          <td style="padding:10px 12px; font-size:12.5px; font-weight:600; color:var(--text-primary)">${escHtml(item.managerName)}</td>
           <td style="padding:10px 12px; text-align:center;">
             <div style="display:flex; justify-content:center; gap:4px;">
               <button class="btn btn-ghost btn-sm text-accent" onclick="openClientDebtModalForEdit(${item.id})" style="padding:4px 8px;" title="Tahrirlash">
