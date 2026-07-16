@@ -7,11 +7,11 @@
    TOKENS — yagona rang tizimi
 ───────────────────────────────────────────────────── */
 :root {
-  /* Brand (Apple Blue) */
-  --brand:        #007AFF;
-  --brand-hover:  #0062CC;
-  --brand-soft:   rgba(0, 122, 255, 0.08);
-  --brand-glow:   rgba(0, 122, 255, 0.18);
+  /* Brand (Fluxen Purple) */
+  --brand:        #6366F1;
+  --brand-hover:  #4F46E5;
+  --brand-soft:   rgba(99, 102, 241, 0.08);
+  --brand-glow:   rgba(99, 102, 241, 0.18);
 
   /* Surfaces (Light) */
   --surface-base:   #F2F2F7;
@@ -56,7 +56,7 @@
   --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
   --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
   --shadow-xl: 0 16px 48px rgba(0,0,0,0.12);
-  --shadow-brand: 0 4px 14px rgba(0,122,255,0.2);
+  --shadow-brand: 0 4px 14px rgba(99,102,241,0.28);
 
   /* Radius (Rounded like iOS/macOS) */
   --r-xs:   6px;
@@ -89,30 +89,30 @@
 
 /* Dark mode */
 [data-theme="dark"] {
-  /* Brand (Apple Blue Dark) */
-  --brand:        #0A84FF;
-  --brand-hover:  #0062CC;
-  --brand-soft:   rgba(10, 132, 255, 0.12);
-  --brand-glow:   rgba(10, 132, 255, 0.22);
+  /* Brand (Purple — Dark mode da yaxshi ko'rinadi) */
+  --brand:        #818CF8;
+  --brand-hover:  #6366F1;
+  --brand-soft:   rgba(129, 140, 248, 0.12);
+  --brand-glow:   rgba(129, 140, 248, 0.20);
 
-  /* Surfaces (Apple Dark True Black) */
-  --surface-base:  #000000;
-  --surface-card:  #1C1C1E;
-  --surface-input: #2C2C2E;
+  /* Surfaces — neutral charcoal (ko'z uchun qulay) */
+  --surface-base:  #111827;
+  --surface-card:  #1F2937;
+  --surface-input: #374151;
 
-  /* Sidebar (macOS style dark sidebar) */
-  --sidebar-bg:          #161618;
-  --sidebar-border:      rgba(255,255,255,0.06);
-  --sidebar-hover:       rgba(255,255,255,0.04);
-  --sidebar-active:      #0A84FF;
-  --sidebar-text:        #AEAEB2;
+  /* Sidebar — bir oz qoraroq charcoal */
+  --sidebar-bg:          #0F172A;
+  --sidebar-border:      rgba(255,255,255,0.07);
+  --sidebar-hover:       rgba(129, 140, 248, 0.08);
+  --sidebar-active:      #6366F1;
+  --sidebar-text:        #9CA3AF;
   --sidebar-text-active: #FFFFFF;
 
-  /* Text */
-  --text-900: #FFFFFF;
-  --text-700: #EBEBF5;
-  --text-500: #AEAEB2;
-  --text-300: #636366;
+  /* Text — issiq oq, ko'z uchun qulay */
+  --text-900: #F9FAFB;
+  --text-700: #E5E7EB;
+  --text-500: #9CA3AF;
+  --text-300: #6B7280;
 
   /* Semantic (Apple SF Colors Dark) */
   --success:        #30D158;
@@ -124,9 +124,9 @@
   --danger:         #FF453A;
   --danger-bg:      rgba(255, 69, 58, 0.1);
   --danger-border:  rgba(255, 69, 58, 0.25);
-  --info:           #0A84FF;
-  --info-bg:        rgba(10, 132, 255, 0.1);
-  --info-border:    rgba(10, 132, 255, 0.25);
+  --info:           #818CF8;
+  --info-bg:        rgba(129, 140, 248, 0.1);
+  --info-border:    rgba(129, 140, 248, 0.25);
 
   --border:        rgba(255,255,255,0.07);
   --border-strong: rgba(255,255,255,0.12);
@@ -149,9 +149,26 @@
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 15px;
-  background: var(--surface-base);
+  background: #3D1A8A;
   color: var(--text-900);
   -webkit-font-smoothing: antialiased;
+}
+
+[data-theme="dark"] body { background: #030712; }
+
+/* Fluxen: outer purple wrapper → inner white rounded container */
+.app-wrapper {
+  margin: 8px;
+  border-radius: 16px;
+  height: calc(100vh - 16px);
+  background: #F5F6FA;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 24px 80px rgba(0,0,0,0.5);
+}
+
+[data-theme="dark"] .app-wrapper {
+  background: #111827;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 24px 80px rgba(0,0,0,0.6);
 }
 
 ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -163,102 +180,135 @@ body {
    SIDEBAR
 ───────────────────────────────────────────────────── */
 .sidebar {
+  background: #FFFFFF;
+  border-right: 1px solid rgba(0,0,0,0.06);
+  height: 100%;
+}
+
+[data-theme="dark"] .sidebar {
   background: #0F172A;
-  border-right: 1px solid rgba(255,255,255,0.06);
+  border-right: 1px solid rgba(255,255,255,0.07);
 }
 
 /* Logo */
 .sidebar-logo {
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
 }
 
+[data-theme="dark"] .sidebar-logo { border-bottom: 1px solid rgba(255,255,255,0.08); }
+
 .sidebar-logo-icon {
-  background: var(--brand);
-  box-shadow: none;
-  border-radius: 8px;
+  background: linear-gradient(135deg, #6366F1, #4F46E5);
+  box-shadow: 0 2px 8px rgba(99,102,241,0.35);
+  border-radius: 10px;
 }
 
 .sidebar-logo-text {
-  color: #FFFFFF;
+  color: #1F2937;
   font-weight: 700;
   font-size: 16px;
   letter-spacing: -0.3px;
 }
 
-.sidebar-logo-text span { color: rgba(255,255,255,0.35); }
+.sidebar-logo-text span { color: #6366F1; }
+
+[data-theme="dark"] .sidebar-logo-text { color: #FFFFFF; }
+[data-theme="dark"] .sidebar-logo-text span { color: #818CF8; }
 
 /* Nav */
 .nav-section-label {
-  color: rgba(255,255,255,0.20);
+  color: #9CA3AF;
   font-size: 10px;
   letter-spacing: 0.8px;
 }
 
 .sidebar-nav a,
 .sidebar-nav-btn {
-  color: rgba(255,255,255,0.50);
+  color: #6B7280;
   font-size: 13px;
-  font-weight: 450;
-  border-radius: 7px;
+  font-weight: 500;
+  border-radius: 8px;
   height: 36px;
 }
 
 .sidebar-nav a:hover,
 .sidebar-nav-btn:hover {
-  background: rgba(255,255,255,0.07);
-  color: rgba(255,255,255,0.85);
+  background: rgba(99,102,241,0.07);
+  color: #4F46E5;
 }
 
 .sidebar-nav a.active {
-  background: var(--brand);
+  background: #6366F1;
   color: #FFFFFF;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(37,99,235,0.35);
+  box-shadow: 0 2px 10px rgba(99,102,241,0.35);
 }
 
 .sidebar-nav a.active .nav-icon { opacity: 1; }
-.nav-icon { opacity: 0.60; font-size: 15px; }
+.nav-icon { opacity: 0.70; font-size: 15px; }
+
+[data-theme="dark"] .sidebar-nav a,
+[data-theme="dark"] .sidebar-nav-btn { color: #94A3B8; }
+[data-theme="dark"] .sidebar-nav a:hover,
+[data-theme="dark"] .sidebar-nav-btn:hover { background: rgba(129,140,248,0.08); color: #C7D2FE; }
+[data-theme="dark"] .sidebar-nav a.active { background: #6366F1; color: #fff; box-shadow: 0 2px 10px rgba(99,102,241,0.4); }
 
 /* Submenu */
 .sidebar-submenu-header {
-  color: rgba(255,255,255,0.50);
+  color: #6B7280;
   font-size: 13px;
-  border-radius: 7px;
+  border-radius: 8px;
   height: 36px;
 }
 .sidebar-submenu-header:hover {
-  background: rgba(255,255,255,0.07);
-  color: rgba(255,255,255,0.85);
+  background: rgba(99,102,241,0.07);
+  color: #4F46E5;
 }
 .sidebar-submenu-header.active {
-  background: var(--brand);
+  background: #6366F1;
   color: #fff;
-  box-shadow: 0 2px 8px rgba(37,99,235,0.30);
+  box-shadow: 0 2px 10px rgba(99,102,241,0.30);
 }
 
 .sub-item {
-  color: rgba(255,255,255,0.38);
+  color: #9CA3AF;
   font-size: 12.5px;
   border-radius: 6px;
 }
-.sub-item:hover { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.72); }
-.sub-item.active { color: rgba(255,255,255,0.82); }
+.sub-item:hover { background: rgba(99,102,241,0.06); color: #4F46E5; }
+.sub-item.active { color: #6366F1; font-weight: 600; }
 
-.nav-divider { background: rgba(255,255,255,0.06); }
+[data-theme="dark"] .sidebar-submenu-header { color: #94A3B8; }
+[data-theme="dark"] .sidebar-submenu-header:hover { background: rgba(129,140,248,0.08); color: #C7D2FE; }
+[data-theme="dark"] .sidebar-submenu-header.active { background: #6366F1; color: #fff; }
+[data-theme="dark"] .sub-item { color: rgba(255,255,255,0.38); }
+[data-theme="dark"] .sub-item:hover { background: rgba(129,140,248,0.07); color: rgba(255,255,255,0.75); }
+[data-theme="dark"] .sub-item.active { color: #A5B4FC; }
+
+.nav-divider { background: rgba(0,0,0,0.06); }
+[data-theme="dark"] .nav-divider { background: rgba(255,255,255,0.08); }
 
 /* Bottom */
-.sidebar-bottom { border-top: 1px solid rgba(255,255,255,0.06); }
-.sidebar-user:hover { background: rgba(255,255,255,0.05); }
+.sidebar-bottom { border-top: 1px solid rgba(0,0,0,0.06); }
+[data-theme="dark"] .sidebar-bottom { border-top: 1px solid rgba(255,255,255,0.08); }
+.sidebar-user:hover { background: rgba(99,102,241,0.05); }
+[data-theme="dark"] .sidebar-user:hover { background: rgba(129,140,248,0.07); }
 .sidebar-user-avatar {
-  background: var(--brand);
+  background: linear-gradient(135deg, #6366F1, #4F46E5);
   font-weight: 700;
   font-size: 12px;
+  box-shadow: 0 2px 6px rgba(99,102,241,0.30);
 }
-.sidebar-user-info .name { color: rgba(255,255,255,0.88); font-size: 13px; }
-.sidebar-user-info .role { color: rgba(255,255,255,0.38); font-size: 11px; }
+.sidebar-user-info .name { color: #1F2937; font-size: 13px; }
+.sidebar-user-info .role { color: #6B7280; font-size: 11px; }
 
-.sidebar-logout-btn { color: rgba(255,255,255,0.38); font-size: 12.5px; }
-.sidebar-logout-btn:hover { background: rgba(220,38,38,0.10); color: #FCA5A5; }
+[data-theme="dark"] .sidebar-user-info .name { color: rgba(255,255,255,0.90); }
+[data-theme="dark"] .sidebar-user-info .role { color: rgba(255,255,255,0.40); }
+
+.sidebar-logout-btn { color: #9CA3AF; font-size: 12.5px; }
+.sidebar-logout-btn:hover { background: rgba(220,38,38,0.07); color: #EF4444; }
+[data-theme="dark"] .sidebar-logout-btn { color: rgba(255,255,255,0.35); }
+[data-theme="dark"] .sidebar-logout-btn:hover { background: rgba(239,68,68,0.10); color: #FCA5A5; }
 
 /* ─────────────────────────────────────────────────────
    TOPBAR
@@ -270,7 +320,7 @@ body {
 }
 
 [data-theme="dark"] .topbar {
-  background: #1E293B;
+  background: #1F2937;
   border-bottom: 1px solid rgba(255,255,255,0.07);
 }
 
@@ -802,7 +852,7 @@ body {
    MISC
 ───────────────────────────────────────────────────── */
 .client-card:hover { border-color: var(--brand); box-shadow: var(--shadow-md); transform: translateY(-2px); }
-.client-avatar { background: #EFF6FF; color: var(--brand); border: 1px solid #BFDBFE; border-radius: 9px; }
+.client-avatar { background: #EEF2FF; color: var(--brand); border: 1px solid #C7D2FE; border-radius: 9px; }
 
 .filter-bar { background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--shadow-xs); }
 
@@ -824,7 +874,7 @@ body {
 
 a.quick-nav-card .card:hover {
   border-color: var(--brand);
-  box-shadow: 0 8px 20px rgba(37,99,235,0.12);
+  box-shadow: 0 8px 20px rgba(99,102,241,0.14);
   transform: translateY(-3px);
 }
 
@@ -1221,13 +1271,13 @@ a.quick-nav-card .card:hover {
 
 /* Last column (Jami) subtle background */
 .mgr-kpi-tbl td:last-child {
-  background: rgba(37,99,235,0.03);
+  background: rgba(99,102,241,0.03);
 }
 .mgr-kpi-tbl tr:hover td:last-child {
-  background: rgba(37,99,235,0.07);
+  background: rgba(99,102,241,0.07);
 }
 [data-theme="dark"] .mgr-kpi-tbl td:last-child {
-  background: rgba(37,99,235,0.06);
+  background: rgba(99,102,241,0.07);
 }
 
 /* KPI total row */
@@ -1352,4 +1402,167 @@ a.quick-nav-card .card:hover {
 @keyframes pulse-green {
   0%, 100% { box-shadow: 0 0 0 0 rgba(52,199,89,0.6); }
   50%       { box-shadow: 0 0 0 5px rgba(52,199,89,0); }
+}
+
+/* ─────────────────────────────────────────────────────
+   FLUXEN DESIGN ADDITIONS
+───────────────────────────────────────────────────── */
+
+/* Page content background */
+.page-content {
+  background: #F5F6FA;
+}
+[data-theme="dark"] .page-content { background: #111827; }
+
+/* Topbar tweaks */
+.topbar {
+  background: #FFFFFF;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+/* Fluxen avatar — purple gradient */
+.topbar-avatar {
+  background: linear-gradient(135deg, #6366F1, #4F46E5);
+  box-shadow: 0 2px 6px rgba(99,102,241,0.30);
+}
+
+/* Stat cards — more like Fluxen (white, clean shadow) */
+.stat-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(99,102,241,0.12), 0 1px 3px rgba(0,0,0,0.04);
+  border-color: rgba(99,102,241,0.20);
+}
+
+[data-theme="dark"] .stat-card {
+  background: #1F2937;
+  border-color: rgba(255,255,255,0.07);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+/* Card backgrounds */
+.card {
+  background: #FFFFFF;
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+}
+[data-theme="dark"] .card {
+  background: #1F2937;
+  border-color: rgba(255,255,255,0.07);
+}
+
+/* Card table headers */
+.data-table th, .deals-tbl th {
+  background: #F9FAFB;
+}
+[data-theme="dark"] .data-table th,
+[data-theme="dark"] .deals-tbl th {
+  background: rgba(255,255,255,0.04);
+}
+
+/* Fluxen page-header greeting style */
+.fluxen-page-header {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+[data-theme="dark"] .fluxen-page-header { border-bottom-color: rgba(255,255,255,0.08); }
+
+/* Kanban columns */
+.kanban-col {
+  background: #FFFFFF;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+[data-theme="dark"] .kanban-col {
+  background: #1F2937;
+  border-color: rgba(255,255,255,0.07);
+}
+
+/* Lead cards on kanban */
+.lead-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-left: 3px solid rgba(0,0,0,0.10);
+}
+[data-theme="dark"] .lead-card {
+  background: #1F2937;
+  border-color: rgba(255,255,255,0.07);
+}
+
+/* Modal adjustments */
+.modal-box { background: #FFFFFF; }
+[data-theme="dark"] .modal-box { background: #1F2937; }
+
+/* Topbar search */
+.topbar-search input {
+  background: #F5F6FA;
+  border: 1px solid rgba(0,0,0,0.07);
+}
+.topbar-search input:focus {
+  background: #FFFFFF;
+  border-color: #6366F1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.10);
+}
+[data-theme="dark"] .topbar-search input {
+  background: #374151;
+  border-color: rgba(255,255,255,0.08);
+  color: #F9FAFB;
+}
+
+/* Form controls */
+.form-control:focus {
+  border-color: #6366F1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.10);
+}
+
+/* Btn primary — purple */
+.btn-primary {
+  background: linear-gradient(135deg, #6366F1, #4F46E5);
+  box-shadow: 0 2px 8px rgba(99,102,241,0.30);
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, #4F46E5, #4338CA);
+  box-shadow: 0 4px 14px rgba(99,102,241,0.40);
+}
+
+/* Funnel bars — Fluxen style with purple */
+.funnel-bar {
+  background: linear-gradient(90deg, #6366F1, #818CF8) !important;
+}
+
+/* Filter bar */
+.filter-bar {
+  background: #FFFFFF;
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+[data-theme="dark"] .filter-bar {
+  background: #1F2937;
+  border-color: rgba(255,255,255,0.07);
+}
+
+/* Toast — white */
+.toast { background: #FFFFFF; }
+[data-theme="dark"] .toast { background: #1F2937; }
+
+/* Notif / profile dropdown */
+.notif-panel, .profile-dropdown { background: #FFFFFF; }
+[data-theme="dark"] .notif-panel,
+[data-theme="dark"] .profile-dropdown { background: #1F2937; }
+
+/* Table wrapper */
+.table-wrapper {
+  background: #FFFFFF;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+[data-theme="dark"] .table-wrapper {
+  background: #1F2937;
+  border-color: rgba(255,255,255,0.07);
 }

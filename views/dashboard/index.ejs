@@ -3,10 +3,10 @@
   activePage: 'dashboard',
   user: user}) %>
 
-<div class="page-header">
+<div class="page-header fluxen-page-header">
   <div>
-    <h1>Dashboard</h1>
-    <p>Umumiy ko'rsatkichlar va statistika</p>
+    <h1 id="greetingText" style="font-size:22px;font-weight:800;letter-spacing:-0.5px;">Xayrli kun! 👋</h1>
+    <p id="greetingDate" style="font-size:13px;color:var(--text-300);margin-top:2px;">Umumiy ko'rsatkichlar va statistika</p>
   </div>
   <div class="page-header-actions flex items-center gap-2 flex-wrap">
     <div id="dateRangeContainer" style="display:none; align-items:center; gap:6px;">
@@ -30,6 +30,21 @@
     </a>
   </div>
 </div>
+
+<script>
+(function() {
+  var h = new Date().getHours();
+  var name = '<%= user && user.fullName ? user.fullName.split(" ")[0] : "Admin" %>';
+  var greeting = h < 12 ? 'Xayrli tong' : (h < 17 ? 'Xayrli kun' : 'Xayrli kech');
+  var el = document.getElementById('greetingText');
+  if (el) el.textContent = greeting + ', ' + name + ' 👋';
+  var days = ['Yakshanba','Dushanba','Seshanba','Chorshanba','Payshanba','Juma','Shanba'];
+  var months = ['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr'];
+  var now = new Date();
+  var dateEl = document.getElementById('greetingDate');
+  if (dateEl) dateEl.textContent = days[now.getDay()] + ', ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+})();
+</script>
 
 <div id="debugErrorContainer" style="display:none; margin-bottom: 20px; padding: 15px; border-radius: 8px; background-color: rgba(255, 59, 48, 0.1); border: 1px solid #FF3B30; color: #FF3B30; font-family: monospace; font-size: 13px; white-space: pre-wrap; word-break: break-all;">
   <strong>[DEBUG] Tahlil Xatoligi:</strong>
@@ -908,7 +923,7 @@ async function loadDashboard() {
             var stgs = Array.isArray(pipelineStats) ? pipelineStats.slice().sort(function(a,b){return b.count-a.count;}).slice(0,4) : [];
             if (!stgs.length) return '<div style="font-size:11px;color:var(--text-muted);">Bosqich yo\'q</div>';
             var total = stgs.reduce(function(s,st){return s+st.count;},0) || 1;
-            var colors = ['#007AFF','#34C759','#FF9500','#FF3B30'];
+            var colors = ['#6366F1','#34C759','#FF9500','#FF3B30'];
             return stgs.map(function(st,i) {
               var pct = Math.round((st.count/total)*100);
               var c = colors[i] || '#888';
@@ -1343,7 +1358,7 @@ async function loadDashboard() {
           </div>
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--bg-secondary); border-radius:8px; border:1px solid var(--border); cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='var(--bg-primary)'" onmouseout="this.style.background='var(--bg-secondary)'" onclick="openShopirDealsModal()">
-          <span style="font-weight:600; font-size:13px"><i class="fas fa-truck-moving" style="color:#007AFF; margin-right:6px"></i> Shopirdagi pullar <i class="fas fa-external-link-alt" style="font-size:10px; color:var(--text-tertiary); margin-left:4px"></i></span>
+          <span style="font-weight:600; font-size:13px"><i class="fas fa-truck-moving" style="color:#6366F1; margin-right:6px"></i> Shopirdagi pullar <i class="fas fa-external-link-alt" style="font-size:10px; color:var(--text-tertiary); margin-left:4px"></i></span>
           <div style="text-align:right">
             <div style="font-weight:800; color:var(--text-primary); font-size:14px">${fmtMoney(shp.amount)}</div>
             <div style="font-size:10px; color:var(--text-tertiary)">Soni: ${shp.count} ta buyurtma</div>
@@ -1465,7 +1480,7 @@ async function loadDashboard() {
 
       if (productChart) productChart.destroy();
       const top = safeProductData.slice(0, 8);
-      const COLORS = ['#007AFF','#34C759','#FF9500','#FF3B30','#5856D6','#00C7BE','#FF2D55','#AC8E68'];
+      const COLORS = ['#6366F1','#34C759','#FF9500','#FF3B30','#A855F7','#00C7BE','#FF2D55','#AC8E68'];
       const fmtS = v => v >= 1e9 ? (v/1e9).toFixed(1)+'B' : v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : v.toString();
 
       const emptyEl = document.getElementById('productEmpty');

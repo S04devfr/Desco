@@ -133,7 +133,7 @@ function updateStats() {
 }
 
 function avatarColors(name) {
-  const colors = ['#007AFF','#34C759','#FF9500','#FF3B30','#5856D6','#00C7BE','#FF2D55'];
+  const colors = ['#6366F1','#34C759','#FF9500','#FF3B30','#A855F7','#00C7BE','#FF2D55'];
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
   return colors[Math.abs(hash) % colors.length];

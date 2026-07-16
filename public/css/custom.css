@@ -9,11 +9,11 @@
    1. DESIGN TOKENS
 ───────────────────────────────────────────────────── */
 :root {
-  /* Brand (Apple Blue) */
-  --brand:        #007AFF;
-  --brand-hover:  #0062CC;
-  --brand-soft:   rgba(0, 122, 255, 0.08);
-  --brand-glow:   rgba(0, 122, 255, 0.18);
+  /* Brand (Fluxen Purple) */
+  --brand:        #6366F1;
+  --brand-hover:  #4F46E5;
+  --brand-soft:   rgba(99, 102, 241, 0.08);
+  --brand-glow:   rgba(99, 102, 241, 0.18);
 
   /* Surfaces (Light) */
   --surface-base:   #F2F2F7;
@@ -99,23 +99,23 @@
 }
 
 [data-theme="dark"] {
-  /* Brand (Apple Blue Dark) */
-  --brand:        #0A84FF;
-  --brand-hover:  #0062CC;
-  --brand-soft:   rgba(10, 132, 255, 0.12);
-  --brand-glow:   rgba(10, 132, 255, 0.22);
+  /* Brand (Fluxen Purple Dark) */
+  --brand:        #818CF8;
+  --brand-hover:  #6366F1;
+  --brand-soft:   rgba(129, 140, 248, 0.12);
+  --brand-glow:   rgba(129, 140, 248, 0.22);
 
-  /* Surfaces (Apple Dark True Black) */
-  --surface-base:  #000000;
-  --surface-card:  #1C1C1E;
-  --surface-input: #2C2C2E;
+  /* Surfaces — neutral charcoal */
+  --surface-base:  #111827;
+  --surface-card:  #1F2937;
+  --surface-input: #374151;
 
-  /* Sidebar (macOS style dark sidebar) */
-  --sidebar-bg:          #161618;
-  --sidebar-border:      rgba(255,255,255,0.06);
-  --sidebar-hover:       rgba(255,255,255,0.04);
-  --sidebar-active:      #0A84FF;
-  --sidebar-text:        #AEAEB2;
+  /* Sidebar — qoraroq charcoal */
+  --sidebar-bg:          #0F172A;
+  --sidebar-border:      rgba(255,255,255,0.07);
+  --sidebar-hover:       rgba(129, 140, 248, 0.08);
+  --sidebar-active:      #6366F1;
+  --sidebar-text:        #9CA3AF;
   --sidebar-text-active: #FFFFFF;
 
   /* Text */
