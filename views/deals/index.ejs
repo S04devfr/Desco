@@ -427,18 +427,18 @@
 
     <!-- Table view (hidden by default) -->
     <div class="table-wrap hidden" id="tableView">
-      <table class="deals-tbl">
+      <table class="deals-tbl" style="table-layout: fixed; width: 100%;">
         <thead>
           <tr>
-            <th>#</th>
-            <th>Sdelka nomi</th>
-            <th>Mijoz</th>
-            <th>Bosqich</th>
-            <th>Summa</th>
-            <th>To'landi</th>
-            <th>Muddat</th>
-            <th>Manager</th>
-            <th></th>
+            <th style="width: 60px;">#</th>
+            <th style="width: 250px;">Sdelka nomi</th>
+            <th style="width: 160px;">Mijoz</th>
+            <th style="width: 130px;">Bosqich</th>
+            <th style="width: 120px;">Summa</th>
+            <th style="width: 120px;">To'landi</th>
+            <th style="width: 110px;">Muddat</th>
+            <th style="width: 140px;">Manager</th>
+            <th style="width: 100px;"></th>
           </tr>
         </thead>
         <tbody id="dealsTableBody"></tbody>
@@ -1207,14 +1207,14 @@ function renderTable() {
     const stage = d.stage || _stages.find(s => s.id === d.stageId);
     const sc = statusColors[d.status]||'#8E8E93';
     return `<tr onclick="openDetail(${d.id})">
-      <td style="color:var(--text-tertiary);font-size:12px">#${d.id}</td>
-      <td><strong>${_esc(d.productName||d.name)}</strong></td>
-      <td>${d.client ? _esc(d.client.name) : '<span style="color:var(--text-tertiary)">—</span>'}</td>
-      <td>${stage ? `<span class="badge" style="background:${stage.color}22;color:${stage.color}">${_esc(stage.name)}</span>` : '—'}</td>
-      <td style="font-weight:700">${_fmt(d.amount)}</td>
-      <td style="color:var(--success)">${_fmt(d.paidAmount)}</td>
-      <td class="${ov(d)?'text-danger':''}">${d.deadline?_date(d.deadline):'—'}</td>
-      <td>${d.manager?_esc(d.manager.fullName||d.manager.email):'—'}</td>
+      <td style="color:var(--text-tertiary);font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">#${d.id}</td>
+      <td style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${_esc(d.productName||d.name)}"><strong>${_esc(d.productName||d.name)}</strong></td>
+      <td style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${d.client ? _esc(d.client.name) : ''}">${d.client ? _esc(d.client.name) : '<span style="color:var(--text-tertiary)">—</span>'}</td>
+      <td style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${stage ? `<span class="badge" style="background:${stage.color}22;color:${stage.color}">${_esc(stage.name)}</span>` : '—'}</td>
+      <td style="font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${_fmt(d.amount)}</td>
+      <td style="color:var(--success); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${_fmt(d.paidAmount)}</td>
+      <td class="${ov(d)?'text-danger':''}" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${d.deadline?_date(d.deadline):'—'}</td>
+      <td style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${d.manager?_esc(d.manager.fullName||d.manager.email):''}">${d.manager?_esc(d.manager.fullName||d.manager.email):'—'}</td>
       <td onclick="event.stopPropagation()">
         <div style="display:flex;gap:4px">
           <button class="btn btn-ghost btn-icon btn-sm" onclick="openDetail(${d.id})"><i class="fas fa-eye"></i></button>
