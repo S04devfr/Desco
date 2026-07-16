@@ -146,10 +146,34 @@
     <div class="mgr-chart-panel">
       <div style="display: flex; gap: 20px; width: 100%; flex-wrap: wrap;">
         <!-- Chart container -->
-        <div style="flex: 2; min-width: 300px;">
-          <div class="mgr-panel-label" style="margin-bottom: 8px;"><i class="fas fa-chart-bar"></i> Savdo hajmi (so'm)</div>
-          <div class="mgr-chart-wrap" style="min-height: 200px; max-height: 250px;">
+        <div style="flex: 2; min-width: 300px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 10px;">
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <div style="width: 36px; height: 36px; border-radius: 8px; background: var(--brand-soft); display: flex; align-items: center; justify-content: center; color: var(--brand);">
+                <i class="fas fa-calendar-alt" style="font-size: 16px;"></i>
+              </div>
+              <div>
+                <div style="font-weight: 700; font-size: 14px; color: var(--text-primary);">Kunlar kesimida</div>
+                <div style="font-size: 11px; color: var(--text-tertiary);" id="chartSubtitleMonth">Kunlik statistika</div>
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-weight: 800; font-size: 18px; color: var(--text-primary); line-height: 1.1;" id="chartTotalWonSales">0 UZS</div>
+              <div style="font-size: 10px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Jami Savdo</div>
+            </div>
+          </div>
+          <div class="mgr-chart-wrap" style="min-height: 190px; max-height: 230px;">
             <canvas id="salesChart"></canvas>
+          </div>
+          <div style="display: flex; justify-content: center; gap: 20px; margin-top: 12px; font-size: 11px; font-weight: 700;">
+            <span style="display: flex; align-items: center; gap: 6px; color: var(--text-secondary);">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #FF3B30; display: inline-block;"></span>
+              Qarz (Nasiya)
+            </span>
+            <span style="display: flex; align-items: center; gap: 6px; color: var(--text-secondary);">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #34C759; display: inline-block;"></span>
+              Muvaffaqiyatli Savdo
+            </span>
           </div>
         </div>
         <!-- Debtors Sidebar -->
@@ -1274,23 +1298,100 @@ async function loadDashboard() {
       if (safeSalesData.length === 0) {
         document.getElementById('salesChart').parentElement.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:13px;">Ma\'lumot yo\'q</div>';
       } else {
-        salesChart = new Chart(document.getElementById('salesChart'), {
-          type: 'bar',
+        const grandTotalSales = safeSalesData.reduce((sum, item) => sum + (item.sales || 0), 0);
+        const chartTotalSalesEl = document.getElementById('chartTotalWonSales');
+        if (chartTotalSalesEl) {
+          chartTotalSalesEl.textContent = fmtMoney(grandTotalSales);
+        }
+        
+        const chartSubtitleMonthEl = document.getElementById('chartSubtitleMonth');
+        if (chartSubtitleMonthEl) {
+          const monthsUz = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
+          const now = new Date();
+          chartSubtitleMonthEl.textContent = monthsUz[now.getMonth()] + ' ' + now.getFullYear();
+        }
+
+        const canvas = document.getElementById('salesChart');
+        const ctx = canvas.getContext('2d');
+
+        const gradientGreen = ctx.createLinearGradient(0, 0, 0, 200);
+        gradientGreen.addColorStop(0, 'rgba(52, 199, 89, 0.25)');
+        gradientGreen.addColorStop(1, 'rgba(52, 199, 89, 0.00)');
+
+        const gradientRed = ctx.createLinearGradient(0, 0, 0, 200);
+        gradientRed.addColorStop(0, 'rgba(255, 59, 48, 0.18)');
+        gradientRed.addColorStop(1, 'rgba(255, 59, 48, 0.00)');
+
+        salesChart = new Chart(canvas, {
+          type: 'line',
           data: {
-            labels: safeSalesData.map(d => d.manager || 'Noma\'lum'),
-            datasets: [{
-              label: "Savdo (so'm)",
-              data: safeSalesData.map(d => d.totalSales || 0),
-              backgroundColor: 'rgba(0,122,255,0.7)',
-              borderRadius: 8, borderSkipped: false
-            }]
+            labels: safeSalesData.map(d => d.day),
+            datasets: [
+              {
+                label: "Qarz (Nasiya)",
+                data: safeSalesData.map(d => d.debt || 0),
+                borderColor: '#FF3B30',
+                backgroundColor: gradientRed,
+                fill: true,
+                tension: 0.4,
+                borderWidth: 2,
+                pointRadius: 2,
+                pointHoverRadius: 5
+              },
+              {
+                label: "Muvaffaqiyatli Savdo",
+                data: safeSalesData.map(d => d.sales || 0),
+                borderColor: '#34C759',
+                backgroundColor: gradientGreen,
+                fill: true,
+                tension: 0.4,
+                borderWidth: 2,
+                pointRadius: 2,
+                pointHoverRadius: 5
+              }
+            ]
           },
           options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                titleColor: isDark ? '#FFFFFF' : '#1C1C1E',
+                bodyColor: isDark ? '#E5E5EA' : '#3A3A3C',
+                borderColor: 'var(--border)',
+                borderWidth: 1,
+                padding: 10,
+                boxPadding: 6,
+                usePointStyle: true,
+                callbacks: {
+                  label: function(context) {
+                    return context.dataset.label + ': ' + fmtMoney(context.parsed.y);
+                  }
+                }
+              }
+            },
             scales: {
-              y: { grid: { color: gridColor }, ticks: { color: textColor, callback: v => fmtShort(v) } },
-              x: { grid: { display: false }, ticks: { color: textColor } }
+              y: {
+                grid: {
+                  color: gridColor,
+                  borderDash: [5, 5],
+                  drawBorder: false
+                },
+                ticks: {
+                  color: textColor,
+                  callback: v => fmtShort(v),
+                  font: { size: 10, weight: '500' }
+                }
+              },
+              x: {
+                grid: { display: false },
+                ticks: {
+                  color: textColor,
+                  font: { size: 10, weight: '500' }
+                }
+              }
             }
           }
         });

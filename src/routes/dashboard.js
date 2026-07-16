@@ -303,30 +303,73 @@ router.get('/kpis', async (req, res, next) => {
   }
 })
 
-// Sales grouped by manager
+// Sales grouped by day for current month / range
 router.get('/sales-by-manager', async (req, res, next) => {
   try {
     const isAdmin = req.user && req.user.role === 'admin';
     const where = buildWhere(req.query.filter, req);
     if (!isAdmin) where.managerId = req.userId;
-    const deals = await prisma.deal.findMany({ 
-      where, 
-      include: { 
-        manager: { 
-          select: { id: true, fullName: true, role: true } 
-        } 
-      } 
-    })
-    const totals = {}
-    for (const deal of deals) {
-      if (!deal.manager) continue; // Skip unassigned ("Belgilanmagan")
-      if (deal.manager.role === 'admin') continue; // Skip admin
-      const name = deal.manager.fullName || 'Menejer'
-      totals[name] = (totals[name] || 0) + deal.amount
+
+    const originalWhere = { ...where };
+    const deals = await prisma.deal.findMany({
+      where: originalWhere,
+      select: {
+        amount: true,
+        paidAmount: true,
+        status: true,
+        createdAt: true,
+        stage: { select: { name: true } }
+      },
+      orderBy: { createdAt: 'asc' }
+    });
+
+    let startDate = new Date();
+    startDate.setDate(1);
+    let endDate = new Date();
+
+    if (req.query.filter === 'range' && req.query.startDate && req.query.endDate) {
+      startDate = new Date(req.query.startDate);
+      endDate = new Date(req.query.endDate);
+    } else if (req.query.filter === 'week') {
+      startDate = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000);
+      endDate = new Date();
+    } else if (req.query.filter === 'yesterday') {
+      startDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      endDate = new Date();
+    } else if (req.query.filter === 'today') {
+      startDate = new Date();
+      endDate = new Date();
     }
-    res.json(Object.entries(totals).map(([manager, totalSales]) => ({ manager, totalSales })))
+
+    const dailyData = {};
+    const temp = new Date(startDate);
+    temp.setHours(0, 0, 0, 0);
+    const endMidnight = new Date(endDate);
+    endMidnight.setHours(23, 59, 59, 999);
+
+    while (temp <= endMidnight) {
+      const dateStr = temp.toISOString().slice(0, 10);
+      const dayLabel = temp.getDate();
+      dailyData[dateStr] = { date: dateStr, day: dayLabel, sales: 0, debt: 0 };
+      temp.setDate(temp.getDate() + 1);
+    }
+
+    for (const d of deals) {
+      if (!d.createdAt) continue;
+      const dateStr = new Date(d.createdAt).toISOString().slice(0, 10);
+      if (dailyData[dateStr]) {
+        const stageName = (d.stage?.name || '').toLowerCase();
+        const isWon = d.status === 'won' || stageName.includes('100%') || stageName.includes('yutil') || stageName.includes('won');
+        if (isWon) {
+          dailyData[dateStr].sales += d.amount || 0;
+          dailyData[dateStr].debt += Math.max(0, (d.amount || 0) - (d.paidAmount || 0));
+        }
+      }
+    }
+
+    res.json(Object.values(dailyData));
   } catch (error) {
-    console.error('Sales Error:', error);
+    console.error('Sales Daily Error:', error);
     return res.status(200).json([]);
   }
 })
