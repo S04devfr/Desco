@@ -121,8 +121,14 @@ router.get('/kpis', async (req, res, next) => {
       totalCostPrice = wonDeals.reduce((sum, d) => sum + (d.costPrice || 0), 0);
       
       netProfit = totalRevenue - totalCostPrice - totalExpenses;
-      const clients = await prisma.client.findMany({ select: { debt: true } });
-      totalClientDebt = clients.reduce((sum, c) => sum + (c.debt || 0), 0);
+      
+      const [clients, allDeals] = await Promise.all([
+        prisma.client.findMany({ select: { debt: true } }),
+        prisma.deal.findMany({ select: { amount: true, paidAmount: true } })
+      ]);
+      const manualDebt = clients.reduce((sum, c) => sum + (c.debt || 0), 0);
+      const dealDebt = allDeals.reduce((sum, d) => sum + Math.max((d.amount || 0) - (d.paidAmount || 0), 0), 0);
+      totalClientDebt = manualDebt + dealDebt;
     }
 
     const won = deals.filter(isWonDeal).length;
