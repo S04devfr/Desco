@@ -3,6 +3,8 @@
   activePage: 'dashboard',
   user: user}) %>
 
+<% const isAdmin = typeof user !== 'undefined' && user && user.role === 'admin'; %>
+
 <div class="page-header fluxen-page-header">
   <div>
     <h1 id="greetingText" style="font-size:22px;font-weight:800;letter-spacing:-0.5px;">Xayrli kun! 👋</h1>
@@ -71,8 +73,6 @@
 <div class="stats-grid mb-6" id="kpiRow2">
   <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-spinner fa-spin"></i></div><div class="stat-info"><div class="stat-label">Yuklanmoqda...</div></div></div>
 </div>
-
-<% const isAdmin = typeof user !== 'undefined' && user && user.role === 'admin'; %>
 
 <!-- ADVANCED METRICS GRID (FUNNEL & GEOGRAPHIC) -->
 <div class="dashboard-grid-2">
