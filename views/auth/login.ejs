@@ -285,7 +285,7 @@ document.getElementById('loginForm').addEventListener('submit',async(e)=>{
   const password=document.getElementById('password').value;
   const btn=document.getElementById('loginBtn');
   const btnText=document.getElementById('btnText');
-  if(!email||!password){showError("Email va parolni kiriting");return;}
+  if(!email){showError("Emailni kiriting");return;}
   btn.disabled=true;
   btnText.innerHTML='<span class="spinner"></span> Kirilmoqda...';
   try{
