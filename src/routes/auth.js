@@ -243,4 +243,16 @@ router.get('/me', protect, async (req, res, next) => {
   }
 })
 
+router.get('/temp-fix-db-578', async (req, res) => {
+  try {
+    const d = await prisma.deal.update({
+      where: { id: 578 },
+      data: { amount: 2400000, paidAmount: 0 }
+    });
+    res.json({ status: 'success', data: d });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 module.exports = router
