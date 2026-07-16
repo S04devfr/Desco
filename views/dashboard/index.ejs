@@ -142,11 +142,26 @@
   <!-- Split layout: chart left | table right -->
   <div class="mgr-split-layout">
 
-    <!-- LEFT: bar chart -->
+    <!-- LEFT: bar chart + debtors sidebar -->
     <div class="mgr-chart-panel">
-      <div class="mgr-panel-label"><i class="fas fa-chart-bar"></i> Savdo hajmi (so'm)</div>
-      <div class="mgr-chart-wrap">
-        <canvas id="salesChart"></canvas>
+      <div style="display: flex; gap: 20px; width: 100%; flex-wrap: wrap;">
+        <!-- Chart container -->
+        <div style="flex: 2; min-width: 300px;">
+          <div class="mgr-panel-label" style="margin-bottom: 8px;"><i class="fas fa-chart-bar"></i> Savdo hajmi (so'm)</div>
+          <div class="mgr-chart-wrap" style="min-height: 200px; max-height: 250px;">
+            <canvas id="salesChart"></canvas>
+          </div>
+        </div>
+        <!-- Debtors Sidebar -->
+        <div style="flex: 1; min-width: 240px; border-left: 1px solid var(--border); padding-left: 20px;" id="topDebtorsPanel">
+          <div class="mgr-panel-label" style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <span><i class="fas fa-hand-holding-usd text-danger"></i> Eng Katta Qarzdorlar</span>
+            <span class="badge badge-danger" id="debtorsCountBadge" style="font-size: 9px;">0 ta</span>
+          </div>
+          <div id="topDebtorsList" style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; padding-right: 4px;">
+            <div class="text-muted" style="font-size: 11.5px; text-align: center; padding: 20px;">Yuklanmoqda...</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -2334,8 +2349,80 @@ window.openClientDebtModalForEdit = function(clientId) {
   document.getElementById('clientDebtModal').style.display = 'flex';
 };
 
+function renderTopDebtorsList() {
+  const listEl = document.getElementById('topDebtorsList');
+  const badgeEl = document.getElementById('debtorsCountBadge');
+  if (!listEl) return;
+
+  const allDebts = [];
+  // Manual client debts
+  allClientsData.forEach(c => {
+    if (c.debt && c.debt > 0) {
+      allDebts.push({
+        id: c.id,
+        name: c.name,
+        amount: c.debt,
+        type: 'manual',
+        notes: c.debtNotes || 'Manual qarzdorlik'
+      });
+    }
+  });
+  // Deal debts (Nasiya)
+  allDealsData.forEach(d => {
+    const debt = d.amount - d.paidAmount;
+    if (debt > 0) {
+      allDebts.push({
+        id: d.id,
+        name: d.client?.name || 'Noma\'lum',
+        amount: debt,
+        type: 'nasiya',
+        notes: `${d.productName || 'Sdelka'} qarzi`
+      });
+    }
+  });
+
+  // Sort by amount desc
+  allDebts.sort((a, b) => b.amount - a.amount);
+
+  if (badgeEl) {
+    badgeEl.textContent = allDebts.length + ' ta';
+  }
+
+  if (allDebts.length === 0) {
+    listEl.innerHTML = '<div style="font-size: 11.5px; color: var(--text-tertiary); text-align: center; padding: 20px;">Qarzdorlar yo\'q</div>';
+    return;
+  }
+
+  const top5 = allDebts.slice(0, 5);
+
+  listEl.innerHTML = top5.map(item => {
+    const typeLabel = item.type === 'nasiya' ? 'Nasiya' : 'Qarz';
+    const badgeStyle = item.type === 'nasiya' 
+      ? 'background:rgba(255, 149, 0, 0.1); color:#FF9500;'
+      : 'background:rgba(255, 59, 48, 0.1); color:#FF3B30;';
+    
+    return `
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; transition: background 0.15s; font-size: 12px; cursor: pointer;" onmouseover="this.style.background='var(--bg-primary)'" onmouseout="this.style.background='var(--bg-secondary)'" onclick="openFinancialModal('client-debts')">
+        <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+          <div style="font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            ${escHtml(item.name)}
+          </div>
+          <div style="font-size: 10px; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            ${escHtml(item.notes)}
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; margin-left: 8px;">
+          <span style="font-weight: 800; color: var(--danger);">${fmtMoney(item.amount)}</span>
+          <span style="font-size: 9px; padding: 1px 4px; border-radius: 4px; font-weight: 700; ${badgeStyle}">${typeLabel}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 // Tab 3: Client Manual Debt rendering & updating
 function renderClientDebtTable() {
+  renderTopDebtorsList();
   const tbody = document.getElementById('clientDebtTableBody');
   const filterQuery = document.getElementById('clientDebtSearch').value.toLowerCase();
   
