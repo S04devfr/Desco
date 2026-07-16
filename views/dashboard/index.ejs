@@ -25,9 +25,11 @@
     <button class="btn btn-secondary btn-sm" onclick="loadDashboard()">
       <i class="fas fa-sync-alt"></i> Yangilash
     </button>
+    <% if (isAdmin) { %>
     <a id="exportCsvBtn" href="/api/export/excel?filter=month" class="btn btn-secondary btn-sm" style="display:flex;align-items:center;gap:5px;">
       <i class="fas fa-file-excel" style="color:#34C759"></i> Excel eksport
     </a>
+    <% } %>
   </div>
 </div>
 
