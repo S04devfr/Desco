@@ -313,7 +313,22 @@ router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => 
       // Boshqa tahrirlash jarayonida ham bo'sh sdelka o'zlashtiriladi
       data.managerId = req.userId
     }
-    if (stageId !== undefined) data.stageId = stageId ? Number(stageId) : null
+    if (stageId !== undefined) {
+      data.stageId = stageId ? Number(stageId) : null
+      if (stageId) {
+        const stage = await prisma.pipelineStage.findUnique({ where: { id: Number(stageId) } })
+        if (stage) {
+          const stageName = stage.name.toLowerCase();
+          if (stageName.includes('yutil') || stageName.includes('100%') || stageName.includes('olindi')) {
+            data.status = 'won';
+          } else if (stageName.includes('rad') || stageName.includes('otkaz') || stageName.includes('lost')) {
+            data.status = 'lost';
+          } else {
+            data.status = 'new';
+          }
+        }
+      }
+    }
     if (warehouse !== undefined) data.warehouse = warehouse || null
 
     const deal = await prisma.deal.update({
@@ -495,9 +510,21 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
           finalManagerId = req.userId;
         }
 
+        let finalStatus = txDeal.status;
+        if (newStage) {
+          const stageName = newStage.name.toLowerCase();
+          if (stageName.includes('yutil') || stageName.includes('100%') || stageName.includes('olindi')) {
+            finalStatus = 'won';
+          } else if (stageName.includes('rad') || stageName.includes('otkaz') || stageName.includes('lost')) {
+            finalStatus = 'lost';
+          } else {
+            finalStatus = 'new';
+          }
+        }
+
       const updated = await tx.deal.update({
         where: { id },
-        data: { stageId: finalStageId, pipelineId: finalPipelineId, managerId: finalManagerId },
+        data: { stageId: finalStageId, pipelineId: finalPipelineId, managerId: finalManagerId, status: finalStatus },
         include: {
           client: { select: { id: true, name: true, company: true, phone: true, city: true } },
           manager: managerSelect,

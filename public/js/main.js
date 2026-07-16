@@ -210,3 +210,16 @@ window.updateSidebarTaskBadge = updateSidebarTaskBadge;
 document.addEventListener('DOMContentLoaded', () => {
   updateSidebarTaskBadge();
 });
+
+// ── MOBILE MENU TOGGLE ──
+function toggleMobileMenu() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  if (sidebar) {
+    sidebar.classList.toggle('mobile-open');
+  }
+  if (overlay) {
+    overlay.classList.toggle('active');
+  }
+}
+window.toggleMobileMenu = toggleMobileMenu;

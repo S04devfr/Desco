@@ -366,6 +366,38 @@
   </div>
 </div>
 
+<!-- Logistics / Delivery Tracker Panel -->
+<div class="card" style="margin-top: 20px;" id="logisticsTrackerPanel">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <h3 class="section-title"><i class="fas fa-shipping-fast text-brand"></i>Dostavka & Logistika Nazorati (Shopirlar faoliyati)</h3>
+    <span class="badge badge-purple" id="logisticsActiveCount" style="font-size: 11px;">0 ta faol dostavka</span>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-wrap" style="max-height: 380px; overflow-y: auto;">
+      <table class="deals-tbl" style="width: 100%;">
+        <thead>
+          <tr style="background: var(--bg-tertiary);">
+            <th style="padding: 10px 12.5px; font-size: 11px; font-weight: 700; width: 60px;">ID</th>
+            <th style="padding: 10px 12.5px; font-size: 11px; font-weight: 700;">Mijoz Ismi / Viloyat</th>
+            <th style="padding: 10px 12.5px; font-size: 11px; font-weight: 700;">Mahsulot</th>
+            <th style="padding: 10px 12.5px; font-size: 11px; font-weight: 700; width: 140px;">Yuborilgan vaqt</th>
+            <th style="padding: 10px 12.5px; font-size: 11px; font-weight: 700; width: 140px;">Menejer</th>
+            <th style="padding: 10px 12.5px; font-size: 11px; font-weight: 700; width: 150px;">Logistika Holati</th>
+            <th style="padding: 10px 12.5px; font-size: 11px; font-weight: 700; text-align: right; width: 120px;">Qarz summasi</th>
+          </tr>
+        </thead>
+        <tbody id="logisticsDealsTableBody">
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 30px; color: var(--text-tertiary);">
+              Yuklanmoqda...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════════════════════════════════════════════════ -->
 <!-- BO'LIM 2: UMUMIY STATISTIKALAR -->
 <!-- ══════════════════════════════════════════════════════ -->
@@ -947,7 +979,10 @@ async function loadDashboard() {
           <div class="stat-icon green"><i class="fas fa-chart-line"></i></div>
           <div class="stat-info">
             <div class="stat-label">Sof foyda</div>
-            <div class="stat-value ${profitClass}">${renderCardMoney(netProfitVal)}</div>
+            <div class="stat-value ${profitClass}" style="filter: blur(5px); cursor: pointer; transition: filter 0.25s; display: inline-flex; align-items: center; gap: 8px;" onclick="event.stopPropagation(); this.style.filter = this.style.filter === 'none' ? 'blur(5px)' : 'none'; const icon = this.querySelector('i'); if (icon) { icon.className = this.style.filter === 'none' ? 'fas fa-eye' : 'fas fa-eye-slash'; }" title="Ko'rish / Yashirish uchun bosing">
+              <span>${renderCardMoney(netProfitVal)}</span>
+              <i class="fas fa-eye-slash" style="font-size: 11px; opacity: 0.6;"></i>
+            </div>
             <div class="stat-sub">Savdo − Tannarx − Xarajat</div>
           </div>
         </div>
@@ -1774,6 +1809,7 @@ async function loadFinancialData() {
     updateCatalogDropdown();
     renderInstallmentTab();
     renderClientDebtTable();
+    renderLogisticsTracker();
   } catch(e) {
     console.error('Moliya yuklashda xato:', e);
   }
@@ -2581,6 +2617,116 @@ function renderTopDebtorsList() {
     `;
   }).join('');
 }
+
+function renderLogisticsTracker() {
+  const tbody = document.getElementById('logisticsDealsTableBody');
+  const countBadge = document.getElementById('logisticsActiveCount');
+  if (!tbody) return;
+
+  const logisticsDeals = allDealsData.filter(d => d.pipelineId === 3 || d.stage?.pipelineId === 3);
+
+  logisticsDeals.sort((a, b) => {
+    const aClosed = a.stageId === 29;
+    const bClosed = b.stageId === 29;
+    if (aClosed !== bClosed) return aClosed ? 1 : -1;
+    return new Date(a.createdAt) - new Date(b.createdAt);
+  });
+
+  const activeCount = logisticsDeals.filter(d => d.stageId !== 29).length;
+  if (countBadge) {
+    countBadge.textContent = activeCount + ' ta faol dostavka';
+  }
+
+  if (logisticsDeals.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-tertiary);"><i class="fas fa-shipping-fast" style="font-size:24px; opacity:0.3; display:block; margin-bottom:8px;"></i>Logistika voronkasida hech qanday buyurtma mavjud emas. Sdelkalarni "zakazn holati" voronkasiga o\'tkazing.</td></tr>';
+    return;
+  }
+
+  const now = new Date();
+
+  tbody.innerHTML = logisticsDeals.map(d => {
+    const formattedDate = d.createdAt ? new Date(d.createdAt).toLocaleDateString('uz-UZ') : '—';
+    
+    let agingBadgeHtml = '';
+    if (d.createdAt && d.stageId !== 29) {
+      const createdTime = new Date(d.createdAt).getTime();
+      const diffDays = Math.floor((now.getTime() - createdTime) / (1000 * 60 * 60 * 24));
+      if (diffDays >= 3) {
+        agingBadgeHtml = `<span style="font-size:9.5px; padding:2px 5px; background:rgba(255, 59, 48, 0.12); color:#FF3B30; border-radius:4px; font-weight:700; margin-left:6px;"><i class="fas fa-exclamation-triangle"></i> ${diffDays} kun oldin</span>`;
+      } else if (diffDays >= 1) {
+        agingBadgeHtml = `<span style="font-size:9.5px; padding:2px 5px; background:rgba(255, 149, 0, 0.12); color:#FF9500; border-radius:4px; font-weight:700; margin-left:6px;"><i class="fas fa-clock"></i> ${diffDays} kun</span>`;
+      } else {
+        agingBadgeHtml = `<span style="font-size:9.5px; padding:2px 5px; background:rgba(52, 199, 89, 0.12); color:#34C759; border-radius:4px; font-weight:700; margin-left:6px;">Bugun</span>`;
+      }
+    }
+
+    const clientName = d.client?.name || 'Noma\'lum';
+    const clientCity = d.client?.city || '—';
+    const managerName = d.manager?.fullName || '—';
+    const unpaidDebt = Math.max(0, (d.amount || 0) - (d.paidAmount || 0));
+
+    const logisticsStages = [
+      { id: 24, name: 'Qabul qilindi' },
+      { id: 25, name: 'Tayyorlanmoqda' },
+      { id: 26, name: 'Yo\'lga chiqdi' },
+      { id: 27, name: 'Yetib bordi' },
+      { id: 28, name: 'To\'lov kutilmoqda' },
+      { id: 29, name: 'To\'lov olindi' }
+    ];
+
+    const optionsHtml = logisticsStages.map(s => {
+      const selected = d.stageId === s.id ? 'selected' : '';
+      return `<option value="${s.id}" ${selected}>${s.name}</option>`;
+    }).join('');
+
+    const selectStyle = d.stageId === 29 
+      ? 'background:rgba(52, 199, 89, 0.12); color:#34C759; font-weight:700; border-color:transparent;'
+      : 'background:var(--bg-secondary); color:var(--text-primary);';
+
+    return `
+      <tr style="border-bottom:1px solid var(--border); ${d.stageId === 29 ? 'opacity:0.75; background:rgba(52, 199, 89, 0.01);' : ''}">
+        <td style="padding:10px 12.5px; font-size:12.5px; color:var(--text-tertiary);">#${d.id}</td>
+        <td style="padding:10px 12.5px;">
+          <div style="font-weight:700; font-size:13px; color:var(--text-primary);">${escHtml(clientName)}</div>
+          <div style="font-size:10.5px; color:var(--text-tertiary);"><i class="fas fa-map-marker-alt"></i> ${escHtml(clientCity)}</div>
+        </td>
+        <td style="padding:10px 12.5px; font-size:12.5px; font-weight:600; color:var(--text-primary);">${escHtml(d.productName)}</td>
+        <td style="padding:10px 12.5px; font-size:12px; color:var(--text-secondary);">
+          ${formattedDate}
+          ${agingBadgeHtml}
+        </td>
+        <td style="padding:10px 12.5px; font-size:12.5px; font-weight:600; color:var(--text-secondary);">${escHtml(managerName)}</td>
+        <td style="padding:10px 12.5px;">
+          <select onchange="updateDealStageDirectly(${d.id}, this.value)" class="form-control" style="font-size:11.5px; height:28px; padding:0 6px; width:140px; border-radius:6px; ${selectStyle}">
+            ${optionsHtml}
+          </select>
+        </td>
+        <td style="padding:10px 12.5px; text-align:right; font-size:13px; font-weight:700; color:${unpaidDebt > 0 ? 'var(--danger)' : 'var(--success)'};">
+          ${fmtMoney(unpaidDebt)}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+window.updateDealStageDirectly = async function(dealId, newStageId) {
+  try {
+    const r = await fetch(`/api/deals/${dealId}/stage`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stageId: newStageId })
+    });
+    if (!r.ok) {
+      const err = await r.json();
+      throw new Error(err.message || 'Xatolik');
+    }
+    if (typeof showToast === 'function') showToast('Bosqich muvaffaqiyatli o\'zgartirildi', 'success');
+    loadDashboard();
+    loadFinancialData();
+  } catch(e) {
+    alert("Xatolik: " + e.message);
+  }
+};
 
 // Tab 3: Client Manual Debt rendering & updating
 function renderClientDebtTable() {

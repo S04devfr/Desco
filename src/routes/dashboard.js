@@ -70,7 +70,22 @@ router.get('/kpis', async (req, res, next) => {
     const expenses = await prisma.expense.findMany({ where: expenseWhere });
 
     const getEffectivePaid = (d) => {
-      return d.paidAmount || 0;
+      const stageName = (d.stage?.name || '').toLowerCase();
+      const isWon = d.status === 'won' || 
+                    stageName.includes('100%') || 
+                    stageName.includes('yutil') || 
+                    stageName.includes('won') ||
+                    stageName.includes('olindi');
+      return isWon ? (d.paidAmount || 0) : 0;
+    };
+
+    const isWonDeal = (d) => {
+      const stageName = (d.stage?.name || '').toLowerCase();
+      return d.status === 'won' || 
+             stageName.includes('100%') || 
+             stageName.includes('yutil') || 
+             stageName.includes('won') ||
+             stageName.includes('olindi');
     };
 
     const isDealCanceled = (d) => {
@@ -86,7 +101,7 @@ router.get('/kpis', async (req, res, next) => {
 
     const totalOrders = deals.length;
     const totalRevenue = deals.reduce((sum, d) => sum + getEffectivePaid(d), 0);
-    const totalDebt = deals.reduce((sum, d) => sum + Math.max((d.amount || 0) - getEffectivePaid(d), 0), 0);
+    const totalDebt = deals.reduce((sum, d) => sum + Math.max((d.amount || 0) - (d.paidAmount || 0), 0), 0);
     
     let totalExpenses = 0, totalCostPrice = 0, netProfit = 0, totalClientDebt = 0;
     let totalMarketingExpenses = 0;
@@ -102,7 +117,7 @@ router.get('/kpis', async (req, res, next) => {
       });
       
       // Cost price faqat yopilgan (won) deals uchun hisoblanadi
-      const wonDeals = deals.filter(d => d.status === 'won' || (d.stage && (d.stage.name.toLowerCase().includes('100%') || d.stage.name.toLowerCase().includes('yutil'))));
+      const wonDeals = deals.filter(isWonDeal);
       totalCostPrice = wonDeals.reduce((sum, d) => sum + (d.costPrice || 0), 0);
       
       netProfit = totalRevenue - totalCostPrice - totalExpenses;
@@ -110,7 +125,7 @@ router.get('/kpis', async (req, res, next) => {
       totalClientDebt = clients.reduce((sum, c) => sum + (c.debt || 0), 0);
     }
 
-    const won = deals.filter(d => d.status === 'won' || (d.stage && (d.stage.name.toLowerCase().includes('100%') || d.stage.name.toLowerCase().includes('yutil')))).length;
+    const won = deals.filter(isWonDeal).length;
     const lost = deals.filter(isDealCanceled).length;
 
     // ── 1. Marketing Ads Spent, CPL, ROI ──
@@ -501,7 +516,7 @@ router.get('/pipeline-stats', async (req, res) => {
       include: { _count: { select: { deals: { where } } } },
       orderBy: { order: 'asc' }
     });
-    res.json(stages.map(s => ({ id: s.id, name: s.name, color: s.color, count: s._count.deals })));
+    res.json(stages.map(s => ({ id: s.id, name: s.name, color: s.color, count: s._count.deals, pipelineId: s.pipelineId })));
   } catch(e) {
     res.json([]);
   }

@@ -13,6 +13,7 @@
 </head>
 <body>
 <div class="app-wrapper">
+  <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMobileMenu()"></div>
   <%- include('../layouts/sidebar', { user: user, activePage: typeof activePage !== 'undefined' ? activePage : '' }) %>
   <div class="main-area">
     <%- include('../layouts/topbar', { user: user }) %>
