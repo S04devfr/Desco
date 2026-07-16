@@ -137,17 +137,28 @@ router.get('/kpis', async (req, res, next) => {
     const cancellationRate = totalOrders > 0 ? ((totalCanceledCount / totalOrders) * 100) : 0;
 
     // ── 3. Nasiya Tariffs Breakdown ──
+    const getDebtBalance = (d) => Math.max(0, (d.amount || 0) - (d.paidAmount || 0));
+
     const countNasiyaDesco = deals.filter(d => d.stage?.name.toLowerCase().includes('desco')).length;
-    const amountNasiyaDesco = deals.filter(d => d.stage?.name.toLowerCase().includes('desco')).reduce((sum, d) => sum + (d.amount || 0), 0);
+    const amountNasiyaDesco = deals.filter(d => d.stage?.name.toLowerCase().includes('desco')).reduce((sum, d) => sum + getDebtBalance(d), 0);
     
     const countNasiyaIshonch = deals.filter(d => d.stage?.name.toLowerCase().includes('ishonch')).length;
-    const amountNasiyaIshonch = deals.filter(d => d.stage?.name.toLowerCase().includes('ishonch')).reduce((sum, d) => sum + (d.amount || 0), 0);
+    const amountNasiyaIshonch = deals.filter(d => d.stage?.name.toLowerCase().includes('ishonch')).reduce((sum, d) => sum + getDebtBalance(d), 0);
 
     const countNasiyaBaraka = deals.filter(d => d.stage?.name.toLowerCase().includes('baraka')).length;
-    const amountNasiyaBaraka = deals.filter(d => d.stage?.name.toLowerCase().includes('baraka')).reduce((sum, d) => sum + (d.amount || 0), 0);
+    const amountNasiyaBaraka = deals.filter(d => d.stage?.name.toLowerCase().includes('baraka')).reduce((sum, d) => sum + getDebtBalance(d), 0);
 
     const countShopir = deals.filter(d => d.stage?.name.toLowerCase().includes('shopir')).length;
-    const amountShopir = deals.filter(d => d.stage?.name.toLowerCase().includes('shopir')).reduce((sum, d) => sum + (d.amount || 0), 0);
+    const amountShopir = deals.filter(d => d.stage?.name.toLowerCase().includes('shopir')).reduce((sum, d) => sum + getDebtBalance(d), 0);
+    const shopirDeals = deals.filter(d => d.stage?.name.toLowerCase().includes('shopir')).map(d => ({
+      id: d.id,
+      productName: d.productName || 'Noma\'lum',
+      amount: d.amount || 0,
+      paidAmount: d.paidAmount || 0,
+      debt: getDebtBalance(d),
+      date: d.createdAt ? d.createdAt.toISOString().slice(0, 10) : '',
+      managerName: d.manager?.fullName || '—'
+    }));
 
     // ── 4. Geografik Tahlil (Sales by City) ──
     const cityMap = {};
@@ -265,7 +276,7 @@ router.get('/kpis', async (req, res, next) => {
       nasiyaDesco: { count: countNasiyaDesco, amount: amountNasiyaDesco },
       nasiyaIshonch: { count: countNasiyaIshonch, amount: amountNasiyaIshonch },
       nasiyaBaraka: { count: countNasiyaBaraka, amount: amountNasiyaBaraka },
-      shopir: { count: countShopir, amount: amountShopir },
+      shopir: { count: countShopir, amount: amountShopir, deals: shopirDeals },
       geographicSales,
       pipelineForecastValue,
       managersList,
