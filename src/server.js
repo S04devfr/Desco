@@ -30,11 +30,12 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json({
+  limit: '100kb',
   verify: (req, res, buf) => {
     req.rawBody = buf;
   }
 }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 
 // Railway reverse proxy ortida ishlaydi — cookie va IP to'g'ri ishlashi uchun
 if (process.env.NODE_ENV === 'production') {
