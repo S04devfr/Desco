@@ -70,12 +70,7 @@ router.get('/kpis', async (req, res, next) => {
     const expenses = await prisma.expense.findMany({ where: expenseWhere });
 
     const getEffectivePaid = (d) => {
-      const stageName = (d.stage?.name || '').toLowerCase();
-      const isWon = d.status === 'won' || 
-                    stageName.includes('100%') || 
-                    stageName.includes('yutil') || 
-                    stageName.includes('won');
-      return isWon ? (d.amount || 0) : (d.paidAmount || 0);
+      return d.paidAmount || 0;
     };
 
     const isDealCanceled = (d) => {
@@ -105,7 +100,11 @@ router.get('/kpis', async (req, res, next) => {
         const cat = e.category || 'other';
         expenseByCategory[cat] = (expenseByCategory[cat] || 0) + e.amount;
       });
-      totalCostPrice = deals.reduce((sum, d) => sum + (d.costPrice || 0), 0);
+      
+      // Cost price faqat yopilgan (won) deals uchun hisoblanadi
+      const wonDeals = deals.filter(d => d.status === 'won' || (d.stage && (d.stage.name.toLowerCase().includes('100%') || d.stage.name.toLowerCase().includes('yutil'))));
+      totalCostPrice = wonDeals.reduce((sum, d) => sum + (d.costPrice || 0), 0);
+      
       netProfit = totalRevenue - totalCostPrice - totalExpenses;
       const clients = await prisma.client.findMany({ select: { debt: true } });
       totalClientDebt = clients.reduce((sum, c) => sum + (c.debt || 0), 0);
