@@ -261,4 +261,16 @@ router.get('/temp-migrate-nasiyas', async (req, res) => {
   }
 });
 
+router.get('/temp-inspect-deal', async (req, res) => {
+  try {
+    const deal = await prisma.deal.findUnique({
+      where: { id: 821 },
+      include: { installments: true }
+    });
+    res.json(deal);
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 module.exports = router
