@@ -5,124 +5,277 @@
 }) %>
 
 <style>
-  .plans-container {
+  .plans-page-container {
     display: flex;
     flex-direction: column;
     height: calc(100vh - 100px);
     gap: 16px;
-    padding: 20px;
+    padding: 24px;
     box-sizing: border-box;
+    overflow-y: auto;
   }
   
-  .plans-header {
+  .plans-page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 16px;
   }
-  
-  .plans-board {
+
+  /* Premium AI Banner Panel */
+  .ai-recommendation-panel {
+    background: linear-gradient(135deg, rgba(255, 149, 0, 0.08) 0%, rgba(99, 102, 241, 0.05) 100%);
+    border: 1px dashed var(--border);
+    border-radius: 14px;
+    padding: 16px 20px;
     display: flex;
-    gap: 20px;
-    flex-grow: 1;
-    overflow-x: auto;
-    padding-bottom: 12px;
-    align-items: flex-start;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.01);
   }
-  
-  .kanban-col {
-    flex: 0 0 320px;
-    width: 320px;
+
+  .ai-icon-wrapper {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: var(--accent-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    font-size: 18px;
+    flex-shrink: 0;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .ai-content {
+    flex-grow: 1;
+  }
+
+  .ai-title {
+    font-weight: 700;
+    font-size: 13.5px;
+    color: var(--text-primary);
+    margin: 0 0 4px 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ai-desc {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  /* Stats Chips */
+  .stats-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+
+  .stat-chip {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 160px;
+  }
+
+  .stat-chip-icon {
+    font-size: 16px;
+    color: var(--text-tertiary);
+  }
+
+  .stat-chip-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stat-chip-val {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .stat-chip-lbl {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  /* Two Column Layout */
+  .plans-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    flex-grow: 1;
+    min-height: 450px;
+  }
+
+  @media (max-width: 992px) {
+    .plans-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .plans-column {
     display: flex;
     flex-direction: column;
     background: var(--bg-secondary);
-    border-radius: 12px;
+    border-radius: 14px;
     border: 1px solid var(--border);
-    max-height: 100%;
+    height: 100%;
     overflow: hidden;
     box-shadow: var(--shadow-sm);
-    transition: box-shadow 0.2s;
   }
-  
-  .kanban-col:hover {
-    box-shadow: var(--shadow-md);
-  }
-  
-  .kanban-col-header {
-    padding: 14px 16px;
+
+  .plans-column-header {
+    padding: 16px 20px;
     border-bottom: 1px solid var(--border);
+    background: var(--bg-tertiary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .plans-column-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
     display: flex;
     align-items: center;
     gap: 8px;
-    background: var(--bg-tertiary);
   }
-  
-  .kanban-col-body {
-    padding: 12px;
+
+  .plans-column-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+  }
+
+  .plans-column-body {
+    padding: 16px;
     display: flex;
     flex-direction: column;
     gap: 12px;
     overflow-y: auto;
     flex-grow: 1;
-    background: var(--bg-secondary);
-    min-height: 200px;
+    min-height: 350px;
   }
-  
-  /* Plan Card Styles */
+
+  /* Task cards */
   .plan-card {
     background: var(--bg-primary);
     border: 1px solid var(--border);
     border-left: 4px solid var(--accent);
-    border-radius: 8px;
-    padding: 12px 14px;
+    border-radius: 10px;
+    padding: 14px 16px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
     position: relative;
     transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.01);
   }
-  
+
   .plan-card:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
   }
-  
+
   .plan-card-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 8px;
+    gap: 10px;
   }
-  
+
+  .plan-card-checkbox {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--text-tertiary);
+    border-radius: 5px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: white;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .plan-card-checkbox:hover {
+    border-color: var(--accent);
+  }
+
+  .plan-card-checkbox.checked {
+    background: #34C759;
+    border-color: #34C759;
+  }
+
   .plan-card-title {
     font-size: 14.5px;
     font-weight: 600;
     color: var(--text-primary);
     margin: 0;
     line-height: 1.4;
+    flex-grow: 1;
+    transition: color 0.2s;
   }
-  
+
+  .plan-card-title.done {
+    text-decoration: line-through;
+    color: var(--text-secondary);
+  }
+
   .plan-card-desc {
     font-size: 12.5px;
     color: var(--text-secondary);
     margin: 0;
-    line-height: 1.4;
+    line-height: 1.5;
     white-space: pre-wrap;
   }
-  
+
+  .plan-card-desc.done {
+    opacity: 0.6;
+  }
+
   .plan-card-meta {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 11.5px;
-    color: var(--text-tertiary);
+    flex-wrap: wrap;
+    gap: 8px;
     border-top: 1px solid var(--border);
-    padding-top: 8px;
+    padding-top: 10px;
     margin-top: 4px;
+    font-size: 11.5px;
   }
-  
+
+  .plan-card-date {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-secondary);
+  }
+
+  .plan-card-date.overdue {
+    color: var(--danger);
+    font-weight: 600;
+  }
+
   .priority-badge {
     display: inline-flex;
     align-items: center;
@@ -133,67 +286,132 @@
     font-weight: 700;
     text-transform: uppercase;
   }
-  
+
   .priority-badge.high { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
   .priority-badge.medium { background: rgba(234, 179, 8, 0.1); color: #eab308; }
   .priority-badge.low { background: rgba(34, 197, 94, 0.1); color: #22c55e; }
-  
-  .plan-card-actions {
+
+  .plan-actions {
     display: flex;
     align-items: center;
     gap: 6px;
   }
-  
-  .plan-action-btn {
+
+  .plan-btn {
     border: none;
     background: none;
-    padding: 3px 6px;
+    padding: 4px;
     font-size: 12px;
     color: var(--text-tertiary);
     cursor: pointer;
     border-radius: 4px;
     transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
-  
-  .plan-action-btn:hover {
+
+  .plan-btn:hover {
     background: var(--bg-tertiary);
     color: var(--text-primary);
   }
-  
-  .plan-action-btn.move-btn {
+
+  .plan-btn.edit-btn:hover {
     color: var(--accent);
   }
-  
-  .plan-action-btn.delete-btn:hover {
+
+  .plan-btn.delete-btn:hover {
     color: var(--danger);
-    background: rgba(239, 68, 68, 0.1);
+    background: rgba(239, 68, 68, 0.08);
   }
 </style>
 
-<div class="plans-container">
-  <!-- Header -->
-  <div class="plans-header">
+<div class="plans-page-container">
+  <!-- Page Header -->
+  <div class="plans-page-header">
     <div>
       <h2 style="margin:0 0 4px; font-weight:700; font-size:22px; color:var(--text-primary)">
         <i class="fas fa-clipboard-list" style="color:#FF9500; margin-right:8px"></i> Rejalar va Eslatmalar
       </h2>
-      <p style="margin:0; font-size:13px; color:var(--text-secondary)">Tizim rivojlanishi, qilinadigan ishlar va amalga oshirilgan rejalar taxtasi.</p>
+      <p style="margin:0; font-size:13px; color:var(--text-secondary)">Qilinadigan ishlar (To-Do) va qilingan ishlar (Done) ro'yxatining yagona taxtasi.</p>
     </div>
     <div style="display:flex; gap:10px; align-items:center;">
       <input type="text" id="planSearchInput" class="form-control" placeholder="Rejalarni qidirish..." style="width:200px; height:36px; font-size:12.5px" oninput="renderBoard()">
       <button class="btn btn-primary" onclick="openPlanModal()" style="height:36px; display:flex; align-items:center; gap:6px; font-size:13px;">
-        <i class="fas fa-plus"></i> Yangi Reja
+        <i class="fas fa-plus"></i> Yangi Reja Qo'shish
       </button>
     </div>
   </div>
 
-  <!-- Board -->
-  <div class="plans-board" id="plansBoard">
-    <!-- Rendered dynamically -->
+  <!-- Stats Grid -->
+  <div class="stats-row">
+    <div class="stat-chip">
+      <div class="stat-chip-icon"><i class="fas fa-spinner" style="color:#007AFF"></i></div>
+      <div class="stat-chip-info">
+        <span class="stat-chip-val" id="todoCountText">0</span>
+        <span class="stat-chip-lbl">Qilinadigan rejalar</span>
+      </div>
+    </div>
+    <div class="stat-chip">
+      <div class="stat-chip-icon"><i class="fas fa-check-circle" style="color:#34C759"></i></div>
+      <div class="stat-chip-info">
+        <span class="stat-chip-val" id="doneCountText">0</span>
+        <span class="stat-chip-lbl">Yakunlangan rejalar</span>
+      </div>
+    </div>
+    <div class="stat-chip">
+      <div class="stat-chip-icon"><i class="fas fa-star" style="color:#FF9500"></i></div>
+      <div class="stat-chip-info">
+        <span class="stat-chip-val" id="highPriorityCountText">0</span>
+        <span class="stat-chip-lbl">O'ta muhim rejalar</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Premium AI Recommendation Banner -->
+  <div class="ai-recommendation-panel">
+    <div class="ai-icon-wrapper">
+      <i class="fas fa-robot"></i>
+    </div>
+    <div class="ai-content">
+      <h5 class="ai-title"><i class="fas fa-magic" style="color:#FF9500"></i> Desco AI Tahlili & Tavsiyalar</h5>
+      <p class="ai-desc" id="aiAdviceText">Planlar yuklanmoqda...</p>
+    </div>
+  </div>
+
+  <!-- Plans Grid (2 Columns) -->
+  <div class="plans-grid">
+    <!-- Left Column: Todo -->
+    <div class="plans-column">
+      <div class="plans-column-header">
+        <h4 class="plans-column-title">
+          <span style="width: 8px; height: 8px; border-radius: 50%; background: #007AFF;"></span>
+          Qilinadigan ishlar & Rejalar
+        </h4>
+        <span class="plans-column-badge" id="todoBadge" style="background:#007AFF1A; color:#007AFF;">0</span>
+      </div>
+      <div class="plans-column-body" id="todoColumnBody">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- Right Column: Done -->
+    <div class="plans-column">
+      <div class="plans-column-header">
+        <h4 class="plans-column-title">
+          <span style="width: 8px; height: 8px; border-radius: 50%; background: #34C759;"></span>
+          Qilingan ishlar & Tarix
+        </h4>
+        <span class="plans-column-badge" id="doneBadge" style="background:#34C7591A; color:#34C759;">0</span>
+      </div>
+      <div class="plans-column-body" id="doneColumnBody">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- Plan Modal -->
+<!-- Plan Modal Form -->
 <div id="planModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closePlanModal()">
   <div class="modal-dialog" style="max-width:480px;">
     <div class="modal-header">
@@ -210,33 +428,38 @@
       
       <div>
         <label class="form-label">Tafsilotlar (Izoh)</label>
-        <textarea id="planDescription" class="form-control" rows="4" placeholder="Reja haqida to'liqroq ma'lumot..." style="resize:vertical;"></textarea>
+        <textarea id="planDescription" class="form-control" rows="4" placeholder="Reja haqida batafsil izoh yoki bajariladigan ishlar qadamlari..." style="resize:vertical;"></textarea>
       </div>
 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
         <div>
-          <label class="form-label">Holat</label>
-          <select id="planStatus" class="form-control">
-            <option value="todo">Qilinadigan ishlar</option>
-            <option value="progress">Bajarilayotgan ishlar</option>
-            <option value="done">Qilingan ishlar</option>
-          </select>
+          <label class="form-label">Muddati (Sana)</label>
+          <input type="date" id="planDueDate" class="form-control">
         </div>
         <div>
           <label class="form-label">Muhimlik darajasi</label>
           <select id="planPriority" class="form-control">
-            <option value="high">Yuqori</option>
+            <option value="high">Yuqori (O'ta muhim)</option>
             <option value="medium" selected>O'rta</option>
             <option value="low">Past</option>
           </select>
         </div>
       </div>
 
-      <div>
-        <label class="form-label">Kartochka rangi</label>
-        <div style="display:flex; gap:10px; align-items:center;">
-          <input type="color" id="planColor" class="form-control" value="#3b82f6" style="width:50px; padding:2px; height:36px; cursor:pointer;">
-          <span style="font-size:12px; color:var(--text-tertiary)">Kartochkaning chap chetidagi chiziq rangi.</span>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label class="form-label">Boshlang'ich holati</label>
+          <select id="planStatus" class="form-control">
+            <option value="todo" selected>Qilinadigan ish</option>
+            <option value="done">Qilingan (Tayyor) ish</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Kartochka chekka rangi</label>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <input type="color" id="planColor" class="form-control" value="#3b82f6" style="width:40px; padding:2px; height:36px; cursor:pointer;">
+            <span style="font-size:11px; color:var(--text-tertiary)">Guruhlar uchun ranglar.</span>
+          </div>
         </div>
       </div>
     </div>
@@ -261,8 +484,9 @@
   }
 
   function renderBoard() {
-    const board = document.getElementById('plansBoard');
-    if (!board) return;
+    const todoBody = document.getElementById('todoColumnBody');
+    const doneBody = document.getElementById('doneColumnBody');
+    if (!todoBody || !doneBody) return;
     
     const query = document.getElementById('planSearchInput').value.toLowerCase();
     
@@ -271,80 +495,116 @@
       (p.description || '').toLowerCase().includes(query)
     );
     
-    const todo = filtered.filter(p => p.status === 'todo');
-    const progress = filtered.filter(p => p.status === 'progress');
+    const todo = filtered.filter(p => p.status !== 'done');
     const done = filtered.filter(p => p.status === 'done');
     
-    const columns = [
-      { key: 'todo', title: 'Qilinadigan ishlar', color: '#007AFF', list: todo },
-      { key: 'progress', title: 'Bajarilayotgan ishlar', color: '#FF9500', list: progress },
-      { key: 'done', title: 'Qilingan ishlar', color: '#34C759', list: done }
-    ];
+    const highPriorityCount = todo.filter(p => p.priority === 'high').length;
     
-    board.innerHTML = columns.map(col => `
-      <div class="kanban-col">
-        <div class="kanban-col-header">
-          <span style="width: 8px; height: 8px; border-radius: 50%; background: ${col.color};"></span>
-          <h4 style="margin: 0; font-size: 13.5px; font-weight: 700; color: var(--text-primary); flex-grow: 1;">${col.title}</h4>
-          <span class="badge" style="background: ${col.color}1A; color: ${col.color}; font-size: 10.5px; padding: 2px 7px; border-radius: 10px; font-weight: 700;">${col.list.length}</span>
+    // Update stats counters
+    document.getElementById('todoCountText').textContent = todo.length;
+    document.getElementById('doneCountText').textContent = done.length;
+    document.getElementById('highPriorityCountText').textContent = highPriorityCount;
+    
+    document.getElementById('todoBadge').textContent = todo.length;
+    document.getElementById('doneBadge').textContent = done.length;
+    
+    // Generate AI recommendations dynamically
+    updateAiRecommendations(todo.length, done.length, highPriorityCount, todo);
+    
+    // Render Todo List
+    if (todo.length === 0) {
+      todoBody.innerHTML = `
+        <div style="padding: 50px 10px; text-align: center; color: var(--text-tertiary); font-size: 13px;">
+          <i class="fas fa-clipboard-list" style="font-size: 32px; opacity: 0.3; display: block; margin-bottom: 10px; color:#007AFF"></i>
+          Hozircha rejalashtirilgan ishlar yo'q. Yangi reja qo'shing!
         </div>
-        <div class="kanban-col-body">
-          ${col.list.length === 0 ? `
-            <div style="padding: 40px 10px; text-align: center; color: var(--text-tertiary); font-size: 12.5px;">
-              <i class="fas fa-clipboard-check" style="font-size: 24px; opacity: 0.3; display: block; margin-bottom: 8px;"></i>
-              Ushbu ustunda rejalar yo'q
-            </div>
-          ` : col.list.map(p => `
-            <div class="plan-card" style="border-left-color: ${p.color || '#3b82f6'}">
-              <div class="plan-card-header">
-                <h5 class="plan-card-title">${escHtml(p.title)}</h5>
-                <div class="plan-card-actions">
-                  <button class="plan-action-btn" onclick="openPlanModal(${p.id})" title="Tahrirlash"><i class="fas fa-edit"></i></button>
-                  <button class="plan-action-btn delete-btn" onclick="deletePlan(${p.id})" title="O'chirish"><i class="fas fa-trash-alt"></i></button>
-                </div>
-              </div>
-              
-              ${p.description ? `<p class="plan-card-desc">${escHtml(p.description)}</p>` : ''}
-              
-              <div class="plan-card-meta">
-                <div style="display:flex; gap:6px; align-items:center;">
-                  <span class="priority-badge ${p.priority}">${translatePriority(p.priority)}</span>
-                </div>
-                <div style="display:flex; align-items:center; gap:4px;">
-                  ${col.key !== 'todo' ? `
-                    <button class="plan-action-btn move-btn" onclick="movePlan(${p.id}, '${getPreviousStatus(col.key)}')" title="Orqaga siljitish">
-                      <i class="fas fa-chevron-left"></i>
-                    </button>
-                  ` : ''}
-                  
-                  ${col.key !== 'done' ? `
-                    <button class="plan-action-btn move-btn" onclick="movePlan(${p.id}, '${getNextStatus(col.key)}')" title="Oldinga siljitish">
-                      <i class="fas fa-chevron-right"></i>
-                    </button>
-                  ` : ''}
-                </div>
-              </div>
-            </div>
-          `).join('')}
+      `;
+    } else {
+      todoBody.innerHTML = todo.map(p => renderCardHtml(p, false)).join('');
+    }
+    
+    // Render Done List
+    if (done.length === 0) {
+      doneBody.innerHTML = `
+        <div style="padding: 50px 10px; text-align: center; color: var(--text-tertiary); font-size: 13px;">
+          <i class="fas fa-check-double" style="font-size: 32px; opacity: 0.3; display: block; margin-bottom: 10px; color:#34C759"></i>
+          Hozircha bajarilgan ishlar yo'q. Faol rejalarni yakunlang!
+        </div>
+      `;
+    } else {
+      doneBody.innerHTML = done.map(p => renderCardHtml(p, true)).join('');
+    }
+  }
+
+  function updateAiRecommendations(todoCount, doneCount, highCount, todoList) {
+    const el = document.getElementById('aiAdviceText');
+    if (!el) return;
+    
+    if (todoCount === 0 && doneCount === 0) {
+      el.textContent = "Hozircha rejalaringiz ro'yxati bo'sh. CRM tizimi faoliyatini tartibga solish uchun 'Yangi Reja Qo'shish' tugmasi orqali ilk rejangizni kiriting!";
+      return;
+    }
+    
+    if (todoCount === 0 && doneCount > 0) {
+      el.innerHTML = `Tabriklaymiz! Barcha <strong>${doneCount} ta</strong> reja muvaffaqiyatli yakunlandi! Tizim 100% tartibli holatda. Yangi qilinadigan loyiha va takliflarni rejalashtiring.`;
+      return;
+    }
+    
+    // Check if there are overdue todo tasks
+    const today = new Date().toISOString().slice(0, 10);
+    const overdueCount = todoList.filter(p => p.dueDate && p.dueDate.slice(0, 10) < today).length;
+    
+    let advice = "";
+    if (overdueCount > 0) {
+      advice += `<span style="color:#ef4444; font-weight:700;"><i class="fas fa-exclamation-triangle"></i> Diqqat!</span> Sizda muddati o'tgan <strong>${overdueCount} ta</strong> reja bor. `;
+    }
+    
+    if (highCount > 0) {
+      advice += `Tizimda <strong>${highCount} ta o'ta muhim</strong> vazifa kutilmoqda. Birinchi navbatda ushbu ustuvor vazifalarni bajarishni tavsiya etamiz. `;
+    } else {
+      advice += `Sizda <strong>${todoCount} ta</strong> faol reja bor. Ulardan <strong>${doneCount} tasi</strong> allaqachon muvaffaqiyatli yakunlangan. `;
+    }
+    
+    advice += "Kundalik ishlarni tartiblash uchun rejalar muddatiga (Sana) qarab ish rejasini tuzing.";
+    el.innerHTML = advice;
+  }
+
+  function renderCardHtml(p, isDone) {
+    const isOverdue = !isDone && p.dueDate && p.dueDate.slice(0, 10) < new Date().toISOString().slice(0, 10);
+    const dateStr = p.dueDate ? new Date(p.dueDate).toLocaleDateString('uz-UZ') : '';
+    
+    return `
+      <div class="plan-card" style="border-left-color: ${p.color || '#3b82f6'}">
+        <div class="plan-card-header">
+          <div class="plan-card-checkbox ${isDone ? 'checked' : ''}" onclick="togglePlanStatus(${p.id}, ${isDone})" title="${isDone ? 'Faol holatga qaytarish' : 'Bajarilgan deb belgilash'}">
+            ${isDone ? '<i class="fas fa-check"></i>' : ''}
+          </div>
+          <h5 class="plan-card-title ${isDone ? 'done' : ''}">${escHtml(p.title)}</h5>
+          <div class="plan-actions">
+            <button class="plan-btn edit-btn" onclick="openPlanModal(${p.id})" title="Tahrirlash"><i class="fas fa-edit"></i></button>
+            <button class="plan-btn delete-btn" onclick="deletePlan(${p.id})" title="O'chirish"><i class="fas fa-trash-alt"></i></button>
+          </div>
+        </div>
+        
+        ${p.description ? `<p class="plan-card-desc ${isDone ? 'done' : ''}">${escHtml(p.description)}</p>` : ''}
+        
+        <div class="plan-card-meta">
+          <span class="priority-badge ${p.priority}">${translatePriority(p.priority)}</span>
+          ${dateStr ? `
+            <span class="plan-card-date ${isOverdue ? 'overdue' : ''}">
+              <i class="fas fa-calendar-alt"></i> 
+              ${isOverdue ? 'Muddati o\'tgan: ' : ''}${dateStr}
+            </span>
+          ` : '<span style="color:var(--text-tertiary);"><i class="fas fa-calendar-alt"></i> Belgilanmagan</span>'}
         </div>
       </div>
-    `).join('');
+    `;
   }
 
   function translatePriority(p) {
     if (p === 'high') return 'Yuqori';
     if (p === 'medium') return 'O\'rta';
     return 'Past';
-  }
-  
-  function getPreviousStatus(status) {
-    if (status === 'done') return 'progress';
-    return 'todo';
-  }
-  
-  function getNextStatus(status) {
-    if (status === 'todo') return 'progress';
-    return 'done';
   }
 
   function openPlanModal(id = null) {
@@ -362,6 +622,7 @@
       document.getElementById('planStatus').value = p.status;
       document.getElementById('planPriority').value = p.priority;
       document.getElementById('planColor').value = p.color || '#3b82f6';
+      document.getElementById('planDueDate').value = p.dueDate ? p.dueDate.slice(0, 10) : '';
       document.getElementById('modalTitleText').innerHTML = '<i class="fas fa-edit text-brand"></i> Rejani Tahrirlash';
     } else {
       document.getElementById('planId').value = '';
@@ -370,6 +631,7 @@
       document.getElementById('planStatus').value = 'todo';
       document.getElementById('planPriority').value = 'medium';
       document.getElementById('planColor').value = '#3b82f6';
+      document.getElementById('planDueDate').value = '';
       document.getElementById('modalTitleText').innerHTML = '<i class="fas fa-plus text-brand"></i> Yangi Reja Qo\'shish';
     }
     modal.style.display = 'flex';
@@ -386,6 +648,7 @@
     const status = document.getElementById('planStatus').value;
     const priority = document.getElementById('planPriority').value;
     const color = document.getElementById('planColor').value;
+    const dueDate = document.getElementById('planDueDate').value;
 
     if (!title) {
       alert('Sarlavha kiritilishi shart!');
@@ -403,7 +666,7 @@
       const r = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, description, status, priority, color })
+        body: JSON.stringify({ title, description, status, priority, color, dueDate })
       });
       if (!r.ok) throw new Error();
       
@@ -417,7 +680,8 @@
     }
   }
 
-  async function movePlan(id, newStatus) {
+  async function togglePlanStatus(id, currentlyDone) {
+    const newStatus = currentlyDone ? 'todo' : 'done';
     try {
       const r = await fetch(`/plans/api/${id}`, {
         method: 'PATCH',
@@ -427,7 +691,7 @@
       if (!r.ok) throw new Error();
       loadPlans();
     } catch(e) {
-      console.error('Siljitishda xatolik:', e);
+      console.error('Holatni o\'zgartirishda xatolik:', e);
     }
   }
 

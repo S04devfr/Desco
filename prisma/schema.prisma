@@ -332,6 +332,7 @@ model Plan {
   status      String   @default("todo") // "todo", "progress", "done"
   priority    String   @default("medium") // "high", "medium", "low"
   color       String?  @default("#3b82f6")
+  dueDate     DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

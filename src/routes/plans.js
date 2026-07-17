@@ -34,7 +34,7 @@ router.get('/api', async (req, res, next) => {
 // Create plan
 router.post('/api', async (req, res, next) => {
   try {
-    const { title, description, status, priority, color } = req.body
+    const { title, description, status, priority, color, dueDate } = req.body
     if (!title) {
       return res.status(400).json({ error: 'Sarlavha kiritilishi shart' })
     }
@@ -45,6 +45,7 @@ router.post('/api', async (req, res, next) => {
         status: status || 'todo',
         priority: priority || 'medium',
         color: color || '#3b82f6',
+        dueDate: dueDate ? new Date(dueDate) : null,
         creatorId: req.userId
       },
       include: {
@@ -63,7 +64,7 @@ router.post('/api', async (req, res, next) => {
 router.patch('/api/:id', async (req, res, next) => {
   try {
     const id = Number(req.params.id)
-    const { title, description, status, priority, color } = req.body
+    const { title, description, status, priority, color, dueDate } = req.body
     
     const updated = await prisma.plan.update({
       where: { id },
@@ -72,7 +73,8 @@ router.patch('/api/:id', async (req, res, next) => {
         ...(description !== undefined ? { description } : {}),
         ...(status !== undefined ? { status } : {}),
         ...(priority !== undefined ? { priority } : {}),
-        ...(color !== undefined ? { color } : {})
+        ...(color !== undefined ? { color } : {}),
+        ...(dueDate !== undefined ? { dueDate: dueDate ? new Date(dueDate) : null } : {})
       },
       include: {
         creator: {
