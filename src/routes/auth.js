@@ -263,11 +263,26 @@ router.get('/temp-migrate-nasiyas', async (req, res) => {
 
 router.get('/temp-inspect-deal', async (req, res) => {
   try {
+    const deals = await prisma.deal.findMany({
+      include: { installments: true }
+    });
+    let updatedCount = 0;
+    for (const d of deals) {
+      if (d.installments && d.installments.length > 0) {
+        const total = d.installments.reduce((sum, inst) => sum + inst.amount, 0);
+        const paid = d.installments.filter(inst => inst.paid).reduce((sum, inst) => sum + inst.amount, 0);
+        await prisma.deal.update({
+          where: { id: d.id },
+          data: { amount: total, paidAmount: paid }
+        });
+        updatedCount++;
+      }
+    }
     const deal = await prisma.deal.findUnique({
       where: { id: 821 },
       include: { installments: true }
     });
-    res.json(deal);
+    res.json({ updatedCount, deal });
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
