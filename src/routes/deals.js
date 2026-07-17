@@ -720,6 +720,9 @@ router.post('/:id/installments', requireRole('admin', 'manager'), async (req, re
       });
       
       const created = [];
+      let totalAmount = 0;
+      let totalPaid = 0;
+      
       if (Array.isArray(installments)) {
         for (const inst of installments) {
           let dueDate = new Date(inst.dueDate);
@@ -728,12 +731,21 @@ router.post('/:id/installments', requireRole('admin', 'manager'), async (req, re
             // Defaulting to 1 month ahead if invalid date was passed
             dueDate.setMonth(dueDate.getMonth() + 1);
           }
+          
+          const instAmount = Number(inst.amount) || 0;
+          const instPaid = Boolean(inst.paid);
+          
+          totalAmount += instAmount;
+          if (instPaid) {
+            totalPaid += instAmount;
+          }
+          
           const item = await tx.installment.create({
             data: {
               dealId,
               dueDate: dueDate,
-              amount: Number(inst.amount) || 0,
-              paid: Boolean(inst.paid),
+              amount: instAmount,
+              paid: instPaid,
               productName: inst.productName || null,
               month: inst.month || null,
               notes: inst.notes || null
@@ -742,14 +754,14 @@ router.post('/:id/installments', requireRole('admin', 'manager'), async (req, re
           created.push(item);
 
           // 3 kun oldingi avtomatlashtirilgan eslatma yaratish (agar to'lanmagan bo'lsa)
-          if (!inst.paid) {
+          if (!instPaid) {
             const taskDueDate = new Date(dueDate);
             taskDueDate.setDate(taskDueDate.getDate() - 3);
             
             await tx.task.create({
               data: {
                 title: `To'lov eslatmasi (Nasiya)`,
-                description: `Ushbu sdelka uchun to'lov muddati: ${dueDate.toLocaleDateString('uz-UZ')}. To'lov summasi: ${inst.amount} so'm. Mahsulot: ${inst.productName || 'Noma\'lum'}`,
+                description: `Ushbu sdelka uchun to'lov muddati: ${dueDate.toLocaleDateString('uz-UZ')}. To'lov summasi: ${instAmount} so'm. Mahsulot: ${inst.productName || 'Noma\'lum'}`,
                 dueDate: taskDueDate,
                 assignedToId: req.userId,
                 dealId: dealId,
@@ -759,6 +771,18 @@ router.post('/:id/installments', requireRole('admin', 'manager'), async (req, re
           }
         }
       }
+      
+      // Update the deal's amount and paidAmount to match the installments
+      if (created.length > 0) {
+        await tx.deal.update({
+          where: { id: dealId },
+          data: {
+            amount: totalAmount,
+            paidAmount: totalPaid
+          }
+        });
+      }
+      
       return created;
     });
     res.json(result);
