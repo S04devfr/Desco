@@ -272,7 +272,7 @@ router.get('/kpis', async (req, res, next) => {
     // ── 7. Funnel conversion stages (HubSpot Funnel) ──
     const funnelStages = {
       yangi: deals.filter(d => d.stage?.name.toLowerCase().includes('yangi')).length,
-      won: won,
+      muzokara: deals.filter(d => d.stage?.name.toLowerCase().includes('muzokara')).length,
       lost: lost,
       total: deals.length
     };
@@ -328,7 +328,7 @@ router.get('/kpis', async (req, res, next) => {
       geographicSales: [],
       pipelineForecastValue: 0,
       managersList: [],
-      funnelStages: { yangi: 0, won: 0, lost: 0, total: 0 },
+      funnelStages: { yangi: 0, muzokara: 0, lost: 0, total: 0 },
       error: error.message + "\n" + error.stack
     });
   }
