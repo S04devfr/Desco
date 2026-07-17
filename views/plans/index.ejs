@@ -8,11 +8,16 @@
   .plans-page-container {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 100px);
     gap: 16px;
-    padding: 24px;
+    padding: 20px;
     box-sizing: border-box;
-    overflow-y: auto;
+  }
+  
+  @media (max-width: 768px) {
+    .plans-page-container {
+      padding: 12px;
+      gap: 12px;
+    }
   }
   
   .plans-page-header {
@@ -21,6 +26,30 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 16px;
+  }
+  
+  .plans-header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-grow: 1;
+    justify-content: flex-end;
+  }
+  
+  @media (max-width: 576px) {
+    .plans-page-header {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .plans-header-actions {
+      flex-direction: column;
+      align-items: stretch;
+      width: 100%;
+    }
+    .plans-header-actions input,
+    .plans-header-actions button {
+      width: 100% !important;
+    }
   }
 
   /* Premium AI Banner Panel */
@@ -33,6 +62,15 @@
     align-items: center;
     gap: 16px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.01);
+  }
+  
+  @media (max-width: 576px) {
+    .ai-recommendation-panel {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 14px;
+    }
   }
 
   .ai-icon-wrapper {
@@ -70,12 +108,19 @@
     line-height: 1.5;
   }
 
-  /* Stats Chips */
+  /* Stats Chips Grid */
   .stats-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
     gap: 12px;
     margin-bottom: 8px;
-    flex-wrap: wrap;
+  }
+  
+  @media (max-width: 768px) {
+    .stats-row {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
   }
 
   .stat-chip {
@@ -86,8 +131,6 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    flex: 1;
-    min-width: 160px;
   }
 
   .stat-chip-icon {
@@ -123,6 +166,7 @@
   @media (max-width: 992px) {
     .plans-grid {
       grid-template-columns: 1fr;
+      gap: 16px;
     }
   }
 
@@ -170,7 +214,7 @@
     gap: 12px;
     overflow-y: auto;
     flex-grow: 1;
-    min-height: 350px;
+    min-height: 300px;
   }
 
   /* Task cards */
@@ -335,7 +379,7 @@
       </h2>
       <p style="margin:0; font-size:13px; color:var(--text-secondary)">Qilinadigan ishlar (To-Do) va qilingan ishlar (Done) ro'yxatining yagona taxtasi.</p>
     </div>
-    <div style="display:flex; gap:10px; align-items:center;">
+    <div class="plans-header-actions">
       <input type="text" id="planSearchInput" class="form-control" placeholder="Rejalarni qidirish..." style="width:200px; height:36px; font-size:12.5px" oninput="renderBoard()">
       <button class="btn btn-primary" onclick="openPlanModal()" style="height:36px; display:flex; align-items:center; gap:6px; font-size:13px;">
         <i class="fas fa-plus"></i> Yangi Reja Qo'shish
