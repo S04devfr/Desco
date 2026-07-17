@@ -60,14 +60,14 @@
       <span class="nav-label">Ombor</span>
     </a>
 
-    <a href="/instagram" class="<%= activePage === 'instagram' ? 'active' : '' %>">
-      <span class="nav-icon"><i class="fab fa-instagram" style="color:#E1306C"></i></span>
-      <span class="nav-label">Instagram</span>
+    <a href="/plans" class="<%= activePage === 'plans' ? 'active' : '' %>">
+      <span class="nav-icon"><i class="fas fa-clipboard-list" style="color:#FF9500"></i></span>
+      <span class="nav-label">Rejalar</span>
     </a>
 
     <!-- Qo'shimcha submenu -->
     <div class="sidebar-submenu-container">
-      <div class="sidebar-submenu-header <%= activePage.startsWith('extra') ? 'active' : '' %>" onclick="toggleSubmenu(this)">
+      <div class="sidebar-submenu-header <%= (activePage.startsWith('extra') || activePage === 'instagram') ? 'active' : '' %>" onclick="toggleSubmenu(this)">
         <span class="nav-icon"><i class="fas fa-plus-circle"></i></span>
         <span class="nav-label">Qo'shimcha</span>
         <i class="fas fa-chevron-right arrow-icon"></i>
@@ -78,6 +78,9 @@
         </a>
         <a href="/extra/branches" class="sub-item <%= activePage === 'extra-branches'  ? 'active' : '' %>">
           <span class="sub-dot" style="background:#A855F7"></span> Ishonch filiallari
+        </a>
+        <a href="/instagram" class="sub-item <%= activePage === 'instagram' ? 'active' : '' %>">
+          <span class="sub-dot" style="background:#E1306C"></span> Instagram
         </a>
       </div>
     </div>

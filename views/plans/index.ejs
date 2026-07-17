@@ -1,0 +1,453 @@
+<%- include('../layouts/header', {
+  title: 'Rejalar va Eslatmalar — DESCO CRM',
+  activePage: 'plans',
+  user: user
+}) %>
+
+<style>
+  .plans-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 100px);
+    gap: 16px;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  
+  .plans-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .plans-board {
+    display: flex;
+    gap: 20px;
+    flex-grow: 1;
+    overflow-x: auto;
+    padding-bottom: 12px;
+    align-items: flex-start;
+  }
+  
+  .kanban-col {
+    flex: 0 0 320px;
+    width: 320px;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    max-height: 100%;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.2s;
+  }
+  
+  .kanban-col:hover {
+    box-shadow: var(--shadow-md);
+  }
+  
+  .kanban-col-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-tertiary);
+  }
+  
+  .kanban-col-body {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+    flex-grow: 1;
+    background: var(--bg-secondary);
+    min-height: 200px;
+  }
+  
+  /* Plan Card Styles */
+  .plan-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  }
+  
+  .plan-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+  
+  .plan-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .plan-card-title {
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    line-height: 1.4;
+  }
+  
+  .plan-card-desc {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.4;
+    white-space: pre-wrap;
+  }
+  
+  .plan-card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11.5px;
+    color: var(--text-tertiary);
+    border-top: 1px solid var(--border);
+    padding-top: 8px;
+    margin-top: 4px;
+  }
+  
+  .priority-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  
+  .priority-badge.high { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+  .priority-badge.medium { background: rgba(234, 179, 8, 0.1); color: #eab308; }
+  .priority-badge.low { background: rgba(34, 197, 94, 0.1); color: #22c55e; }
+  
+  .plan-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .plan-action-btn {
+    border: none;
+    background: none;
+    padding: 3px 6px;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.15s;
+  }
+  
+  .plan-action-btn:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+  
+  .plan-action-btn.move-btn {
+    color: var(--accent);
+  }
+  
+  .plan-action-btn.delete-btn:hover {
+    color: var(--danger);
+    background: rgba(239, 68, 68, 0.1);
+  }
+</style>
+
+<div class="plans-container">
+  <!-- Header -->
+  <div class="plans-header">
+    <div>
+      <h2 style="margin:0 0 4px; font-weight:700; font-size:22px; color:var(--text-primary)">
+        <i class="fas fa-clipboard-list" style="color:#FF9500; margin-right:8px"></i> Rejalar va Eslatmalar
+      </h2>
+      <p style="margin:0; font-size:13px; color:var(--text-secondary)">Tizim rivojlanishi, qilinadigan ishlar va amalga oshirilgan rejalar taxtasi.</p>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <input type="text" id="planSearchInput" class="form-control" placeholder="Rejalarni qidirish..." style="width:200px; height:36px; font-size:12.5px" oninput="renderBoard()">
+      <button class="btn btn-primary" onclick="openPlanModal()" style="height:36px; display:flex; align-items:center; gap:6px; font-size:13px;">
+        <i class="fas fa-plus"></i> Yangi Reja
+      </button>
+    </div>
+  </div>
+
+  <!-- Board -->
+  <div class="plans-board" id="plansBoard">
+    <!-- Rendered dynamically -->
+  </div>
+</div>
+
+<!-- Plan Modal -->
+<div id="planModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closePlanModal()">
+  <div class="modal-dialog" style="max-width:480px;">
+    <div class="modal-header">
+      <h3 class="modal-title" id="modalTitleText"><i class="fas fa-edit text-brand"></i> Yangi Reja Qo'shish</h3>
+      <button class="modal-close" onclick="closePlanModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" style="padding:20px; display:flex; flex-direction:column; gap:14px;">
+      <input type="hidden" id="planId">
+      
+      <div>
+        <label class="form-label">Sarlavha (Mavzu) <span style="color:red">*</span></label>
+        <input type="text" id="planTitle" class="form-control" placeholder="Masalan: Telegram bot integratsiyasi" required>
+      </div>
+      
+      <div>
+        <label class="form-label">Tafsilotlar (Izoh)</label>
+        <textarea id="planDescription" class="form-control" rows="4" placeholder="Reja haqida to'liqroq ma'lumot..." style="resize:vertical;"></textarea>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label class="form-label">Holat</label>
+          <select id="planStatus" class="form-control">
+            <option value="todo">Qilinadigan ishlar</option>
+            <option value="progress">Bajarilayotgan ishlar</option>
+            <option value="done">Qilingan ishlar</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Muhimlik darajasi</label>
+          <select id="planPriority" class="form-control">
+            <option value="high">Yuqori</option>
+            <option value="medium" selected>O'rta</option>
+            <option value="low">Past</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="form-label">Kartochka rangi</label>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <input type="color" id="planColor" class="form-control" value="#3b82f6" style="width:50px; padding:2px; height:36px; cursor:pointer;">
+          <span style="font-size:12px; color:var(--text-tertiary)">Kartochkaning chap chetidagi chiziq rangi.</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closePlanModal()">Bekor qilish</button>
+      <button class="btn btn-primary" id="savePlanBtn" onclick="savePlan()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let _plans = [];
+  
+  async function loadPlans() {
+    try {
+      const r = await fetch('/plans/api');
+      _plans = await r.json();
+      renderBoard();
+    } catch(e) {
+      console.error('Planlarni yuklashda xatolik:', e);
+    }
+  }
+
+  function renderBoard() {
+    const board = document.getElementById('plansBoard');
+    if (!board) return;
+    
+    const query = document.getElementById('planSearchInput').value.toLowerCase();
+    
+    const filtered = _plans.filter(p => 
+      (p.title || '').toLowerCase().includes(query) ||
+      (p.description || '').toLowerCase().includes(query)
+    );
+    
+    const todo = filtered.filter(p => p.status === 'todo');
+    const progress = filtered.filter(p => p.status === 'progress');
+    const done = filtered.filter(p => p.status === 'done');
+    
+    const columns = [
+      { key: 'todo', title: 'Qilinadigan ishlar', color: '#007AFF', list: todo },
+      { key: 'progress', title: 'Bajarilayotgan ishlar', color: '#FF9500', list: progress },
+      { key: 'done', title: 'Qilingan ishlar', color: '#34C759', list: done }
+    ];
+    
+    board.innerHTML = columns.map(col => `
+      <div class="kanban-col">
+        <div class="kanban-col-header">
+          <span style="width: 8px; height: 8px; border-radius: 50%; background: ${col.color};"></span>
+          <h4 style="margin: 0; font-size: 13.5px; font-weight: 700; color: var(--text-primary); flex-grow: 1;">${col.title}</h4>
+          <span class="badge" style="background: ${col.color}1A; color: ${col.color}; font-size: 10.5px; padding: 2px 7px; border-radius: 10px; font-weight: 700;">${col.list.length}</span>
+        </div>
+        <div class="kanban-col-body">
+          ${col.list.length === 0 ? `
+            <div style="padding: 40px 10px; text-align: center; color: var(--text-tertiary); font-size: 12.5px;">
+              <i class="fas fa-clipboard-check" style="font-size: 24px; opacity: 0.3; display: block; margin-bottom: 8px;"></i>
+              Ushbu ustunda rejalar yo'q
+            </div>
+          ` : col.list.map(p => `
+            <div class="plan-card" style="border-left-color: ${p.color || '#3b82f6'}">
+              <div class="plan-card-header">
+                <h5 class="plan-card-title">${escHtml(p.title)}</h5>
+                <div class="plan-card-actions">
+                  <button class="plan-action-btn" onclick="openPlanModal(${p.id})" title="Tahrirlash"><i class="fas fa-edit"></i></button>
+                  <button class="plan-action-btn delete-btn" onclick="deletePlan(${p.id})" title="O'chirish"><i class="fas fa-trash-alt"></i></button>
+                </div>
+              </div>
+              
+              ${p.description ? `<p class="plan-card-desc">${escHtml(p.description)}</p>` : ''}
+              
+              <div class="plan-card-meta">
+                <div style="display:flex; gap:6px; align-items:center;">
+                  <span class="priority-badge ${p.priority}">${translatePriority(p.priority)}</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:4px;">
+                  ${col.key !== 'todo' ? `
+                    <button class="plan-action-btn move-btn" onclick="movePlan(${p.id}, '${getPreviousStatus(col.key)}')" title="Orqaga siljitish">
+                      <i class="fas fa-chevron-left"></i>
+                    </button>
+                  ` : ''}
+                  
+                  ${col.key !== 'done' ? `
+                    <button class="plan-action-btn move-btn" onclick="movePlan(${p.id}, '${getNextStatus(col.key)}')" title="Oldinga siljitish">
+                      <i class="fas fa-chevron-right"></i>
+                    </button>
+                  ` : ''}
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function translatePriority(p) {
+    if (p === 'high') return 'Yuqori';
+    if (p === 'medium') return 'O\'rta';
+    return 'Past';
+  }
+  
+  function getPreviousStatus(status) {
+    if (status === 'done') return 'progress';
+    return 'todo';
+  }
+  
+  function getNextStatus(status) {
+    if (status === 'todo') return 'progress';
+    return 'done';
+  }
+
+  function openPlanModal(id = null) {
+    const modal = document.getElementById('planModal');
+    const saveBtn = document.getElementById('savePlanBtn');
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = 'Saqlash';
+
+    if (id) {
+      const p = _plans.find(x => x.id === id);
+      if (!p) return;
+      document.getElementById('planId').value = p.id;
+      document.getElementById('planTitle').value = p.title;
+      document.getElementById('planDescription').value = p.description || '';
+      document.getElementById('planStatus').value = p.status;
+      document.getElementById('planPriority').value = p.priority;
+      document.getElementById('planColor').value = p.color || '#3b82f6';
+      document.getElementById('modalTitleText').innerHTML = '<i class="fas fa-edit text-brand"></i> Rejani Tahrirlash';
+    } else {
+      document.getElementById('planId').value = '';
+      document.getElementById('planTitle').value = '';
+      document.getElementById('planDescription').value = '';
+      document.getElementById('planStatus').value = 'todo';
+      document.getElementById('planPriority').value = 'medium';
+      document.getElementById('planColor').value = '#3b82f6';
+      document.getElementById('modalTitleText').innerHTML = '<i class="fas fa-plus text-brand"></i> Yangi Reja Qo\'shish';
+    }
+    modal.style.display = 'flex';
+  }
+
+  function closePlanModal() {
+    document.getElementById('planModal').style.display = 'none';
+  }
+
+  async function savePlan() {
+    const id = document.getElementById('planId').value;
+    const title = document.getElementById('planTitle').value.trim();
+    const description = document.getElementById('planDescription').value.trim();
+    const status = document.getElementById('planStatus').value;
+    const priority = document.getElementById('planPriority').value;
+    const color = document.getElementById('planColor').value;
+
+    if (!title) {
+      alert('Sarlavha kiritilishi shart!');
+      return;
+    }
+
+    const saveBtn = document.getElementById('savePlanBtn');
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saqlanmoqda...';
+
+    const url = id ? `/plans/api/${id}` : '/plans/api';
+    const method = id ? 'PATCH' : 'POST';
+
+    try {
+      const r = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, description, status, priority, color })
+      });
+      if (!r.ok) throw new Error();
+      
+      closePlanModal();
+      if (typeof showToast === 'function') showToast(id ? 'Reja tahrirlandi' : 'Yangi reja yaratildi', 'success');
+      loadPlans();
+    } catch(e) {
+      alert('Xatolik yuz berdi!');
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = 'Saqlash';
+    }
+  }
+
+  async function movePlan(id, newStatus) {
+    try {
+      const r = await fetch(`/plans/api/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (!r.ok) throw new Error();
+      loadPlans();
+    } catch(e) {
+      console.error('Siljitishda xatolik:', e);
+    }
+  }
+
+  async function deletePlan(id) {
+    if (!confirm('Ushbu rejani butunlay o\'chirib tashlamoqchimisiz?')) return;
+    try {
+      const r = await fetch(`/plans/api/${id}`, { method: 'DELETE' });
+      if (!r.ok) throw new Error();
+      if (typeof showToast === 'function') showToast('Reja o\'chirildi', 'success');
+      loadPlans();
+    } catch(e) {
+      console.error('O\'chirishda xatolik:', e);
+    }
+  }
+
+  function escHtml(str) {
+    return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  document.addEventListener('DOMContentLoaded', loadPlans);
+</script>
+
+<%- include('../layouts/footer') %>

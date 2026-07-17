@@ -25,6 +25,7 @@ model User {
   activities     ActivityLog[]
   managerSalary  ManagerSalary?
   managerFines   ManagerFine[]
+  plans          Plan[]
 }
 
 model Client {
@@ -322,5 +323,19 @@ model ManagerFine {
   month     String   // "2025-01"
   createdAt DateTime @default(now())
   manager   User     @relation(fields: [managerId], references: [id])
+}
+
+model Plan {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  status      String   @default("todo") // "todo", "progress", "done"
+  priority    String   @default("medium") // "high", "medium", "low"
+  color       String?  @default("#3b82f6")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  creatorId   Int
+  creator     User     @relation(fields: [creatorId], references: [id])
 }
 
