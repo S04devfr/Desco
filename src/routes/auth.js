@@ -243,13 +243,19 @@ router.get('/me', protect, async (req, res, next) => {
   }
 })
 
-router.get('/temp-fix-db-578', async (req, res) => {
+router.get('/temp-migrate-nasiyas', async (req, res) => {
   try {
-    const d = await prisma.deal.update({
-      where: { id: 578 },
-      data: { amount: 2400000, paidAmount: 0 }
+    const nasiyaStage = await prisma.pipelineStage.findFirst({
+      where: { name: 'Nasiya Desco' }
     });
-    res.json({ status: 'success', data: d });
+    if (!nasiyaStage) {
+      return res.status(404).json({ error: 'Nasiya Desco stage not found' });
+    }
+    const updateResult = await prisma.deal.updateMany({
+      where: { installments: { some: {} } },
+      data: { stageId: nasiyaStage.id }
+    });
+    res.json({ status: 'success', migratedCount: updateResult.count });
   } catch(e) {
     res.status(500).json({ error: e.message });
   }

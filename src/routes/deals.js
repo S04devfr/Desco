@@ -774,11 +774,16 @@ router.post('/:id/installments', requireRole('admin', 'manager'), async (req, re
       
       // Update the deal's amount and paidAmount to match the installments
       if (created.length > 0) {
+        const nasiyaStage = await tx.pipelineStage.findFirst({
+          where: { name: 'Nasiya Desco' }
+        });
+        
         await tx.deal.update({
           where: { id: dealId },
           data: {
             amount: totalAmount,
-            paidAmount: totalPaid
+            paidAmount: totalPaid,
+            ...(nasiyaStage ? { stageId: nasiyaStage.id } : {})
           }
         });
       }
