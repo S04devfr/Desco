@@ -2251,29 +2251,30 @@ updateLiveClock(); // initial call
 // ── Nasiya Desco: Muddatli to'lov modal (Kanban trigger) ──────
 let _ndDeal = null;
 
-function openNasiyaDescoModal(deal) {
+async function openNasiyaDescoModal(deal) {
   _ndDeal = deal;
   const m = document.getElementById('ndModal');
   if (!m) return;
 
+  document.getElementById('ndModalDealId').value = deal.id;
   document.getElementById('ndClientName').textContent = deal.client?.name || "Noma'lum";
   document.getElementById('ndClientPhone').textContent = deal.client?.phone || '—';
   document.getElementById('ndProduct').textContent = deal.productName || '—';
   document.getElementById('ndTotal').textContent = Number(deal.amount || 0).toLocaleString() + ' so\'m';
-  document.getElementById('ndMonths').value = '';
-  document.getElementById('ndMonthly').value = '';
-  document.getElementById('ndStartDate').value = new Date().toISOString().slice(0,10);
-  document.getElementById('ndDownPayment').value = '';
-  document.getElementById('ndNotes').value = deal.notes || '';
-  document.getElementById('ndSchedulePreview').style.display = 'none';
 
-  // Auto-fill if installments exist
-  if (deal.installments && deal.installments.length > 0) {
-    const insts = deal.installments;
-    document.getElementById('ndMonths').value = insts.length;
-    document.getElementById('ndMonthly').value = insts[0]?.amount || '';
-    if (insts[0]?.dueDate) document.getElementById('ndStartDate').value = insts[0].dueDate.slice(0,10);
-    ndUpdatePreview();
+  const remainingDebt = deal.amount - deal.paidAmount;
+  const container = document.getElementById('ndInstRowsContainer');
+  container.innerHTML = '<div>Yuklanmoqda...</div>';
+
+  try {
+    const list = await apiFetch('/api/deals/' + deal.id + '/installments');
+    if (list && list.length) {
+      container.innerHTML = list.map((inst, idx) => getNdInstallmentRowHtml(idx, inst.dueDate.slice(0, 10), inst.amount, inst.paid, inst.productName, inst.month, inst.notes)).join('');
+    } else {
+      container.innerHTML = getNdInstallmentRowHtml(0, new Date().toISOString().slice(0, 10), remainingDebt, false, deal.productName, '1-oy', '');
+    }
+  } catch(e) {
+    container.innerHTML = getNdInstallmentRowHtml(0, new Date().toISOString().slice(0, 10), remainingDebt, false, deal.productName, '1-oy', '');
   }
 
   m.style.display = 'flex';
@@ -2284,86 +2285,142 @@ function closeNdModal() {
   _ndDeal = null;
 }
 
-function ndCalcMonthly() {
-  const months = parseInt(document.getElementById('ndMonths').value) || 0;
-  const total = _ndDeal?.amount || 0;
-  const down = parseFloat(document.getElementById('ndDownPayment').value) || 0;
-  if (months > 0 && total > 0) {
-    document.getElementById('ndMonthly').value = Math.ceil((total - down) / months);
-  }
-  ndUpdatePreview();
+function getNdInstallmentRowHtml(index, dateVal, amountVal, paidVal, productVal, monthVal, notesVal) {
+  return `
+    <div class="installment-row" style="display:flex; align-items:center; gap:6px; background:var(--surface-input); border:1px solid var(--border); padding:6px 8px; border-radius:6px; margin-bottom:4px;">
+      <span style="font-size:12px; color:var(--text-500); width:16px; font-weight:600;">#${index + 1}</span>
+      <input type="text" class="form-control inst-product" value="${_esc(productVal || '')}" style="width:120px; height:28px; font-size:12px; padding:0 6px;" placeholder="Mahsulot">
+      <input type="text" class="form-control inst-month" value="${_esc(monthVal || '')}" style="width:65px; height:28px; font-size:12px; padding:0 6px;" placeholder="Oy">
+      <input type="date" class="form-control inst-date" value="${dateVal}" style="width:115px; height:28px; font-size:12px; padding:0 6px;">
+      <input type="number" class="form-control inst-amount" value="${amountVal}" style="width:85px; height:28px; font-size:12px; padding:0 6px; font-weight:600;" placeholder="Summa">
+      <input type="text" class="form-control inst-notes" value="${_esc(notesVal || '')}" style="flex:1; height:28px; font-size:12px; padding:0 6px;" placeholder="Izoh">
+      
+      <label style="display:inline-flex; align-items:center; gap:4px; font-size:11.5px; color:var(--text-500); cursor:pointer; margin:0 4px; user-select:none; white-space:nowrap;">
+        <input type="checkbox" class="inst-paid" ${paidVal ? 'checked' : ''} style="cursor:pointer;"> To'landi
+      </label>
+      
+      <button class="btn btn-ghost btn-sm text-danger" onclick="this.parentElement.remove()" style="padding:2px 6px; font-size:11px;" title="Qatorni o'chirish">
+        <i class="fas fa-trash"></i>
+      </button>
+    </div>
+  `;
 }
 
-function ndUpdatePreview() {
-  const months = parseInt(document.getElementById('ndMonths').value) || 0;
-  const monthly = parseFloat(document.getElementById('ndMonthly').value) || 0;
-  const startStr = document.getElementById('ndStartDate').value;
-  const preview = document.getElementById('ndSchedulePreview');
-  const tbody = document.getElementById('ndScheduleBody');
-  if (!months || !monthly || !startStr) { preview.style.display = 'none'; return; }
-  preview.style.display = 'block';
-  const start = new Date(startStr);
-  let rows = '';
-  for (let i = 0; i < Math.min(months, 24); i++) {
-    const d = new Date(start); d.setMonth(d.getMonth() + i);
-    rows += `<tr><td style="padding:5px 10px;border-bottom:1px solid var(--border-light);">${d.toLocaleDateString('uz-UZ',{day:'2-digit',month:'2-digit',year:'2-digit'})}</td><td style="padding:5px 10px;border-bottom:1px solid var(--border-light);text-align:right;font-weight:600;">${Number(monthly).toLocaleString()} so'm</td></tr>`;
+function addNdInstallmentRow() {
+  const container = document.getElementById('ndInstRowsContainer');
+  const index = container.querySelectorAll('.installment-row').length;
+  
+  const lastRowDate = container.querySelector('.installment-row:last-child .inst-date');
+  const lastProduct = container.querySelector('.installment-row:last-child .inst-product');
+  let dateStr = new Date().toISOString().slice(0,10);
+  let pName = lastProduct ? lastProduct.value : (_ndDeal?.productName || '');
+  
+  if (lastRowDate && lastRowDate.value) {
+    const d = new Date(lastRowDate.value);
+    d.setMonth(d.getMonth() + 1);
+    dateStr = d.toISOString().slice(0,10);
   }
-  tbody.innerHTML = rows;
+
+  const div = document.createElement('div');
+  div.innerHTML = getNdInstallmentRowHtml(index, dateStr, 0, false, pName, `${index+1}-oy`, '');
+  container.appendChild(div.firstElementChild);
 }
 
-async function saveNdInstallments() {
+function autoGenerateNdInstallments(months) {
   if (!_ndDeal) return;
-  const months = parseInt(document.getElementById('ndMonths').value) || 0;
-  const monthly = parseFloat(document.getElementById('ndMonthly').value) || 0;
-  const startStr = document.getElementById('ndStartDate').value;
-  const down = parseFloat(document.getElementById('ndDownPayment').value) || 0;
-  const notes = document.getElementById('ndNotes').value.trim();
+  const remaining = _ndDeal.amount - _ndDeal.paidAmount;
+  const eachVal = Math.round(remaining / months);
 
-  if (!months || !monthly || !startStr) { _toast('Necha oy va oylik to\'lovni kiriting', 'error'); return; }
+  const container = document.getElementById('ndInstRowsContainer');
+  container.innerHTML = '';
+  
+  for (let i = 0; i < months; i++) {
+    const d = new Date();
+    d.setMonth(d.getMonth() + i);
+    const dateStr = d.toISOString().slice(0, 10);
+    const amount = (i === months - 1) ? (remaining - (eachVal * (months - 1))) : eachVal;
+    
+    container.innerHTML += getNdInstallmentRowHtml(i, dateStr, amount, false, _ndDeal.productName, `${i+1}-oy`, '');
+  }
+}
 
+async function saveNdInstallmentPlan() {
   const btn = document.getElementById('ndSaveBtn');
-  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+  
+  const container = document.getElementById('ndInstRowsContainer');
+  const rows = container.querySelectorAll('.installment-row');
+  const installments = [];
+  
+  for (const row of rows) {
+    const dueDate = row.querySelector('.inst-date').value;
+    const amount = Number(row.querySelector('.inst-amount').value) || 0;
+    const paid = row.querySelector('.inst-paid').checked;
+    const productName = row.querySelector('.inst-product').value;
+    const month = row.querySelector('.inst-month').value;
+    const notes = row.querySelector('.inst-notes').value;
+    
+    if (!dueDate) {
+      _toast('Sana kiritilishi majburiy', 'error');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-save"></i> Planni Saqlash';
+      return;
+    }
+    installments.push({ dueDate, amount, paid, productName, month, notes });
+  }
 
   try {
-    const start = new Date(startStr);
-    const installments = [];
-    if (down > 0) {
-      installments.push({ productName: _ndDeal.productName || '', month: 'Boshlang\'ich', amount: down, paid: false, dueDate: start.toISOString() });
-    }
-    for (let i = 0; i < months; i++) {
-      const d = new Date(start); d.setMonth(d.getMonth() + i);
-      installments.push({ productName: _ndDeal.productName || '', month: `${i+1}-oy`, amount: monthly, paid: false, dueDate: d.toISOString(), notes: i === 0 ? notes : '' });
-    }
-
     await apiFetch('/api/deals/' + _ndDeal.id + '/installments', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ installments })
     });
-    if (notes) {
-      await apiFetch('/api/deals/' + _ndDeal.id, {
-        method: 'PATCH', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ notes })
-      });
-    }
+    
+    _toast('To\'lov plani saqlandi', 'success');
     closeNdModal();
-    _toast('Muddatli to\'lov jadvali saqlandi!', 'success');
+    if (typeof loadDashboard === 'function') loadDashboard();
+    else if (typeof fetchDeals === 'function') fetchDeals();
   } catch(e) {
-    _toast('Xatolik: ' + e.message, 'error');
+    _toast('Saqlashda xatolik: ' + e.message, 'error');
   } finally {
-    btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Saqlash';
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-save"></i> Planni Saqlash';
+  }
+}
+
+async function deleteNdInstallmentPlan() {
+  if (!confirm("Haqiqatan ham ushbu nasiya to'lov rejasini o'chirmoqchimisiz? (Bu barcha rejalashtirilgan oylik to'lovlarni o'chiradi)")) return;
+  
+  try {
+    await apiFetch('/api/deals/' + _ndDeal.id + '/installments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ installments: [] })
+    });
+    
+    _toast('Nasiya rejasi o\'chirildi', 'success');
+    closeNdModal();
+    if (typeof loadDashboard === 'function') loadDashboard();
+    else if (typeof fetchDeals === 'function') fetchDeals();
+  } catch(e) {
+    _toast('O\'chirishda xatolik: ' + e.message, 'error');
   }
 }
   </script>
 
 <!-- Nasiya Desco Modal -->
 <div id="ndModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeNdModal()">
-  <div class="modal-dialog" style="max-width:500px;">
+  <div class="modal-dialog" style="max-width:620px;">
     <div class="modal-header">
       <h3 class="modal-title"><i class="fas fa-calendar-alt text-brand"></i> Nasiya Desco — Muddatli to'lov</h3>
       <button class="modal-close" onclick="closeNdModal()"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body" style="padding:20px; display:flex; flex-direction:column; gap:14px;">
-      <div style="background:var(--surface-input); border:1px solid var(--border); border-radius:10px; padding:12px 16px;">
+      <input type="hidden" id="ndModalDealId">
+      
+      <!-- Client Info Strip -->
+      <div style="background:var(--surface-input); border:1px solid var(--border); border-radius:10px; padding:12px 16px; display:flex; flex-direction:column; gap:4px; margin-bottom: 8px;">
         <div style="font-weight:600; font-size:14px;" id="ndClientName">—</div>
         <div style="font-size:12px; color:var(--text-500);" id="ndClientPhone">—</div>
         <div style="font-size:12px; color:var(--text-500); margin-top:4px;">
@@ -2371,46 +2428,36 @@ async function saveNdInstallments() {
           Jami: <span id="ndTotal" style="font-weight:600; color:var(--brand)">—</span>
         </div>
       </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-        <div>
-          <label class="form-label">Necha oyga <span style="color:red">*</span></label>
-          <input type="number" id="ndMonths" class="form-control" placeholder="12" min="1" max="60" oninput="ndCalcMonthly()">
-        </div>
-        <div>
-          <label class="form-label">Oylik to'lov (so'm)</label>
-          <input type="number" id="ndMonthly" class="form-control" placeholder="0" oninput="ndUpdatePreview()">
-        </div>
-        <div>
-          <label class="form-label">Boshlash sanasi</label>
-          <input type="date" id="ndStartDate" class="form-control" oninput="ndUpdatePreview()">
-        </div>
-        <div>
-          <label class="form-label">Boshlang'ich to'lov</label>
-          <input type="number" id="ndDownPayment" class="form-control" placeholder="0" oninput="ndCalcMonthly()">
+
+      <!-- Quick action: auto-generate plan -->
+      <div style="background:var(--bg-tertiary); padding:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+        <span style="font-size:11.5px; color:var(--text-secondary); font-weight:500;">
+          <i class="fas fa-magic" style="color:var(--accent); margin-right:4px;"></i> Avto-Bo'lib to'lash plani
+        </span>
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-sm btn-ghost" onclick="autoGenerateNdInstallments(3)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border)">3 oy</button>
+          <button class="btn btn-sm btn-ghost" onclick="autoGenerateNdInstallments(6)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border)">6 oy</button>
+          <button class="btn btn-sm btn-ghost" onclick="autoGenerateNdInstallments(12)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border)">12 oy</button>
         </div>
       </div>
-      <div>
-        <label class="form-label">Izoh</label>
-        <input type="text" id="ndNotes" class="form-control" placeholder="Qo'shimcha ma'lumot...">
-      </div>
-      <div id="ndSchedulePreview" style="display:none;">
-        <div style="font-size:12px; font-weight:600; color:var(--text-500); margin-bottom:6px; text-transform:uppercase; letter-spacing:.5px;">To'lov jadvali</div>
-        <div style="max-height:150px; overflow-y:auto; border:1px solid var(--border); border-radius:8px;">
-          <table style="width:100%; font-size:12px; border-collapse:collapse;">
-            <thead><tr style="background:var(--surface-input);">
-              <th style="padding:6px 10px; text-align:left; border-bottom:1px solid var(--border);">Sana</th>
-              <th style="padding:6px 10px; text-align:right; border-bottom:1px solid var(--border);">Summa</th>
-            </tr></thead>
-            <tbody id="ndScheduleBody"></tbody>
-          </table>
+
+      <!-- Installments rows -->
+      <div style="font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-tertiary); margin-bottom:2px; margin-top:8px;">To'lov jadvali</div>
+      <div id="ndInstRowsContainer" style="display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto; margin-bottom:12px; padding-right:4px;"></div>
+      
+      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border); padding-top:12px;">
+        <button class="btn btn-sm btn-ghost" onclick="addNdInstallmentRow()" style="border:1px dashed var(--border); font-size:12px;">
+          <i class="fas fa-plus"></i> To'lov qo'shish
+        </button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-sm btn-danger" onclick="deleteNdInstallmentPlan()" style="font-size:12px;">
+            <i class="fas fa-trash-alt"></i> Planni O'chirish
+          </button>
+          <button class="btn btn-sm btn-primary" onclick="saveNdInstallmentPlan()" id="ndSaveBtn">
+            <i class="fas fa-save"></i> Planni Saqlash
+          </button>
         </div>
       </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeNdModal()">Keyinroq</button>
-      <button class="btn btn-primary" id="ndSaveBtn" onclick="saveNdInstallments()">
-        <i class="fas fa-save"></i> Saqlash
-      </button>
     </div>
   </div>
 </div>
