@@ -155,6 +155,45 @@ router.post('/', async (req, res, next) => {
       }
     }
 
+    let resolvedPipelineId = pipelineId ? Number(pipelineId) : null
+    let resolvedStageId = stageId ? Number(stageId) : null
+
+    // Resolve pipelineId from stageId if stageId is provided but pipelineId is missing
+    if (!resolvedPipelineId && resolvedStageId) {
+      const stage = await prisma.pipelineStage.findUnique({
+        where: { id: resolvedStageId }
+      })
+      if (stage && stage.pipelineId) {
+        resolvedPipelineId = stage.pipelineId
+      }
+    }
+
+    // Resolve default pipelineId if pipelineId is still missing
+    if (!resolvedPipelineId) {
+      const defaultPipeline = await prisma.pipeline.findFirst({
+        where: { isDefault: true }
+      })
+      if (defaultPipeline) {
+        resolvedPipelineId = defaultPipeline.id
+      } else {
+        const firstPipeline = await prisma.pipeline.findFirst()
+        if (firstPipeline) {
+          resolvedPipelineId = firstPipeline.id
+        }
+      }
+    }
+
+    // Resolve stageId if missing
+    if (resolvedPipelineId && !resolvedStageId) {
+      const firstStage = await prisma.pipelineStage.findFirst({
+        where: { pipelineId: resolvedPipelineId },
+        orderBy: { order: 'asc' }
+      })
+      if (firstStage) {
+        resolvedStageId = firstStage.id
+      }
+    }
+
     const deal = await prisma.deal.create({
       data: {
         productName,
@@ -167,8 +206,8 @@ router.post('/', async (req, res, next) => {
         createdAt: (createdAt && !isNaN(new Date(createdAt))) ? new Date(createdAt) : new Date(),
         clientId: resolvedClientId,
         managerId: req.userId,
-        stageId: stageId ? Number(stageId) : null,
-        pipelineId: pipelineId ? Number(pipelineId) : null,
+        stageId: resolvedStageId,
+        pipelineId: resolvedPipelineId,
         warehouse: warehouse || null
       },
       include: {
@@ -185,7 +224,7 @@ router.post('/', async (req, res, next) => {
     
     // ── WAREHOUSE STOCK DECREMENT (On Creation) ──
     try {
-      const NON_SHIP_KEYWORDS = ['yangi', 'muzokara', 'taklif', 'kutish', 'qayta aloqa', 'negativ', 'rad', 'otkaz', 'lost', 'fail', "yo'qotilgan"];
+      const NON_SHIP_KEYWORDS = ['yangi', 'muzokara', 'peregovor', 'pereg', 'taklif', 'kutish', 'qayta aloqa', 'negativ', 'rad', 'otkaz', 'lost', 'fail', "yo'qotilgan"];
       function isShippingStage(name) {
         if (!name) return false;
         const lower = name.toLowerCase();
@@ -391,7 +430,7 @@ router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => 
 
     // ── WAREHOUSE STOCK DECREMENT / ROLLBACK ──
     try {
-      const NON_SHIP_KEYWORDS = ['yangi', 'muzokara', 'taklif', 'kutish', 'qayta aloqa', 'negativ', 'rad', 'otkaz', 'lost', 'fail', "yo'qotilgan"];
+      const NON_SHIP_KEYWORDS = ['yangi', 'muzokara', 'peregovor', 'pereg', 'taklif', 'kutish', 'qayta aloqa', 'negativ', 'rad', 'otkaz', 'lost', 'fail', "yo'qotilgan"];
       function isShippingStage(name) {
         if (!name) return false;
         const lower = name.toLowerCase();
@@ -584,7 +623,7 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
     if (broadcast) broadcast({ type: 'deal_updated', dealId: deal.id, deal });
     // ── WAREHOUSE STOCK DECREMENT / ROLLBACK (Stage change) ──
     try {
-      const NON_SHIP_KEYWORDS = ['yangi', 'muzokara', 'taklif', 'kutish', 'qayta aloqa', 'negativ', 'rad', 'otkaz', 'lost', 'fail', "yo'qotilgan"];
+      const NON_SHIP_KEYWORDS = ['yangi', 'muzokara', 'peregovor', 'pereg', 'taklif', 'kutish', 'qayta aloqa', 'negativ', 'rad', 'otkaz', 'lost', 'fail', "yo'qotilgan"];
       function isShipStage(name) {
         if (!name) return false;
         const lower = name.toLowerCase();

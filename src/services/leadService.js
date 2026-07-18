@@ -243,7 +243,16 @@ async function handleMetaWebhook(body, broadcast) {
 
             // 6. UI ni real-vaqtda yangilash (Socket)
             if (broadcast) {
-              broadcast({ type: 'deal_created', dealId: deal.id });
+              const fullDeal = await prisma.deal.findUnique({
+                where: { id: deal.id },
+                include: {
+                  client: { select: { id: true, name: true, company: true, phone: true, city: true } },
+                  manager: { select: { id: true, fullName: true, email: true, role: true } },
+                  stage: { select: { id: true, name: true, color: true, order: true } },
+                  installments: { select: { id: true } }
+                }
+              });
+              broadcast({ type: 'deal_created', dealId: deal.id, deal: fullDeal });
               console.log(`[Meta Webhook] ✓ WebSocket broadcast yuborildi. deal_created: ${deal.id}`);
             }
 
@@ -767,7 +776,16 @@ async function handleUniversalLead(source, rawData, broadcast) {
   // 6. Real-time UI yangilanish (WebSocket)
   if (broadcast) {
     try {
-      broadcast({ type: 'deal_created', dealId: result.deal.id });
+      const fullDeal = await prisma.deal.findUnique({
+        where: { id: result.deal.id },
+        include: {
+          client: { select: { id: true, name: true, company: true, phone: true, city: true } },
+          manager: { select: { id: true, fullName: true, email: true, role: true } },
+          stage: { select: { id: true, name: true, color: true, order: true } },
+          installments: { select: { id: true } }
+        }
+      });
+      broadcast({ type: 'deal_created', dealId: result.deal.id, deal: fullDeal });
     } catch (wsErr) {
       console.warn('[Universal Lead WebSocket Broadcast Warn] UI ni yangilashda xato (muhim emas):', wsErr.message);
     }

@@ -639,7 +639,16 @@ router.post('/telegram', verifyTelegramSecret, async (req, res) => {
     // UI real-vaqtda yangilanishi uchun socket signalini yuboramiz
     const broadcast = req.app.get('broadcast');
     if (broadcast) {
-      broadcast({ type: 'deal_created', dealId: deal.id });
+      const fullDeal = await prisma.deal.findUnique({
+        where: { id: deal.id },
+        include: {
+          client: { select: { id: true, name: true, company: true, phone: true, city: true } },
+          manager: { select: { id: true, fullName: true, email: true, role: true } },
+          stage: { select: { id: true, name: true, color: true, order: true } },
+          installments: { select: { id: true } }
+        }
+      });
+      broadcast({ type: 'deal_created', dealId: deal.id, deal: fullDeal });
     }
 
     res.status(200).json({

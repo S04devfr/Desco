@@ -962,7 +962,7 @@ a.quick-nav-card .card:hover {
 .deals-tbl {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12.5px;
+  font-size: 13.5px;
 }
 
 .deals-tbl thead {
@@ -972,22 +972,22 @@ a.quick-nav-card .card:hover {
 }
 
 .deals-tbl th {
-  padding: 9px 12px;
+  padding: 11px 14px;
   text-align: left;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--text-500);
-  border-bottom: 1px solid var(--border);
+  color: var(--text-600);
+  border-bottom: 1px solid var(--border-strong);
   background: var(--surface-base);
   white-space: nowrap;
 }
 
 .deals-tbl td {
-  padding: 9px 12px;
+  padding: 11px 14px;
   border-bottom: 1px solid var(--border);
-  color: var(--text-700);
+  color: var(--text-800);
   vertical-align: middle;
 }
 

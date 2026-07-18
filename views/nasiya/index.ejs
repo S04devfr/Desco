@@ -86,15 +86,39 @@
 </div>
 
 <style>
-.nasiya-client-cell { display:flex; flex-direction:column; gap:2px; padding:8px 10px; }
-.nasiya-client-name { font-weight:600; font-size:13px; color:var(--text-primary); }
-.nasiya-client-phone { font-size:11px; color:var(--brand); }
-.nasiya-client-city  { font-size:11px; color:var(--text-500); }
-.inst-badge { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600; }
+#nasiyaTable {
+  border-collapse: collapse !important;
+  width: 100%;
+}
+#nasiyaTable th {
+  border: 1px solid var(--border-strong) !important;
+  padding: 11px 14px !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  background: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+}
+#nasiyaTable td {
+  border: 1px solid var(--border) !important;
+  padding: 11px 14px !important;
+  font-size: 13.5px !important;
+  color: var(--text-800) !important;
+  vertical-align: middle;
+}
+#nasiyaTable tbody tr:hover {
+  background: var(--brand-soft) !important;
+}
+
+.nasiya-client-cell { display:flex; flex-direction:column; gap:2px; padding:2px 0; }
+.nasiya-client-name { font-weight:600; font-size:14.5px; color:var(--text-primary); }
+.nasiya-client-phone { font-size:12.5px; color:var(--brand); font-weight:500; }
+.nasiya-client-city  { font-size:12.5px; color:var(--text-500); }
+.inst-badge { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:4px; font-size:11.5px; font-weight:700; }
 .inst-badge.paid   { background:rgba(52,199,89,0.12); color:#34C759; }
 .inst-badge.unpaid { background:rgba(255,59,48,0.12);  color:#FF3B30; }
-.inst-progress { height:4px; border-radius:2px; background:var(--surface-input); overflow:hidden; margin-top:4px; }
-.inst-progress-bar { height:100%; background:var(--brand); border-radius:2px; transition:width .3s; }
+.inst-progress { height:6px; border-radius:3px; background:var(--border-light); overflow:hidden; margin-top:6px; }
+.inst-progress-bar { height:100%; background:var(--brand); border-radius:3px; transition:width .3s; }
 </style>
 
 <script>
@@ -194,34 +218,34 @@ async function loadNasiyaDeals() {
           ? `<span class="inst-badge paid"><i class="fas fa-check"></i> Yopilgan</span>`
           : `<span class="inst-badge unpaid">${paidCount}/${totalMonths} oy</span>`;
 
-        html += `<tr style="border-bottom:1px solid var(--border-light);">
-          <td style="border:1px solid var(--border-light);">${clientCell}</td>
-          <td style="padding:8px 10px; font-size:13px;">${escHtml(d.productName)}</td>
-          <td style="padding:8px 10px; font-size:12px; font-weight:600; color:var(--brand);">${fmtMoney(d.amount)}</td>
-          <td style="padding:8px 10px; font-size:13px; text-align:center;">${totalMonths || '—'} oy</td>
-          <td style="padding:8px 10px; font-size:12px; font-weight:600;">${fmtMoney(monthly)}</td>
-          <td style="padding:8px 10px;">
-            <div style="font-size:12px; color:var(--text-500);">${fmtMoney(paidAmt)}</div>
+        html += `<tr>
+          <td>${clientCell}</td>
+          <td style="font-weight: 500;">${escHtml(d.productName)}</td>
+          <td style="font-weight:700; color:var(--brand);">${fmtMoney(d.amount)}</td>
+          <td style="text-align:center;">${totalMonths || '—'} oy</td>
+          <td style="font-weight:700; color:var(--text-900);">${fmtMoney(monthly)}</td>
+          <td>
+            <div style="font-weight:600; color:var(--text-600); margin-bottom: 2px;">${fmtMoney(paidAmt)}</div>
             <div class="inst-progress"><div class="inst-progress-bar" style="width:${pct}%"></div></div>
           </td>
-          <td style="padding:8px 10px; text-align:center;">${badge}</td>
-          <td style="padding:8px 10px; text-align:center;">
-            <div style="display:flex;justify-content:center;gap:4px;">
-              <button class="btn btn-sm btn-primary" onclick="openDescoEdit(${d.id})" title="Tahrirlash"><i class="fas fa-edit"></i></button>
-              <button class="btn btn-sm btn-ghost text-danger" onclick="deleteNasiya(${d.id})" title="O'chirish"><i class="fas fa-trash"></i></button>
+          <td style="text-align:center;">${badge}</td>
+          <td style="text-align:center;">
+            <div style="display:flex;justify-content:center;gap:6px;">
+              <button class="btn btn-sm btn-primary" onclick="openDescoEdit(${d.id})" title="Tahrirlash" style="padding: 4px 8px;"><i class="fas fa-edit"></i></button>
+              <button class="btn btn-sm btn-ghost text-danger" onclick="deleteNasiya(${d.id})" title="O'chirish" style="padding: 4px 8px;"><i class="fas fa-trash"></i></button>
             </div>
           </td>
         </tr>`;
       } else {
-        html += `<tr style="border-bottom:1px solid var(--border-light);">
-          <td style="border:1px solid var(--border-light);">${clientCell}</td>
-          <td style="padding:8px 10px; font-size:13px;">${escHtml(d.productName)}</td>
-          <td style="padding:8px 10px; font-size:12px; font-weight:600; color:var(--brand);">${fmtMoney(d.amount)}</td>
-          <td style="padding:8px 10px; font-size:12px; color:var(--text-500);">${escHtml(d.manager?.fullName || '—')}</td>
-          <td style="padding:8px 10px; font-size:11px; color:var(--text-500);">${fmtDate(d.createdAt)}</td>
-          <td style="padding:8px 10px; font-size:12px; color:var(--text-500);">${escHtml(d.notes || '—')}</td>
-          <td style="padding:8px 10px; text-align:center;">
-            <button class="btn btn-sm btn-ghost text-danger" onclick="deleteNasiya(${d.id})" title="O'chirish"><i class="fas fa-trash"></i></button>
+        html += `<tr>
+          <td>${clientCell}</td>
+          <td style="font-weight: 500;">${escHtml(d.productName)}</td>
+          <td style="font-weight:700; color:var(--brand);">${fmtMoney(d.amount)}</td>
+          <td style="font-weight:500;">${escHtml(d.manager?.fullName || '—')}</td>
+          <td style="font-size:12px; color:var(--text-500);">${fmtDate(d.createdAt)}</td>
+          <td style="font-size:12px; color:var(--text-600); max-width: 200px; white-space: normal; word-wrap: break-word;">${escHtml(d.notes || '—')}</td>
+          <td style="text-align:center;">
+            <button class="btn btn-sm btn-ghost text-danger" onclick="deleteNasiya(${d.id})" title="O'chirish" style="padding: 4px 8px;"><i class="fas fa-trash"></i></button>
           </td>
         </tr>`;
       }

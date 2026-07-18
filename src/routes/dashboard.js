@@ -202,7 +202,7 @@ router.get('/kpis', async (req, res, next) => {
       const stageName = (d.stage?.name || '').toLowerCase();
       let probability = 0.1; // Default probability: 10%
       if (stageName.includes('yangi')) probability = 0.15;
-      else if (stageName.includes('muzokara')) probability = 0.35;
+      else if (stageName.includes('muzokara') || stageName.includes('peregovor') || stageName.includes('pereg')) probability = 0.35;
       else if (stageName.includes('taklif')) probability = 0.6;
       else if (stageName.includes('nasiya') || stageName.includes('shopir') || stageName.includes('yo\'lda')) probability = 0.85;
       else if (stageName.includes('100%') || stageName.includes('yutil') || d.status === 'won') probability = 1.0;
@@ -272,7 +272,10 @@ router.get('/kpis', async (req, res, next) => {
     // ── 7. Funnel conversion stages (HubSpot Funnel) ──
     const funnelStages = {
       yangi: deals.filter(d => d.stage?.name.toLowerCase().includes('yangi')).length,
-      muzokara: deals.filter(d => d.stage?.name.toLowerCase().includes('muzokara')).length,
+      muzokara: deals.filter(d => {
+        const name = (d.stage?.name || '').toLowerCase();
+        return name.includes('muzokara') || name.includes('peregovor') || name.includes('pereg');
+      }).length,
       lost: lost,
       total: deals.length
     };
@@ -548,7 +551,7 @@ router.get('/client-insights', async (req, res) => {
 
     // Muzokaradadagi sdelkalar
     const interested = deals.filter(d =>
-      ['muzokara', 'taklif', 'qayta aloqa'].some(kw => (d.stage?.name || '').toLowerCase().includes(kw))
+      ['muzokara', 'taklif', 'qayta aloqa', 'peregovor', 'pereg'].some(kw => (d.stage?.name || '').toLowerCase().includes(kw))
     ).length;
 
     // Won sdelkalar

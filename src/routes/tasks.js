@@ -7,38 +7,15 @@ router.use(protect)
 
 const userSelect = { select: { id: true, fullName: true, email: true, role: true } }
 
-// clientId ni raw SQL orqali task'larga qo'shish (generated client bilmaydi)
-async function enrichWithClient(tasks) {
-  try {
-    const ids = tasks.map(t => t.id)
-    if (!ids.length) return tasks
-    // SQLite uchun ? placeholder (PostgreSQL $n emas)
-    const ph = ids.map(() => '?').join(',')
-    const rows = await prisma.$queryRawUnsafe(
-      `SELECT t.id as "taskId", t."clientId" as "clientId", c.name as "clientName", c.company as "clientCompany", c.phone as "clientPhone", c.city as "clientCity",
-              t."dealId" as "dealId", d."clientId" as "dealClientId", dc.name as "dealClientName", dc.company as "dealClientCompany", dc.phone as "dealClientPhone", dc.city as "dealClientCity"
-       FROM "Task" t
-       LEFT JOIN "Client" c ON t."clientId" = c.id
-       LEFT JOIN "Deal" d ON t."dealId" = d.id
-       LEFT JOIN "Client" dc ON d."clientId" = dc.id
-       WHERE t.id IN (${ph})`, ...ids
-    )
-    const map = {}
-    for (const r of rows) map[Number(r.taskId)] = r
-    return tasks.map(t => {
-      const r = map[t.id]
-      const finalClientId = r?.clientId ? Number(r.clientId) : (r?.dealClientId ? Number(r.dealClientId) : null);
-      const finalClientName = r?.clientId ? r.clientName : r?.dealClientName;
-      const finalClientCompany = r?.clientId ? r.clientCompany : r?.dealClientCompany;
-      const finalClientPhone = r?.clientId ? r.clientPhone : r?.dealClientPhone;
-      const finalClientCity = r?.clientId ? r.clientCity : r?.dealClientCity;
-      return {
-        ...t,
-        clientId: finalClientId,
-        client: finalClientId ? { id: finalClientId, name: finalClientName, company: finalClientCompany, phone: finalClientPhone || null, city: finalClientCity || null } : null
-      }
-    })
-  } catch (e) { return tasks }
+// Format task client mapping (combining explicit task client and parent deal client)
+function formatTaskClient(t) {
+  if (!t) return null;
+  const finalClient = t.client || t.deal?.client || null;
+  return {
+    ...t,
+    clientId: finalClient ? finalClient.id : null,
+    client: finalClient
+  };
 }
 
 // List tasks
@@ -62,6 +39,9 @@ router.get('/', async (req, res) => {
       where,
       include: {
         assignedTo: userSelect,
+        client: {
+          select: { id: true, name: true, company: true, phone: true, city: true }
+        },
         deal: {
           select: {
             id: true,
@@ -72,7 +52,10 @@ router.get('/', async (req, res) => {
             notes: true,
             pipelineId: true,
             stageId: true,
-            stage: { select: { id: true, name: true } }
+            stage: { select: { id: true, name: true } },
+            client: {
+              select: { id: true, name: true, company: true, phone: true, city: true }
+            }
           }
         }
       },
@@ -80,7 +63,7 @@ router.get('/', async (req, res) => {
     })
 
     if (!Array.isArray(tasks)) return res.json([])
-    res.json(await enrichWithClient(tasks))
+    res.json(tasks.map(formatTaskClient))
   } catch (error) {
     console.error('[Tasks] GET / xato — bo\'sh ro\'yxat qaytarilmoqda:', error.message)
     res.json([])
@@ -92,11 +75,23 @@ router.get('/:id', async (req, res, next) => {
   try {
     const task = await prisma.task.findUnique({
       where: { id: Number(req.params.id) },
-      include: { assignedTo: userSelect, deal: { include: { stage: { select: { id: true, name: true } } } } }
+      include: {
+        assignedTo: userSelect,
+        client: {
+          select: { id: true, name: true, company: true, phone: true, city: true }
+        },
+        deal: {
+          include: {
+            stage: { select: { id: true, name: true } },
+            client: {
+              select: { id: true, name: true, company: true, phone: true, city: true }
+            }
+          }
+        }
+      }
     })
     if (!task) return res.status(404).json({ message: 'Vazifa topilmadi' })
-    const [enriched] = await enrichWithClient([task])
-    res.json(enriched)
+    res.json(formatTaskClient(task))
   } catch (error) { next(error) }
 })
 
@@ -114,19 +109,25 @@ router.post('/', async (req, res, next) => {
         dueTime: dueTime || null,
         priority: priority || 'medium',
         dealId: dealId ? Number(dealId) : null,
+        clientId: clientId ? Number(clientId) : null,
         assignedToId: assignedToId ? Number(assignedToId) : (typeof req.userId === 'number' ? req.userId : null)
       },
-      include: { assignedTo: userSelect, deal: { select: { id: true, productName: true } } }
+      include: {
+        assignedTo: userSelect,
+        client: {
+          select: { id: true, name: true, company: true, phone: true, city: true }
+        },
+        deal: {
+          select: {
+            id: true,
+            productName: true,
+            client: {
+              select: { id: true, name: true, company: true, phone: true, city: true }
+            }
+          }
+        }
+      }
     })
-
-    if (clientId) {
-      try {
-        await prisma.$executeRawUnsafe('UPDATE "Task" SET "clientId"=? WHERE id=?', Number(clientId), task.id)
-        const cl = await prisma.$queryRawUnsafe('SELECT id, name, company FROM "Client" WHERE id=?', Number(clientId))
-        task.clientId = Number(clientId)
-        task.client = cl[0] || null
-      } catch (e) { /* ignore */ }
-    }
 
     if (stageId && task.dealId) {
       await prisma.deal.update({
@@ -135,7 +136,7 @@ router.post('/', async (req, res, next) => {
       });
     }
 
-    res.status(201).json(task)
+    res.status(201).json(formatTaskClient(task))
   } catch (error) { next(error) }
 })
 
@@ -153,27 +154,27 @@ router.patch('/:id', async (req, res, next) => {
     if (completed !== undefined) data.completed = completed
     if (dealId !== undefined) data.dealId = dealId ? Number(dealId) : null
     if (assignedToId !== undefined) data.assignedToId = assignedToId ? Number(assignedToId) : null
+    if (clientId !== undefined) data.clientId = clientId ? Number(clientId) : null
 
     const task = await prisma.task.update({
       where: { id: Number(req.params.id) },
       data,
-      include: { assignedTo: userSelect }
-    })
-
-    if (clientId !== undefined) {
-      try {
-        const cid = clientId ? Number(clientId) : null
-        await prisma.$executeRawUnsafe('UPDATE "Task" SET "clientId"=? WHERE id=?', cid, task.id)
-        if (cid) {
-          const cl = await prisma.$queryRawUnsafe('SELECT id, name, company FROM "Client" WHERE id=?', cid)
-          task.clientId = cid
-          task.client = cl[0] || null
-        } else {
-          task.clientId = null
-          task.client = null
+      include: {
+        assignedTo: userSelect,
+        client: {
+          select: { id: true, name: true, company: true, phone: true, city: true }
+        },
+        deal: {
+          select: {
+            id: true,
+            productName: true,
+            client: {
+              select: { id: true, name: true, company: true, phone: true, city: true }
+            }
+          }
         }
-      } catch (e) { /* ignore */ }
-    }
+      }
+    })
 
     if (stageId && task.dealId) {
       await prisma.deal.update({
@@ -182,7 +183,7 @@ router.patch('/:id', async (req, res, next) => {
       });
     }
 
-    res.json(task)
+    res.json(formatTaskClient(task))
   } catch (error) {
     if (error.code === 'P2025') return res.status(404).json({ message: 'Vazifa topilmadi' })
     next(error)

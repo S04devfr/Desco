@@ -32,37 +32,37 @@ router.post('/ping', async (req, res) => {
     const GAP    = 8 * 60 * 1000   // 8 min gap = new session
 
     // Find most recent active session for today
-    const rows = await prisma.$queryRawUnsafe(
-      `SELECT * FROM "UserActivityLog"
-       WHERE userId=? AND date=? AND isActive=1
-       ORDER BY lastPing DESC LIMIT 1`,
-      userId, today
-    )
+    const rows = await prisma.$queryRaw`
+      SELECT * FROM "UserActivityLog"
+      WHERE "userId" = ${userId} AND "date" = ${today} AND "isActive" = 1
+      ORDER BY "lastPing" DESC LIMIT 1
+    `
     const session = rows[0]
 
     if (session && (Date.now() - new Date(session.lastPing).getTime()) < GAP) {
       // Extend existing session
       const dur = minDiff(session.sessionStart, now)
-      await prisma.$executeRawUnsafe(
-        `UPDATE "UserActivityLog" SET lastPing=?, durationMin=?, updatedAt=? WHERE id=?`,
-        now, dur, now, session.id
-      )
+      await prisma.$executeRaw`
+        UPDATE "UserActivityLog"
+        SET "lastPing" = ${now}, "durationMin" = ${dur}, "updatedAt" = ${now}
+        WHERE "id" = ${session.id}
+      `
     } else {
       // Close old session if exists
       if (session) {
         const dur = minDiff(session.sessionStart, session.lastPing)
-        await prisma.$executeRawUnsafe(
-          `UPDATE "UserActivityLog" SET isActive=0, durationMin=?, updatedAt=? WHERE id=?`,
-          dur, now, session.id
-        )
+        await prisma.$executeRaw`
+          UPDATE "UserActivityLog"
+          SET "isActive" = 0, "durationMin" = ${dur}, "updatedAt" = ${now}
+          WHERE "id" = ${session.id}
+        `
       }
       // Start fresh session
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO "UserActivityLog"
-         (userId, date, sessionStart, lastPing, durationMin, isActive, createdAt, updatedAt)
-         VALUES (?,?,?,?,0,1,?,?)`,
-        userId, today, now, now, now, now
-      )
+      await prisma.$executeRaw`
+        INSERT INTO "UserActivityLog"
+        ("userId", "date", "sessionStart", "lastPing", "durationMin", "isActive", "createdAt", "updatedAt")
+        VALUES (${userId}, ${today}, ${now}, ${now}, 0, 1, ${now}, ${now})
+      `
     }
 
     res.json({ ok: true, ts: now })
@@ -77,13 +77,12 @@ router.post('/ping', async (req, res) => {
 router.get('/online', async (req, res) => {
   try {
     const cutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString()
-    const rows = await prisma.$queryRawUnsafe(
-      `SELECT DISTINCT u.id, u.fullName, u.email, u.role
-       FROM "UserActivityLog" a
-       JOIN "User" u ON u.id = a.userId
-       WHERE a.lastPing >= ? AND a.isActive = 1`,
-      cutoff
-    )
+    const rows = await prisma.$queryRaw`
+      SELECT DISTINCT u.id, u.fullName, u.email, u.role
+      FROM "UserActivityLog" a
+      JOIN "User" u ON u.id = a."userId"
+      WHERE a."lastPing" >= ${cutoff} AND a."isActive" = 1
+    `
     res.json(rows)
   } catch (err) {
     res.json([])
@@ -99,30 +98,30 @@ router.get('/stats', requireRole('admin'), async (req, res) => {
     const cutoff5min = new Date(Date.now() - 5 * 60 * 1000).toISOString()
 
     // Today minutes per user
-    const todayRows = await prisma.$queryRawUnsafe(`
-      SELECT userId,
-             SUM(durationMin) AS todayMin,
-             MAX(lastPing)    AS lastSeen
+    const todayRows = await prisma.$queryRaw`
+      SELECT "userId",
+             SUM("durationMin") AS "todayMin",
+             MAX("lastPing")    AS "lastSeen"
       FROM   "UserActivityLog"
-      WHERE  date = ?
-      GROUP BY userId
-    `, today)
+      WHERE  "date" = ${today}
+      GROUP BY "userId"
+    `
 
     // Week total per user
-    const weekRows = await prisma.$queryRawUnsafe(`
-      SELECT userId,
-             SUM(durationMin) AS weekMin
+    const weekRows = await prisma.$queryRaw`
+      SELECT "userId",
+             SUM("durationMin") AS "weekMin"
       FROM   "UserActivityLog"
-      WHERE  date >= ?
-      GROUP BY userId
-    `, weekAgo)
+      WHERE  "date" >= ${weekAgo}
+      GROUP BY "userId"
+    `
 
     // Online now
-    const onlineRows = await prisma.$queryRawUnsafe(`
-      SELECT DISTINCT userId
+    const onlineRows = await prisma.$queryRaw`
+      SELECT DISTINCT "userId"
       FROM "UserActivityLog"
-      WHERE lastPing >= ? AND isActive = 1
-    `, cutoff5min)
+      WHERE "lastPing" >= ${cutoff5min} AND "isActive" = 1
+    `
 
     const todayMap  = {}
     const weekMap   = {}
@@ -132,13 +131,22 @@ router.get('/stats', requireRole('admin'), async (req, res) => {
     weekRows.forEach(r  => { weekMap[r.userId]   = Number(r.weekMin || 0) })
     onlineRows.forEach(r => onlineSet.add(Number(r.userId)))
 
-    // All managers
-    const users = await prisma.$queryRawUnsafe(`
-      SELECT id, fullName, email, role
-      FROM "User"
-      WHERE isActive=1 AND role IN ('admin','manager')
-      ORDER BY fullName
-    `)
+    // All managers (using standard database-agnostic Prisma Client instead of raw SQL)
+    const users = await prisma.user.findMany({
+      where: {
+        isActive: true,
+        role: { in: ['admin', 'manager'] }
+      },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        role: true
+      },
+      orderBy: {
+        fullName: 'asc'
+      }
+    })
 
     const result = users.map(u => {
       const uid      = Number(u.id)
@@ -161,13 +169,13 @@ router.get('/stats', requireRole('admin'), async (req, res) => {
     })
 
     // Also return a daily breakdown for charting (last 7 days)
-    const dailyRows = await prisma.$queryRawUnsafe(`
-      SELECT userId, date, SUM(durationMin) AS totalMin
+    const dailyRows = await prisma.$queryRaw`
+      SELECT "userId", "date", SUM("durationMin") AS "totalMin"
       FROM   "UserActivityLog"
-      WHERE  date >= ?
-      GROUP BY userId, date
-      ORDER BY date
-    `, weekAgo)
+      WHERE  "date" >= ${weekAgo}
+      GROUP BY "userId", "date"
+      ORDER BY "date"
+    `
 
     res.json({ managers: result, daily: dailyRows })
   } catch (err) {
