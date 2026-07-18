@@ -15,6 +15,39 @@
   </div>
 </div>
 
+<style>
+#clientsTable {
+  border-collapse: collapse !important;
+  width: 100%;
+}
+#clientsTable th {
+  border: 1px solid var(--border-strong) !important;
+  padding: 10px 12px !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  background: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+}
+#clientsTable td {
+  border: 1px solid var(--border) !important;
+  padding: 8px 12px !important;
+  font-size: 13.5px !important;
+  color: var(--text-800) !important;
+  vertical-align: middle;
+}
+#clientsTable tbody tr:hover {
+  background: var(--brand-soft) !important;
+}
+
+.truncate-cell {
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+</style>
+
 <!-- FILTER BAR -->
 <div class="filter-bar">
   <i class="fas fa-search" style="color:var(--text-tertiary);font-size:13px"></i>
@@ -31,16 +64,16 @@
 
 <!-- CLIENT TABLE -->
 <div class="table-responsive" style="overflow-x:auto;">
-  <table class="table" style="width:100%; border-collapse:collapse; background:var(--bg-secondary); border-radius:10px; overflow:hidden;">
-    <thead style="background:var(--bg-primary); border-bottom:1px solid var(--border);">
+  <table class="table" id="clientsTable" style="width:100%;">
+    <thead>
       <tr>
-        <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">#</th>
-        <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Mijoz ismi</th>
-        <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Telefon</th>
-        <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Shahar</th>
-        <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Mahsulot</th>
-        <th style="padding:12px 16px; text-align:left; font-weight:600; font-size:13px; color:var(--text-secondary);">Menejer</th>
-        <th style="padding:12px 16px; text-align:right; font-weight:600; font-size:13px; color:var(--text-secondary);">Amallar</th>
+        <th style="width: 4%; text-align: center;">#</th>
+        <th style="width: 25%;">Mijoz ismi</th>
+        <th style="width: 15%;">Telefon</th>
+        <th style="width: 20%;">Shahar</th>
+        <th style="width: 20%;">Mahsulot</th>
+        <th style="width: 10%;">Menejer</th>
+        <th style="width: 6%; text-align: center;">Amallar</th>
       </tr>
     </thead>
     <tbody id="clientGrid">
@@ -158,25 +191,33 @@ function renderClients() {
     const uniqueProducts = [...new Set(products)].join(', ') || '—';
     const manager = c.owner ? (c.owner.fullName || c.owner.email) : '—';
     return `
-      <tr class="client-row" style="border-bottom:1px solid var(--border); transition:background 0.2s;" onmouseover="this.style.background='var(--bg-tertiary)'" onmouseout="this.style.background='transparent'">
-        <td style="padding:12px 16px; font-size:13px; color:var(--text-secondary);">${idx + 1}</td>
-        <td style="padding:12px 16px;">
-          <div style="display:flex; align-items:center; gap:12px;">
-            <div style="width:36px; height:36px; font-size:14px; background:linear-gradient(135deg,${color},${color}99); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:bold;">${initials}</div>
-            <div>
-              <div style="font-weight:600; font-size:14px; color:var(--text-primary);">${escHtml(c.name)}</div>
-              <div style="font-size:12px; color:var(--text-tertiary);">${c.company ? escHtml(c.company) : '—'}</div>
+      <tr class="client-row">
+        <td style="text-align: center;">${idx + 1}</td>
+        <td>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="width:26px; height:26px; font-size:11px; background:linear-gradient(135deg,${color},${color}99); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:bold; flex-shrink:0;">${initials}</div>
+            <div class="truncate-cell" style="max-width: 220px;" title="${escHtml(c.name)}">
+              <div style="font-weight:600; font-size:13.5px; color:var(--text-primary);">${escHtml(c.name)}</div>
+              <div style="font-size:11px; color:var(--text-tertiary);">${c.company ? escHtml(c.company) : '—'}</div>
             </div>
           </div>
         </td>
-        <td style="padding:12px 16px; font-size:13px; color:var(--text-primary);">${c.phone ? escHtml(c.phone) : '—'}</td>
-        <td style="padding:12px 16px; font-size:13px; color:var(--text-primary);">${c.city ? escHtml(c.city) : '—'}</td>
-        <td style="padding:12px 16px; font-size:13px; color:var(--text-primary);">${escHtml(uniqueProducts)}</td>
-        <td style="padding:12px 16px; font-size:13px; color:var(--text-primary);"><span class="badge badge-gray">${escHtml(manager)}</span></td>
-        <td style="padding:12px 16px; text-align:right;">
-          <div style="display:flex; justify-content:flex-end; gap:6px;">
-            <button class="btn btn-ghost btn-sm btn-icon" onclick="openClientModal(false, ${c.id})" title="Ko'rish / Tahrirlash"><i class="fas fa-eye"></i></button>
-            <button class="btn btn-ghost btn-sm btn-icon text-danger" onclick="deleteClient(${c.id})" title="O'chirish"><i class="fas fa-trash"></i></button>
+        <td>${c.phone ? escHtml(c.phone) : '—'}</td>
+        <td>
+          <div class="truncate-cell" style="max-width: 250px;" title="${escHtml(c.city || '')}">
+            ${c.city ? escHtml(c.city) : '—'}
+          </div>
+        </td>
+        <td>
+          <div class="truncate-cell" style="max-width: 220px;" title="${escHtml(uniqueProducts)}">
+            ${escHtml(uniqueProducts)}
+          </div>
+        </td>
+        <td><span class="badge badge-gray" style="font-size: 11.5px; padding: 2px 6px;">${escHtml(manager)}</span></td>
+        <td style="text-align:center;">
+          <div style="display:flex; justify-content:center; gap:4px;">
+            <button class="btn btn-ghost btn-sm btn-icon" onclick="openClientModal(false, ${c.id})" title="Ko'rish / Tahrirlash" style="padding: 4px 6px; font-size: 12px;"><i class="fas fa-eye"></i></button>
+            <button class="btn btn-ghost btn-sm btn-icon text-danger" onclick="deleteClient(${c.id})" title="O'chirish" style="padding: 4px 6px; font-size: 12px;"><i class="fas fa-trash"></i></button>
           </div>
         </td>
       </tr>
