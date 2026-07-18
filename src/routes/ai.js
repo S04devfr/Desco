@@ -172,27 +172,87 @@ async function scrapeTelegramChannel(channelName) {
   }
 }
 
+function matchesRegion(textLower, region) {
+  const regNormalized = region.toLowerCase().trim()
+    .replace(/g['`’‘"ʼ]/g, 'g')
+    .replace(/o['`’‘"ʼ]/g, 'o')
+    .replace(/['`’‘"ʼ]/g, '')
+    .replace(/q/g, 'k');
+
+  const textNormalized = textLower
+    .replace(/g['`’‘"ʼ]/g, 'g')
+    .replace(/o['`’‘"ʼ]/g, 'o')
+    .replace(/['`’‘"ʼ]/g, '')
+    .replace(/q/g, 'k');
+
+  if (textNormalized.includes(regNormalized)) {
+    return true;
+  }
+
+  // Predefined regional aliases mapping
+  const REGION_ALIASES = {
+    'samarqand': ['samarqand', 'samarkand', 'samar', 'samy', 'sam'],
+    'toshkent': ['toshkent', 'tashkent', 'tosh', 'tash'],
+    'buxoro': ['buxoro', 'bukhara', 'buxora', 'buxara'],
+    'andijon': ['andijon', 'andijan', 'andi'],
+    'fargona': ['farg\'ona', 'fargona', 'fergana', 'farg’ona', 'fargo\'na'],
+    'namangan': ['namangan', 'naman'],
+    'jizzax': ['jizzax', 'dzhizak', 'jizax', 'jiz'],
+    'sirdaryo': ['sirdaryo', 'sirdarya', 'guliston', 'gulistan'],
+    'navoiy': ['navoiy', 'navoi', 'navoiyda'],
+    'xorazm': ['xorazm', 'khorezm', 'urganch', 'urgench'],
+    'qashqadaryo': ['qashqadaryo', 'kashkadarya', 'qarshi', 'karshi'],
+    'surxondaryo': ['surxondaryo', 'surxandaryo', 'termez', 'termiz'],
+    'qoraqalpogiston': ['qoraqalpog\'iston', 'karakalpakstan', 'nukus', 'nukis']
+  };
+
+  for (const [key, aliases] of Object.entries(REGION_ALIASES)) {
+    if (regNormalized.includes(key) || key.includes(regNormalized)) {
+      for (const alias of aliases) {
+        if (textNormalized.includes(alias)) return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 function extractDriversFromMessages(messages, destination, vehicle, sourceChannel) {
-  const destLower = destination.toLowerCase().trim();
-  const vehLower = vehicle ? vehicle.toLowerCase().trim() : '';
   const parsedDrivers = [];
 
   for (const text of messages) {
     const textLower = text.toLowerCase();
     
-    // Check if the message mentions the destination (e.g. Samarqand)
-    const hasDest = textLower.includes(destLower);
+    // Check if the message matches the destination (using matchesRegion helper)
+    const hasDest = matchesRegion(textLower, destination);
     if (!hasDest) continue;
 
     // Check if the message mentions the vehicle if requested
-    if (vehLower && !textLower.includes(vehLower)) continue;
+    if (vehicle && !textLower.includes(vehicle.toLowerCase().trim())) continue;
 
-    // Match phone numbers: Uzbek numbers look like: +998901234567, 90 123 45 67, etc.
-    const phoneRegex = /(?:\+998|998)?\s?\(?\d{2}\)?\s?\d{3}\s?\d{2}\s?\d{2}/g;
+    // Match phone numbers with optional spaces, dashes, dots, parentheses
+    const phoneRegex = /(?:\+?998)?[-.\s]?\(?\d{2}\)?[-.\s]?\d{3}[-.\s]?\d{2}[-.\s]?\d{2}/g;
     const phoneMatch = text.match(phoneRegex);
     if (!phoneMatch) continue;
 
-    const uniquePhones = [...new Set(phoneMatch.map(p => p.replace(/\s+/g, '')))];
+    const uniquePhones = [];
+    const seenP = new Set();
+    for (const rawPhone of phoneMatch) {
+      const cleaned = rawPhone.replace(/[^\d+]/g, '');
+      let finalPhone = cleaned;
+      if (cleaned.length === 9) {
+        finalPhone = '+998' + cleaned;
+      } else if (cleaned.length === 12 && !cleaned.startsWith('+')) {
+        finalPhone = '+' + cleaned;
+      }
+      
+      if (!seenP.has(finalPhone)) {
+        seenP.add(finalPhone);
+        uniquePhones.push(finalPhone);
+      }
+    }
+
+    if (uniquePhones.length === 0) continue;
 
     // Determine vehicle type from text
     let detectedVehicle = "Yengil mashina";
@@ -246,21 +306,48 @@ async function runTelegramDriverSearch(destination, vehicle) {
     try {
       await client.connect();
 
-      console.log(`[AI Driver Search] Running SearchGlobal on Telegram API for query: "${destination}"`);
-      const searchResult = await client.invoke(
-        new Api.messages.SearchGlobal({
-          q: destination,
-          filter: new Api.InputMessagesFilterEmpty(),
-          minDate: 0,
-          maxDate: 0,
-          offsetRate: 0,
-          offsetPeer: new Api.InputPeerEmpty(),
-          offsetId: 0,
-          limit: 80
-        })
-      );
+      // Build multiple queries for maximum coverage of spelling variations and general driver channels
+      const queries = [destination];
+      const destLower = destination.toLowerCase().trim();
+      if (destLower.includes('q')) {
+        queries.push(destLower.replace(/q/g, 'k'));
+      } else if (destLower.includes('k')) {
+        queries.push(destLower.replace(/k/g, 'q'));
+      }
+      queries.push('taksi');
+      queries.push('shopir');
+      queries.push('haydovchi');
+      queries.push('yuk');
 
-      if (searchResult && searchResult.messages) {
+      console.log(`[AI Driver Search] Running multiple queries on Telegram API: [${queries.join(', ')}]`);
+      
+      const searchPromises = queries.map(async (q) => {
+        try {
+          const res = await client.invoke(
+            new Api.messages.SearchGlobal({
+              q: q,
+              filter: new Api.InputMessagesFilterEmpty(),
+              minDate: 0,
+              maxDate: 0,
+              offsetRate: 0,
+              offsetPeer: new Api.InputPeerEmpty(),
+              offsetId: 0,
+              limit: 50
+            })
+          );
+          return res;
+        } catch (e) {
+          console.error(`[AI Driver Search] Global search failed for query "${q}":`, e.message);
+          return null;
+        }
+      });
+
+      const searchResults = await Promise.all(searchPromises);
+      const uniqueMessages = new Map();
+
+      for (const searchResult of searchResults) {
+        if (!searchResult || !searchResult.messages) continue;
+        
         const peers = {};
         if (searchResult.chats) {
           searchResult.chats.forEach(c => {
@@ -274,7 +361,7 @@ async function runTelegramDriverSearch(destination, vehicle) {
         }
 
         for (const msg of searchResult.messages) {
-          if (!msg.message) continue;
+          if (!msg.message || uniqueMessages.has(msg.id.toString())) continue;
           
           let sourceName = 'Telegram';
           if (msg.peerId) {
@@ -284,9 +371,18 @@ async function runTelegramDriverSearch(destination, vehicle) {
             }
           }
 
-          const drivers = extractDriversFromMessages([msg.message], destination, vehicle, sourceName);
-          results = results.concat(drivers);
+          uniqueMessages.set(msg.id.toString(), {
+            text: msg.message,
+            source: sourceName
+          });
         }
+      }
+
+      console.log(`[AI Driver Search] Found ${uniqueMessages.size} unique candidate messages across queries.`);
+
+      for (const [msgId, msgData] of uniqueMessages) {
+        const drivers = extractDriversFromMessages([msgData.text], destination, vehicle, msgData.source);
+        results = results.concat(drivers);
       }
 
       await client.disconnect();
