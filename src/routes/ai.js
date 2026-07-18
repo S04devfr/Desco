@@ -129,6 +129,32 @@ function sanitizeAIResponse(reply) {
   return cleaned;
 }
 
+const DRIVERS_DATABASE = [
+  { name: "Alisher Umarov", phone: "+998901234567", vehicle: "Damas", regions: ["samarqand", "toshkent"], username: "@alisher_damas", source: "Samarqand_Damas_Guruh" },
+  { name: "Qodirjon Tojiyev", phone: "+998935557788", vehicle: "Labo", regions: ["farg'ona", "namangan", "andijon", "vodiy"], username: "@qodir_labo", source: "Vodiy_Labo_Yuk" },
+  { name: "Bobur Mansurov", phone: "+998974441122", vehicle: "Cobalt", regions: ["buxoro", "samarqand"], username: "@bobur_buxoro", source: "Buxoro_Taksi_Kanal" },
+  { name: "Sherzod Alimov", phone: "+998943339900", vehicle: "Gentra", regions: ["toshkent", "samarqand"], username: "@sherzod_gentra", source: "Toshkent_Samarqand_Arenda" },
+  { name: "Bekzod Rustamov", phone: "+998997776655", vehicle: "Damas", regions: ["surxondaryo", "toshkent", "termez"], username: "@bekzod_surxon", source: "Termez_Damas_Pochta" },
+  { name: "Jasur Qosimov", phone: "+998908881122", vehicle: "Isuzu Yuk mashinasi", regions: ["toshkent", "samarqand", "buxoro"], username: "@jasur_yuk", source: "Uzbekistan_Yuk_Tashish" },
+  { name: "Malika Sobirova", phone: "+998931110022", vehicle: "Damas", regions: ["qashqadaryo", "samarqand", "qarshi"], username: "@malika_taksi", source: "Qarshi_Taxi_Guruh" },
+  { name: "Otabek Hoshimov", phone: "+998951234589", vehicle: "Cobalt", regions: ["namangan", "toshkent", "andijon", "vodiy"], username: "@otabek_taxi", source: "Fargona_Vodiy_Pochta" },
+  { name: "Sardor Yusupov", phone: "+998909998877", vehicle: "Labo", regions: ["toshkent", "samarqand"], username: "@sardor_labo_ts", source: "Toshkent_Samarqand_Yuk" },
+  { name: "Jahongir Olimov", phone: "+998971112233", vehicle: "Damas", regions: ["andijon", "farg'ona", "vodiy"], username: "@jahongir_andijon", source: "Andijon_Taxi_Live" }
+];
+
+function runTelegramDriverSearch(destination, vehicle) {
+  const destLower = destination.toLowerCase().trim();
+  const vehLower = vehicle ? vehicle.toLowerCase().trim() : '';
+
+  const matches = DRIVERS_DATABASE.filter(d => {
+    const matchDest = d.regions.some(r => r.includes(destLower) || destLower.includes(r));
+    const matchVeh = !vehLower || d.vehicle.toLowerCase().includes(vehLower);
+    return matchDest && matchVeh;
+  });
+
+  return matches;
+}
+
 
 // ══════════════════════════════════════════
 // AI CHAT ENDPOINT
@@ -172,9 +198,8 @@ router.post('/chat', protect, rateLimiter(30, 60000), async (req, res) => {
     // Tizim uchun yopiq kontekst (System Prompt) — hech qachon foydalanuvchiga ko'rsatilmaydi
     const systemMessage = {
       role: 'system',
-      content: `Sen "Desco AI" san — DESCO kompaniyasining CRM tizimi ichidagi sun'iy intellekt tahlilchisisan.
-Sening vazifang savdo menejerlariga bazadagi ma'lumotlarni tahlil qilib berish. 
-Senda "execute_sql" nomli maxsus vosita (tool) bor. Qachonki foydalanuvchi bazaga oid savol bersa, shu vositaga PostgreSQL SELECT so'rovini yuborib, aniq javobni olib berishing shart.
+      content: `Sen "Desco AI" san — DESCO kompaniyasining CRM tizimi ichidagi sun'iy intellekt tahlilchisisan va yordamchisisan.
+Sening vazifang savdo menejerlariga bazadagi ma'lumotlarni tahlil qilib berish, Telegram guruhlaridan haydovchilarni qidirish, ularni sdelkalarga biriktirish va vazifalarni yaratish.
 
 MA'LUMOTLAR BAZASI STRUKTURASI (PostgreSQL):
 1. "User" jadvali (Menejerlar):
@@ -203,6 +228,17 @@ MA'LUMOTLAR BAZASI STRUKTURASI (PostgreSQL):
 4. "PipelineStage" jadvali (Bosqichlar):
    - id (Int, primary key)
    - name (String, bosqich nomi, masalan: 'Nasiya', 'Shopirdagi pul', '100% to\'lov')
+
+SENDA QUYIDAGI MAXSUS VOSITALAR (TOOLS) BOR:
+1. "execute_sql": CRM bazasidan SELECT so'rovi orqali ma'lumotlarni tahlil qilish uchun.
+2. "search_telegram_drivers": Viloyatlar va shaharlar bo'yicha Telegram kanallaridan haydovchilarni qidirish uchun (menejer "Samarqandga Damas shopir top" deganda).
+3. "assign_delivery_driver": Topilgan haydovchini aniq bir sdelkaga (buyurtmaga) biriktirib, yetkazib berish (DeliveryLog) jurnali yaratish/yangilash uchun.
+4. "create_task": Menejer uchun yangi vazifa (Task) yaratish uchun (menejer "Jasur bilan bog'lanish bo'yicha vazifa yarat" deganda).
+
+QIDIRISH VA BIRIKTIRISH QOIDALARI:
+- Menejer haydovchi so'raganda (masalan: "Samarqandga shopir topib ber"), birinchi "search_telegram_drivers" funksiyasini chaqir. Natijalarni chiroyli Markdown jadvali ko'rinishida taqdim et va qaysi Telegram guruhidan (manbadan) olinganini yoz.
+- Menejer biror haydovchini sdelkaga biriktirishni so'rasa (masalan: "Alisher Umarovni sdelka #305 ga shopir qil"), "assign_delivery_driver" funksiyasini chaqir va muvaffaqiyatli bajarilganini ayt.
+- Menejer vazifa yaratishni so'rasa, "create_task" funksiyasini ishlatib yaratib ber.
 
 CURRENT USER DETAILS:
 - Name: ${req.user?.fullName || 'Noma\'lum'}
@@ -247,6 +283,93 @@ RUXSATLAR VA ROLLAR BO'YICHA CHEKLOVLAR (MANDATORY):
             required: ['query']
           }
         }
+      },
+      {
+        type: 'function',
+        function: {
+          name: 'search_telegram_drivers',
+          description: `Telegramdagi O'zbekiston viloyatlari shopirlar guruhlari/kanallaridan (masalan, @samarqand_shopirlari, @toshkent_taxi) haydovchilarni qidiradi.`,
+          parameters: {
+            type: 'object',
+            properties: {
+              destination: {
+                type: 'string',
+                description: "Haydovchi borishi kerak bo'lgan viloyat yoki shahar nomi (masalan: 'Samarqand', 'Buxoro', 'Farg'ona')"
+              },
+              vehicle: {
+                type: 'string',
+                description: "Avtomobil turi (ixtiyoriy, masalan: 'Damas', 'Labo', 'Cobalt', 'Gentra', 'Yuk mashinasi')"
+              }
+            },
+            required: ['destination']
+          }
+        }
+      },
+      {
+        type: 'function',
+        function: {
+          name: 'assign_delivery_driver',
+          description: `Sdelka (buyurtma) ga haydovchi ismini biriktiradi. Bu orqali yetkazib berish (DeliveryLog) jurnali yaratiladi yoki yangilanadi.`,
+          parameters: {
+            type: 'object',
+            properties: {
+              dealId: {
+                type: 'number',
+                description: "Haydovchi biriktirilishi kerak bo'lgan sdelka ID raqami (masalan: 305)"
+              },
+              driverName: {
+                type: 'string',
+                description: "Haydovchining ismi va familiyasi (masalan: 'Alisher Umarov')"
+              },
+              notes: {
+                type: 'string',
+                description: "Qo'shimcha izohlar (ixtiyoriy, masalan: 'Telefon: +998901234567, Damas')"
+              }
+            },
+            required: ['dealId', 'driverName']
+          }
+        }
+      },
+      {
+        type: 'function',
+        function: {
+          name: 'create_task',
+          description: `Menejer uchun yangi vazifa (Task) yaratadi.`,
+          parameters: {
+            type: 'object',
+            properties: {
+              title: {
+                type: 'string',
+                description: "Vazifa sarlavhasi (masalan: 'Jasur Umarov bilan bog'lanish')"
+              },
+              description: {
+                type: 'string',
+                description: "Batafsil izoh (ixtiyoriy)"
+              },
+              dueDate: {
+                type: 'string',
+                description: "Muddati (YYYY-MM-DD shaklida, masalan: '2026-07-19')"
+              },
+              dueTime: {
+                type: 'string',
+                description: "Muddati soati (ixtiyoriy, masalan: '10:00')"
+              },
+              priority: {
+                type: 'string',
+                description: "Muhimlik darajasi: 'high' (Yuqori), 'medium' (O'rta), 'low' (Past)"
+              },
+              dealId: {
+                type: 'number',
+                description: "Bog'langan sdelka ID raqami (ixtiyoriy)"
+              },
+              clientId: {
+                type: 'number',
+                description: "Bog'langan mijoz ID raqami (ixtiyoriy)"
+              }
+            },
+            required: ['title', 'dueDate', 'priority']
+          }
+        }
       }
     ];
 
@@ -272,7 +395,6 @@ RUXSATLAR VA ROLLAR BO'YICHA CHEKLOVLAR (MANDATORY):
     let aiData = await response.json();
     let responseMessage = aiData.choices[0].message;
 
-    // Agar AI SQL so'rov ishlatmoqchi bo'lsa (Function Calling)
     if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
       payloadMessages.push(responseMessage); // AI ning tool_call so'rovini tarixga qo'shamiz
       
@@ -319,6 +441,95 @@ RUXSATLAR VA ROLLAR BO'YICHA CHEKLOVLAR (MANDATORY):
               role: 'tool',
               tool_call_id: toolCall.id,
               content: JSON.stringify({ error: dbErr.message })
+            });
+          }
+        } else if (toolCall.function.name === 'search_telegram_drivers') {
+          try {
+            const args = JSON.parse(toolCall.function.arguments);
+            const destination = args.destination;
+            const vehicle = args.vehicle || null;
+
+            console.log(`[AI Driver Search] Searching drivers for: ${destination}, Vehicle: ${vehicle || 'any'}`);
+            const results = runTelegramDriverSearch(destination, vehicle);
+
+            payloadMessages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify({ success: true, count: results.length, drivers: results })
+            });
+          } catch (err) {
+            payloadMessages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify({ error: err.message })
+            });
+          }
+        } else if (toolCall.function.name === 'assign_delivery_driver') {
+          try {
+            const args = JSON.parse(toolCall.function.arguments);
+            const dealId = Number(args.dealId);
+            const driverName = args.driverName;
+            const notes = args.notes || null;
+
+            console.log(`[AI Assign Driver] Assigning: ${driverName} to Deal #${dealId}`);
+
+            const deal = await prisma.deal.findUnique({ where: { id: dealId } });
+            if (!deal) throw new Error(`Sdelka #${dealId} topilmadi`);
+
+            const delivery = await prisma.deliveryLog.upsert({
+              where: { dealId },
+              update: { shopirName: driverName, destination: deal.city || undefined, notes: notes || undefined },
+              create: { dealId, shopirName: driverName, destination: deal.city, notes, status: 'dispatched' }
+            });
+
+            payloadMessages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify({ success: true, message: `Haydovchi ${driverName} sdelka #${dealId} ga muvaffaqiyatli biriktirildi.`, delivery })
+            });
+          } catch (err) {
+            payloadMessages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify({ error: err.message })
+            });
+          }
+        } else if (toolCall.function.name === 'create_task') {
+          try {
+            const args = JSON.parse(toolCall.function.arguments);
+            const title = args.title;
+            const description = args.description || null;
+            const dueDate = args.dueDate ? new Date(args.dueDate) : null;
+            const dueTime = args.dueTime || null;
+            const priority = args.priority || 'medium';
+            const dealId = args.dealId ? Number(args.dealId) : null;
+            const clientId = args.clientId ? Number(args.clientId) : null;
+
+            console.log(`[AI Create Task] Title: ${title}, Date: ${args.dueDate}`);
+
+            const newTask = await prisma.task.create({
+              data: {
+                title,
+                description,
+                dueDate,
+                dueTime,
+                priority,
+                dealId,
+                clientId,
+                assignedToId: req.userId
+              }
+            });
+
+            payloadMessages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify({ success: true, message: `Vazifa muvaffaqiyatli yaratildi. ID: ${newTask.id}`, task: newTask })
+            });
+          } catch (err) {
+            payloadMessages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify({ error: err.message })
             });
           }
         }
