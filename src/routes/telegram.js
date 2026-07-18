@@ -106,14 +106,14 @@ router.post('/verify-code', protect, requireRole('admin'), async (req, res) => {
 
     const { client, phoneCodeHash, apiId, apiHash } = loginData;
 
-    await client.signIn({
-      phoneNumber: cleanPhone,
-      phoneCodeHash: phoneCodeHash,
-      phoneCode: cleanCode,
-      onError: (err) => {
-        throw err;
-      }
-    });
+    const { Api } = require('telegram');
+    await client.invoke(
+      new Api.auth.SignIn({
+        phoneNumber: cleanPhone,
+        phoneCodeHash: phoneCodeHash,
+        phoneCode: cleanCode
+      })
+    );
 
     const sessionString = client.session.save();
 
@@ -148,7 +148,11 @@ router.post('/verify-code', protect, requireRole('admin'), async (req, res) => {
     res.json({ success: true, message: "Telegram akkaunti muvaffaqiyatli bog'landi!" });
   } catch (err) {
     console.error("[Telegram verify-code error]:", err);
-    res.status(500).json({ message: err.message || "Kodni tasdiqlashda xatolik yuz berdi" });
+    let msg = err.message || "Kodni tasdiqlashda xatolik yuz berdi";
+    if (err.message && err.message.includes("SESSION_PASSWORD_NEEDED")) {
+      msg = "Hisobingizda Ikki bosqichli parollash (2-FA) yoqilgan. Tizim sodda ulanishi uchun, iltimos, Telegram sozlamalaridan 2-bosqichli parolni vaqtinchalik o'chirib turing va qayta urinib ko'ring.";
+    }
+    res.status(500).json({ message: msg });
   }
 });
 
