@@ -3,9 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -193,11 +192,15 @@ model Task {
 }
 
 model CompanySettings {
-  id          Int      @id @default(autoincrement())
-  companyName String   @default("DESCO CRM")
-  currency    String   @default("UZS")
-  logoUrl     String?
-  updatedAt   DateTime @updatedAt
+  id                    Int      @id @default(autoincrement())
+  companyName           String   @default("DESCO CRM")
+  currency              String   @default("UZS")
+  logoUrl               String?
+  telegramSessionString String?
+  telegramPhone         String?
+  telegramApiId         String?
+  telegramApiHash       String?
+  updatedAt             DateTime @updatedAt
 }
 
 model InstagramAccount {

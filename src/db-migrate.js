@@ -91,6 +91,20 @@ async function runMigrations(prisma) {
     }
   } catch (e) { console.log('ℹ️  CompanySettings:', e.message?.slice(0, 80)) }
 
+  // Ensure Telegram columns exist in CompanySettings (SQLite auto-migration)
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "CompanySettings" ADD COLUMN "telegramSessionString" TEXT`);
+  } catch (e) {}
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "CompanySettings" ADD COLUMN "telegramPhone" TEXT`);
+  } catch (e) {}
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "CompanySettings" ADD COLUMN "telegramApiId" TEXT`);
+  } catch (e) {}
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "CompanySettings" ADD COLUMN "telegramApiHash" TEXT`);
+  } catch (e) {}
+
   // 4. Admin user (agar mavjud bo'lmasa)
   try {
     const bcrypt = require('bcryptjs')

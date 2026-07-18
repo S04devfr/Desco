@@ -229,45 +229,120 @@ function extractDriversFromMessages(messages, destination, vehicle, sourceChanne
 }
 
 async function runTelegramDriverSearch(destination, vehicle) {
-  const CHANNELS_TO_SCRAPE = [
-    'samarqand_taksi',
-    'vodiy_toshkent_taksi',
-    'tashkent_taksi',
-    'buxoro_taksi',
-    'yollovchi_toshkent',
-    'yuk_tashish_uz',
-    'damas_labo_taxi_uz'
-  ];
+  const prisma = require('../config/database');
+  const settings = await prisma.companySettings.findFirst();
 
-  let liveDrivers = [];
+  let results = [];
 
-  try {
+  if (settings && settings.telegramSessionString && settings.telegramApiId && settings.telegramApiHash) {
+    console.log("[AI Driver Search] User Telegram Session active. Running authenticated search...");
+    const { TelegramClient } = require('telegram');
+    const { StringSession } = require('telegram/sessions');
+    const session = new StringSession(settings.telegramSessionString);
+    const client = new TelegramClient(session, Number(settings.telegramApiId), settings.telegramApiHash, {
+      connectionRetries: 3,
+    });
+
+    try {
+      await client.connect();
+
+      const dialogs = await client.getDialogs({ limit: 40 });
+      const relevantDialogs = dialogs.filter(d => {
+        const title = (d.title || '').toLowerCase();
+        return title.includes('taksi') || title.includes('taxi') || title.includes('shopir') || title.includes('haydovchi') || title.includes('yuk') || title.includes('cargo') || title.includes('dostavka');
+      });
+
+      console.log(`[AI Driver Search] Found ${relevantDialogs.length} relevant Telegram groups/chats in user's profile.`);
+
+      const searchPromises = relevantDialogs.map(async (dialog) => {
+        try {
+          const messages = await client.getMessages(dialog.entity, {
+            search: destination,
+            limit: 10
+          });
+          
+          const messageTexts = messages.map(m => m.message || '').filter(Boolean);
+          const drivers = extractDriversFromMessages(messageTexts, destination, vehicle, dialog.title || 'Telegram Guruh');
+          return drivers;
+        } catch (err) {
+          console.error(`[AI Driver Search] Error searching dialog ${dialog.title}:`, err.message);
+          return [];
+        }
+      });
+
+      const CHANNELS_TO_SCRAPE = [
+        'samarqand_taksi',
+        'vodiy_toshkent_taksi',
+        'tashkent_taksi',
+        'buxoro_taksi',
+        'yollovchi_toshkent',
+        'yuk_tashish_uz',
+        'damas_labo_taxi_uz'
+      ];
+
+      const channelPromises = CHANNELS_TO_SCRAPE.map(async (channel) => {
+        try {
+          const messages = await client.getMessages(channel, {
+            search: destination,
+            limit: 15
+          });
+          const messageTexts = messages.map(m => m.message || '').filter(Boolean);
+          const drivers = extractDriversFromMessages(messageTexts, destination, vehicle, channel);
+          return drivers;
+        } catch (err) {
+          console.warn(`[AI Driver Search] Authenticated search failed for @${channel}, falling back to web scrape...`);
+          const messages = await scrapeTelegramChannel(channel);
+          return extractDriversFromMessages(messages, destination, vehicle, channel);
+        }
+      });
+
+      const allResults = await Promise.all([...searchPromises, ...channelPromises]);
+      allResults.forEach(drivers => {
+        results = results.concat(drivers);
+      });
+
+      await client.disconnect();
+    } catch (err) {
+      console.error("[AI Driver Search] Authenticated GramJS client error:", err.message);
+      try { await client.disconnect(); } catch(e) {}
+    }
+  }
+
+  if (results.length === 0) {
+    console.log("[AI Driver Search] Falling back to public channel scraping...");
+    const CHANNELS_TO_SCRAPE = [
+      'samarqand_taksi',
+      'vodiy_toshkent_taksi',
+      'tashkent_taksi',
+      'buxoro_taksi',
+      'yollovchi_toshkent',
+      'yuk_tashish_uz',
+      'damas_labo_taxi_uz'
+    ];
+
     const scrapePromises = CHANNELS_TO_SCRAPE.map(async (channel) => {
       const messages = await scrapeTelegramChannel(channel);
       const drivers = extractDriversFromMessages(messages, destination, vehicle, channel);
       return drivers;
     });
 
-    const results = await Promise.all(scrapePromises);
-    results.forEach(drivers => {
-      liveDrivers = liveDrivers.concat(drivers);
+    const allScrapes = await Promise.all(scrapePromises);
+    allScrapes.forEach(drivers => {
+      results = results.concat(drivers);
     });
-  } catch (err) {
-    console.error("[Scraper API Error] scraping failed:", err.message);
   }
 
-  // Remove duplicates by phone number
-  const uniqueLiveDrivers = [];
+  const uniqueDrivers = [];
   const seenPhones = new Set();
-  for (const d of liveDrivers) {
+  for (const d of results) {
     if (!seenPhones.has(d.phone)) {
       seenPhones.add(d.phone);
-      uniqueLiveDrivers.push(d);
+      uniqueDrivers.push(d);
     }
   }
 
-  if (uniqueLiveDrivers.length === 0) {
-    console.log(`[AI Driver Search] No live driver matches found. Falling back to internal drivers database.`);
+  if (uniqueDrivers.length === 0) {
+    console.log(`[AI Driver Search] Absolutely no driver matches found. Falling back to internal drivers database.`);
     const destLower = destination.toLowerCase().trim();
     const vehLower = vehicle ? vehicle.toLowerCase().trim() : '';
 
@@ -279,7 +354,7 @@ async function runTelegramDriverSearch(destination, vehicle) {
     return fallbackMatches;
   }
 
-  return uniqueLiveDrivers;
+  return uniqueDrivers;
 }
 
 

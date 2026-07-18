@@ -87,6 +87,7 @@ const swatchHtml = colorSwatches.map(c =>
       <div class="settings-tab" onclick="switchTab('pipelines', this)"><i class="fas fa-filter"></i> Voronkalar</div>
       <div class="settings-tab" onclick="switchTab('users', this)"><i class="fas fa-users"></i> Jamoa va rollar</div>
       <div class="settings-tab" onclick="switchTab('integrations', this)"><i class="fas fa-plug"></i> Integratsiyalar</div>
+      <div class="settings-tab" onclick="switchTab('telegram', this)"><i class="fab fa-telegram"></i> Telegram ulash</div>
     <% } %>
   </div>
 
@@ -306,6 +307,73 @@ const swatchHtml = colorSwatches.map(c =>
               <input type="text" class="form-control" id="webhookTokenInput" value="desco-secret-token-123" readonly style="font-family: monospace; background: var(--bg-tertiary);">
               <button class="btn btn-secondary btn-sm" onclick="copyToClipboard('webhookTokenInput', this)"><i class="fas fa-copy"></i> Nusxalash</button>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. TELEGRAM CONNECTION -->
+    <div class="settings-pane" id="pane-telegram">
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <i class="fab fa-telegram" style="color:#0088cc; font-size:20px;"></i>
+          <h3>Telegram Account Integratsiyasi</h3>
+        </div>
+        <div class="settings-section-body">
+          <p style="font-size: 13.5px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 20px;">
+            Desco AI barcha shaxsiy yoki a'zo bo'lgan Telegram guruhlaringiz va chatlaringizdan (masalan: viloyat shopirlar guruhlari, taxi guruhlari, yuk tashish chatlari) haydovchilarni qidirishi uchun shaxsiy profilingizni CRM-ga xavfsiz bog'lang.
+          </p>
+
+          <div id="tg-status-card" style="margin-bottom: 20px; padding: 16px; border-radius: 12px; border: 1px solid var(--border); display: flex; align-items: center; gap: 12px; background: var(--bg-tertiary);">
+            <div id="tg-status-icon" style="width: 12px; height: 12px; border-radius: 50%; background: var(--danger); transition: background-color 0.3s;"></div>
+            <div>
+              <strong id="tg-status-text" style="font-size: 14px; color: var(--text-primary);">Telegram bog'lanmagan</strong>
+              <p id="tg-status-desc" style="font-size: 12px; color: var(--text-tertiary); margin: 4px 0 0 0;">AI faqat jamoat preview guruhlari bilan cheklangan.</p>
+            </div>
+          </div>
+
+          <!-- Connection Form -->
+          <div id="tg-connect-form">
+            <div class="form-grid form-grid-2" style="margin-bottom:16px;">
+              <div class="form-group">
+                <label class="form-label">API ID (my.telegram.org dan)</label>
+                <input type="text" id="tg-api-id" class="form-control" placeholder="Masalan: 94575" value="<%= company && company.telegramApiId ? escHtml(company.telegramApiId) : '94575' %>">
+              </div>
+              <div class="form-group">
+                <label class="form-label">API Hash (my.telegram.org dan)</label>
+                <input type="text" id="tg-api-hash" class="form-control" placeholder="Masalan: a3406de8d..." value="<%= company && company.telegramApiHash ? escHtml(company.telegramApiHash) : 'a3406de8d171bb878bb6e828a740e261' %>">
+              </div>
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label class="form-label">Telegram Telefon Raqam *</label>
+                <div style="display: flex; gap: 8px;">
+                  <input type="text" id="tg-phone" class="form-control" placeholder="+998901234567" style="max-width: 300px;" value="<%= company && company.telegramPhone ? escHtml(company.telegramPhone) : '' %>">
+                  <button class="btn btn-primary" id="tg-send-code-btn" onclick="sendTelegramCode()">
+                    <i class="fas fa-paper-plane"></i> Kodni yuborish
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Verification Code Block (Initially Hidden) -->
+            <div id="tg-verify-block" class="hidden" style="margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--border);">
+              <div class="form-group">
+                <label class="form-label" style="color: var(--accent); font-weight: 700;">Telegramga yuborilgan tasdiqlash kodi *</label>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <input type="text" id="tg-code" class="form-control" placeholder="12345" style="max-width: 150px; font-weight: 700; text-align: center; font-size: 16px; letter-spacing: 2px;">
+                  <button class="btn btn-success" id="tg-verify-btn" onclick="verifyTelegramCode()">
+                    <i class="fas fa-check-circle"></i> Tasdiqlash va Ulash
+                  </button>
+                </div>
+                <p style="font-size: 11px; color: var(--text-tertiary); margin-top: 6px;">Kodni kiritishda harflar yoki raqamlar bo'lsa, xuddi o'zidek kiriting.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Disconnect Area (Initially Hidden) -->
+          <div id="tg-connected-area" class="hidden" style="margin-top: 20px;">
+            <button class="btn btn-danger btn-sm" onclick="disconnectTelegram()">
+              <i class="fas fa-sign-out-alt"></i> Telegramni uzish
+            </button>
           </div>
         </div>
       </div>
@@ -691,5 +759,115 @@ function saveLanguage() {
   localStorage.setItem('crm-lang', val);
   window.location.reload();
 }
+
+// ── TELEGRAM ACCOUNT INTEGRATION ──
+async function checkTelegramStatus() {
+  try {
+    const r = await fetch('/api/telegram/status');
+    const data = await r.json();
+    const icon = document.getElementById('tg-status-icon');
+    const text = document.getElementById('tg-status-text');
+    const desc = document.getElementById('tg-status-desc');
+    const connArea = document.getElementById('tg-connected-area');
+    const formGrid = document.querySelector('#tg-connect-form .form-grid');
+    
+    if (data.connected) {
+      if (icon) icon.style.backgroundColor = '#10B981'; // Green
+      if (text) text.textContent = "Bog'langan: " + data.phone;
+      if (desc) desc.textContent = "AI profilingizdagi barcha shaxsiy guruh va chatlardan haydovchilarni qidiradi.";
+      if (connArea) connArea.classList.remove('hidden');
+      if (formGrid) formGrid.style.display = 'none';
+      document.getElementById('tg-verify-block').classList.add('hidden');
+    } else {
+      if (icon) icon.style.backgroundColor = '#EF4444'; // Red
+      if (text) text.textContent = "Telegram bog'lanmagan";
+      if (desc) desc.textContent = "AI faqat jamoat preview guruhlari bilan cheklangan.";
+      if (connArea) connArea.classList.add('hidden');
+      if (formGrid) formGrid.style.display = 'grid';
+    }
+  } catch (e) {}
+}
+
+async function sendTelegramCode() {
+  const phone = document.getElementById('tg-phone').value.trim();
+  const apiId = document.getElementById('tg-api-id').value.trim();
+  const apiHash = document.getElementById('tg-api-hash').value.trim();
+
+  if (!phone || !apiId || !apiHash) {
+    showToast("Barcha maydonlarni to'ldiring", "error");
+    return;
+  }
+
+  const btn = document.getElementById('tg-send-code-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yuborilmoqda...';
+
+  try {
+    const r = await fetch('/api/telegram/send-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, apiId, apiHash })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.message || "Xatolik yuz berdi");
+
+    showToast("Tasdiqlash kodi yuborildi!", "success");
+    document.getElementById('tg-verify-block').classList.remove('hidden');
+  } catch (e) {
+    showToast(e.message, "error");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Kodni yuborish';
+  }
+}
+
+async function verifyTelegramCode() {
+  const phone = document.getElementById('tg-phone').value.trim();
+  const code = document.getElementById('tg-code').value.trim();
+
+  if (!code) {
+    showToast("Tasdiqlash kodini kiriting", "error");
+    return;
+  }
+
+  const btn = document.getElementById('tg-verify-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Tasdiqlanmoqda...';
+
+  try {
+    const r = await fetch('/api/telegram/verify-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, code })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.message || "Tasdiqlashda xatolik");
+
+    showToast("Telegram akkaunt muvaffaqiyatli bog'landi!", "success");
+    await checkTelegramStatus();
+  } catch (e) {
+    showToast(e.message, "error");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-check-circle"></i> Tasdiqlash va Ulash';
+  }
+}
+
+async function disconnectTelegram() {
+  if (!confirm("Telegram akkauntini uzishni tasdiqlaysizmi?")) return;
+  try {
+    const r = await fetch('/api/telegram/disconnect', { method: 'POST' });
+    if (!r.ok) throw new Error();
+    showToast("Telegram uzildi", "success");
+    await checkTelegramStatus();
+  } catch (e) {
+    showToast("Uzatishda xatolik yuz berdi", "error");
+  }
+}
+
+// Run status check on load
+document.addEventListener('DOMContentLoaded', () => {
+  checkTelegramStatus();
+});
 </script>
 <%- include('../layouts/footer') %>

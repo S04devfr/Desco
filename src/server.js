@@ -91,6 +91,7 @@ app.use('/api/settings',        require('./routes/settings'));
 app.use('/api/instagram',       require('./routes/instagram'));
 app.use('/api/webhook',         require('./routes/webhook'));
 app.use('/api/ai',              require('./routes/ai'));
+app.use('/api/telegram',        require('./routes/telegram'));
 app.use('/api/warehouse',       require('./routes/warehouse'));
 app.use('/api/marketing',       require('./routes/marketing'));
 app.use('/api/delivery',        require('./routes/delivery'));
