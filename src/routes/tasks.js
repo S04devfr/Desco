@@ -151,7 +151,11 @@ router.patch('/:id', async (req, res, next) => {
     if (dueDate !== undefined) data.dueDate = (dueDate && !isNaN(new Date(dueDate))) ? new Date(dueDate) : null
     if (dueTime !== undefined) data.dueTime = dueTime
     if (priority !== undefined) data.priority = priority
-    if (completed !== undefined) data.completed = completed
+    if (completed !== undefined) {
+      data.completed = completed
+    } else if (stageId !== undefined && stageId !== null && stageId !== '') {
+      data.completed = true
+    }
     if (dealId !== undefined) data.dealId = dealId ? Number(dealId) : null
     if (assignedToId !== undefined) data.assignedToId = assignedToId ? Number(assignedToId) : null
     if (clientId !== undefined) data.clientId = clientId ? Number(clientId) : null

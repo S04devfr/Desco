@@ -570,6 +570,13 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
           stage: stageSelect
         }
       })
+
+      // Automatically complete all active tasks associated with this deal
+      await tx.task.updateMany({
+        where: { dealId: id, completed: false },
+        data: { completed: true }
+      })
+
       await tx.activityLog.create({
         data: {
           action: "Bosqich o'zgartirildi",
