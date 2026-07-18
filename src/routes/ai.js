@@ -142,17 +142,144 @@ const DRIVERS_DATABASE = [
   { name: "Jahongir Olimov", phone: "+998971112233", vehicle: "Damas", regions: ["andijon", "farg'ona", "vodiy"], username: "@jahongir_andijon", source: "Andijon_Taxi_Live" }
 ];
 
-function runTelegramDriverSearch(destination, vehicle) {
+async function scrapeTelegramChannel(channelName) {
+  try {
+    const url = `https://t.me/s/${channelName}`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 second timeout per channel
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (!res.ok) return [];
+
+    const html = await res.text();
+    const messageBlocks = [];
+    const regex = /<div class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/g;
+    let match;
+    while ((match = regex.exec(html)) !== null) {
+      let text = match[1]
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<[^>]*>/g, '')
+        .trim();
+      if (text) {
+        messageBlocks.push(text);
+      }
+    }
+    return messageBlocks;
+  } catch (err) {
+    console.error(`[Scraper Error] Failed to scrape @${channelName}:`, err.message);
+    return [];
+  }
+}
+
+function extractDriversFromMessages(messages, destination, vehicle, sourceChannel) {
   const destLower = destination.toLowerCase().trim();
   const vehLower = vehicle ? vehicle.toLowerCase().trim() : '';
+  const parsedDrivers = [];
 
-  const matches = DRIVERS_DATABASE.filter(d => {
-    const matchDest = d.regions.some(r => r.includes(destLower) || destLower.includes(r));
-    const matchVeh = !vehLower || d.vehicle.toLowerCase().includes(vehLower);
-    return matchDest && matchVeh;
-  });
+  for (const text of messages) {
+    const textLower = text.toLowerCase();
+    
+    // Check if the message mentions the destination (e.g. Samarqand)
+    const hasDest = textLower.includes(destLower);
+    if (!hasDest) continue;
 
-  return matches;
+    // Check if the message mentions the vehicle if requested
+    if (vehLower && !textLower.includes(vehLower)) continue;
+
+    // Match phone numbers: Uzbek numbers look like: +998901234567, 90 123 45 67, etc.
+    const phoneRegex = /(?:\+998|998)?\s?\(?\d{2}\)?\s?\d{3}\s?\d{2}\s?\d{2}/g;
+    const phoneMatch = text.match(phoneRegex);
+    if (!phoneMatch) continue;
+
+    const uniquePhones = [...new Set(phoneMatch.map(p => p.replace(/\s+/g, '')))];
+
+    // Determine vehicle type from text
+    let detectedVehicle = "Yengil mashina";
+    if (textLower.includes("damas")) detectedVehicle = "Damas";
+    else if (textLower.includes("labo")) detectedVehicle = "Labo";
+    else if (textLower.includes("cobalt")) detectedVehicle = "Cobalt";
+    else if (textLower.includes("gentra") || textLower.includes("jentra")) detectedVehicle = "Gentra";
+    else if (textLower.includes("isuzu")) detectedVehicle = "Isuzu Yuk mashinasi";
+    else if (textLower.includes("kamaz")) detectedVehicle = "Kamaz Yuk mashinasi";
+
+    // Extract a realistic driver name or description
+    let driverName = "Telegram Haydovchi";
+    const nameMatch = text.match(/(?:ismim|ism|haydovchi)\s*:?\s*([A-Za-zА-Яа-яЎўҚқҒғҲҳ\s]{3,15})/i);
+    if (nameMatch && nameMatch[1]) {
+      driverName = nameMatch[1].trim();
+    } else {
+      const words = text.split(/\s+/).filter(w => !w.includes('+') && w.length > 2);
+      if (words.length > 0) {
+        driverName = words.slice(0, 3).join(' ').replace(/[^\w\sА-Яа-яЎўҚқҒғҲҳ]/g, '');
+      }
+    }
+
+    parsedDrivers.push({
+      name: driverName || "Telegram Haydovchi",
+      phone: uniquePhones[0],
+      vehicle: detectedVehicle,
+      regions: [destination],
+      username: `@${sourceChannel}`,
+      source: sourceChannel
+    });
+  }
+
+  return parsedDrivers;
+}
+
+async function runTelegramDriverSearch(destination, vehicle) {
+  const CHANNELS_TO_SCRAPE = [
+    'samarqand_taksi',
+    'vodiy_toshkent_taksi',
+    'tashkent_taksi',
+    'buxoro_taksi',
+    'yollovchi_toshkent',
+    'yuk_tashish_uz',
+    'damas_labo_taxi_uz'
+  ];
+
+  let liveDrivers = [];
+
+  try {
+    const scrapePromises = CHANNELS_TO_SCRAPE.map(async (channel) => {
+      const messages = await scrapeTelegramChannel(channel);
+      const drivers = extractDriversFromMessages(messages, destination, vehicle, channel);
+      return drivers;
+    });
+
+    const results = await Promise.all(scrapePromises);
+    results.forEach(drivers => {
+      liveDrivers = liveDrivers.concat(drivers);
+    });
+  } catch (err) {
+    console.error("[Scraper API Error] scraping failed:", err.message);
+  }
+
+  // Remove duplicates by phone number
+  const uniqueLiveDrivers = [];
+  const seenPhones = new Set();
+  for (const d of liveDrivers) {
+    if (!seenPhones.has(d.phone)) {
+      seenPhones.add(d.phone);
+      uniqueLiveDrivers.push(d);
+    }
+  }
+
+  if (uniqueLiveDrivers.length === 0) {
+    console.log(`[AI Driver Search] No live driver matches found. Falling back to internal drivers database.`);
+    const destLower = destination.toLowerCase().trim();
+    const vehLower = vehicle ? vehicle.toLowerCase().trim() : '';
+
+    const fallbackMatches = DRIVERS_DATABASE.filter(d => {
+      const matchDest = d.regions.some(r => r.includes(destLower) || destLower.includes(r));
+      const matchVeh = !vehLower || d.vehicle.toLowerCase().includes(vehLower);
+      return matchDest && matchVeh;
+    });
+    return fallbackMatches;
+  }
+
+  return uniqueLiveDrivers;
 }
 
 
@@ -450,7 +577,7 @@ RUXSATLAR VA ROLLAR BO'YICHA CHEKLOVLAR (MANDATORY):
             const vehicle = args.vehicle || null;
 
             console.log(`[AI Driver Search] Searching drivers for: ${destination}, Vehicle: ${vehicle || 'any'}`);
-            const results = runTelegramDriverSearch(destination, vehicle);
+            const results = await runTelegramDriverSearch(destination, vehicle);
 
             payloadMessages.push({
               role: 'tool',
