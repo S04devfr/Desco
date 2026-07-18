@@ -236,7 +236,7 @@ async function runTelegramDriverSearch(destination, vehicle) {
 
   if (settings && settings.telegramSessionString && settings.telegramApiId && settings.telegramApiHash) {
     console.log("[AI Driver Search] User Telegram Session active. Running authenticated search...");
-    const { TelegramClient } = require('telegram');
+    const { TelegramClient, Api } = require('telegram');
     const { StringSession } = require('telegram/sessions');
     const session = new StringSession(settings.telegramSessionString);
     const client = new TelegramClient(session, Number(settings.telegramApiId), settings.telegramApiHash, {
@@ -246,60 +246,48 @@ async function runTelegramDriverSearch(destination, vehicle) {
     try {
       await client.connect();
 
-      const dialogs = await client.getDialogs({ limit: 40 });
-      const relevantDialogs = dialogs.filter(d => {
-        const title = (d.title || '').toLowerCase();
-        return title.includes('taksi') || title.includes('taxi') || title.includes('shopir') || title.includes('haydovchi') || title.includes('yuk') || title.includes('cargo') || title.includes('dostavka');
-      });
+      console.log(`[AI Driver Search] Running SearchGlobal on Telegram API for query: "${destination}"`);
+      const searchResult = await client.invoke(
+        new Api.messages.SearchGlobal({
+          q: destination,
+          filter: new Api.InputMessagesFilterEmpty(),
+          minDate: 0,
+          maxDate: 0,
+          offsetRate: 0,
+          offsetPeer: new Api.InputPeerEmpty(),
+          offsetId: 0,
+          limit: 80
+        })
+      );
 
-      console.log(`[AI Driver Search] Found ${relevantDialogs.length} relevant Telegram groups/chats in user's profile.`);
-
-      const searchPromises = relevantDialogs.map(async (dialog) => {
-        try {
-          const messages = await client.getMessages(dialog.entity, {
-            search: destination,
-            limit: 10
+      if (searchResult && searchResult.messages) {
+        const peers = {};
+        if (searchResult.chats) {
+          searchResult.chats.forEach(c => {
+            peers[c.id.toString()] = c.title || c.username || 'Telegram Guruh';
           });
+        }
+        if (searchResult.users) {
+          searchResult.users.forEach(u => {
+            peers[u.id.toString()] = `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.username || 'Foydalanuvchi';
+          });
+        }
+
+        for (const msg of searchResult.messages) {
+          if (!msg.message) continue;
           
-          const messageTexts = messages.map(m => m.message || '').filter(Boolean);
-          const drivers = extractDriversFromMessages(messageTexts, destination, vehicle, dialog.title || 'Telegram Guruh');
-          return drivers;
-        } catch (err) {
-          console.error(`[AI Driver Search] Error searching dialog ${dialog.title}:`, err.message);
-          return [];
+          let sourceName = 'Telegram';
+          if (msg.peerId) {
+            const peerKey = (msg.peerId.chatId || msg.peerId.channelId || msg.peerId.userId || '').toString();
+            if (peers[peerKey]) {
+              sourceName = peers[peerKey];
+            }
+          }
+
+          const drivers = extractDriversFromMessages([msg.message], destination, vehicle, sourceName);
+          results = results.concat(drivers);
         }
-      });
-
-      const CHANNELS_TO_SCRAPE = [
-        'samarqand_taksi',
-        'vodiy_toshkent_taksi',
-        'tashkent_taksi',
-        'buxoro_taksi',
-        'yollovchi_toshkent',
-        'yuk_tashish_uz',
-        'damas_labo_taxi_uz'
-      ];
-
-      const channelPromises = CHANNELS_TO_SCRAPE.map(async (channel) => {
-        try {
-          const messages = await client.getMessages(channel, {
-            search: destination,
-            limit: 15
-          });
-          const messageTexts = messages.map(m => m.message || '').filter(Boolean);
-          const drivers = extractDriversFromMessages(messageTexts, destination, vehicle, channel);
-          return drivers;
-        } catch (err) {
-          console.warn(`[AI Driver Search] Authenticated search failed for @${channel}, falling back to web scrape...`);
-          const messages = await scrapeTelegramChannel(channel);
-          return extractDriversFromMessages(messages, destination, vehicle, channel);
-        }
-      });
-
-      const allResults = await Promise.all([...searchPromises, ...channelPromises]);
-      allResults.forEach(drivers => {
-        results = results.concat(drivers);
-      });
+      }
 
       await client.disconnect();
     } catch (err) {
@@ -308,30 +296,7 @@ async function runTelegramDriverSearch(destination, vehicle) {
     }
   }
 
-  if (results.length === 0) {
-    console.log("[AI Driver Search] Falling back to public channel scraping...");
-    const CHANNELS_TO_SCRAPE = [
-      'samarqand_taksi',
-      'vodiy_toshkent_taksi',
-      'tashkent_taksi',
-      'buxoro_taksi',
-      'yollovchi_toshkent',
-      'yuk_tashish_uz',
-      'damas_labo_taxi_uz'
-    ];
-
-    const scrapePromises = CHANNELS_TO_SCRAPE.map(async (channel) => {
-      const messages = await scrapeTelegramChannel(channel);
-      const drivers = extractDriversFromMessages(messages, destination, vehicle, channel);
-      return drivers;
-    });
-
-    const allScrapes = await Promise.all(scrapePromises);
-    allScrapes.forEach(drivers => {
-      results = results.concat(drivers);
-    });
-  }
-
+  // Remove duplicates by phone number
   const uniqueDrivers = [];
   const seenPhones = new Set();
   for (const d of results) {
@@ -341,19 +306,7 @@ async function runTelegramDriverSearch(destination, vehicle) {
     }
   }
 
-  if (uniqueDrivers.length === 0) {
-    console.log(`[AI Driver Search] Absolutely no driver matches found. Falling back to internal drivers database.`);
-    const destLower = destination.toLowerCase().trim();
-    const vehLower = vehicle ? vehicle.toLowerCase().trim() : '';
-
-    const fallbackMatches = DRIVERS_DATABASE.filter(d => {
-      const matchDest = d.regions.some(r => r.includes(destLower) || destLower.includes(r));
-      const matchVeh = !vehLower || d.vehicle.toLowerCase().includes(vehLower);
-      return matchDest && matchVeh;
-    });
-    return fallbackMatches;
-  }
-
+  console.log(`[AI Driver Search] Completed search. Found ${uniqueDrivers.length} real driver matches.`);
   return uniqueDrivers;
 }
 
