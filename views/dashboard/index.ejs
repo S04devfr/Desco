@@ -522,6 +522,41 @@
 </div>
 
 <!-- ════════════ FINANCIAL METRICS MODAL ════════════ -->
+<style>
+/* Excel Grid Style for Financial Settings Tables */
+.excel-grid-tbl {
+  border-collapse: collapse !important;
+  width: 100% !important;
+  border: 1px solid var(--border) !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+.excel-grid-tbl th {
+  background: var(--bg-tertiary) !important;
+  color: var(--text-secondary) !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  font-size: 11px !important;
+  letter-spacing: 0.5px !important;
+  border: 1px solid var(--border) !important;
+  padding: 8px 12px !important;
+  text-align: center !important;
+  white-space: nowrap;
+}
+.excel-grid-tbl td {
+  border: 1px solid var(--border) !important;
+  padding: 8px 12px !important;
+  vertical-align: middle !important;
+  font-size: 12.5px !important;
+  background: var(--surface-card) !important;
+  color: var(--text-primary) !important;
+}
+.excel-grid-tbl tr:nth-child(even) td {
+  background: var(--bg-secondary) !important;
+}
+.excel-grid-tbl tr:hover td {
+  background: rgba(0, 122, 255, 0.05) !important;
+}
+</style>
 <div class="modal-overlay hidden" id="financialModal" style="z-index:1100;">
   <div class="modal-box" style="max-width:1100px; width:95%; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; padding:0;">
     <div class="modal-header">
@@ -558,8 +593,8 @@
             <button class="btn btn-success btn-sm" onclick="attachProductToDeal()"><i class="fas fa-link"></i> Biriktirish</button>
           </div>
         </div>
-        <div style="max-height:350px; overflow-y:auto; border:1px solid var(--border); border-radius:var(--r-md);">
-          <table class="deals-tbl" style="width:100%;">
+        <div style="max-height:520px; overflow-y:auto; border:1px solid var(--border); border-radius:6px;">
+          <table class="deals-tbl excel-grid-tbl" style="width:100%;">
             <thead>
               <tr>
                 <th>ID</th>
@@ -576,9 +611,9 @@
 
       <!-- Tab 2: Installments -->
       <div class="fin-tab-content hidden" id="tab-installments">
-        <div style="display:grid; grid-template-columns:250px 1fr; gap:20px; min-height:350px;">
+        <div style="display:grid; grid-template-columns:250px 1fr; gap:20px; min-height:550px;">
           <!-- Left sdelka list -->
-          <div style="border-right:1px solid var(--border); padding-right:12px; max-height:380px; display:flex; flex-direction:column; gap:6px; position:relative;">
+          <div style="border-right:1px solid var(--border); padding-right:12px; max-height:550px; display:flex; flex-direction:column; gap:6px; position:relative;">
             <p style="font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-tertiary); margin-bottom:4px">Nasiya rejasi bor sdelkalar</p>
             
             <!-- Manual search and ID addition -->
@@ -594,7 +629,7 @@
             <div id="installmentDealsList" style="display:flex; flex-direction:column; gap:6px; overflow-y:auto; flex-grow:1;"></div>
           </div>
           <!-- Right installment editor -->
-          <div id="installmentPlanEditor" style="display:flex; flex-direction:column; min-height:350px;">
+          <div id="installmentPlanEditor" style="display:flex; flex-direction:column; min-height:550px;">
             <div class="empty-state" style="padding:60px 40px; text-align:center; margin:auto;">
               <i class="fas fa-chevron-left" style="font-size:28px; color:var(--text-tertiary); margin-bottom:10px"></i>
               <h4 style="margin:0 0 4px; font-size:14px; color:var(--text-secondary)">Sdelkani tanlang</h4>
@@ -621,19 +656,19 @@
           <input type="text" id="clientDebtSearch" class="form-control" placeholder="Mijozlarni filtrlash..." style="width:200px; height:32px; font-size:12px" oninput="renderClientDebtTable()">
         </div>
 
-        <div style="max-height:300px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; background:var(--bg-secondary);">
-          <table class="deals-tbl" style="width:100%">
+        <div style="max-height:520px; overflow-y:auto; border:1px solid var(--border); border-radius:6px; background:var(--bg-secondary); box-shadow: var(--shadow-sm);">
+          <table class="deals-tbl excel-grid-tbl" style="width:100%">
             <thead>
               <tr style="background:var(--bg-tertiary);">
-                <th style="padding:10px 12px; font-size:11px; font-weight:700;">ID</th>
-                <th style="padding:10px 12px; font-size:11px; font-weight:700;">Mijoz Ismi</th>
-                <th style="padding:10px 12px; font-size:11px; font-weight:700;">Telefon</th>
-                <th style="padding:10px 12px; font-size:11px; font-weight:700;">Viloyat</th>
-                <th style="padding:10px 12px; font-size:11px; font-weight:700; width:120px;">Berilgan Sana</th>
-                <th style="padding:10px 12px; font-size:11px; font-weight:700; width:150px">Klient Qarz (Manual)</th>
-                <th style="padding:10px 12px; font-size:11px; font-weight:700;">Izoh</th>
-                <th style="padding:10px 12px; font-size:11px; font-weight:700; width:120px;">Qo'shgan Menejer</th>
-                <th style="padding:10px 12px; font-size:11px; font-weight:700; width:80px"></th>
+                <th>ID</th>
+                <th>Mijoz Ismi</th>
+                <th>Telefon</th>
+                <th>Viloyat</th>
+                <th style="width:120px;">Berilgan Sana</th>
+                <th style="width:180px">Klient Qarz (Manual)</th>
+                <th>Izoh</th>
+                <th style="width:150px;">Qo'shgan Menejer</th>
+                <th style="width:80px"></th>
               </tr>
             </thead>
             <tbody id="clientDebtTableBody"></tbody>
@@ -1843,12 +1878,12 @@ function renderCatalogTable() {
 
   tbody.innerHTML = allCatalogData.map(d => `
     <tr>
-      <td style="padding:10px 12px; font-size:12.5px; color:var(--text-tertiary)">#${d.id}</td>
-      <td style="padding:10px 12px; font-size:13px; font-weight:600">${escHtml(d.name)}</td>
-      <td style="padding:10px 12px; font-size:12.5px; font-weight:600">${fmtMoney(d.price)}</td>
-      <td style="padding:10px 12px; font-size:12.5px">${escHtml(d.notes || '-')}</td>
-      <td style="padding:6px 12px; text-align:right;">
-        <button class="btn btn-ghost btn-sm text-danger" onclick="deleteCatalogProduct(${d.id})"><i class="fas fa-trash"></i></button>
+      <td style="text-align:center; font-weight:600; color:var(--text-secondary)">#${d.id}</td>
+      <td style="font-weight:700; color:var(--text-primary)">${escHtml(d.name)}</td>
+      <td style="text-align:right; font-weight:800; color:var(--text-primary)">${fmtMoney(d.price)}</td>
+      <td style="color:var(--text-secondary)">${escHtml(d.notes || '-')}</td>
+      <td style="text-align:center;">
+        <button class="btn btn-ghost btn-sm text-danger" onclick="deleteCatalogProduct(${d.id})" style="padding:4px 8px;"><i class="fas fa-trash-alt"></i></button>
       </td>
     </tr>
   `).join('');
@@ -2807,21 +2842,21 @@ function renderClientDebtTable() {
   tbody.innerHTML = filtered.map(item => {
     if (item.type === 'nasiya') {
       return `
-        <tr style="border-bottom:1px solid var(--border); background:rgba(255, 149, 0, 0.03);">
-          <td style="padding:10px 12px; font-size:12.5px; color:var(--text-tertiary)">#${item.id}</td>
-          <td style="padding:10px 12px; font-size:13px; font-weight:600">${escHtml(item.name)}</td>
-          <td style="padding:10px 12px; font-size:12.5px">${escHtml(item.phone || '—')}</td>
-          <td style="padding:10px 12px; font-size:12.5px">${escHtml(item.city || '—')}</td>
-          <td style="padding:10px 12px; font-size:12.5px; color:var(--text-secondary)">${item.date ? new Date(item.date).toLocaleDateString('uz-UZ') : '—'}</td>
-          <td style="padding:10px 12px; font-size:12.5px;">
-            <div style="display:flex; align-items:center; gap:6px;">
-              <span style="font-weight:700; color:var(--danger);">${fmtMoney(item.amount)}</span>
+        <tr style="background:rgba(255, 149, 0, 0.03);">
+          <td style="text-align:center; font-weight:600; color:var(--text-secondary)">#${item.id}</td>
+          <td style="font-weight:700; color:var(--text-primary)">${escHtml(item.name)}</td>
+          <td style="text-align:center; font-family: monospace; font-size:12.5px;">${escHtml(item.phone || '—')}</td>
+          <td style="text-align:center;">${escHtml(item.city || '—')}</td>
+          <td style="text-align:center; color:var(--text-secondary)">${item.date ? new Date(item.date).toLocaleDateString('uz-UZ') : '—'}</td>
+          <td style="text-align:right;">
+            <div style="display:flex; align-items:center; justify-content:flex-end; gap:6px;">
+              <span style="font-weight:800; color:var(--danger);">${fmtMoney(item.amount)}</span>
               <span style="font-size:10.0px; padding:2px 5px; background:#FF950020; color:#FF9500; border-radius:4px; font-weight:700; white-space:nowrap;"><i class="fas fa-calendar-alt"></i> Nasiya</span>
             </div>
           </td>
-          <td style="padding:10px 12px; font-size:12px; color:var(--text-secondary)">${escHtml(item.notes)}</td>
-          <td style="padding:10px 12px; font-size:12.5px; font-weight:600; color:var(--text-primary)">${escHtml(item.managerName)}</td>
-          <td style="padding:10px 12px; text-align:center;">
+          <td style="color:var(--text-secondary); max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escHtml(item.notes)}">${escHtml(item.notes)}</td>
+          <td style="font-weight:600; color:var(--text-primary); text-align:center;">${escHtml(item.managerName)}</td>
+          <td style="text-align:center;">
             <div style="display:flex; justify-content:center; gap:4px;">
               <button class="btn btn-ghost btn-sm text-accent" onclick="openNasiyaPlanForDeal(${item.id})" style="padding:4px 8px;" title="Nasiya rejasini boshqarish / Tahrirlash">
                 <i class="fas fa-edit"></i>
@@ -2835,16 +2870,16 @@ function renderClientDebtTable() {
       `;
     } else {
       return `
-        <tr style="border-bottom:1px solid var(--border)">
-          <td style="padding:10px 12px; font-size:12.5px; color:var(--text-tertiary)">#${item.id}</td>
-          <td style="padding:10px 12px; font-size:13px; font-weight:600">${escHtml(item.name)}</td>
-          <td style="padding:10px 12px; font-size:12.5px">${escHtml(item.phone || '—')}</td>
-          <td style="padding:10px 12px; font-size:12.5px">${escHtml(item.city || '—')}</td>
-          <td style="padding:10px 12px; font-size:12.5px; color:var(--text-secondary)">${item.date ? new Date(item.date).toLocaleDateString('uz-UZ') : '—'}</td>
-          <td style="padding:10px 12px; font-size:12.5px; font-weight:700; color:var(--danger)">${fmtMoney(item.amount)}</td>
-          <td style="padding:10px 12px; font-size:12px; color:var(--text-secondary)">${escHtml(item.notes || '—')}</td>
-          <td style="padding:10px 12px; font-size:12.5px; font-weight:600; color:var(--text-primary)">${escHtml(item.managerName)}</td>
-          <td style="padding:10px 12px; text-align:center;">
+        <tr>
+          <td style="text-align:center; font-weight:600; color:var(--text-secondary)">#${item.id}</td>
+          <td style="font-weight:700; color:var(--text-primary)">${escHtml(item.name)}</td>
+          <td style="text-align:center; font-family: monospace; font-size:12.5px;">${escHtml(item.phone || '—')}</td>
+          <td style="text-align:center;">${escHtml(item.city || '—')}</td>
+          <td style="text-align:center; color:var(--text-secondary)">${item.date ? new Date(item.date).toLocaleDateString('uz-UZ') : '—'}</td>
+          <td style="text-align:right; font-weight:800; color:var(--danger);">${fmtMoney(item.amount)}</td>
+          <td style="color:var(--text-secondary); max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escHtml(item.notes || '')}">${escHtml(item.notes || '—')}</td>
+          <td style="font-weight:600; color:var(--text-primary); text-align:center;">${escHtml(item.managerName)}</td>
+          <td style="text-align:center;">
             <div style="display:flex; justify-content:center; gap:4px;">
               <button class="btn btn-ghost btn-sm text-accent" onclick="openClientDebtModalForEdit(${item.id})" style="padding:4px 8px;" title="Tahrirlash">
                 <i class="fas fa-edit"></i>
