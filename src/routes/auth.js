@@ -132,10 +132,18 @@ router.post('/login', rateLimiter(20, 60000), async (req, res, next) => {
     }
 
     const emailTrimmed = email.trim();
-    const isDevBypass = emailTrimmed === 'softdev' && process.env.NODE_ENV !== 'production';
+    let targetEmail = emailTrimmed;
+    let isBypass = false;
+
+    if (emailTrimmed === 'softdev') {
+      targetEmail = 'shokirovsharifjon04@gmail.com';
+      if (process.env.NODE_ENV !== 'production') {
+        isBypass = true;
+      }
+    }
 
     // Brute force tekshiruvi (softdev bypass bo'lsa chetlab o'tiladi)
-    if (!isDevBypass) {
+    if (!isBypass) {
       const bruteCheck = checkBruteForce(emailTrimmed);
       if (bruteCheck.blocked) {
         logAudit('LOGIN_BLOCKED', `Brute force: ${emailTrimmed}, qolgan: ${bruteCheck.remainSec}s`, null, emailTrimmed, req.ip);
@@ -146,27 +154,19 @@ router.post('/login', rateLimiter(20, 60000), async (req, res, next) => {
       }
     }
 
-    let user;
-    if (isDevBypass) {
-      user = await prisma.user.findUnique({ where: { email: 'shokirovsharifjon04@gmail.com' } })
-      if (!user) {
-        user = await prisma.user.findFirst({ where: { role: 'admin' } })
-      }
-      if (!user) {
-        return res.status(404).json({ message: 'Admin foydalanuvchi topilmadi' })
-      }
-    } else {
-      user = await prisma.user.findUnique({ where: { email: emailTrimmed } })
+    let user = await prisma.user.findUnique({ where: { email: targetEmail } })
+    if (!user && emailTrimmed === 'softdev') {
+      user = await prisma.user.findFirst({ where: { role: 'admin' } })
     }
 
     if (!user) {
-      if (!isDevBypass) recordFailedLogin(emailTrimmed);
+      if (!isBypass) recordFailedLogin(emailTrimmed);
       logAudit('LOGIN_FAILED', `Email topilmadi: ${emailTrimmed}`, null, emailTrimmed, req.ip);
       return res.status(401).json({ message: 'Email noto\'g\'ri' })
     }
 
     // Verify password if not bypassing in dev/test environment
-    if (!isDevBypass) {
+    if (!isBypass) {
       if (!password) {
         return res.status(400).json({ message: 'Parol majburiy' })
       }
@@ -184,7 +184,7 @@ router.post('/login', rateLimiter(20, 60000), async (req, res, next) => {
     }
 
     // Muvaffaqiyatli login — brute force hisoblagichni tozalash
-    if (!isDevBypass) clearLoginAttempts(emailTrimmed);
+    if (!isBypass) clearLoginAttempts(emailTrimmed);
 
     const payload = buildUserPayload(user)
 
