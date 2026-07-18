@@ -550,6 +550,46 @@ RUXSATLAR VA ROLLAR BO'YICHA CHEKLOVLAR (MANDATORY):
     let aiData = await response.json();
     let responseMessage = aiData.choices[0].message;
 
+    // ── MANUAL DSML PARSER (DEFENSIVE PROXY FIX FOR GEMINI PROXIES) ──
+    if (responseMessage.content && (responseMessage.content.includes('DSML') || responseMessage.content.includes('invoke name='))) {
+      console.log("[AI Parser] Detected raw DSML tool calls in response content. Parsing manually...");
+      const toolCalls = [];
+      const blocks = responseMessage.content.split(/<(?:\s*\|\s*)?DSML(?:\s*\|\s*)?invoke|invoke name=/);
+      
+      for (let i = 1; i < blocks.length; i++) {
+        const block = blocks[i];
+        const nameMatch = block.match(/name="([^"]+)"/) || block.match(/^"([^"]+)"/);
+        if (!nameMatch) continue;
+        const toolName = nameMatch[1];
+        
+        const params = {};
+        const paramRegex = /(?:parameter name=|parameter=")([^"]+)"[^>]*>([\s\S]*?)(?=\n|<|$)/g;
+        let paramMatch;
+        while ((paramMatch = paramRegex.exec(block)) !== null) {
+          const paramName = paramMatch[1];
+          const paramValue = paramMatch[2].trim();
+          params[paramName] = paramValue;
+        }
+        
+        if (params.dealId) params.dealId = Number(params.dealId);
+        if (params.clientId) params.clientId = Number(params.clientId);
+        
+        toolCalls.push({
+          id: `manual_call_${Date.now()}_${i}`,
+          type: 'function',
+          function: {
+            name: toolName,
+            arguments: JSON.stringify(params)
+          }
+        });
+      }
+      
+      if (toolCalls.length > 0) {
+        responseMessage.tool_calls = toolCalls;
+        responseMessage.content = null;
+      }
+    }
+
     if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
       payloadMessages.push(responseMessage); // AI ning tool_call so'rovini tarixga qo'shamiz
       
