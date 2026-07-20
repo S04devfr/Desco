@@ -227,12 +227,13 @@ async function loadClients() {
       const lastMsg = c.messages && c.messages.length > 0 ? c.messages[0].text : 'Yangi mijoz';
       const div = document.createElement('div');
       div.className = `chat-client-item ${c.id === currentClientId ? 'active' : ''}`;
-      div.onclick = () => selectClient(c.id, c.name);
+      div.onclick = () => selectClient(c.id, c.name, c.instagramUsername);
       
+      const usernameSpan = c.instagramUsername ? ` <span style="font-size: 11px; font-weight: normal; color: var(--text-tertiary);">@${c.instagramUsername}</span>` : '';
       div.innerHTML = `
         <div class="chat-avatar"><i class="fas fa-user"></i></div>
         <div class="chat-client-info">
-          <div class="chat-client-name">${c.name}</div>
+          <div class="chat-client-name">${c.name}${usernameSpan}</div>
           <div class="chat-client-msg">${lastMsg}</div>
         </div>
       `;
@@ -243,7 +244,7 @@ async function loadClients() {
   }
 }
 
-async function selectClient(id, name) {
+async function selectClient(id, name, instagramUsername) {
   currentClientId = id;
   currentClientName = name;
   
@@ -251,10 +252,11 @@ async function selectClient(id, name) {
   event.currentTarget.classList.add('active');
   
   const chatMain = document.getElementById('chatMain');
+  const usernameHeader = instagramUsername ? ` <span style="font-size: 13px; font-weight: normal; color: var(--text-tertiary); margin-left: 8px;">@${instagramUsername}</span>` : '';
   chatMain.innerHTML = `
     <div class="chat-header">
       <div class="chat-avatar"><i class="fas fa-user"></i></div>
-      <div style="font-weight: 600;">${name}</div>
+      <div style="font-weight: 600;">${name}${usernameHeader}</div>
     </div>
     <div class="chat-messages" id="chatMessages">
       <div style="text-align: center; color: var(--text-tertiary);">Yuklanmoqda...</div>
@@ -332,11 +334,17 @@ async function sendMessage() {
       div.querySelector('.fa-clock').className = 'fas fa-check';
       loadClients();
     } else {
+      const errorData = await res.json();
       div.querySelector('.fa-clock').className = 'fas fa-exclamation-circle';
-      div.querySelector('.fa-exclamation-circle').style.color = '#ffcccc';
+      div.querySelector('.fa-exclamation-circle').style.color = '#ff5e5e';
+      const errMsg = errorData.error || 'Yuborishda xatolik yuz berdi';
+      _toast(`Meta API Xatosi: ${errMsg}`, 'error');
     }
   } catch (error) {
     console.error('Error sending message:', error);
+    div.querySelector('.fa-clock').className = 'fas fa-exclamation-circle';
+    div.querySelector('.fa-exclamation-circle').style.color = '#ff5e5e';
+    _toast('Tarmoqda xatolik yuz berdi', 'error');
   }
 }
 

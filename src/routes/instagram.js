@@ -44,18 +44,60 @@ router.post('/webhook', async (req, res) => {
                 where: { instagramId: senderId }
               });
 
+              // If client exists but doesn't have instagramUsername, fetch and update it
+              if (client && !client.instagramUsername) {
+                const settings = await prisma.companySettings.findFirst();
+                const PAGE_ACCESS_TOKEN = settings?.instagramAccessToken || process.env.META_PAGE_ACCESS_TOKEN;
+                if (PAGE_ACCESS_TOKEN) {
+                  try {
+                    const profileRes = await fetch(`https://graph.facebook.com/v19.0/${senderId}?fields=username,name&access_token=${PAGE_ACCESS_TOKEN}`);
+                    const profileData = await profileRes.json();
+                    if (profileData && profileData.username) {
+                      client = await prisma.client.update({
+                        where: { id: client.id },
+                        data: {
+                          name: profileData.name || profileData.username,
+                          instagramUsername: profileData.username
+                        }
+                      });
+                    }
+                  } catch (profileErr) {
+                    console.error('Error updating instagram profile:', profileErr);
+                  }
+                }
+              }
+
               // If not, create a new client
               if (!client) {
+                const settings = await prisma.companySettings.findFirst();
+                const PAGE_ACCESS_TOKEN = settings?.instagramAccessToken || process.env.META_PAGE_ACCESS_TOKEN;
+
+                let username = null;
+                let clientName = `Instagram Lead (${senderId})`;
+
+                if (PAGE_ACCESS_TOKEN) {
+                  try {
+                    const profileRes = await fetch(`https://graph.facebook.com/v19.0/${senderId}?fields=username,name&access_token=${PAGE_ACCESS_TOKEN}`);
+                    const profileData = await profileRes.json();
+                    if (profileData && profileData.username) {
+                      username = profileData.username;
+                      clientName = profileData.name || profileData.username;
+                    }
+                  } catch (profileErr) {
+                    console.error('Error fetching instagram profile:', profileErr);
+                  }
+                }
+
                 client = await prisma.client.create({
                   data: {
-                    name: `Instagram Lead (${senderId})`,
+                    name: clientName,
                     instagramId: senderId,
+                    instagramUsername: username,
                     notes: `Instagram orqali yangi murojaat. Xabar: "${text.substring(0, 50)}..."`
                   }
                 });
 
                 // Auto-create a Deal for this new client
-                // Find the default pipeline and its first stage
                 const pipeline = await prisma.pipeline.findFirst({
                   where: { isDefault: true },
                   include: { stages: { orderBy: { order: 'asc' }, take: 1 } }
@@ -181,10 +223,17 @@ router.post('/messages', async (req, res) => {
         const result = await response.json();
         if (result.error) {
           console.error('Meta API Error:', result.error);
+          await prisma.instagramMessage.delete({ where: { id: savedMsg.id } });
+          return res.status(400).json({ error: result.error.message || 'Meta API Error', details: result.error });
         }
       } catch (apiErr) {
         console.error('Failed to send to Meta API:', apiErr);
+        await prisma.instagramMessage.delete({ where: { id: savedMsg.id } });
+        return res.status(500).json({ error: apiErr.message || 'Failed to connect to Meta API' });
       }
+    } else {
+      await prisma.instagramMessage.delete({ where: { id: savedMsg.id } });
+      return res.status(400).json({ error: 'Instagram Access Token topilmadi. Sozlamalarni tekshiring.' });
     }
 
     res.json(savedMsg);
