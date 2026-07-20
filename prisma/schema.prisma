@@ -211,6 +211,9 @@ model CompanySettings {
   telegramPhone         String?
   telegramApiId         String?
   telegramApiHash       String?
+  instagramAccessToken  String?
+  instagramPageId       String?
+  instagramVerifyToken  String?
   updatedAt             DateTime @updatedAt
 }
 

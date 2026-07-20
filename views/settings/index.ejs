@@ -88,6 +88,7 @@ const swatchHtml = colorSwatches.map(c =>
       <div class="settings-tab" onclick="switchTab('users', this)"><i class="fas fa-users"></i> Jamoa va rollar</div>
       <div class="settings-tab" onclick="switchTab('integrations', this)"><i class="fas fa-plug"></i> Integratsiyalar</div>
       <div class="settings-tab" onclick="switchTab('telegram', this)"><i class="fab fa-telegram"></i> Telegram ulash</div>
+      <div class="settings-tab" onclick="switchTab('instagram', this)"><i class="fab fa-instagram"></i> Instagram ulash</div>
     <% } %>
   </div>
 
@@ -373,6 +374,51 @@ const swatchHtml = colorSwatches.map(c =>
           <div id="tg-connected-area" class="hidden" style="margin-top: 20px;">
             <button class="btn btn-danger btn-sm" onclick="disconnectTelegram()">
               <i class="fas fa-sign-out-alt"></i> Telegramni uzish
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. INSTAGRAM CONNECTION -->
+    <div class="settings-pane" id="pane-instagram">
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <i class="fab fa-instagram" style="color:#e1306c; font-size:20px;"></i>
+          <h3>Instagram Direct Integratsiyasi</h3>
+        </div>
+        <div class="settings-section-body">
+          <p style="font-size: 13.5px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 20px;">
+            Mijozlaringiz bilan Instagram Direct orqali to'g'ridan-to'g'ri CRM tizimida suhbatlashish uchun Meta API sozlamalarini ulang.
+          </p>
+
+          <div id="ig-status-card" style="margin-bottom: 20px; padding: 16px; border-radius: 12px; border: 1px solid var(--border); display: flex; align-items: center; gap: 12px; background: var(--bg-tertiary);">
+            <div id="ig-status-icon" style="width: 12px; height: 12px; border-radius: 50%; background: <%= company && company.instagramAccessToken ? 'var(--success)' : 'var(--danger)' %>; transition: background-color 0.3s;"></div>
+            <div>
+              <strong id="ig-status-text" style="font-size: 14px; color: var(--text-primary);"><%= company && company.instagramAccessToken ? 'Instagram faol' : 'Instagram ulanmagan' %></strong>
+              <p id="ig-status-desc" style="font-size: 12px; color: var(--text-tertiary); margin: 4px 0 0 0;"><%= company && company.instagramAccessToken ? 'Messenger API orqali xabarlar sinxronlanmoqda.' : 'Sozlamalarni kiritib, integratsiyani faollashtiring.' %></p>
+            </div>
+          </div>
+
+          <!-- Connection Form -->
+          <div id="ig-connect-form">
+            <div class="form-grid form-grid-2" style="margin-bottom:16px;">
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label class="form-label">Meta Page Access Token (EAA... bilan boshlanadi)</label>
+                <textarea id="ig-access-token" class="form-control" placeholder="EAAG..." rows="3" style="font-family: monospace; font-size: 12.5px; width: 100%; padding: 10px;"><%= company && company.instagramAccessToken ? escHtml(company.instagramAccessToken) : '' %></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Instagram Professional Account ID (Page ID)</label>
+                <input type="text" id="ig-page-id" class="form-control" placeholder="Masalan: 996334676538374" value="<%= company && company.instagramPageId ? escHtml(company.instagramPageId) : '' %>">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Verify Token (Siz o'ylab topadigan webhook kaliti)</label>
+                <input type="text" id="ig-verify-token" class="form-control" placeholder="desco-crm-verify-token" value="<%= company && company.instagramVerifyToken ? escHtml(company.instagramVerifyToken) : '' %>">
+              </div>
+            </div>
+            
+            <button class="btn btn-primary" id="ig-save-btn" onclick="saveInstagramSettings()" style="height: 38px; display: flex; align-items: center; gap: 8px;">
+              <i class="fas fa-save"></i> Sozlamalarni saqlash
             </button>
           </div>
         </div>
@@ -862,6 +908,46 @@ async function disconnectTelegram() {
     await checkTelegramStatus();
   } catch (e) {
     showToast("Uzatishda xatolik yuz berdi", "error");
+  }
+}
+
+async function saveInstagramSettings() {
+  const instagramAccessToken = document.getElementById('ig-access-token').value.trim();
+  const instagramPageId = document.getElementById('ig-page-id').value.trim();
+  const instagramVerifyToken = document.getElementById('ig-verify-token').value.trim();
+
+  const btn = document.getElementById('ig-save-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saqlanmoqda...';
+
+  try {
+    const r = await fetch('/api/settings/instagram', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ instagramAccessToken, instagramPageId, instagramVerifyToken })
+    });
+    if (!r.ok) throw new Error();
+    showToast('Instagram sozlamalari saqlandi!', 'success');
+    
+    // Update UI status
+    const statusIcon = document.getElementById('ig-status-icon');
+    const statusText = document.getElementById('ig-status-text');
+    const statusDesc = document.getElementById('ig-status-desc');
+    
+    if (instagramAccessToken) {
+      statusIcon.style.background = 'var(--success)';
+      statusText.textContent = 'Instagram faol';
+      statusDesc.textContent = 'Messenger API orqali xabarlar sinxronlanmoqda.';
+    } else {
+      statusIcon.style.background = 'var(--danger)';
+      statusText.textContent = 'Instagram ulanmagan';
+      statusDesc.textContent = 'Sozlamalarni kiritib, integratsiyani faollashtiring.';
+    }
+  } catch(e) {
+    showToast('Saqlashda xatolik yuz berdi', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-save"></i> Sozlamalarni saqlash';
   }
 }
 

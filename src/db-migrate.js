@@ -104,6 +104,15 @@ async function runMigrations(prisma) {
   try {
     await prisma.$executeRawUnsafe(`ALTER TABLE "CompanySettings" ADD COLUMN "telegramApiHash" TEXT`);
   } catch (e) {}
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "CompanySettings" ADD COLUMN "instagramAccessToken" TEXT`);
+  } catch (e) {}
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "CompanySettings" ADD COLUMN "instagramPageId" TEXT`);
+  } catch (e) {}
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "CompanySettings" ADD COLUMN "instagramVerifyToken" TEXT`);
+  } catch (e) {}
 
   // 4. Admin user (agar mavjud bo'lmasa)
   try {

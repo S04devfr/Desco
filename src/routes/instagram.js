@@ -2,13 +2,14 @@ const express = require('express');
 const router = express.Router();
 const prisma = require('../config/database');
 
-const VERIFY_TOKEN = process.env.INSTAGRAM_VERIFY_TOKEN || 'desco-crm-verify-token';
-
 // Webhook Verification (Instagram needs this when subscribing)
-router.get('/webhook', (req, res) => {
+router.get('/webhook', async (req, res) => {
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
+
+  const settings = await prisma.companySettings.findFirst();
+  const VERIFY_TOKEN = settings?.instagramVerifyToken || process.env.INSTAGRAM_VERIFY_TOKEN || 'desco-crm-verify-token';
 
   if (mode && token) {
     if (mode === 'subscribe' && token === VERIFY_TOKEN) {
@@ -149,7 +150,8 @@ router.post('/messages', async (req, res) => {
     }
 
     const recipientId = client.instagramId;
-    const PAGE_ACCESS_TOKEN = process.env.META_PAGE_ACCESS_TOKEN;
+    const settings = await prisma.companySettings.findFirst();
+    const PAGE_ACCESS_TOKEN = settings?.instagramAccessToken || process.env.META_PAGE_ACCESS_TOKEN;
 
     // Save to DB first
     const messageId = `out_${Date.now()}_${Math.floor(Math.random() * 1000)}`;

@@ -171,5 +171,32 @@ router.delete('/users/:id', async (req, res, next) => {
   }
 })
 
+router.patch('/instagram', requireRole('admin'), async (req, res, next) => {
+  try {
+    const { instagramAccessToken, instagramPageId, instagramVerifyToken } = req.body
+    const existing = await prisma.companySettings.findFirst()
+
+    if (!existing) {
+      await prisma.companySettings.create({
+        data: {
+          instagramAccessToken: instagramAccessToken !== undefined ? instagramAccessToken : null,
+          instagramPageId: instagramPageId !== undefined ? instagramPageId : null,
+          instagramVerifyToken: instagramVerifyToken !== undefined ? instagramVerifyToken : null
+        }
+      })
+    } else {
+      const data = {}
+      if (instagramAccessToken !== undefined) data.instagramAccessToken = instagramAccessToken
+      if (instagramPageId !== undefined) data.instagramPageId = instagramPageId
+      if (instagramVerifyToken !== undefined) data.instagramVerifyToken = instagramVerifyToken
+      await prisma.companySettings.update({
+        where: { id: existing.id },
+        data
+      })
+    }
+    res.json({ success: true })
+  } catch (error) { next(error) }
+})
+
 module.exports = router
 module.exports.getCompanySettings = getCompanySettings
