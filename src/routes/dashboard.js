@@ -122,12 +122,26 @@ router.get('/kpis', async (req, res, next) => {
       
       netProfit = totalRevenue - totalCostPrice - totalExpenses;
       
-      const [clients, allDeals] = await Promise.all([
-        prisma.client.findMany({ select: { debt: true } }),
-        prisma.deal.findMany({ select: { amount: true, paidAmount: true } })
-      ]);
-      const manualDebt = clients.reduce((sum, c) => sum + (c.debt || 0), 0);
-      const dealDebt = allDeals.reduce((sum, d) => sum + Math.max((d.amount || 0) - (d.paidAmount || 0), 0), 0);
+      const clientsAgg = await prisma.client.aggregate({
+        _sum: { debt: true },
+        where: { debt: { gt: 0 } }
+      });
+      const manualDebt = clientsAgg._sum.debt || 0;
+
+      let dealDebt = 0;
+      try {
+        const isPostgres = process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith('postgres://') || process.env.DATABASE_URL.startsWith('postgresql://'));
+        if (isPostgres) {
+          const res = await prisma.$queryRaw`SELECT SUM(COALESCE(amount, 0) - COALESCE("paidAmount", 0)) as "sum" FROM "Deal" WHERE amount > "paidAmount"`;
+          dealDebt = Number(res[0]?.sum || 0);
+        } else {
+          const res = await prisma.$queryRaw`SELECT SUM(COALESCE(amount, 0) - COALESCE(paidAmount, 0)) as "sum" FROM "Deal" WHERE amount > paidAmount`;
+          dealDebt = Number(res[0]?.sum || 0);
+        }
+      } catch (e) {
+        const allDeals = await prisma.deal.findMany({ select: { amount: true, paidAmount: true } });
+        dealDebt = allDeals.reduce((sum, d) => sum + Math.max((d.amount || 0) - (d.paidAmount || 0), 0), 0);
+      }
       totalClientDebt = manualDebt + dealDebt;
     }
 

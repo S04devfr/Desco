@@ -52,6 +52,9 @@ model Client {
   instagramId       String? @unique
   instagramUsername String?
   messages          InstagramMessage[]
+
+  @@index([ownerId])
+  @@index([createdAt])
 }
 
 // ── VORONKA (PIPELINE) ──
@@ -117,6 +120,9 @@ model Deal {
 
   @@index([stageId])
   @@index([managerId])
+  @@index([clientId])
+  @@index([pipelineId])
+  @@index([createdAt])
 }
 
 // ── YETKAZIB BERISH KUZATUVI ──
@@ -190,6 +196,10 @@ model Task {
 
   clientId Int?
   client   Client? @relation(fields: [clientId], references: [id])
+
+  @@index([assignedToId])
+  @@index([completed])
+  @@index([createdAt])
 }
 
 model CompanySettings {
@@ -240,6 +250,9 @@ model Installment {
   notes       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([dealId])
+  @@index([dueDate])
 }
 
 model ProductCatalog {

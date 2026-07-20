@@ -48,7 +48,38 @@ router.get('/', async (req, res, next) => {
       ]
     }
 
-    let deals = await prisma.deal.findMany({
+    if (q) {
+      const searchLower = q.toLowerCase().trim();
+      const cleanId = searchLower.startsWith('#') ? searchLower.substring(1) : searchLower;
+      const idNum = Number(cleanId);
+      const isPostgres = process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith('postgres://') || process.env.DATABASE_URL.startsWith('postgresql://'));
+      const mode = isPostgres ? 'insensitive' : undefined;
+
+      const searchConditions = [
+        { productName: { contains: searchLower, mode } },
+        { client: { name: { contains: searchLower, mode } } },
+        { client: { phone: { contains: searchLower, mode } } },
+        { client: { city: { contains: searchLower, mode } } },
+        { manager: { fullName: { contains: searchLower, mode } } },
+        { manager: { email: { contains: searchLower, mode } } }
+      ];
+
+      if (!isNaN(idNum)) {
+        searchConditions.push({ id: idNum });
+      }
+
+      if (where.OR) {
+        where.AND = [
+          { OR: where.OR },
+          { OR: searchConditions }
+        ];
+        delete where.OR;
+      } else {
+        where.OR = searchConditions;
+      }
+    }
+
+    const deals = await prisma.deal.findMany({
       where,
       include: {
         client: { select: { id: true, name: true, company: true, phone: true, city: true } },
@@ -57,36 +88,9 @@ router.get('/', async (req, res, next) => {
         installments: { select: { id: true } }
       },
       orderBy: { createdAt: 'desc' }
-    })
+    });
 
-    if (q) {
-      const searchLower = q.toLowerCase().trim();
-      const cleanId = searchLower.startsWith('#') ? searchLower.substring(1) : searchLower;
-      
-      deals = deals.filter(d => {
-        // 1. Match deal ID
-        if (String(d.id) === cleanId) return true;
-        
-        // 2. Match product name
-        if (d.productName?.toLowerCase().includes(searchLower)) return true;
-        
-        // 3. Match client name / phone / city
-        if (d.client) {
-          if (d.client.name?.toLowerCase().includes(searchLower)) return true;
-          if (d.client.phone?.toLowerCase().includes(searchLower)) return true;
-          if (d.client.city?.toLowerCase().includes(searchLower)) return true;
-        }
-        
-        // 4. Match manager name
-        if (d.manager) {
-          if (d.manager.fullName?.toLowerCase().includes(searchLower)) return true;
-          if (d.manager.email?.toLowerCase().includes(searchLower)) return true;
-        }
-        
-        return false;
-      });
-    }
-    res.json(deals)
+    res.json(deals);
   } catch (error) { next(error) }
 })
 
