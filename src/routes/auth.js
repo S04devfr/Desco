@@ -132,50 +132,34 @@ router.post('/login', rateLimiter(20, 60000), async (req, res, next) => {
     }
 
     const emailTrimmed = email.trim();
-    let targetEmail = emailTrimmed;
-    let isBypass = false;
+    const targetEmail = emailTrimmed;
 
-    if (emailTrimmed === 'softdev') {
-      targetEmail = 'shokirovsharifjon04@gmail.com';
-      if (process.env.NODE_ENV !== 'production') {
-        isBypass = true;
-      }
+    // Brute force tekshiruvi
+    const bruteCheck = checkBruteForce(emailTrimmed);
+    if (bruteCheck.blocked) {
+      logAudit('LOGIN_BLOCKED', `Brute force: ${emailTrimmed}, qolgan: ${bruteCheck.remainSec}s`, null, emailTrimmed, req.ip);
+      return res.status(429).json({
+        message: `Juda ko'p noto'g'ri urinish. ${Math.ceil(bruteCheck.remainSec / 60)} daqiqadan keyin qayta urinib ko'ring.`,
+        retryAfter: bruteCheck.remainSec
+      });
     }
 
-    // Brute force tekshiruvi (softdev bypass bo'lsa chetlab o'tiladi)
-    if (!isBypass) {
-      const bruteCheck = checkBruteForce(emailTrimmed);
-      if (bruteCheck.blocked) {
-        logAudit('LOGIN_BLOCKED', `Brute force: ${emailTrimmed}, qolgan: ${bruteCheck.remainSec}s`, null, emailTrimmed, req.ip);
-        return res.status(429).json({
-          message: `Juda ko'p noto'g'ri urinish. ${Math.ceil(bruteCheck.remainSec / 60)} daqiqadan keyin qayta urinib ko'ring.`,
-          retryAfter: bruteCheck.remainSec
-        });
-      }
-    }
-
-    let user = await prisma.user.findUnique({ where: { email: targetEmail } })
-    if (!user && emailTrimmed === 'softdev') {
-      user = await prisma.user.findFirst({ where: { role: 'admin' } })
-    }
+    const user = await prisma.user.findUnique({ where: { email: targetEmail } })
 
     if (!user) {
-      if (!isBypass) recordFailedLogin(emailTrimmed);
+      recordFailedLogin(emailTrimmed);
       logAudit('LOGIN_FAILED', `Email topilmadi: ${emailTrimmed}`, null, emailTrimmed, req.ip);
       return res.status(401).json({ message: 'Email noto\'g\'ri' })
     }
 
-    // Verify password if not bypassing in dev/test environment
-    if (!isBypass) {
-      if (!password) {
-        return res.status(400).json({ message: 'Parol majburiy' })
-      }
-      const isMatch = await bcrypt.compare(password, user.password)
-      if (!isMatch) {
-        recordFailedLogin(emailTrimmed)
-        logAudit('LOGIN_FAILED', `Noto'g'ri parol: ${emailTrimmed}`, user.id, emailTrimmed, req.ip)
-        return res.status(401).json({ message: 'Parol noto\'g\'ri' })
-      }
+    if (!password) {
+      return res.status(400).json({ message: 'Parol majburiy' })
+    }
+    const isMatch = await bcrypt.compare(password, user.password)
+    if (!isMatch) {
+      recordFailedLogin(emailTrimmed)
+      logAudit('LOGIN_FAILED', `Noto'g'ri parol: ${emailTrimmed}`, user.id, emailTrimmed, req.ip)
+      return res.status(401).json({ message: 'Parol noto\'g\'ri' })
     }
 
     if (!user.isActive) {
@@ -184,7 +168,7 @@ router.post('/login', rateLimiter(20, 60000), async (req, res, next) => {
     }
 
     // Muvaffaqiyatli login — brute force hisoblagichni tozalash
-    if (!isBypass) clearLoginAttempts(emailTrimmed);
+    clearLoginAttempts(emailTrimmed);
 
     const payload = buildUserPayload(user)
 

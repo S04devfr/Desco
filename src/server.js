@@ -2,6 +2,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const helmet = require('helmet');
 const cors = require('cors');
+const compression = require('compression');
 const path = require('path');
 const session = require('express-session');
 const http = require('http');
@@ -10,6 +11,8 @@ const { WebSocketServer } = require('ws');
 dotenv.config();
 
 const app = express();
+
+app.use(compression());
 
 // ── SECURITY HEADERS (Helmet) ──
 app.use(helmet({
@@ -42,7 +45,8 @@ if (process.env.NODE_ENV === 'production') {
   app.set('trust proxy', 1);
 }
 
-app.use(session({
+// ── SESSION STORE CONFIGURATION ──
+let sessionConfig = {
   secret: process.env.SESSION_SECRET || 'dev-secret',
   resave: false,
   saveUninitialized: false,
@@ -50,9 +54,37 @@ app.use(session({
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     sameSite: 'lax',
-    maxAge: 1000 * 60 * 60 * 24
+    maxAge: 1000 * 60 * 60 * 24 * 30 // 30 kun
   }
-}));
+};
+
+const isPostgres = process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith('postgres://') || process.env.DATABASE_URL.startsWith('postgresql://'));
+
+if (isPostgres) {
+  try {
+    const pgSession = require('connect-pg-simple')(session);
+    const { Pool } = require('pg');
+    const sessionPool = new Pool({
+      connectionString: process.env.DIRECT_URL || process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
+    });
+    sessionPool.on('error', (err) => {
+      console.error('[Session Pool] Kutilmagan xato:', err.message);
+    });
+    sessionConfig.store = new pgSession({
+      pool: sessionPool,
+      tableName: 'session',
+      createTableIfMissing: true
+    });
+    console.log('✅ PostgreSQL session store active');
+  } catch (e) {
+    console.error('⚠️ PostgreSQL session store error, falling back to MemoryStore:', e.message);
+  }
+} else {
+  console.log('ℹ️ Local SQLite active, using MemoryStore for sessions');
+}
+
+app.use(session(sessionConfig));
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '../views'));

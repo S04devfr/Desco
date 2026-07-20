@@ -63,7 +63,7 @@ function verifyWebhookToken(req, res, next) {
   }
 }
 
-// Xavfsizlik Middleware: Tokenni tekshirish (Vaqtincha ochiq/ogohlantiruvchi rejim)
+// Xavfsizlik Middleware: Tokenni tekshirish (Make/Zapier webhook uchun)
 const verifyMakeToken = (req, res, next) => {
   const headerToken = req.header('X-CRM-Webhook-Token') || req.header('X-Yuboraman-Token');
   const queryToken = req.query.token;
@@ -72,19 +72,14 @@ const verifyMakeToken = (req, res, next) => {
   const token = headerToken || queryToken || paramToken;
   const secret = process.env.WEBHOOK_SECRET_TOKEN || 'desco-crm-secret-2026';
 
-  if (!token) {
-    console.warn(`[Webhook Secure Warning] Token yuborilmadi. Ammo integratsiya muammosiz ishlashi uchun so'rov qabul qilindi.`);
-    return next();
-  }
-
-  if (token !== secret) {
-    console.warn(`[Webhook Secure Warning] Noto'g'ri token yuborildi: "${token}". Ammo so'rov qabul qilindi.`);
-    return next();
+  if (!token || token !== secret) {
+    console.warn(`[Webhook Secure] Noto'g'ri yoki yo'q token bilan so'rov rad etildi. IP: ${req.ip}`);
+    return res.status(401).json({ error: 'Unauthorized', message: 'Noto\'g\'ri yoki yo\'q webhook token.' });
   }
   next();
 };
 
-// Xavfsizlik Middleware: Tokenni tekshirish (Yuboraman webhook uchun - Vaqtincha ochiq)
+// Xavfsizlik Middleware: Tokenni tekshirish (Yuboraman webhook uchun)
 const verifyYuboramanToken = (req, res, next) => {
   const headerToken = req.header('X-Yuboraman-Token') || req.header('X-CRM-Webhook-Token');
   const queryToken = req.query.token;
@@ -93,14 +88,9 @@ const verifyYuboramanToken = (req, res, next) => {
   const token = headerToken || queryToken || paramToken;
   const secret = process.env.YUBORAMAN_SECRET_TOKEN || 'yuboraman-secret-2026';
 
-  if (!token) {
-    console.warn(`[Yuboraman Webhook Warning] Token yuborilmadi. Ammo integratsiya muammosiz ishlashi uchun so'rov qabul qilindi.`);
-    return next();
-  }
-
-  if (token !== secret) {
-    console.warn(`[Yuboraman Webhook Warning] Noto'g'ri token yuborildi: "${token}". Ammo so'rov qabul qilindi.`);
-    return next();
+  if (!token || token !== secret) {
+    console.warn(`[Webhook Secure] Noto'g'ri yoki yo'q token bilan so'rov rad etildi. IP: ${req.ip}`);
+    return res.status(401).json({ error: 'Unauthorized', message: 'Noto\'g\'ri yoki yo\'q webhook token.' });
   }
   next();
 };
