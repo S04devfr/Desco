@@ -195,7 +195,10 @@ router.patch('/instagram', requireRole('admin'), async (req, res, next) => {
       })
     }
     res.json({ success: true })
-  } catch (error) { next(error) }
+  } catch (error) {
+    console.error('[Settings PATCH Error]:', error);
+    res.status(500).json({ error: error.message || 'Saqlashda ichki xatolik yuz berdi' });
+  }
 })
 
 module.exports = router

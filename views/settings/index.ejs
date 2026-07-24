@@ -940,7 +940,10 @@ async function saveInstagramSettings() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ instagramAccessToken, instagramPageId, instagramVerifyToken })
     });
-    if (!r.ok) throw new Error();
+    if (!r.ok) {
+      const errData = await r.json().catch(() => ({}));
+      throw new Error(errData.error || 'Saqlashda xatolik yuz berdi');
+    }
     showToast('Instagram sozlamalari saqlandi!', 'success');
     
     // Update UI status
@@ -958,7 +961,7 @@ async function saveInstagramSettings() {
       statusDesc.textContent = 'Sozlamalarni kiritib, integratsiyani faollashtiring.';
     }
   } catch(e) {
-    showToast('Saqlashda xatolik yuz berdi', 'error');
+    showToast(e.message, 'error');
   } finally {
     btn.disabled = false;
     btn.innerHTML = '<i class="fas fa-save"></i> Sozlamalarni saqlash';
