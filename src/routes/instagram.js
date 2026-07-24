@@ -34,14 +34,30 @@ router.post('/webhook', async (req, res) => {
           const senderId = webhookEvent.sender.id;
           const recipientId = webhookEvent.recipient.id;
 
-          if (webhookEvent.message && webhookEvent.message.text) {
-            const text = webhookEvent.message.text;
+          if (webhookEvent.message && (webhookEvent.message.text || webhookEvent.message.attachments)) {
             const messageId = webhookEvent.message.mid;
-            
+            const text = webhookEvent.message.text || '';
+            const isEcho = webhookEvent.message.is_echo || false;
+
+            // Determine if the message is outgoing (sent by our page) or incoming (sent by the client)
+            const isOutgoing = isEcho;
+            const clientIgId = isOutgoing ? recipientId : senderId;
+
+            // Handle attachments (images, voice notes/audio, etc.)
+            let attachmentType = null;
+            let attachmentUrl = null;
+            if (webhookEvent.message.attachments && webhookEvent.message.attachments.length > 0) {
+              const attachment = webhookEvent.message.attachments[0];
+              attachmentType = attachment.type; // image, audio, video, file
+              if (attachment.payload && attachment.payload.url) {
+                attachmentUrl = attachment.payload.url;
+              }
+            }
+
             try {
               // Try to find if client exists
               let client = await prisma.client.findUnique({
-                where: { instagramId: senderId }
+                where: { instagramId: clientIgId }
               });
 
               // If client exists but doesn't have instagramUsername, fetch and update it
@@ -50,7 +66,7 @@ router.post('/webhook', async (req, res) => {
                 const PAGE_ACCESS_TOKEN = settings?.instagramAccessToken || process.env.META_PAGE_ACCESS_TOKEN;
                 if (PAGE_ACCESS_TOKEN) {
                   try {
-                    const profileRes = await fetch(`https://graph.facebook.com/v19.0/${senderId}?fields=username,name&access_token=${PAGE_ACCESS_TOKEN}`);
+                    const profileRes = await fetch(`https://graph.facebook.com/v19.0/${clientIgId}?fields=username,name&access_token=${PAGE_ACCESS_TOKEN}`);
                     const profileData = await profileRes.json();
                     if (profileData && profileData.username) {
                       client = await prisma.client.update({
@@ -73,11 +89,11 @@ router.post('/webhook', async (req, res) => {
                 const PAGE_ACCESS_TOKEN = settings?.instagramAccessToken || process.env.META_PAGE_ACCESS_TOKEN;
 
                 let username = null;
-                let clientName = `Instagram Lead (${senderId})`;
+                let clientName = `Instagram Lead (${clientIgId})`;
 
                 if (PAGE_ACCESS_TOKEN) {
                   try {
-                    const profileRes = await fetch(`https://graph.facebook.com/v19.0/${senderId}?fields=username,name&access_token=${PAGE_ACCESS_TOKEN}`);
+                    const profileRes = await fetch(`https://graph.facebook.com/v19.0/${clientIgId}?fields=username,name&access_token=${PAGE_ACCESS_TOKEN}`);
                     const profileData = await profileRes.json();
                     if (profileData && profileData.username) {
                       username = profileData.username;
@@ -88,12 +104,13 @@ router.post('/webhook', async (req, res) => {
                   }
                 }
 
+                const previewText = text ? text.substring(0, 50) : `[${attachmentType || 'Fayl'}]`;
                 client = await prisma.client.create({
                   data: {
                     name: clientName,
-                    instagramId: senderId,
+                    instagramId: clientIgId,
                     instagramUsername: username,
-                    notes: `Instagram orqali yangi murojaat. Xabar: "${text.substring(0, 50)}..."`
+                    notes: `Instagram orqali yangi murojaat. Xabar: "${previewText}..."`
                   }
                 });
 
@@ -106,32 +123,51 @@ router.post('/webhook', async (req, res) => {
                 if (pipeline && pipeline.stages.length > 0) {
                   await prisma.deal.create({
                     data: {
-                      productName: `Instagram Lead - ${senderId}`,
+                      productName: `Instagram Lead - ${clientIgId}`,
                       clientId: client.id,
                       pipelineId: pipeline.id,
                       stageId: pipeline.stages[0].id,
                       status: 'new',
                       amount: 0,
-                      notes: `Avtomatik yaratildi. Instagram xabari: "${text}"`
+                      notes: `Avtomatik yaratildi. Instagram xabari: "${text || `[${attachmentType || 'Fayl'}]`}"`
                     }
                   });
                 }
               }
 
               // Save the message
-              await prisma.instagramMessage.upsert({
+              const savedMsg = await prisma.instagramMessage.upsert({
                 where: { messageId },
-                update: {},
+                update: {
+                  text,
+                  attachmentType,
+                  attachmentUrl
+                },
                 create: {
                   messageId,
                   text,
                   senderId,
                   recipientId,
                   timestamp: new Date(webhookEvent.timestamp),
-                  isOutgoing: false,
-                  clientId: client.id
+                  isOutgoing,
+                  clientId: client.id,
+                  attachmentType,
+                  attachmentUrl
                 }
               });
+
+              // Real-time WebSocket broadcast
+              const broadcast = req.app.get('broadcast');
+              if (broadcast) {
+                broadcast({
+                  type: 'instagram_message',
+                  clientId: client.id,
+                  message: {
+                    ...savedMsg,
+                    timestamp: savedMsg.timestamp.toISOString()
+                  }
+                });
+              }
 
             } catch (err) {
               console.error('Error saving instagram message:', err);
@@ -234,6 +270,19 @@ router.post('/messages', async (req, res) => {
     } else {
       await prisma.instagramMessage.delete({ where: { id: savedMsg.id } });
       return res.status(400).json({ error: 'Instagram Access Token topilmadi. Sozlamalarni tekshiring.' });
+    }
+
+    // Broadcast the message via WebSocket
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) {
+      broadcast({
+        type: 'instagram_message',
+        clientId: client.id,
+        message: {
+          ...savedMsg,
+          timestamp: savedMsg.timestamp.toISOString()
+        }
+      });
     }
 
     res.json(savedMsg);

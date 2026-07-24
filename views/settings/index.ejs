@@ -392,6 +392,20 @@ const swatchHtml = colorSwatches.map(c =>
             Mijozlaringiz bilan Instagram Direct orqali to'g'ridan-to'g'ri CRM tizimida suhbatlashish uchun Meta API sozlamalarini ulang.
           </p>
 
+          <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom: 20px; background: rgba(225, 48, 108, 0.08); border: 1px solid rgba(225, 48, 108, 0.2); padding: 16px; border-radius: 12px;">
+            <i class="fab fa-instagram" style="color: #E1306C; font-size: 24px; margin-top: 2px;"></i>
+            <div>
+              <h4 style="margin-bottom: 4px; color: var(--text-primary);">Instagram Direct integratsiya sozlamalari</h4>
+              <p style="font-size: 13px; color: var(--text-secondary); margin: 0; line-height: 1.5;">
+                Meta For Developers panelida Webhook callback manzilini va Verify Token'ni quyidagicha sozlang:
+              </p>
+              <div style="margin-top: 10px;">
+                <span style="font-size: 12px; color: var(--text-secondary); font-weight: 600;">Callback URL:</span>
+                <code style="background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 12px; word-break: break-all;">https://&lt;DOMEN_NOMI&gt;/api/instagram/webhook</code>
+              </div>
+            </div>
+          </div>
+
           <div id="ig-status-card" style="margin-bottom: 20px; padding: 16px; border-radius: 12px; border: 1px solid var(--border); display: flex; align-items: center; gap: 12px; background: var(--bg-tertiary);">
             <div id="ig-status-icon" style="width: 12px; height: 12px; border-radius: 50%; background: <%= company && company.instagramAccessToken ? 'var(--success)' : 'var(--danger)' %>; transition: background-color 0.3s;"></div>
             <div>

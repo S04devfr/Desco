@@ -3,9 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -239,6 +238,9 @@ model InstagramMessage {
 
   clientId  Int?
   client    Client?  @relation(fields: [clientId], references: [id])
+
+  attachmentType String?
+  attachmentUrl  String?
 }
 
 model Installment {

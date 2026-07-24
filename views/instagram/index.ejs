@@ -6,27 +6,31 @@
 <div class="page-header">
   <div>
     <h1>Instagram Integratsiyasi</h1>
-    <p>Instagram Direct xabarlarini boshqarish va ulanish</p>
+    <p>Instagram Direct xabarlarini boshqarish, tahlil qilish va CRM sdelkalari bilan bog'lash</p>
   </div>
 </div>
 
 <style>
 .chat-container {
   display: flex;
-  height: calc(100vh - 120px);
-  background: var(--bg-secondary);
+  height: calc(100vh - 160px);
+  background: var(--surface-card);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--r-md);
   overflow: hidden;
   margin-top: 20px;
+  box-shadow: var(--shadow-sm);
 }
+
 .chat-sidebar {
   width: 300px;
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  background: var(--bg-primary);
+  background: var(--surface-card);
+  flex-shrink: 0;
 }
+
 .chat-sidebar-header {
   padding: 15px;
   border-bottom: 1px solid var(--border);
@@ -34,71 +38,99 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  color: var(--text-900);
 }
+
 .chat-client-list {
   flex: 1;
   overflow-y: auto;
 }
+
 .chat-client-item {
-  padding: 15px;
-  border-bottom: 1px solid var(--border-light);
+  padding: 12px 15px;
+  border-bottom: 1px solid var(--border);
   cursor: pointer;
-  transition: 0.2s;
+  transition: background var(--dur-fast) var(--ease);
   display: flex;
   gap: 12px;
   align-items: center;
+  position: relative;
 }
+
 .chat-client-item:hover {
-  background: var(--bg-secondary);
+  background: var(--sidebar-hover);
 }
+
 .chat-client-item.active {
-  background: var(--bg-tertiary);
-  border-left: 3px solid var(--accent);
+  background: var(--brand-soft);
 }
+
+.chat-client-item.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3.5px;
+  background: var(--brand);
+}
+
 .chat-avatar {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  background: var(--bg-tertiary);
+  background: var(--surface-input);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-  color: var(--text-secondary);
+  font-size: 16px;
+  color: var(--text-500);
+  flex-shrink: 0;
 }
+
 .chat-client-info {
   flex: 1;
   min-width: 0;
 }
+
 .chat-client-name {
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13.5px;
+  color: var(--text-900);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
+
 .chat-client-msg {
-  font-size: 12px;
-  color: var(--text-tertiary);
+  font-size: 11.5px;
+  color: var(--text-500);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-top: 2px;
+  margin-top: 3px;
 }
+
 .chat-main {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
+  background: var(--surface-base);
 }
+
 .chat-header {
-  padding: 15px 20px;
+  padding: 12px 20px;
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: var(--bg-primary);
+  justify-content: space-between;
+  background: var(--surface-card);
 }
+
 .chat-messages {
   flex: 1;
   overflow-y: auto;
@@ -107,97 +139,342 @@
   flex-direction: column;
   gap: 12px;
 }
+
 .msg-bubble {
   max-width: 70%;
-  padding: 10px 15px;
-  border-radius: 15px;
-  font-size: 14px;
-  line-height: 1.4;
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 13.5px;
+  line-height: 1.45;
   word-wrap: break-word;
+  box-shadow: var(--shadow-xs);
 }
+
 .msg-in {
   align-self: flex-start;
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
+  background: var(--surface-card);
+  color: var(--text-900);
+  border-bottom-left-radius: 4px;
+  border: 1px solid var(--border);
 }
+
 .msg-out {
   align-self: flex-end;
-  background: var(--accent);
+  background: var(--brand);
   color: white;
+  border-bottom-right-radius: 4px;
 }
+
 .msg-time {
-  font-size: 10px;
+  font-size: 9.5px;
   margin-top: 5px;
   opacity: 0.7;
   text-align: right;
 }
+
+.msg-out .msg-time {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.msg-attachment-container {
+  margin-bottom: 4px;
+}
+
+.msg-img-attachment {
+  max-width: 240px;
+  max-height: 200px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  display: block;
+}
+
+.msg-img-attachment:hover {
+  transform: scale(1.02);
+}
+
+.msg-audio-attachment {
+  max-width: 220px;
+  outline: none;
+  display: block;
+}
+
+.chat-date-divider {
+  display: flex;
+  justify-content: center;
+  margin: 15px 0;
+  position: relative;
+}
+
+.chat-date-divider::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--border);
+  z-index: 1;
+}
+
+.chat-date-divider span {
+  background: var(--surface-base);
+  padding: 4px 12px;
+  font-size: 11px;
+  color: var(--text-300);
+  border-radius: 20px;
+  position: relative;
+  z-index: 2;
+  border: 1px solid var(--border);
+  font-weight: 500;
+}
+
 .chat-input-area {
   padding: 15px 20px;
   border-top: 1px solid var(--border);
   display: flex;
   gap: 10px;
-  background: var(--bg-primary);
+  background: var(--surface-card);
 }
+
 .chat-input {
   flex: 1;
-  padding: 10px 15px;
+  padding: 10px 16px;
   border: 1px solid var(--border);
-  border-radius: 25px;
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  font-size: 14px;
+  border-radius: 24px;
+  background: var(--surface-base);
+  color: var(--text-900);
+  font-size: 13.5px;
   outline: none;
+  transition: border var(--dur-fast) var(--ease);
 }
+
 .chat-input:focus {
-  border-color: var(--accent);
+  border-color: var(--brand);
 }
+
 .chat-send-btn {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   border: none;
-  background: var(--accent);
+  background: var(--brand);
   color: white;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 14px;
+  transition: background var(--dur-fast) var(--ease);
 }
+
+.chat-send-btn:hover {
+  background: var(--brand-hover);
+}
+
+.chat-details {
+  width: 280px;
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-card);
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.chat-details-header {
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-900);
+  background: var(--surface-card);
+}
+
+.chat-details-body {
+  padding: 20px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--text-300);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.detail-value {
+  font-size: 13px;
+  color: var(--text-700);
+  word-break: break-word;
+}
+
+.detail-card {
+  background: var(--surface-base);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detail-deal-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.detail-deal-item:last-child {
+  border-bottom: none;
+}
+
 .empty-chat {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: var(--text-tertiary);
-  font-size: 16px;
+  color: var(--text-300);
+  font-size: 14px;
+  text-align: center;
+  padding: 40px;
+}
+
+.unread-badge {
+  background: var(--danger);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 16px;
+  text-align: center;
+  margin-left: auto;
+}
+
+@media (max-width: 992px) {
+  .chat-details {
+    display: none;
+  }
 }
 
 @media (max-width: 768px) {
-  .chat-sidebar { width: 100%; }
-  .chat-container { flex-direction: column; }
-  .msg-bubble { max-width: 85%; }
+  .chat-sidebar {
+    width: 100%;
+  }
+  .chat-container.active-chat .chat-sidebar {
+    display: none;
+  }
+  .chat-container.active-chat .chat-main {
+    display: flex;
+  }
+  .chat-main {
+    display: none;
+  }
+  .msg-bubble {
+    max-width: 85%;
+  }
 }
 </style>
 
-<div class="chat-container">
+<div class="chat-container" id="chatContainer">
+  <!-- 1. LEFT SIDEBAR -->
   <div class="chat-sidebar">
     <div class="chat-sidebar-header">
       Suhbatlar
-      <button class="btn btn-sm btn-icon" onclick="loadClients()" title="Yangilash">
-        <i class="fas fa-sync-alt"></i>
+      <button class="btn btn-sm btn-icon" onclick="loadClients()" title="Yangilash" style="border: 1px solid var(--border); background: var(--surface-card); width: 28px; height: 28px; border-radius: 6px;">
+        <i class="fas fa-sync-alt" style="font-size: 12px; color: var(--text-500);"></i>
       </button>
     </div>
+
+    <!-- Client Search -->
+    <div style="padding: 10px 15px; border-bottom: 1px solid var(--border); background: var(--surface-card);">
+      <div style="position: relative;">
+        <input type="text" id="searchClientsInput" class="form-control" placeholder="Mijozlarni qidirish..." oninput="filterClients()" style="padding-left: 32px; border-radius: 20px; font-size: 12.5px; height: 34px;">
+        <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-300); font-size: 11px;"></i>
+      </div>
+    </div>
+
     <div class="chat-client-list" id="clientList">
-      <div style="padding: 20px; text-align: center; color: var(--text-tertiary);">Yuklanmoqda...</div>
+      <div style="padding: 20px; text-align: center; color: var(--text-300);">Yuklanmoqda...</div>
     </div>
   </div>
 
+  <!-- 2. MAIN CHAT AREA -->
   <div class="chat-main" id="chatMain">
     <div class="empty-chat">
-      <i class="fab fa-instagram" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i>
-      <p>Suhbatni boshlash uchun chap tomondan mijozni tanlang</p>
+      <i class="fab fa-instagram" style="font-size: 48px; margin-bottom: 16px; color: var(--text-300); opacity: 0.8;"></i>
+      <h3 style="margin-bottom: 6px; font-size: 16px; font-weight: 600; color: var(--text-900);">Instagram Chat</h3>
+      <p style="font-size: 13px; max-width: 250px; margin: 0 auto; color: var(--text-500); line-height: 1.4;">Muloqotni boshlash uchun chap tarafdagi ro'yxatdan mijozni tanlang</p>
+    </div>
+  </div>
+
+  <!-- 3. DETAILS SIDEBAR -->
+  <div class="chat-details" id="chatDetails">
+    <div style="padding: 20px; text-align: center; color: var(--text-300); font-size: 13px; margin: auto;">
+      <i class="fas fa-info-circle" style="font-size: 24px; margin-bottom: 10px; opacity: 0.5;"></i>
+      <div>Suhbatdosh tafsilotlarini ko'rish uchun mijozni tanlang</div>
+    </div>
+  </div>
+</div>
+
+<!-- IMAGE LIGHTBOX MODAL -->
+<div id="imageModal" class="modal-overlay hidden" onclick="closeImageModal()" style="z-index: 9999; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.75);">
+  <div style="position: relative; max-width: 90%; max-height: 90%;" onclick="event.stopPropagation()">
+    <img id="modalImg" src="" style="max-width: 100%; max-height: 85vh; border-radius: var(--r-sm); box-shadow: var(--shadow-xl); display: block;">
+    <button onclick="closeImageModal()" style="position: absolute; top: -35px; right: 0; background: none; border: none; color: white; font-size: 28px; cursor: pointer; line-height: 1;">&times;</button>
+  </div>
+</div>
+
+<!-- CREATE DEAL MODAL -->
+<div class="modal-overlay hidden" id="dealModal" style="z-index: 1000;">
+  <div class="modal-box" style="max-width: 440px;">
+    <div class="modal-header">
+      <h2>Yangi Sdelka Yaratish</h2>
+      <button class="modal-close" onclick="closeDealModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="dealClientId">
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label class="form-label">Mijoz</label>
+        <input type="text" id="dealClientName" class="form-control" readonly style="background: var(--surface-input); font-weight: 500;">
+      </div>
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label class="form-label">Mahsulot Nomi *</label>
+        <input type="text" id="dealProductName" class="form-control" placeholder="Masalan: Maxsus Mahsulot x2" required>
+      </div>
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label class="form-label">Summa (UZS)</label>
+        <input type="number" id="dealAmount" class="form-control" placeholder="0" value="0">
+      </div>
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label class="form-label">Voronka *</label>
+        <select id="dealPipelineId" class="form-control" onchange="onPipelineChange()" required></select>
+      </div>
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label class="form-label">Bosqich *</label>
+        <select id="dealStageId" class="form-control" required></select>
+      </div>
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label class="form-label">Izoh</label>
+        <textarea id="dealNotes" class="form-control" rows="2" placeholder="Sdelka haqida batafsil ma'lumot..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 15px;">
+      <button class="btn btn-secondary" onclick="closeDealModal()">Bekor qilish</button>
+      <button class="btn btn-primary" onclick="submitCreateDeal()">Yaratish</button>
     </div>
   </div>
 </div>
@@ -205,10 +482,95 @@
 <script>
 let currentClientId = null;
 let currentClientName = '';
+let allPipelines = [];
+let unreadMessageCounts = {}; // Track client unread counts locally if needed
 
-document.addEventListener('DOMContentLoaded', () => {
-  loadClients();
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadClients();
+  await fetchPipelines();
+  initWebSocket();
 });
+
+// Setup WebSocket connection
+function initWebSocket() {
+  const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const ws = new WebSocket(wsProtocol + '//' + window.location.host);
+
+  ws.onopen = () => {
+    console.log('[Instagram Chat WS] Bog\'lanish muvaffaqiyatli');
+  };
+
+  ws.onmessage = function(event) {
+    try {
+      const data = JSON.parse(event.data);
+      if (data.type === 'instagram_message') {
+        handleIncomingWebSocketMessage(data);
+      }
+    } catch (e) {
+      console.error('[WS Message Error]', e);
+    }
+  };
+
+  ws.onerror = (err) => {
+    console.error('[WS Connection Error]', err);
+  };
+
+  ws.onclose = () => {
+    console.log('[Instagram Chat WS] Aloqa uzildi. 5 soniyadan keyin qayta bog\'lanamiz...');
+    setTimeout(initWebSocket, 5000);
+  };
+}
+
+function handleIncomingWebSocketMessage(data) {
+  const { clientId, message } = data;
+
+  // Sound play for client sent message
+  if (!message.isOutgoing) {
+    playNotificationSound();
+    
+    // Update local unread tracking if not current active client
+    if (clientId !== currentClientId) {
+      unreadMessageCounts[clientId] = (unreadMessageCounts[clientId] || 0) + 1;
+    }
+  }
+
+  // Refresh client list to move updated client to top
+  loadClients();
+
+  // If we are looking at the client that received/sent the message, update the messages list
+  if (currentClientId === clientId) {
+    loadMessages(clientId);
+  }
+}
+
+function playNotificationSound() {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5 note
+    gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + 0.12);
+  } catch (e) {
+    console.warn('Could not play beep sound:', e);
+  }
+}
+
+async function fetchPipelines() {
+  try {
+    const res = await fetch('/api/pipelines');
+    allPipelines = await res.json();
+  } catch (err) {
+    console.error('Error fetching pipelines:', err);
+  }
+}
 
 async function loadClients() {
   try {
@@ -219,47 +581,96 @@ async function loadClients() {
     list.innerHTML = '';
     
     if (clients.length === 0) {
-      list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-tertiary);">Suhbatlar yo\'q</div>';
+      list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-300);">Suhbatlar yo\'q</div>';
       return;
     }
     
     clients.forEach(c => {
-      const lastMsg = c.messages && c.messages.length > 0 ? c.messages[0].text : 'Yangi mijoz';
+      let lastMsg = 'Yangi mijoz';
+      if (c.messages && c.messages.length > 0) {
+        const msg = c.messages[0];
+        lastMsg = msg.text ? msg.text : `[${msg.attachmentType === 'image' ? 'Rasm' : 'Ovozli xabar'}]`;
+      }
+      
       const div = document.createElement('div');
       div.className = `chat-client-item ${c.id === currentClientId ? 'active' : ''}`;
+      div.setAttribute('data-id', c.id);
       div.onclick = () => selectClient(c.id, c.name, c.instagramUsername);
       
-      const usernameSpan = c.instagramUsername ? ` <span style="font-size: 11px; font-weight: normal; color: var(--text-tertiary);">@${c.instagramUsername}</span>` : '';
+      const usernameSpan = c.instagramUsername ? ` <span style="font-size: 11px; font-weight: normal; color: var(--text-300);">@${c.instagramUsername}</span>` : '';
+      
+      const count = unreadMessageCounts[c.id] || 0;
+      const badge = count > 0 ? `<div class="unread-badge">${count}</div>` : '';
+
       div.innerHTML = `
         <div class="chat-avatar"><i class="fas fa-user"></i></div>
         <div class="chat-client-info">
           <div class="chat-client-name">${c.name}${usernameSpan}</div>
           <div class="chat-client-msg">${lastMsg}</div>
         </div>
+        ${badge}
       `;
       list.appendChild(div);
     });
+    
+    // Maintain filter search if query exists
+    filterClients();
   } catch (error) {
     console.error('Error loading clients:', error);
   }
+}
+
+function filterClients() {
+  const query = document.getElementById('searchClientsInput').value.toLowerCase().trim();
+  const items = document.querySelectorAll('.chat-client-item');
+  items.forEach(item => {
+    const name = item.querySelector('.chat-client-name').textContent.toLowerCase();
+    if (name.includes(query)) {
+      item.style.display = 'flex';
+    } else {
+      item.style.display = 'none';
+    }
+  });
 }
 
 async function selectClient(id, name, instagramUsername) {
   currentClientId = id;
   currentClientName = name;
   
+  // Clear unread counts for this client
+  if (unreadMessageCounts[id]) {
+    delete unreadMessageCounts[id];
+  }
+  
   document.querySelectorAll('.chat-client-item').forEach(el => el.classList.remove('active'));
-  event.currentTarget.classList.add('active');
+  const activeItem = document.querySelector(`.chat-client-item[data-id="${id}"]`);
+  if (activeItem) {
+    activeItem.classList.add('active');
+    // Remove badge if present
+    const badge = activeItem.querySelector('.unread-badge');
+    if (badge) badge.remove();
+  }
+
+  // Active chat state on container for mobile toggle
+  document.getElementById('chatContainer').classList.add('active-chat');
   
   const chatMain = document.getElementById('chatMain');
-  const usernameHeader = instagramUsername ? ` <span style="font-size: 13px; font-weight: normal; color: var(--text-tertiary); margin-left: 8px;">@${instagramUsername}</span>` : '';
+  
   chatMain.innerHTML = `
     <div class="chat-header">
-      <div class="chat-avatar"><i class="fas fa-user"></i></div>
-      <div style="font-weight: 600;">${name}${usernameHeader}</div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button class="btn btn-sm btn-icon chat-back-btn" onclick="goBack()" style="display: none; border: 1px solid var(--border); background: var(--surface-card); width: 28px; height: 28px; border-radius: 6px; align-items: center; justify-content: center; margin-right: 6px;">
+          <i class="fas fa-arrow-left" style="font-size: 12px; color: var(--text-500);"></i>
+        </button>
+        <div class="chat-avatar"><i class="fas fa-user"></i></div>
+        <div>
+          <div style="font-weight: 600; font-size: 14px; color: var(--text-900);">${name}</div>
+          <div style="font-size: 11px; color: var(--text-300); margin-top: 1px;">Instagram Direct</div>
+        </div>
+      </div>
     </div>
     <div class="chat-messages" id="chatMessages">
-      <div style="text-align: center; color: var(--text-tertiary);">Yuklanmoqda...</div>
+      <div style="text-align: center; color: var(--text-300); padding: 20px;">Yuklanmoqda...</div>
     </div>
     <div class="chat-input-area">
       <input type="text" id="msgInput" class="chat-input" placeholder="Xabar yozing..." onkeypress="if(event.key === 'Enter') sendMessage()">
@@ -269,7 +680,104 @@ async function selectClient(id, name, instagramUsername) {
     </div>
   `;
   
+  await loadClientDetails(id);
   loadMessages(id);
+}
+
+function goBack() {
+  document.getElementById('chatContainer').classList.remove('active-chat');
+  currentClientId = null;
+  currentClientName = '';
+}
+
+async function loadClientDetails(id) {
+  const detailsPanel = document.getElementById('chatDetails');
+  detailsPanel.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-300);">Yuklanmoqda...</div>';
+  
+  try {
+    const res = await fetch('/api/clients/' + id);
+    if (!res.ok) throw new Error('Client details fetch failed');
+    const client = await res.json();
+    
+    let dealsHtml = '';
+    if (client.deals && client.deals.length > 0) {
+      client.deals.forEach(deal => {
+        const amountStr = Number(deal.amount).toLocaleString('uz-UZ') + ' UZS';
+        let statusBadgeColor = 'var(--text-300)';
+        if (deal.status === 'won') statusBadgeColor = 'var(--success)';
+        else if (deal.status === 'lost') statusBadgeColor = 'var(--danger)';
+        else if (deal.status === 'new' || deal.status === 'active') statusBadgeColor = 'var(--info)';
+        
+        dealsHtml += `
+          <div class="detail-deal-item">
+            <div>
+              <div style="font-weight: 500; font-size: 12.5px; color: var(--text-900);">${deal.productName}</div>
+              <div style="font-size: 10px; color: ${statusBadgeColor}; font-weight: 700; text-transform: uppercase; margin-top: 2px;">${deal.status}</div>
+            </div>
+            <div style="font-weight: 600; font-size: 12px; color: var(--text-900);">${amountStr}</div>
+          </div>
+        `;
+      });
+    } else {
+      dealsHtml = '<div style="font-size: 11px; color: var(--text-300); text-align: center; padding: 6px 0;">Sdelkalar topilmadi</div>';
+    }
+    
+    detailsPanel.innerHTML = `
+      <div class="chat-details-header">
+        Mijoz Tafsilotlari
+      </div>
+      <div class="chat-details-body">
+        <div style="text-align: center; margin-bottom: 5px;">
+          <div class="chat-avatar" style="width: 56px; height: 56px; font-size: 22px; margin: 0 auto 10px auto; background: var(--brand-soft); color: var(--brand);"><i class="fas fa-user"></i></div>
+          <h4 style="margin: 0; font-size: 14.5px; font-weight: 600; color: var(--text-900);">${client.name}</h4>
+          ${client.instagramUsername ? `<span style="font-size: 11px; color: var(--text-300);">@${client.instagramUsername}</span>` : ''}
+        </div>
+        
+        <div class="detail-item">
+          <div class="detail-label">Telefon</div>
+          <div class="detail-value">${client.phone || '<span style="color: var(--text-300);">Kiritilmagan</span>'}</div>
+        </div>
+
+        <div class="detail-item">
+          <div class="detail-label">Email</div>
+          <div class="detail-value">${client.email || '<span style="color: var(--text-300);">Kiritilmagan</span>'}</div>
+        </div>
+
+        <div class="detail-item">
+          <div class="detail-label">Shahar</div>
+          <div class="detail-value">${client.city || '<span style="color: var(--text-300);">Kiritilmagan</span>'}</div>
+        </div>
+
+        <div class="detail-item">
+          <div class="detail-label">Qaydlar</div>
+          <div class="detail-value" style="font-style: italic; background: var(--surface-base); border-radius: 6px; padding: 8px; border: 1px dashed var(--border); font-size: 12.5px;">${client.notes || 'Izoh yo\'q'}</div>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid var(--border); margin: 5px 0;">
+
+        <div class="detail-item">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <div class="detail-label" style="margin-bottom: 0;">Sdelkalar</div>
+            <button class="btn btn-sm btn-primary" onclick="openCreateDealModal(${client.id}, '${client.name}')" style="font-size: 10px; padding: 4px 8px; height: auto; display: flex; align-items: center; gap: 4px;">
+              <i class="fas fa-plus" style="font-size: 8px;"></i> Yangi sdelka
+            </button>
+          </div>
+          <div class="detail-card">
+            ${dealsHtml}
+          </div>
+        </div>
+
+        <div style="margin-top: 10px;">
+          <a class="btn btn-secondary btn-sm" href="/clients?id=${client.id}" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; height: 34px;">
+            <i class="fas fa-external-link-alt"></i> Mijoz profilini ochish
+          </a>
+        </div>
+      </div>
+    `;
+  } catch (error) {
+    console.error('Error loading client details:', error);
+    detailsPanel.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--danger);">Yuklashda xatolik yuz berdi</div>';
+  }
 }
 
 async function loadMessages(clientId) {
@@ -281,17 +789,62 @@ async function loadMessages(clientId) {
     container.innerHTML = '';
     
     if (messages.length === 0) {
-      container.innerHTML = '<div style="text-align: center; color: var(--text-tertiary);">Xabarlar yo\'q</div>';
+      container.innerHTML = '<div style="text-align: center; color: var(--text-300); padding: 20px;">Xabarlar yo\'q</div>';
       return;
     }
     
+    let lastDateStr = '';
+    
     messages.forEach(m => {
+      const date = new Date(m.timestamp);
+      const dateStr = date.toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' });
+      
+      if (dateStr !== lastDateStr) {
+        const divider = document.createElement('div');
+        divider.className = 'chat-date-divider';
+        
+        const today = new Date().toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' });
+        const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' });
+        
+        let label = dateStr;
+        if (dateStr === today) label = 'Bugun';
+        else if (dateStr === yesterday) label = 'Kecha';
+        
+        divider.innerHTML = `<span>${label}</span>`;
+        container.appendChild(divider);
+        lastDateStr = dateStr;
+      }
+      
       const div = document.createElement('div');
       div.className = `msg-bubble ${m.isOutgoing ? 'msg-out' : 'msg-in'}`;
       
+      let contentHtml = '';
+      if (m.attachmentType === 'image' && m.attachmentUrl) {
+        contentHtml = `
+          <div class="msg-attachment-container">
+            <img src="${m.attachmentUrl}" class="msg-img-attachment" onclick="openImageModal('${m.attachmentUrl}')" alt="Instagram Rasm">
+            ${m.text ? `<div style="margin-top: 8px;">${m.text}</div>` : ''}
+          </div>
+        `;
+      } else if (m.attachmentType === 'audio' && m.attachmentUrl) {
+        contentHtml = `
+          <div class="msg-attachment-container">
+            <audio controls src="${m.attachmentUrl}" class="msg-audio-attachment"></audio>
+            ${m.text ? `<div style="margin-top: 8px;">${m.text}</div>` : ''}
+          </div>
+        `;
+      } else {
+        // Auto-linkify text
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        const linkedText = (m.text || '').replace(urlRegex, function(url) {
+          return '<a href="' + url + '" target="_blank" style="color: inherit; text-decoration: underline;">' + url + '</a>';
+        });
+        contentHtml = `<div>${linkedText}</div>`;
+      }
+      
       const time = new Date(m.timestamp).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
       div.innerHTML = `
-        <div>${m.text}</div>
+        ${contentHtml}
         <div class="msg-time">${time}</div>
       `;
       container.appendChild(div);
@@ -345,6 +898,103 @@ async function sendMessage() {
     div.querySelector('.fa-clock').className = 'fas fa-exclamation-circle';
     div.querySelector('.fa-exclamation-circle').style.color = '#ff5e5e';
     _toast('Tarmoqda xatolik yuz berdi', 'error');
+  }
+}
+
+function openImageModal(url) {
+  const modal = document.getElementById('imageModal');
+  const img = document.getElementById('modalImg');
+  img.src = url;
+  modal.classList.remove('hidden');
+}
+
+function closeImageModal() {
+  document.getElementById('imageModal').classList.add('hidden');
+}
+
+function openCreateDealModal(clientId, clientName) {
+  document.getElementById('dealClientId').value = clientId;
+  document.getElementById('dealClientName').value = clientName;
+  document.getElementById('dealProductName').value = '';
+  document.getElementById('dealAmount').value = '0';
+  document.getElementById('dealNotes').value = '';
+  
+  const pipelineSelect = document.getElementById('dealPipelineId');
+  pipelineSelect.innerHTML = '';
+  
+  allPipelines.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.name;
+    if (p.isDefault) opt.selected = true;
+    pipelineSelect.appendChild(opt);
+  });
+  
+  onPipelineChange();
+  
+  document.getElementById('dealModal').classList.remove('hidden');
+}
+
+function onPipelineChange() {
+  const pipelineId = Number(document.getElementById('dealPipelineId').value);
+  const stageSelect = document.getElementById('dealStageId');
+  stageSelect.innerHTML = '';
+  
+  const pipeline = allPipelines.find(p => p.id === pipelineId);
+  if (pipeline && pipeline.stages) {
+    pipeline.stages.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = s.name;
+      if (s.isDefault) opt.selected = true;
+      stageSelect.appendChild(opt);
+    });
+  }
+}
+
+function closeDealModal() {
+  document.getElementById('dealModal').classList.add('hidden');
+}
+
+async function submitCreateDeal() {
+  const clientId = Number(document.getElementById('dealClientId').value);
+  const productName = document.getElementById('dealProductName').value.trim();
+  const amount = Number(document.getElementById('dealAmount').value);
+  const pipelineId = Number(document.getElementById('dealPipelineId').value);
+  const stageId = Number(document.getElementById('dealStageId').value);
+  const notes = document.getElementById('dealNotes').value.trim();
+  
+  if (!productName) {
+    _toast('Mahsulot nomi majburiy!', 'error');
+    return;
+  }
+  
+  try {
+    const res = await fetch('/api/deals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        productName,
+        amount,
+        pipelineId,
+        stageId,
+        clientId,
+        notes,
+        status: 'new'
+      })
+    });
+    
+    if (res.ok) {
+      _toast('Sdelka muvaffaqiyatli yaratildi!', 'success');
+      closeDealModal();
+      loadClientDetails(clientId);
+    } else {
+      const err = await res.json();
+      _toast(err.message || 'Sdelka yaratishda xatolik', 'error');
+    }
+  } catch (error) {
+    console.error('Error creating deal:', error);
+    _toast('Tarmoq xatoligi yuz berdi', 'error');
   }
 }
 
