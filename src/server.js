@@ -234,7 +234,7 @@ async function cleanupDuplicateTasks() {
     console.log('[Cleanup] Dublikat vazifalarni tekshirish...');
 
     const activeTasks = await prisma.task.findMany({
-      where: { completed: false, dealId: { not: null } },
+      where: { completed: false, NOT: { dealId: null } },
       orderBy: { id: 'desc' },
       select: { id: true, dealId: true, title: true }
     });
