@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const prisma = require('../config/database');
+const { protect } = require('../middleware/auth');
 
 // Webhook Verification (Instagram/Wazzup needs this when subscribing)
 router.get('/webhook', async (req, res) => {
@@ -323,7 +324,7 @@ router.post('/webhook', async (req, res) => {
 });
 
 // GET /api/instagram/clients
-router.get('/clients', async (req, res) => {
+router.get('/clients', protect, async (req, res) => {
   try {
     const clients = await prisma.client.findMany({
       where: { instagramId: { not: null } },
@@ -343,7 +344,7 @@ router.get('/clients', async (req, res) => {
 });
 
 // GET /api/instagram/messages/:clientId
-router.get('/messages/:clientId', async (req, res) => {
+router.get('/messages/:clientId', protect, async (req, res) => {
   try {
     const clientId = Number(req.params.clientId);
     const messages = await prisma.instagramMessage.findMany({
@@ -358,7 +359,7 @@ router.get('/messages/:clientId', async (req, res) => {
 });
 
 // POST /api/instagram/messages
-router.post('/messages', async (req, res) => {
+router.post('/messages', protect, async (req, res) => {
   try {
     const { clientId, text, attachmentUrl, attachmentType } = req.body;
     
@@ -578,7 +579,7 @@ const fs = require('fs');
 const path = require('path');
 
 // POST /api/instagram/upload-base64
-router.post('/upload-base64', async (req, res) => {
+router.post('/upload-base64', protect, async (req, res) => {
   try {
     const { base64Data, fileName, mimeType } = req.body;
     if (!base64Data) {
@@ -610,7 +611,7 @@ router.post('/upload-base64', async (req, res) => {
 });
 
 // POST /api/instagram/update-client
-router.post('/update-client', async (req, res) => {
+router.post('/update-client', protect, async (req, res) => {
   try {
     const { clientId, name, phone, email, city, notes } = req.body;
     
