@@ -114,6 +114,14 @@ async function runMigrations(prisma) {
     await prisma.$executeRawUnsafe(`ALTER TABLE "CompanySettings" ADD COLUMN "instagramVerifyToken" TEXT`);
   } catch (e) {}
 
+  // Ensure attachment columns exist in InstagramMessage
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "InstagramMessage" ADD COLUMN "attachmentType" TEXT`);
+  } catch (e) {}
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "InstagramMessage" ADD COLUMN "attachmentUrl" TEXT`);
+  } catch (e) {}
+
   // 4. Admin user (agar mavjud bo'lmasa)
   try {
     const bcrypt = require('bcryptjs')
