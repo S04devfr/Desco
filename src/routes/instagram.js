@@ -349,7 +349,7 @@ router.get('/messages/:clientId', async (req, res) => {
 // POST /api/instagram/messages
 router.post('/messages', async (req, res) => {
   try {
-    const { clientId, text } = req.body;
+    const { clientId, text, attachmentUrl, attachmentType } = req.body;
     
     const client = await prisma.client.findUnique({ where: { id: Number(clientId) } });
     if (!client || !client.instagramId) {
@@ -367,12 +367,14 @@ router.post('/messages', async (req, res) => {
       const savedMsg = await prisma.instagramMessage.create({
         data: {
           messageId,
-          text,
+          text: text || null,
           senderId: 'CRM', // CRM sending
           recipientId,
           timestamp: new Date(),
           isOutgoing: true,
-          clientId: client.id
+          clientId: client.id,
+          attachmentType: attachmentType || null,
+          attachmentUrl: attachmentUrl || null
         }
       });
 
@@ -393,6 +395,21 @@ router.post('/messages', async (req, res) => {
           return res.status(400).json({ error: 'Faol Wazzup Instagram kanali topilmadi.' });
         }
 
+        // Construct correct Wazzup payload (do NOT send "type" parameter, Wazzup v3 uses contentUri to identify attachment sends)
+        const wazzupPayload = {
+          channelId: igChannel.channelId,
+          chatId: recipientId,
+          chatType: 'instagram',
+          crmMessageId: messageId
+        };
+
+        if (attachmentUrl) {
+          wazzupPayload.contentUri = attachmentUrl;
+          if (text) wazzupPayload.text = text;
+        } else {
+          wazzupPayload.text = text;
+        }
+
         // Send message via Wazzup API
         const sendRes = await fetch('https://api.wazzup24.com/v3/message', {
           method: 'POST',
@@ -400,13 +417,7 @@ router.post('/messages', async (req, res) => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${WAZZUP_API_KEY}`
           },
-          body: JSON.stringify({
-            channelId: igChannel.channelId,
-            chatId: recipientId,
-            chatType: 'instagram',
-            text: text,
-            crmMessageId: messageId
-          })
+          body: JSON.stringify(wazzupPayload)
         });
 
         const sendResult = await sendRes.json();
