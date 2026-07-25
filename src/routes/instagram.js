@@ -287,7 +287,7 @@ router.post('/webhook', async (req, res) => {
     }
     res.status(200).send('EVENT_RECEIVED');
   } else {
-    res.sendStatus(404);
+    res.status(200).send('OK');
   }
 });
 
