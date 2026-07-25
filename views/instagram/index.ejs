@@ -672,8 +672,16 @@ async function selectClient(id, name, instagramUsername) {
     <div class="chat-messages" id="chatMessages">
       <div style="text-align: center; color: var(--text-300); padding: 20px;">Yuklanmoqda...</div>
     </div>
-    <div class="chat-input-area">
-      <input type="text" id="msgInput" class="chat-input" placeholder="Xabar yozing..." onkeypress="if(event.key === 'Enter') sendMessage()">
+    <div id="attachmentPreview" style="display: none; align-items: center; justify-content: space-between; background: var(--bg-secondary); padding: 8px 16px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+      <div id="attachmentPreviewContent" style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-700);"></div>
+      <button onclick="clearAttachment()" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 13px;"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="chat-input-area" style="position: relative;">
+      <input type="file" id="msgFileInput" style="display: none;" onchange="handleFileSelect(this)">
+      <button class="btn btn-ghost" onclick="document.getElementById('msgFileInput').click()" style="padding: 10px; width: 40px; height: 40px; min-width: 40px; border-radius: 50%; font-size: 16px; display: flex; align-items: center; justify-content: center; color: var(--text-500); margin-right: 6px;" title="Fayl biriktirish (Rasm, Video, Audio)">
+        <i class="fas fa-paperclip"></i>
+      </button>
+      <input type="text" id="msgInput" class="chat-input" placeholder="Xabar yozing..." onkeypress="if(event.key === 'Enter') sendMessage()" style="flex: 1;">
       <button class="chat-send-btn" onclick="sendMessage()">
         <i class="fas fa-paper-plane"></i>
       </button>
@@ -690,6 +698,8 @@ function goBack() {
   currentClientName = '';
 }
 
+let activeClientData = null; // Store active client object
+
 async function loadClientDetails(id) {
   const detailsPanel = document.getElementById('chatDetails');
   detailsPanel.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-300);">Yuklanmoqda...</div>';
@@ -698,6 +708,7 @@ async function loadClientDetails(id) {
     const res = await fetch('/api/clients/' + id);
     if (!res.ok) throw new Error('Client details fetch failed');
     const client = await res.json();
+    activeClientData = client;
     
     let dealsHtml = '';
     if (client.deals && client.deals.length > 0) {
@@ -723,10 +734,14 @@ async function loadClientDetails(id) {
     }
     
     detailsPanel.innerHTML = `
-      <div class="chat-details-header">
-        Mijoz Tafsilotlari
+      <div class="chat-details-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <span>Mijoz Tafsilotlari</span>
+        <button class="btn btn-ghost" id="editDetailsBtn" onclick="toggleDetailsEdit(true)" style="padding: 2px 6px; font-size: 11px; font-weight: 600; color: var(--brand); cursor: pointer; height: auto; border: 1px solid var(--brand-soft); border-radius: 4px; background: var(--brand-soft); display: flex; align-items: center; gap: 4px;">
+          <i class="fas fa-edit"></i> O'zgartirish
+        </button>
       </div>
-      <div class="chat-details-body">
+      
+      <div class="chat-details-body" id="detailsViewMode" style="display: block;">
         <div style="text-align: center; margin-bottom: 5px;">
           <div class="chat-avatar" style="width: 56px; height: 56px; font-size: 22px; margin: 0 auto 10px auto; background: var(--brand-soft); color: var(--brand);"><i class="fas fa-user"></i></div>
           <h4 style="margin: 0; font-size: 14.5px; font-weight: 600; color: var(--text-900);">${client.name}</h4>
@@ -750,7 +765,7 @@ async function loadClientDetails(id) {
 
         <div class="detail-item">
           <div class="detail-label">Qaydlar</div>
-          <div class="detail-value" style="font-style: italic; background: var(--surface-base); border-radius: 6px; padding: 8px; border: 1px dashed var(--border); font-size: 12.5px;">${client.notes || 'Izoh yo\'q'}</div>
+          <div class="detail-value" style="font-style: italic; background: var(--surface-base); border-radius: 6px; padding: 8px; border: 1px dashed var(--border); font-size: 12.5px; white-space: pre-line;">${client.notes || 'Izoh yo\'q'}</div>
         </div>
 
         <hr style="border: none; border-top: 1px solid var(--border); margin: 5px 0;">
@@ -758,7 +773,7 @@ async function loadClientDetails(id) {
         <div class="detail-item">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
             <div class="detail-label" style="margin-bottom: 0;">Sdelkalar</div>
-            <button class="btn btn-sm btn-primary" onclick="openCreateDealModal(${client.id}, '${client.name}')" style="font-size: 10px; padding: 4px 8px; height: auto; display: flex; align-items: center; gap: 4px;">
+            <button class="btn btn-sm btn-primary" onclick="openCreateDealModal(${client.id}, '${escapeQuotes(client.name)}')" style="font-size: 10px; padding: 4px 8px; height: auto; display: flex; align-items: center; gap: 4px;">
               <i class="fas fa-plus" style="font-size: 8px;"></i> Yangi sdelka
             </button>
           </div>
@@ -773,11 +788,97 @@ async function loadClientDetails(id) {
           </a>
         </div>
       </div>
+
+      <div class="chat-details-body" id="detailsEditMode" style="display: none; display: flex; flex-direction: column; gap: 12px; padding: 15px;">
+        <div>
+          <label style="font-size: 11px; font-weight: 600; color: var(--text-500); display: block; margin-bottom: 4px;">Mijoz Ismi</label>
+          <input type="text" id="editClientName" class="form-control form-control-sm" value="${escapeQuotes(client.name)}" style="width: 100%;">
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: 600; color: var(--text-500); display: block; margin-bottom: 4px;">Telefon Raqami</label>
+          <input type="text" id="editClientPhone" class="form-control form-control-sm" value="${escapeQuotes(client.phone || '')}" placeholder="+998901234567" style="width: 100%;">
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: 600; color: var(--text-500); display: block; margin-bottom: 4px;">Elektron Pochta (Email)</label>
+          <input type="text" id="editClientEmail" class="form-control form-control-sm" value="${escapeQuotes(client.email || '')}" placeholder="example@mail.com" style="width: 100%;">
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: 600; color: var(--text-500); display: block; margin-bottom: 4px;">Shahar / Viloyat</label>
+          <input type="text" id="editClientCity" class="form-control form-control-sm" value="${escapeQuotes(client.city || '')}" placeholder="Toshkent" style="width: 100%;">
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: 600; color: var(--text-500); display: block; margin-bottom: 4px;">Qaydlar / Izoh</label>
+          <textarea id="editClientNotes" class="form-control form-control-sm" rows="3" style="width: 100%; font-size: 12px; resize: vertical;" placeholder="Mijoz haqida qaydlar...">${escapeQuotes(client.notes || '')}</textarea>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 5px;">
+          <button class="btn btn-secondary btn-sm" onclick="toggleDetailsEdit(false)" style="flex: 1; height: 32px; font-size: 12px;">Bekor qilish</button>
+          <button class="btn btn-primary btn-sm" onclick="saveClientDetails(${client.id})" id="btnSaveDetails" style="flex: 1; height: 32px; font-size: 12px;">Saqlash</button>
+        </div>
+      </div>
     `;
   } catch (error) {
     console.error('Error loading client details:', error);
     detailsPanel.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--danger);">Yuklashda xatolik yuz berdi</div>';
   }
+}
+
+function toggleDetailsEdit(show) {
+  const viewMode = document.getElementById('detailsViewMode');
+  const editMode = document.getElementById('detailsEditMode');
+  const editBtn = document.getElementById('editDetailsBtn');
+
+  if (show) {
+    viewMode.style.display = 'none';
+    editMode.style.display = 'flex';
+    editBtn.style.display = 'none';
+  } else {
+    viewMode.style.display = 'block';
+    editMode.style.display = 'none';
+    editBtn.style.display = 'flex';
+  }
+}
+
+async function saveClientDetails(clientId) {
+  const btn = document.getElementById('btnSaveDetails');
+  btn.disabled = true;
+  btn.textContent = 'Saqlanmoqda...';
+
+  const payload = {
+    clientId,
+    name: document.getElementById('editClientName').value.trim(),
+    phone: document.getElementById('editClientPhone').value.trim(),
+    email: document.getElementById('editClientEmail').value.trim(),
+    city: document.getElementById('editClientCity').value.trim(),
+    notes: document.getElementById('editClientNotes').value.trim()
+  };
+
+  try {
+    const res = await fetch('/api/instagram/update-client', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      _toast('Mijoz ma\'lumotlari saqlandi!', 'success');
+      loadClientDetails(clientId);
+      loadClients(); // Reload chat list to reflect updated name
+    } else {
+      const err = await res.json();
+      _toast(err.error || 'Saqlashda xatolik', 'error');
+    }
+  } catch (err) {
+    console.error(err);
+    _toast('Saqlashda tarmoq xatosi yuz berdi', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Saqlash';
+  }
+}
+
+function escapeQuotes(str) {
+  if (!str) return '';
+  return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
 }
 
 async function loadMessages(clientId) {
@@ -821,16 +922,23 @@ async function loadMessages(clientId) {
       let contentHtml = '';
       if (m.attachmentType === 'image' && m.attachmentUrl) {
         contentHtml = `
-          <div class="msg-attachment-container">
-            <img src="${m.attachmentUrl}" class="msg-img-attachment" onclick="openImageModal('${m.attachmentUrl}')" alt="Instagram Rasm">
-            ${m.text ? `<div style="margin-top: 8px;">${m.text}</div>` : ''}
+          <div class="msg-attachment-container" style="max-width: 250px; overflow: hidden; border-radius: 8px;">
+            <img src="${m.attachmentUrl}" class="msg-img-attachment" onclick="openImageModal('${m.attachmentUrl}')" alt="Instagram Rasm" style="max-width: 100%; border-radius: 8px; cursor: pointer; display: block;">
+            ${m.text ? `<div style="margin-top: 8px; padding: 4px; font-size:12.5px;">${m.text}</div>` : ''}
           </div>
         `;
       } else if (m.attachmentType === 'audio' && m.attachmentUrl) {
         contentHtml = `
-          <div class="msg-attachment-container">
-            <audio controls src="${m.attachmentUrl}" class="msg-audio-attachment"></audio>
-            ${m.text ? `<div style="margin-top: 8px;">${m.text}</div>` : ''}
+          <div class="msg-attachment-container" style="max-width: 280px; padding: 4px;">
+            <audio controls src="${m.attachmentUrl}" class="msg-audio-attachment" style="max-width: 100%; height: 36px; border-radius: 18px;"></audio>
+            ${m.text ? `<div style="margin-top: 8px; font-size:12.5px;">${m.text}</div>` : ''}
+          </div>
+        `;
+      } else if (m.attachmentType === 'video' && m.attachmentUrl) {
+        contentHtml = `
+          <div class="msg-attachment-container" style="max-width: 250px; overflow: hidden; border-radius: 8px;">
+            <video controls src="${m.attachmentUrl}" class="msg-video-attachment" style="max-width: 100%; max-height: 240px; border-radius: 8px; display: block;"></video>
+            ${m.text ? `<div style="margin-top: 8px; padding: 4px; font-size:12.5px;">${m.text}</div>` : ''}
           </div>
         `;
       } else {
@@ -856,12 +964,67 @@ async function loadMessages(clientId) {
   }
 }
 
+// ── FILE ATTACHMENT UPLOAD FUNKSIONALI ──
+let selectedFileBase64 = null;
+let selectedFileName = '';
+let selectedFileType = '';
+
+function handleFileSelect(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  // Validate size (max 15MB)
+  if (file.size > 15 * 1024 * 1024) {
+    _toast('Fayl hajmi 15MB dan oshmasligi kerak!', 'error');
+    input.value = '';
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const rawBase64 = e.target.result.split(',')[1];
+    selectedFileBase64 = rawBase64;
+    selectedFileName = file.name;
+
+    // Determine type
+    if (file.type.startsWith('image/')) {
+      selectedFileType = 'image';
+    } else if (file.type.startsWith('video/')) {
+      selectedFileType = 'video';
+    } else if (file.type.startsWith('audio/')) {
+      selectedFileType = 'audio';
+    } else {
+      selectedFileType = 'document';
+    }
+
+    // Show preview
+    const preview = document.getElementById('attachmentPreview');
+    const content = document.getElementById('attachmentPreviewContent');
+    preview.style.display = 'flex';
+    content.innerHTML = `
+      <i class="fas ${selectedFileType === 'image' ? 'fa-image' : selectedFileType === 'video' ? 'fa-video' : 'fa-music'}" style="color: var(--brand); font-size: 14px;"></i>
+      <span>${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+    `;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearAttachment() {
+  selectedFileBase64 = null;
+  selectedFileName = '';
+  selectedFileType = '';
+  document.getElementById('msgFileInput').value = '';
+  document.getElementById('attachmentPreview').style.display = 'none';
+}
+
 async function sendMessage() {
   if (!currentClientId) return;
   
   const input = document.getElementById('msgInput');
   const text = input.value.trim();
-  if (!text) return;
+
+  // Make sure we have text or an attachment to send
+  if (!text && !selectedFileBase64) return;
   
   input.value = '';
   
@@ -869,35 +1032,68 @@ async function sendMessage() {
   const div = document.createElement('div');
   div.className = 'msg-bubble msg-out';
   const time = new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
+  
+  // Show temporary status
   div.innerHTML = `
-    <div>${text}</div>
+    <div>${text || `[Fayl yuklanmoqda: ${selectedFileName}]`}</div>
     <div class="msg-time">${time} <i class="fas fa-clock" style="font-size: 8px;"></i></div>
   `;
   container.appendChild(div);
   container.scrollTop = container.scrollHeight;
+
+  // Local backups for file upload payload
+  const b64 = selectedFileBase64;
+  const fName = selectedFileName;
+  const fType = selectedFileType;
+
+  clearAttachment(); // Clear preview immediately for UI responsiveness
   
   try {
+    let attachmentUrl = null;
+
+    // 1. Upload file if selected
+    if (b64) {
+      const uploadRes = await fetch('/api/instagram/upload-base64', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64Data: b64, fileName: fName })
+      });
+
+      if (!uploadRes.ok) {
+        throw new Error('Faylni serverga yuklashda xatolik yuz berdi');
+      }
+      const uploadData = await uploadRes.json();
+      attachmentUrl = uploadData.fileUrl;
+    }
+
+    // 2. Send message via CRM API
     const res = await fetch('/api/instagram/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clientId: currentClientId, text })
+      body: JSON.stringify({
+        clientId: currentClientId,
+        text,
+        attachmentUrl,
+        attachmentType: attachmentUrl ? fType : null
+      })
     });
     
     if (res.ok) {
       div.querySelector('.fa-clock').className = 'fas fa-check';
       loadClients();
+      loadMessages(currentClientId); // Reload to display uploaded content properly
     } else {
       const errorData = await res.json();
       div.querySelector('.fa-clock').className = 'fas fa-exclamation-circle';
       div.querySelector('.fa-exclamation-circle').style.color = '#ff5e5e';
       const errMsg = errorData.error || 'Yuborishda xatolik yuz berdi';
-      _toast(`Meta API Xatosi: ${errMsg}`, 'error');
+      _toast(`Instagram API Xatosi: ${errMsg}`, 'error');
     }
   } catch (error) {
     console.error('Error sending message:', error);
     div.querySelector('.fa-clock').className = 'fas fa-exclamation-circle';
     div.querySelector('.fa-exclamation-circle').style.color = '#ff5e5e';
-    _toast('Tarmoqda xatolik yuz berdi', 'error');
+    _toast(error.message || 'Tarmoqda xatolik yuz berdi', 'error');
   }
 }
 

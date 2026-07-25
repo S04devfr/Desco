@@ -94,6 +94,23 @@ router.post('/webhook', async (req, res) => {
           }
         }
 
+        // Auto-extract phone and city from incoming messages (only if they are not echo)
+        if (!isEcho && text) {
+          const extracted = extractClientDetails(text);
+          if (extracted) {
+            const clientUpdate = {};
+            if (extracted.phone && !client.phone) clientUpdate.phone = extracted.phone;
+            if (extracted.city && !client.city) clientUpdate.city = extracted.city;
+
+            if (Object.keys(clientUpdate).length > 0) {
+              client = await prisma.client.update({
+                where: { id: client.id },
+                data: clientUpdate
+              });
+            }
+          }
+        }
+
         // Determine sender/recipient based on isEcho
         const senderId = isEcho ? 'CRM' : clientIgId;
         const recipientId = isEcho ? clientIgId : 'CRM';
@@ -480,6 +497,116 @@ router.post('/messages', async (req, res) => {
   } catch (error) {
     console.error('Error sending instagram message:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Helper: Auto-extract Phone & City from chat message text
+function extractClientDetails(text) {
+  if (!text) return null;
+  const lowerText = text.toLowerCase();
+  const updates = {};
+
+  // 1. Phone Extraction (Uzbek format phone numbers, e.g. +998901234567, 901234567, 90 123 45 67)
+  const phoneRegex = /(?:\+?998)?\s?\(?\d{2}\)?\s?\d{3}\s?\d{2}\s?\d{2}/;
+  const match = text.match(phoneRegex);
+  if (match) {
+    let clean = match[0].replace(/[^\d]/g, '');
+    if (clean.length === 9) {
+      clean = '+998' + clean;
+    } else if (clean.length === 12 && clean.startsWith('998')) {
+      clean = '+' + clean;
+    }
+    if (clean.startsWith('+998') && clean.length === 13) {
+      updates.phone = clean;
+    }
+  }
+
+  // 2. City Extraction
+  const cityMappings = [
+    { keys: ['tashkent', 'toshkent'], name: 'Toshkent' },
+    { keys: ['samarqand', 'samarkand'], name: 'Samarqand' },
+    { keys: ['buxoro', 'bukhara'], name: 'Buxoro' },
+    { keys: ['qarshi', 'karshi'], name: 'Qarshi' },
+    { keys: ['namangan'], name: 'Namangan' },
+    { keys: ['andijon', 'andijan'], name: 'Andijon' },
+    { keys: ['farg', 'fergana'], name: 'Farg\'ona' },
+    { keys: ['nukus'], name: 'Nukus' },
+    { keys: ['jizzax', 'jizzakh'], name: 'Jizzax' },
+    { keys: ['guliston'], name: 'Guliston' },
+    { keys: ['termiz'], name: 'Termiz' },
+    { keys: ['navoiy', 'navoi'], name: 'Navoiy' },
+    { keys: ['urganch', 'urgench'], name: 'Urganch' },
+    { keys: ['kokand', 'qo\'qon'], name: 'Qo\'qon' },
+    { keys: ['chirchiq'], name: 'Chirchiq' },
+    { keys: ['xiva', 'khiva'], name: 'Xiva' },
+    { keys: ['marg'], name: 'Marg\'ilon' }
+  ];
+
+  for (const mapping of cityMappings) {
+    if (mapping.keys.some(key => lowerText.includes(key))) {
+      updates.city = mapping.name;
+      break;
+    }
+  }
+
+  return Object.keys(updates).length > 0 ? updates : null;
+}
+
+const fs = require('fs');
+const path = require('path');
+
+// POST /api/instagram/upload-base64
+router.post('/upload-base64', async (req, res) => {
+  try {
+    const { base64Data, fileName, mimeType } = req.body;
+    if (!base64Data) {
+      return res.status(400).json({ error: 'Fayl ma\'lumotlari (base64) topilmadi' });
+    }
+
+    // Convert base64 to buffer
+    const buffer = Buffer.from(base64Data, 'base64');
+    
+    // Ensure public/uploads directory exists
+    const uploadsDir = path.join(__dirname, '../../public/uploads');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    // Generate a unique file name
+    const ext = path.extname(fileName) || '.jpg';
+    const newFileName = `inst_${Date.now()}_${Math.floor(Math.random() * 10000)}${ext}`;
+    const filePath = path.join(uploadsDir, newFileName);
+
+    fs.writeFileSync(filePath, buffer);
+
+    const fileUrl = `${req.protocol}://${req.headers.host}/uploads/${newFileName}`;
+    res.json({ fileUrl });
+  } catch (error) {
+    console.error('Error uploading base64 file:', error);
+    res.status(500).json({ error: 'Fayl yuklashda xatolik yuz berdi' });
+  }
+});
+
+// POST /api/instagram/update-client
+router.post('/update-client', async (req, res) => {
+  try {
+    const { clientId, name, phone, email, city, notes } = req.body;
+    
+    const client = await prisma.client.update({
+      where: { id: Number(clientId) },
+      data: {
+        name,
+        phone: phone || null,
+        email: email || null,
+        city: city || null,
+        notes: notes || null
+      }
+    });
+
+    res.json(client);
+  } catch (error) {
+    console.error('Error updating client:', error);
+    res.status(500).json({ error: 'Mijoz ma\'lumotlarini saqlashda xatolik yuz berdi' });
   }
 });
 
