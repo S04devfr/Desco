@@ -1,0 +1,947 @@
+<%- include('../layouts/header', {
+  title: "Nasiya Excel (Smeta) — DESCO CRM",
+  activePage: 'nasiya-excel',
+  user: user}) %>
+
+<div class="page-header">
+  <div>
+    <h1>Nasiya Excel (Jadval) <span style="background: #fff3cd; color: #856404; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; border: 1px solid #ffeeba; margin-left: 8px; vertical-align: middle; display: inline-block; letter-spacing: 0.5px; text-transform: uppercase;">Test rejimida</span></h1>
+    <p>Muddatli to'lovlar (nasiyalar)ning Excel formatidagi interaktiv smetasi</p>
+  </div>
+  <div class="page-header-actions" style="display: flex; gap: 10px; align-items: center;">
+    <div class="search-box" style="position: relative;">
+      <input type="text" id="excelSearch" class="form-control form-control-sm" placeholder="Qidirish (ism, tel, shahar)..." style="width: 230px; padding-left: 30px; height: 36px;">
+      <i class="fas fa-search" style="position: absolute; left: 10px; top: 11px; color: var(--text-400); font-size: 13px;"></i>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="openAddNasiyaModal()" style="height: 36px; display: flex; align-items: center; gap: 6px;">
+      <i class="fas fa-plus"></i> Yangi Nasiya
+    </button>
+    <button class="btn btn-secondary btn-sm" onclick="fetchData()" style="height: 36px;">
+      <i class="fas fa-sync-alt"></i> Yangilash
+    </button>
+  </div>
+</div>
+
+<div class="card" style="margin-top: 15px; border-radius: var(--r-md); overflow: hidden; box-shadow: var(--shadow-sm);">
+  <div class="card-header" style="background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;">
+    <h3 style="margin:0; font-size:14px; font-weight:600; color: var(--text-900);">Nasiya Savdo Smetasi</h3>
+    <span id="excelDealCount" class="badge badge-blue">0 ta kelishuv</span>
+  </div>
+  
+  <div class="excel-wrapper" style="overflow-x: auto; width: 100%; max-height: calc(100vh - 220px);">
+    <table class="excel-table">
+      <thead id="excelThead">
+        <!-- Rendered dynamically -->
+      </thead>
+      <tbody id="excelTbody">
+        <tr>
+          <td colspan="15" style="text-align: center; padding: 50px;">
+            <div class="spinner" style="margin: 0 auto 10px;"></div>
+            <span style="color: var(--text-500); font-size: 13px;">Ma'lumotlar yuklanmoqda...</span>
+          </td>
+        </tr>
+      </tbody>
+      <tfoot id="excelTfoot">
+        <!-- Rendered dynamically -->
+      </tfoot>
+    </table>
+  </div>
+</div>
+
+<!-- ── MODAL: YANGI NASIYA QO'SHISH ── -->
+<div id="addNasiyaModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeAddNasiyaModal()">
+  <div class="modal-dialog" style="max-width:550px; background: var(--surface-card); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-lg);">
+    <div class="modal-header" style="border-bottom: 1px solid var(--border); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+      <h3 class="modal-title" style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text-900); display: flex; align-items: center; gap: 8px;">
+        <i class="fas fa-plus-circle" style="color: var(--brand)"></i> Yangi Nasiya Kelishuvi Qo'shish
+      </h3>
+      <button class="modal-close" onclick="closeAddNasiyaModal()" style="background: none; border: none; font-size: 16px; color: var(--text-500); cursor: pointer;"><i class="fas fa-times"></i></button>
+    </div>
+    <form id="addNasiyaForm" onsubmit="saveAddNasiya(event)" style="margin: 0;">
+      <div class="modal-body" style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <label class="form-label" style="font-weight: 600; font-size: 12px; margin-bottom: 4px; display: block; color: var(--text-700);">Mijoz Ismi *</label>
+            <input type="text" id="addClientName" class="form-control" required placeholder="Masalan: Abdurashid" style="width: 100%;">
+          </div>
+          <div>
+            <label class="form-label" style="font-weight: 600; font-size: 12px; margin-bottom: 4px; display: block; color: var(--text-700);">Telefon Raqami *</label>
+            <input type="text" id="addClientPhone" class="form-control" required placeholder="+998901234567" style="width: 100%;">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <label class="form-label" style="font-weight: 600; font-size: 12px; margin-bottom: 4px; display: block; color: var(--text-700);">Shahar / Viloyat</label>
+            <input type="text" id="addClientCity" class="form-control" placeholder="Toshkent" style="width: 100%;">
+          </div>
+          <div>
+            <label class="form-label" style="font-weight: 600; font-size: 12px; margin-bottom: 4px; display: block; color: var(--text-700);">Mahsulot Nomi *</label>
+            <input type="text" id="addProduct" class="form-control" required placeholder="Massajor 6" style="width: 100%;">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <label class="form-label" style="font-weight: 600; font-size: 12px; margin-bottom: 4px; display: block; color: var(--text-700);">Nasiya Turi (Bosqich) *</label>
+            <select id="addStage" class="form-control" required style="width: 100%; height: 38px; padding: 0 10px;">
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+          <div>
+            <label class="form-label" style="font-weight: 600; font-size: 12px; margin-bottom: 4px; display: block; color: var(--text-700);">Oylar Soni (Muddati)</label>
+            <select id="addMonths" class="form-control" style="width: 100%; height: 38px; padding: 0 10px;" onchange="calculateInstallments()">
+              <option value="1">1 oy (Faqat boshlang'ich)</option>
+              <option value="3">3 oy</option>
+              <option value="6" selected>6 oy</option>
+              <option value="12">12 oy</option>
+              <option value="18">18 oy</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <label class="form-label" style="font-weight: 600; font-size: 12px; margin-bottom: 4px; display: block; color: var(--text-700);">Kelishilgan Summa *</label>
+            <input type="number" id="addAmount" class="form-control" required placeholder="Jami summa (so'm)" style="width: 100%; font-weight: 600;" oninput="calculateInstallments()">
+          </div>
+          <div>
+            <label class="form-label" style="font-weight: 600; font-size: 12px; margin-bottom: 4px; display: block; color: var(--text-700);">1-chi To'lov (Boshlang'ich) *</label>
+            <input type="number" id="addFirstPayment" class="form-control" required placeholder="Boshlang'ich to'lov (so'm)" style="width: 100%; font-weight: 600;" oninput="calculateInstallments()">
+          </div>
+        </div>
+
+        <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 12.5px; color: var(--text-700);">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span>Qolgan nasiya summasi:</span>
+            <strong id="addRemainingText">0 so'm</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span>Oylik to'lov (taxminan):</span>
+            <strong id="addMonthlyText" style="color: var(--brand);">0 so'm / oy</strong>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer" style="border-top: 1px solid var(--border); padding: 15px 20px; display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeAddNasiyaModal()">Bekor qilish</button>
+        <button type="submit" class="btn btn-primary btn-sm" id="addSaveBtn">Qo'shish</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── MODAL: DETAILED TO'LOV PLANINI TAHRIRLASH ── -->
+<div id="nasiyaDescoModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closePlanModal()">
+  <div class="modal-dialog" style="max-width:640px; background: var(--surface-card); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-lg);">
+    <div class="modal-header" style="border-bottom: 1px solid var(--border); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+      <h3 class="modal-title" style="margin:0; font-size:15px; font-weight:700; color: var(--text-900); display:flex; align-items:center; gap:8px;">
+        <i class="fas fa-calendar-alt" style="color:var(--brand)"></i> To'lov Rejasi va Jadvali
+      </h3>
+      <button class="modal-close" onclick="closePlanModal()" style="background:none; border:none; font-size:16px; color:var(--text-500); cursor:pointer;"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" style="padding:20px; display:flex; flex-direction:column; gap:14px;">
+      <input type="hidden" id="descoModalDealId">
+
+      <!-- Client Quick View Strip -->
+      <div id="descoClientInfo" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:10px; padding:12px 16px; display:flex; flex-direction:column; gap:4px;">
+        <div style="font-weight:600; font-size:14px; color: var(--text-900);" id="descoClientName">—</div>
+        <div style="font-size:12.5px; color:var(--brand); font-weight: 500;" id="descoClientPhone">—</div>
+        <div style="font-size:12px; color:var(--text-500);">
+          Mahsulot: <span id="descoProduct" style="font-weight:500; color:var(--text-700)">—</span> &nbsp;|&nbsp;
+          Jami summa: <span id="descoTotal" style="font-weight:700; color:var(--text-900)">—</span>
+        </div>
+      </div>
+
+      <!-- Quick Action: Auto-generate plan -->
+      <div style="background:var(--bg-tertiary); padding:10px 14px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; gap:8px; border: 1px solid var(--border);">
+        <span style="font-size:12px; color:var(--text-secondary); font-weight:500;">
+          <i class="fas fa-magic" style="color:var(--accent); margin-right:4px;"></i> Avto-Reja yaratish:
+        </span>
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-xs btn-secondary" onclick="autoGenerateInstallments(3)" style="padding:4px 8px; font-size:11px;">3 oy</button>
+          <button class="btn btn-xs btn-secondary" onclick="autoGenerateInstallments(6)" style="padding:4px 8px; font-size:11px;">6 oy</button>
+          <button class="btn btn-xs btn-secondary" onclick="autoGenerateInstallments(12)" style="padding:4px 8px; font-size:11px;">12 oy</button>
+        </div>
+      </div>
+
+      <!-- Plan Rows Container -->
+      <div style="font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-400); margin-bottom:2px; margin-top:4px;">To'lov jadvali qatorlari</div>
+      <div id="descoInstRowsContainer" style="display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto; padding-right:4px;">
+        <!-- Inst Rows Rendered Dynamically -->
+      </div>
+      
+      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border); padding-top:12px; margin-top:8px;">
+        <button class="btn btn-sm btn-secondary" onclick="addInstallmentRow()" style="border: 1px dashed var(--border); font-size:12px; height:34px;">
+          <i class="fas fa-plus"></i> To'lov qo'shish
+        </button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-sm btn-danger" onclick="deleteInstallmentPlan()" style="font-size:12px; height:34px;">
+            <i class="fas fa-trash-alt"></i> Planni O'chirish
+          </button>
+          <button class="btn btn-sm btn-primary" onclick="saveInstallmentPlan()" id="descoSaveBtn" style="font-size:12px; height:34px;">
+            <i class="fas fa-save"></i> Planni Saqlash
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.excel-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 13px;
+  background: var(--surface-card);
+}
+
+.excel-table th, .excel-table td {
+  border: 1px solid var(--border) !important;
+  padding: 8px 10px;
+  vertical-align: middle;
+  text-align: left;
+  white-space: nowrap;
+}
+
+/* Excel Style Headers */
+.excel-table th {
+  background: #fce4d6 !important; /* Soft peach/pink header */
+  color: #c55a11 !important; /* Dark orange/brown text */
+  font-weight: 700;
+  font-size: 12.5px;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  box-shadow: inset 0 -1px 0 var(--border);
+}
+
+.excel-table th.month-header {
+  background: #f8cbad !important; /* Slightly darker shade for month columns */
+  color: #c55a11 !important;
+}
+
+/* Zebra striping and hover */
+.excel-table tbody tr:nth-child(even) {
+  background: var(--bg-secondary);
+}
+
+.excel-table tbody tr:hover {
+  background: rgba(16, 185, 129, 0.06) !important; /* Very soft brand color hover */
+}
+
+/* Alignment rules */
+.cell-center {
+  text-align: center !important;
+}
+.cell-right {
+  text-align: right !important;
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Cell editability styles */
+.editable-cell {
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.15s;
+}
+
+.editable-cell:hover {
+  background-color: var(--brand-soft) !important;
+}
+
+.editable-cell::after {
+  content: '\f303';
+  font-family: 'Font Awesome 5 Free';
+  font-weight: 900;
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  color: var(--text-400);
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+
+.editable-cell:hover::after {
+  opacity: 1;
+}
+
+/* Month payments states */
+.month-cell {
+  cursor: pointer;
+  text-align: center !important;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+/* Paid: soft green background, dark green text */
+.month-cell.paid {
+  background-color: #e2f0d9 !important;
+  color: #385723 !important;
+  border: 1px solid #c6e0b4 !important;
+}
+
+/* Unpaid & Overdue: soft red background, dark red text */
+.month-cell.unpaid-overdue {
+  background-color: #ffc7ce !important;
+  color: #9c0006 !important;
+  border: 1px solid #ffb3b8 !important;
+}
+
+/* Unpaid & Future: white/standard with light text */
+.month-cell.unpaid-future {
+  background-color: var(--surface-card);
+  color: #595959 !important;
+}
+
+.month-cell:hover {
+  filter: brightness(0.92);
+}
+
+/* Footer Summary Styles */
+.excel-table tfoot td {
+  background: var(--bg-secondary) !important;
+  font-weight: 700;
+  border-top: 2px solid var(--border-strong) !important;
+  border-bottom: 2px double var(--border-strong) !important;
+  color: var(--text-900);
+}
+
+.excel-table tfoot td.total-yellow {
+  background: #fff2cc !important; /* Soft yellow total cell */
+  color: #7f6000 !important;
+}
+
+/* Input boxes in editing mode */
+.excel-edit-input {
+  width: 100%;
+  height: 28px;
+  border: 1px solid var(--brand) !important;
+  outline: none;
+  padding: 2px 6px;
+  font-family: inherit;
+  font-size: 13px;
+  border-radius: 4px;
+  background: var(--surface-card);
+  color: var(--text-900);
+  box-shadow: 0 0 4px rgba(59, 130, 246, 0.3);
+}
+
+.excel-wrapper::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+.excel-wrapper::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+}
+.excel-wrapper::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 5px;
+}
+</style>
+
+<script>
+let allDeals = [];
+let allMonths = [];
+let allStages = [];
+let activeSearchQuery = '';
+let currentEditingDeal = null;
+
+document.getElementById('excelSearch').addEventListener('input', (e) => {
+  activeSearchQuery = e.target.value.toLowerCase().trim();
+  renderGrid();
+});
+
+async function fetchData() {
+  const tbody = document.getElementById('excelTbody');
+  tbody.innerHTML = `<tr>
+    <td colspan="15" style="text-align: center; padding: 50px;">
+      <div class="spinner" style="margin: 0 auto 10px;"></div>
+      <span style="color: var(--text-500); font-size: 13px;">Ma'lumotlar yuklanmoqda...</span>
+    </td>
+  </tr>`;
+
+  try {
+    const r = await fetch('/api/nasiya/excel-data');
+    if (!r.ok) throw new Error();
+    const data = await r.json();
+    allDeals = data.deals || [];
+    allMonths = data.months || [];
+    allStages = data.stages || [];
+    
+    document.getElementById('excelDealCount').textContent = allDeals.length + ' ta kelishuv';
+    populateStagesSelect();
+    renderGrid();
+  } catch(err) {
+    tbody.innerHTML = `<tr>
+      <td colspan="15" style="text-align: center; padding: 40px; color: var(--danger)">
+        <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 8px;"></i>
+        <br>Ma'lumotlarni yuklashda xatolik yuz berdi.
+      </td>
+    </tr>`;
+  }
+}
+
+function populateStagesSelect() {
+  const select = document.getElementById('addStage');
+  select.innerHTML = allStages.map(s => `<option value="${s.id}">${escHtml(s.name)}</option>`).join('');
+}
+
+function calculateInstallments() {
+  const amount = Number(document.getElementById('addAmount').value) || 0;
+  const first = Number(document.getElementById('addFirstPayment').value) || 0;
+  const months = Number(document.getElementById('addMonths').value) || 1;
+
+  const remaining = amount - first;
+  document.getElementById('addRemainingText').textContent = fmtMoneyVal(remaining) + " so'm";
+
+  if (months > 1) {
+    const monthly = Math.round(remaining / (months - 1));
+    document.getElementById('addMonthlyText').textContent = fmtMoneyVal(monthly) + " so'm / oy";
+  } else {
+    document.getElementById('addMonthlyText').textContent = "0 so'm / oy";
+  }
+}
+
+function renderGrid() {
+  const thead = document.getElementById('excelThead');
+  const tbody = document.getElementById('excelTbody');
+  const tfoot = document.getElementById('excelTfoot');
+
+  if (allDeals.length === 0) {
+    tbody.innerHTML = `<tr>
+      <td colspan="15" style="text-align: center; padding: 40px; color: var(--text-500)">
+        Hozircha hech qanday nasiya kelishuvi topilmadi.
+      </td>
+    </tr>`;
+    return;
+  }
+
+  // Filter deals
+  const filteredDeals = allDeals.filter(d => {
+    const client = d.client || {};
+    const name = (client.name || '').toLowerCase();
+    const phone = (client.phone || '').toLowerCase();
+    const city = (client.city || '').toLowerCase();
+    const product = (d.productName || '').toLowerCase();
+    return name.includes(activeSearchQuery) || 
+           phone.includes(activeSearchQuery) || 
+           city.includes(activeSearchQuery) || 
+           product.includes(activeSearchQuery);
+  });
+
+  // 1. Build Headers
+  let headerHtml = `
+    <tr>
+      <th rowspan="2" style="width: 40px;">№</th>
+      <th rowspan="2" style="min-width: 150px;">Mijoz ismi</th>
+      <th rowspan="2" style="min-width: 120px;">Telefon</th>
+      <th rowspan="2" style="min-width: 100px;">Shahar</th>
+      <th rowspan="2" style="min-width: 150px;">Mahsulot</th>
+      <th rowspan="2" style="min-width: 100px;">Menejer</th>
+      <th rowspan="2" style="min-width: 120px;">Kelishilgan summa</th>
+      <th rowspan="2" style="min-width: 100px;">Necha puldan</th>
+      <th rowspan="2" style="min-width: 100px;">1-chi To'lov</th>
+      <th colspan="${allMonths.length}" class="month-header">Nasiya Savdo (Muddati)</th>
+      <th rowspan="2" style="min-width: 80px; text-align: center;">Amal</th>
+    </tr>
+    <tr>
+  `;
+  allMonths.forEach(m => {
+    headerHtml += `<th class="month-header" style="min-width: 100px;" title="${m.fullLabel}">${m.label}</th>`;
+  });
+  headerHtml += `</tr>`;
+  thead.innerHTML = headerHtml;
+
+  // 2. Build Body Rows
+  let bodyHtml = '';
+  filteredDeals.forEach((deal, index) => {
+    const client = deal.client || {};
+    const insts = deal.installments || [];
+    
+    // Kelishilgan summa (Agreed total amount)
+    const agreedAmount = deal.amount || 0;
+    
+    // 1-chi to'lov: amount of first installment
+    const firstPayment = insts.length > 0 ? insts[0].amount : 0;
+    
+    // Necha puldan: amount of second installment (or average of remaining)
+    const installmentAmount = insts.length > 1 ? insts[1].amount : (insts.length > 0 ? insts[0].amount : 0);
+
+    bodyHtml += `
+      <tr data-deal-id="${deal.id}">
+        <td class="cell-center" style="font-weight: 600; color: var(--text-500);">${index + 1}</td>
+        <td class="editable-cell" data-field="clientName" onclick="startEdit(this, '${escapeQuotes(client.name || '')}')">${escHtml(client.name || "Noma'lum")}</td>
+        <td class="editable-cell" data-field="phone" onclick="startEdit(this, '${escapeQuotes(client.phone || '')}')">${escHtml(client.phone || '—')}</td>
+        <td class="editable-cell" data-field="city" onclick="startEdit(this, '${escapeQuotes(client.city || '')}')">${escHtml(client.city || '—')}</td>
+        <td class="editable-cell" data-field="productName" onclick="startEdit(this, '${escapeQuotes(deal.productName || '')}')">${escHtml(deal.productName)}</td>
+        <td style="color: var(--text-600); font-weight: 500;">${escHtml(deal.manager?.fullName || '—')}</td>
+        <td class="editable-cell cell-right" data-field="amount" data-type="number" onclick="startEdit(this, ${agreedAmount})">${fmtMoneyVal(agreedAmount)}</td>
+        <td class="editable-cell cell-right" data-field="installmentAmount" data-type="number" onclick="startEdit(this, ${installmentAmount})">${fmtMoneyVal(installmentAmount)}</td>
+        <td class="editable-cell cell-right" data-field="firstPayment" data-type="number" onclick="startEdit(this, ${firstPayment})">${fmtMoneyVal(firstPayment)}</td>
+    `;
+
+    // Month columns for this row
+    allMonths.forEach(m => {
+      // Find installment matching this month key
+      const inst = insts.find(i => {
+        const d = new Date(i.dueDate);
+        const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        return k === m.key;
+      });
+
+      if (inst) {
+        const d = new Date(inst.dueDate);
+        const dayStr = String(d.getDate()).padStart(2, '0');
+        const monthStr = String(d.getMonth() + 1).padStart(2, '0');
+        const yearStr = d.getFullYear();
+        const dateFormatted = `${dayStr}.${monthStr}.${yearStr}`;
+
+        // Determine paid state & visual text
+        let stateClass = 'unpaid-future';
+        let cellText = `🕒 ${dateFormatted}`; // Future unpaid
+        const isOverdue = new Date(inst.dueDate) < new Date() && !inst.paid;
+        
+        if (inst.paid) {
+          stateClass = 'paid';
+          cellText = `✓ To'landi`;
+        } else if (isOverdue) {
+          stateClass = 'unpaid-overdue';
+          cellText = `✘ ${dateFormatted}`;
+        }
+
+        bodyHtml += `
+          <td class="month-cell ${stateClass}" 
+              data-inst-id="${inst.id}" 
+              data-paid="${inst.paid}" 
+              title="Muddati: ${dateFormatted}"
+              onclick="toggleInstallment(this)">
+            ${cellText}
+          </td>
+        `;
+      } else {
+        bodyHtml += `<td style="background: var(--bg-tertiary); text-align: center; color: var(--text-400); font-size: 11px;">—</td>`;
+      }
+    });
+
+    bodyHtml += `
+        <td style="text-align: center;">
+          <button class="btn btn-sm btn-secondary" onclick="openPlanModal(${deal.id})" style="padding: 4px 8px; font-size: 11px; display: flex; align-items: center; gap: 4px; margin: 0 auto; height: 26px;">
+            <i class="fas fa-calendar-alt" style="color: var(--brand);"></i> Plan
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+  tbody.innerHTML = bodyHtml;
+
+  // 3. Build Footer Summary
+  let totalAgreed = 0;
+  let totalInstallmentSize = 0;
+  let totalFirstPayment = 0;
+  
+  filteredDeals.forEach(deal => {
+    const insts = deal.installments || [];
+    totalAgreed += deal.amount || 0;
+    totalFirstPayment += insts.length > 0 ? insts[0].amount : 0;
+    totalInstallmentSize += insts.length > 1 ? insts[1].amount : (insts.length > 0 ? insts[0].amount : 0);
+  });
+
+  let footerHtml = `
+    <tr>
+      <td colspan="6" style="text-align: right; font-weight: 700; padding-right: 15px;">Jami summasi:</td>
+      <td class="cell-right total-yellow">${fmtMoneyVal(totalAgreed)}</td>
+      <td class="cell-right">${fmtMoneyVal(totalInstallmentSize)}</td>
+      <td class="cell-right">${fmtMoneyVal(totalFirstPayment)}</td>
+  `;
+
+  // Dynamic sum for each month column
+  allMonths.forEach(m => {
+    let monthSum = 0;
+    filteredDeals.forEach(deal => {
+      deal.installments.forEach(i => {
+        const d = new Date(i.dueDate);
+        const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        if (k === m.key) {
+          monthSum += i.amount || 0;
+        }
+      });
+    });
+    footerHtml += `<td class="cell-right">${fmtMoneyVal(monthSum)}</td>`;
+  });
+
+  footerHtml += `<td style="background: var(--bg-secondary);"></td></tr>`;
+  tfoot.innerHTML = footerHtml;
+}
+
+// Format numbers nicely as Currency
+function fmtMoneyVal(n) {
+  if (n === 0) return '0';
+  return Number(n).toLocaleString('uz-UZ');
+}
+
+function fmtMoney(n) {
+  return fmtMoneyVal(n) + " so'm";
+}
+
+function escHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function escapeQuotes(str) {
+  return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
+
+// Toggle installment payment status
+async function toggleInstallment(cell) {
+  const instId = cell.getAttribute('data-inst-id');
+  const currentPaid = cell.getAttribute('data-paid') === 'true';
+  const newPaid = !currentPaid;
+
+  // Optimistic UI updates
+  cell.setAttribute('data-paid', newPaid ? 'true' : 'false');
+  cell.className = 'month-cell ' + (newPaid ? 'paid' : 'unpaid-future');
+  cell.textContent = newPaid ? "✓ To'landi" : "🕒 ...";
+
+  try {
+    const r = await fetch('/api/nasiya/toggle-installment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ installmentId: instId, paid: newPaid })
+    });
+    if (!r.ok) throw new Error();
+    const result = await r.json();
+    
+    // Update local data
+    const deal = allDeals.find(d => d.id === result.deal.id);
+    if (deal) {
+      deal.paidAmount = result.deal.paidAmount;
+      const inst = deal.installments.find(i => i.id === result.installment.id);
+      if (inst) inst.paid = result.installment.paid;
+    }
+    
+    showToast("To'lov holati yangilandi", 'success');
+    renderGrid();
+  } catch (err) {
+    showToast("Xatolik yuz berdi", 'error');
+    // Revert optimistic updates
+    cell.setAttribute('data-paid', currentPaid ? 'true' : 'false');
+    cell.className = 'month-cell ' + (currentPaid ? 'paid' : 'unpaid-future');
+  }
+}
+
+// Inline editing logic
+let isEditing = false;
+
+function startEdit(cell, originalVal) {
+  if (isEditing) return; // Only allow one edit at a time
+  isEditing = true;
+
+  const fieldName = cell.getAttribute('data-field');
+  const type = cell.getAttribute('data-type') || 'text';
+  const dealId = cell.closest('tr').getAttribute('data-deal-id');
+
+  cell.innerHTML = `
+    <input type="${type === 'number' ? 'number' : 'text'}" 
+           class="excel-edit-input" 
+           value="${originalVal}" 
+           onkeydown="handleEditKeyDown(event, this, ${dealId}, '${fieldName}', '${escapeQuotes(String(originalVal))}')"
+           onblur="saveEdit(this, ${dealId}, '${fieldName}', '${escapeQuotes(String(originalVal))}')" />
+  `;
+  
+  const input = cell.querySelector('.excel-edit-input');
+  input.focus();
+  input.select();
+}
+
+function handleEditKeyDown(e, input, dealId, fieldName, originalVal) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    input.blur(); // Blur triggers saveEdit automatically
+  } else if (e.key === 'Escape') {
+    e.preventDefault();
+    // Revert changes
+    const cell = input.parentElement;
+    cell.textContent = fieldName.includes('Amount') || fieldName === 'amount' || fieldName === 'firstPayment' || fieldName === 'installmentAmount'
+      ? fmtMoneyVal(parseFloat(originalVal) || 0)
+      : originalVal;
+    
+    setTimeout(() => { isEditing = false; }, 100);
+  }
+}
+
+async function saveEdit(input, dealId, fieldName, originalVal) {
+  const cell = input.parentElement;
+  const newValue = input.value.trim();
+
+  if (newValue === originalVal) {
+    // No changes, restore original content
+    cell.textContent = fieldName.includes('Amount') || fieldName === 'amount' || fieldName === 'firstPayment' || fieldName === 'installmentAmount'
+      ? fmtMoneyVal(parseFloat(originalVal) || 0)
+      : originalVal;
+    setTimeout(() => { isEditing = false; }, 100);
+    return;
+  }
+
+  cell.innerHTML = '<span style="color: var(--text-400);"><i class="fas fa-spinner fa-spin"></i> ...</span>';
+
+  try {
+    const r = await fetch('/api/nasiya/update-cell', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dealId, field: fieldName, value: newValue })
+    });
+    if (!r.ok) throw new Error();
+    const updatedDeal = await r.json();
+
+    // Update in allDeals memory
+    const dealIdx = allDeals.findIndex(d => d.id === updatedDeal.id);
+    if (dealIdx !== -1) {
+      allDeals[dealIdx] = updatedDeal;
+    }
+
+    showToast("Ma'lumot saqlandi", 'success');
+  } catch (err) {
+    showToast("Saqlashda xatolik yuz berdi", 'error');
+  } finally {
+    setTimeout(() => { isEditing = false; }, 100);
+    renderGrid();
+  }
+}
+
+// ── ADD NEW DEAL MODAL FUNKSIONALI ──
+function openAddNasiyaModal() {
+  document.getElementById('addNasiyaForm').reset();
+  document.getElementById('addNasiyaModal').style.display = 'flex';
+  calculateInstallments();
+}
+
+function closeAddNasiyaModal() {
+  document.getElementById('addNasiyaModal').style.display = 'none';
+}
+
+async function saveAddNasiya(e) {
+  e.preventDefault();
+  const btn = document.getElementById('addSaveBtn');
+  btn.disabled = true;
+  btn.textContent = 'Saqlanmoqda...';
+
+  const payload = {
+    clientName: document.getElementById('addClientName').value.trim(),
+    clientPhone: document.getElementById('addClientPhone').value.trim(),
+    clientCity: document.getElementById('addClientCity').value.trim(),
+    productName: document.getElementById('addProduct').value.trim(),
+    stageId: document.getElementById('addStage').value,
+    months: document.getElementById('addMonths').value,
+    amount: document.getElementById('addAmount').value,
+    firstPayment: document.getElementById('addFirstPayment').value
+  };
+
+  try {
+    const r = await fetch('/api/nasiya/excel-add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!r.ok) {
+      const err = await r.json();
+      throw new Error(err.error || 'Server error');
+    }
+    
+    showToast("Yangi nasiya kelishuvi muvaffaqiyatli qo'shildi", 'success');
+    closeAddNasiyaModal();
+    fetchData();
+  } catch (err) {
+    showToast(err.message || "Qo'shishda xatolik yuz berdi", 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Qo\'shish';
+  }
+}
+
+// ── PLAN EDIT MODAL FUNKSIONALI ──
+async function openPlanModal(dealId) {
+  try {
+    const r = await fetch('/api/deals/' + dealId);
+    const d = await r.json();
+    currentEditingDeal = d;
+
+    document.getElementById('descoModalDealId').value = d.id;
+    document.getElementById('descoClientName').textContent = d.client?.name || "Noma'lum mijoz";
+    document.getElementById('descoClientPhone').textContent = d.client?.phone || '—';
+    document.getElementById('descoProduct').textContent = d.productName || '—';
+    document.getElementById('descoTotal').textContent = fmtMoney(d.amount);
+
+    const remainingDebt = d.amount - d.paidAmount;
+    const container = document.getElementById('descoInstRowsContainer');
+    container.innerHTML = '<div style="padding:10px; text-align:center;"><i class="fas fa-spinner fa-spin"></i> Yuklanmoqda...</div>';
+
+    const r2 = await fetch('/api/deals/' + d.id + '/installments');
+    const list = await r2.json();
+
+    if (list && list.length) {
+      container.innerHTML = list.map((inst, idx) => getInstallmentRowHtml(idx, inst.dueDate.slice(0, 10), inst.amount, inst.paid, inst.productName, inst.month, inst.notes)).join('');
+    } else {
+      container.innerHTML = getInstallmentRowHtml(0, new Date().toISOString().slice(0, 10), remainingDebt, false, d.productName, '1-oy', '');
+    }
+
+    document.getElementById('nasiyaDescoModal').style.display = 'flex';
+  } catch(err) {
+    showToast("Tafsilotlarni yuklashda xatolik", 'error');
+  }
+}
+
+function closePlanModal() {
+  document.getElementById('nasiyaDescoModal').style.display = 'none';
+  currentEditingDeal = null;
+}
+
+function getInstallmentRowHtml(index, dateVal, amountVal, paidVal, productVal, monthVal, notesVal) {
+  return `
+    <div class="installment-row" style="display:flex; align-items:center; gap:6px; background:var(--surface-input); border:1px solid var(--border); padding:6px 8px; border-radius:6px; margin-bottom:4px;">
+      <span style="font-size:12px; color:var(--text-400); width:16px; font-weight:600;">#${index + 1}</span>
+      <input type="text" class="form-control inst-product" value="${escHtml(productVal || '')}" style="width:120px; height:28px; font-size:12px; padding:0 6px;" placeholder="Mahsulot">
+      <input type="text" class="form-control inst-month" value="${escHtml(monthVal || '')}" style="width:65px; height:28px; font-size:12px; padding:0 6px;" placeholder="Oy">
+      <input type="date" class="form-control inst-date" value="${dateVal}" style="width:115px; height:28px; font-size:12px; padding:0 6px;">
+      <input type="number" class="form-control inst-amount" value="${amountVal}" style="width:85px; height:28px; font-size:12px; padding:0 6px; font-weight:600;" placeholder="Summa">
+      <input type="text" class="form-control inst-notes" value="${escHtml(notesVal || '')}" style="flex:1; height:28px; font-size:12px; padding:0 6px;" placeholder="Izoh">
+      
+      <label style="display:inline-flex; align-items:center; gap:4px; font-size:11.5px; color:var(--text-500); cursor:pointer; margin:0 4px; user-select:none; white-space:nowrap;">
+        <input type="checkbox" class="inst-paid" ${paidVal ? 'checked' : ''} style="cursor:pointer;"> To'langan
+      </label>
+      
+      <button class="btn btn-ghost btn-sm text-danger" onclick="this.parentElement.remove()" style="padding:2px 6px; font-size:11px;" title="Qatorni o'chirish">
+        <i class="fas fa-trash"></i>
+      </button>
+    </div>
+  `;
+}
+
+function addInstallmentRow() {
+  const container = document.getElementById('descoInstRowsContainer');
+  const index = container.querySelectorAll('.installment-row').length;
+  
+  const lastRowDate = container.querySelector('.installment-row:last-child .inst-date');
+  const lastProduct = container.querySelector('.installment-row:last-child .inst-product');
+  let dateStr = new Date().toISOString().slice(0, 10);
+  let pName = lastProduct ? lastProduct.value : (currentEditingDeal?.productName || '');
+  
+  if (lastRowDate && lastRowDate.value) {
+    const d = new Date(lastRowDate.value);
+    d.setMonth(d.getMonth() + 1);
+    dateStr = d.toISOString().slice(0, 10);
+  }
+
+  const div = document.createElement('div');
+  const monthsList = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
+  const dVal = new Date(dateStr);
+  const mLabel = monthsList[dVal.getMonth()];
+
+  div.innerHTML = getInstallmentRowHtml(index, dateStr, 0, false, pName, mLabel, '');
+  container.appendChild(div.firstElementChild);
+}
+
+function autoGenerateInstallments(months) {
+  if (!currentEditingDeal) return;
+  const remaining = currentEditingDeal.amount - currentEditingDeal.paidAmount;
+  const eachVal = Math.round(remaining / months);
+
+  const container = document.getElementById('descoInstRowsContainer');
+  container.innerHTML = '';
+  
+  const monthNames = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
+
+  for (let i = 0; i < months; i++) {
+    const d = new Date();
+    d.setMonth(d.getMonth() + i);
+    const dateStr = d.toISOString().slice(0, 10);
+    const amount = (i === months - 1) ? (remaining - (eachVal * (months - 1))) : eachVal;
+    
+    container.innerHTML += getInstallmentRowHtml(i, dateStr, amount, false, currentEditingDeal.productName, monthNames[d.getMonth()], '');
+  }
+}
+
+async function saveInstallmentPlan() {
+  const btn = document.getElementById('descoSaveBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saqlanmoqda...';
+  
+  const container = document.getElementById('descoInstRowsContainer');
+  const rows = container.querySelectorAll('.installment-row');
+  const installments = [];
+  
+  for (const row of rows) {
+    const dueDate = row.querySelector('.inst-date').value;
+    const amount = Number(row.querySelector('.inst-amount').value) || 0;
+    const paid = row.querySelector('.inst-paid').checked;
+    const productName = row.querySelector('.inst-product').value;
+    const month = row.querySelector('.inst-month').value;
+    const notes = row.querySelector('.inst-notes').value;
+    
+    if (!dueDate) {
+      showToast('Sana kiritilishi majburiy', 'error');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-save"></i> Planni Saqlash';
+      return;
+    }
+    installments.push({ dueDate, amount, paid, productName, month, notes });
+  }
+
+  try {
+    const r = await fetch('/api/deals/' + currentEditingDeal.id + '/installments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ installments })
+    });
+    if (!r.ok) throw new Error();
+    
+    showToast("To'lov rejasi muvaffaqiyatli saqlandi", 'success');
+    closePlanModal();
+    fetchData();
+  } catch(e) {
+    showToast("Saqlashda xatolik yuz berdi", 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-save"></i> Planni Saqlash';
+  }
+}
+
+async function deleteInstallmentPlan() {
+  if (!confirm("Haqiqatan ham ushbu nasiya to'lov rejasini o'chirmoqchimisiz? (Bu barcha rejalashtirilgan oylik to'lovlarni o'chiradi)")) return;
+  
+  try {
+    const r = await fetch('/api/deals/' + currentEditingDeal.id + '/installments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ installments: [] })
+    });
+    if (!r.ok) throw new Error();
+    
+    showToast("Nasiya to'lov rejasi o'chirildi", 'success');
+    closePlanModal();
+    fetchData();
+  } catch(e) {
+    showToast("O'chirishda xatolik yuz berdi", 'error');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', fetchData);
+</script>
+
+<%- include('../layouts/footer') %>

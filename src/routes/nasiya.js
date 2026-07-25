@@ -81,4 +81,347 @@ router.post('/quick-add', async (req, res, next) => {
   }
 });
 
+// GET /api/nasiya/excel-data
+router.get('/excel-data', async (req, res, next) => {
+  try {
+    // Fetch all stages containing "Nasiya"
+    const stages = await prisma.pipelineStage.findMany({
+      where: {
+        name: { contains: 'Nasiya' }
+      },
+      select: { id: true, name: true }
+    });
+    const stageIds = stages.map(s => s.id);
+
+    // Fetch deals
+    const deals = await prisma.deal.findMany({
+      where: {
+        stageId: { in: stageIds }
+      },
+      include: {
+        client: true,
+        manager: { select: { id: true, fullName: true } },
+        installments: { orderBy: { dueDate: 'asc' } }
+      },
+      orderBy: { updatedAt: 'desc' }
+    });
+
+    // Build dynamic month columns
+    const uniqueMonths = new Set();
+    deals.forEach(deal => {
+      deal.installments.forEach(inst => {
+        const d = new Date(inst.dueDate);
+        const year = d.getFullYear();
+        const month = d.getMonth();
+        const key = `${year}-${String(month + 1).padStart(2, '0')}`;
+        uniqueMonths.add(key);
+      });
+    });
+
+    const sortedMonthKeys = Array.from(uniqueMonths).sort();
+    const monthNames = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
+    const months = sortedMonthKeys.map(key => {
+      const [year, monthStr] = key.split('-');
+      const monthIndex = parseInt(monthStr, 10) - 1;
+      return {
+        key,
+        label: monthNames[monthIndex],
+        fullLabel: `${monthNames[monthIndex]} ${year}`,
+        year: parseInt(year, 10),
+        month: monthIndex
+      };
+    });
+
+    // Default months if no installments exist
+    if (months.length === 0) {
+      const currentYear = new Date().getFullYear();
+      const defaultMonths = [4, 5, 6, 7, 8, 9, 10]; // May to Nov (0-indexed: 4 to 10)
+      defaultMonths.forEach(m => {
+        months.push({
+          key: `${currentYear}-${String(m + 1).padStart(2, '0')}`,
+          label: monthNames[m],
+          fullLabel: `${monthNames[m]} ${currentYear}`,
+          year: currentYear,
+          month: m
+        });
+      });
+    }
+
+    res.json({ deals, months, stages });
+  } catch (error) {
+    console.error("Excel data fetch error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /api/nasiya/toggle-installment
+router.post('/toggle-installment', async (req, res, next) => {
+  try {
+    const { installmentId, paid } = req.body;
+    const instId = Number(installmentId);
+    
+    // Update installment
+    const updatedInst = await prisma.installment.update({
+      where: { id: instId },
+      data: { paid: Boolean(paid) }
+    });
+
+    // Recalculate paidAmount of the deal
+    const dealId = updatedInst.dealId;
+    const allInsts = await prisma.installment.findMany({ where: { dealId } });
+    const totalPaid = allInsts.filter(i => i.paid).reduce((sum, i) => sum + i.amount, 0);
+
+    const updatedDeal = await prisma.deal.update({
+      where: { id: dealId },
+      data: { paidAmount: totalPaid }
+    });
+
+    res.json({ installment: updatedInst, deal: updatedDeal });
+  } catch (error) {
+    console.error("Toggle installment error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /api/nasiya/update-cell
+router.post('/update-cell', async (req, res, next) => {
+  try {
+    const { dealId, field, value } = req.body;
+    const dId = Number(dealId);
+
+    const deal = await prisma.deal.findUnique({
+      where: { id: dId },
+      include: { client: true }
+    });
+
+    if (!deal) {
+      return res.status(404).json({ error: "Deal not found" });
+    }
+
+    if (field === 'clientName') {
+      if (deal.clientId) {
+        await prisma.client.update({
+          where: { id: deal.clientId },
+          data: { name: String(value) }
+        });
+      }
+    } else if (field === 'phone') {
+      if (deal.clientId) {
+        await prisma.client.update({
+          where: { id: deal.clientId },
+          data: { phone: String(value) }
+        });
+      }
+    } else if (field === 'city') {
+      if (deal.clientId) {
+        await prisma.client.update({
+          where: { id: deal.clientId },
+          data: { city: String(value) }
+        });
+      }
+    } else if (field === 'productName') {
+      await prisma.deal.update({
+        where: { id: dId },
+        data: { productName: String(value) }
+      });
+    } else if (field === 'amount') {
+      const valNum = parseFloat(value) || 0;
+      await prisma.deal.update({
+        where: { id: dId },
+        data: { amount: valNum }
+      });
+    } else if (field === 'firstPayment') {
+      const valNum = parseFloat(value) || 0;
+      const firstInst = await prisma.installment.findFirst({
+        where: { dealId: dId },
+        orderBy: { dueDate: 'asc' }
+      });
+      if (firstInst) {
+        await prisma.installment.update({
+          where: { id: firstInst.id },
+          data: { amount: valNum }
+        });
+        // Recalculate
+        const allInsts = await prisma.installment.findMany({ where: { dealId: dId } });
+        const totalAmount = allInsts.reduce((sum, i) => sum + i.amount, 0);
+        const totalPaid = allInsts.filter(i => i.paid).reduce((sum, i) => sum + i.amount, 0);
+        await prisma.deal.update({
+          where: { id: dId },
+          data: { amount: totalAmount, paidAmount: totalPaid }
+        });
+      }
+    } else if (field === 'installmentAmount') {
+      const valNum = parseFloat(value) || 0;
+      const insts = await prisma.installment.findMany({
+        where: { dealId: dId },
+        orderBy: { dueDate: 'asc' }
+      });
+      if (insts.length > 1) {
+        for (let i = 1; i < insts.length; i++) {
+          await prisma.installment.update({
+            where: { id: insts[i].id },
+            data: { amount: valNum }
+          });
+        }
+        // Recalculate
+        const allInsts = await prisma.installment.findMany({ where: { dealId: dId } });
+        const totalAmount = allInsts.reduce((sum, i) => sum + i.amount, 0);
+        const totalPaid = allInsts.filter(i => i.paid).reduce((sum, i) => sum + i.amount, 0);
+        await prisma.deal.update({
+          where: { id: dId },
+          data: { amount: totalAmount, paidAmount: totalPaid }
+        });
+      }
+    } else {
+      return res.status(400).json({ error: "Invalid field name" });
+    }
+
+    // Return the updated deal with installments and client
+    const updated = await prisma.deal.findUnique({
+      where: { id: dId },
+      include: {
+        client: true,
+        manager: { select: { id: true, fullName: true } },
+        installments: { orderBy: { dueDate: 'asc' } }
+      }
+    });
+
+    res.json(updated);
+  } catch (error) {
+    console.error("Update cell error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /api/nasiya/excel-add
+router.post('/excel-add', async (req, res, next) => {
+  try {
+    const {
+      clientName,
+      clientPhone,
+      clientCity,
+      productName,
+      stageId,
+      amount,
+      firstPayment,
+      months
+    } = req.body;
+
+    if (!clientName || !clientName.trim()) return res.status(400).json({ error: "Mijoz ismi majburiy" });
+    if (!clientPhone || !clientPhone.trim()) return res.status(400).json({ error: "Telefon raqami majburiy" });
+    if (!productName || !productName.trim()) return res.status(400).json({ error: "Mahsulot nomi majburiy" });
+    if (!stageId) return res.status(400).json({ error: "Nasiya bosqichi majburiy" });
+
+    const totalAmount = Number(amount) || 0;
+    const downPayment = Number(firstPayment) || 0;
+    const monthsCount = Number(months) || 1;
+
+    // Find stage to get pipelineId
+    const stage = await prisma.pipelineStage.findUnique({
+      where: { id: Number(stageId) }
+    });
+    if (!stage) return res.status(400).json({ error: "Tanlangan bosqich topilmadi" });
+
+    // Find or create client
+    let client = await prisma.client.findFirst({
+      where: { phone: clientPhone }
+    });
+
+    if (client) {
+      // Update city if provided and empty
+      if (clientCity && !client.city) {
+        client = await prisma.client.update({
+          where: { id: client.id },
+          data: { city: clientCity }
+        });
+      }
+    } else {
+      client = await prisma.client.create({
+        data: {
+          name: clientName,
+          phone: clientPhone,
+          city: clientCity || null
+        }
+      });
+    }
+
+    // Run transaction to create deal and installments
+    const deal = await prisma.$transaction(async (tx) => {
+      const createdDeal = await tx.deal.create({
+        data: {
+          productName,
+          amount: totalAmount,
+          paidAmount: downPayment, // The first payment is considered paid
+          status: 'won',
+          clientId: client.id,
+          stageId: stage.id,
+          pipelineId: stage.pipelineId,
+          managerId: req.userId
+        }
+      });
+
+      const monthNames = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
+
+      // 1. Create first installment (Down payment) - marked paid: true
+      const now = new Date();
+      await tx.installment.create({
+        data: {
+          dealId: createdDeal.id,
+          dueDate: now,
+          amount: downPayment,
+          paid: true,
+          productName,
+          month: monthNames[now.getMonth()],
+          notes: '1-chi To\'lov (Boshlang\'ich)'
+        }
+      });
+
+      // 2. Generate remaining installments
+      if (monthsCount > 1) {
+        const remaining = totalAmount - downPayment;
+        const monthlyAmt = Math.round(remaining / (monthsCount - 1));
+
+        for (let i = 1; i < monthsCount; i++) {
+          const dueDate = new Date();
+          dueDate.setMonth(dueDate.getMonth() + i);
+
+          // Adjust last payment for rounding errors
+          const currentAmt = (i === monthsCount - 1)
+            ? (remaining - (monthlyAmt * (monthsCount - 2)))
+            : monthlyAmt;
+
+          await tx.installment.create({
+            data: {
+              dealId: createdDeal.id,
+              dueDate,
+              amount: currentAmt,
+              paid: false,
+              productName,
+              month: monthNames[dueDate.getMonth()],
+              notes: `${i + 1}-oylik to'lov`
+            }
+          });
+        }
+      }
+
+      return createdDeal;
+    });
+
+    // Return the new deal populated
+    const result = await prisma.deal.findUnique({
+      where: { id: deal.id },
+      include: {
+        client: true,
+        manager: { select: { id: true, fullName: true } },
+        installments: { orderBy: { dueDate: 'asc' } }
+      }
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error("Excel add deal error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 module.exports = router;
