@@ -65,43 +65,66 @@ router.post('/webhook', async (req, res) => {
           let clientName = msg.contact?.name || `Instagram Lead (${clientIgId})`;
           let username = msg.contact?.username || null;
 
-          try {
-            client = await prisma.client.create({
-              data: {
-                name: clientName,
-                instagramId: clientIgId,
-                instagramUsername: username,
-                notes: 'Instagram (Wazzup) orqali yangi murojaat.'
+          // Try to look up existing client by username to avoid duplicates when switching accounts
+          if (username) {
+            try {
+              const existingClient = await prisma.client.findFirst({
+                where: { instagramUsername: username }
+              });
+              if (existingClient) {
+                client = await prisma.client.update({
+                  where: { id: existingClient.id },
+                  data: {
+                    instagramId: clientIgId,
+                    name: clientName
+                  }
+                });
+                console.log(`[Wazzup Webhook] Re-mapped client ${client.name} (ID: ${client.id}) to new chatId: ${clientIgId}`);
               }
-            });
+            } catch (findErr) {
+              console.error('Error looking up client by username in Wazzup webhook:', findErr);
+            }
+          }
 
-            // Auto-create a Deal in default pipeline
-            const pipeline = await prisma.pipeline.findFirst({
-              where: { isDefault: true },
-              include: { stages: { orderBy: { order: 'asc' }, take: 1 } }
-            });
-
-            if (pipeline && pipeline.stages.length > 0) {
-              await prisma.deal.create({
+          if (!client) {
+            try {
+              client = await prisma.client.create({
                 data: {
-                  productName: `Instagram Lead - ${clientIgId}`,
-                  clientId: client.id,
-                  pipelineId: pipeline.id,
-                  stageId: pipeline.stages[0].id,
-                  status: 'new',
-                  amount: 0,
-                  notes: `Avtomatik yaratildi. Wazzup xabari: "${text.substring(0, 100)}"`
+                  name: clientName,
+                  instagramId: clientIgId,
+                  instagramUsername: username,
+                  notes: 'Instagram (Wazzup) orqali yangi murojaat.'
                 }
               });
-            }
-          } catch (createErr) {
-            if (createErr.code === 'P2002') {
-              // Concurrency safety fallback: fetch client created by parallel request
-              client = await prisma.client.findUnique({
-                where: { instagramId: clientIgId }
+
+              // Auto-create a Deal in default pipeline
+              const pipeline = await prisma.pipeline.findFirst({
+                where: { isDefault: true },
+                include: { stages: { orderBy: { order: 'asc' }, take: 1 } }
               });
-            } else {
-              throw createErr;
+
+              if (pipeline && pipeline.stages.length > 0) {
+                await prisma.deal.create({
+                  data: {
+                    productName: `Instagram Lead - ${clientIgId}`,
+                    clientId: client.id,
+                    pipelineId: pipeline.id,
+                    stageId: pipeline.stages[0].id,
+                    status: 'new',
+                    amount: 0,
+                    notes: `Avtomatik yaratildi. Wazzup xabari: "${text.substring(0, 100)}"`
+                  }
+                });
+              }
+            } catch (createErr) {
+              if (createErr.code === 'P2002') {
+                // Concurrency safety fallback: fetch client created by parallel request
+                client = await prisma.client.findUnique({
+                  where: { instagramId: clientIgId }
+                });
+              } else {
+                throw createErr;
+              }
             }
           }
         }
@@ -224,7 +247,7 @@ router.post('/webhook', async (req, res) => {
                 }
               }
 
-              // If not, create a new client
+              // If not, fetch Meta Profile and check if client already exists by Username to prevent duplicates when switching accounts
               if (!client) {
                 const settings = await prisma.companySettings.findFirst();
                 const PAGE_ACCESS_TOKEN = settings?.instagramAccessToken || process.env.META_PAGE_ACCESS_TOKEN;
@@ -239,40 +262,59 @@ router.post('/webhook', async (req, res) => {
                     if (profileData && profileData.username) {
                       username = profileData.username;
                       clientName = profileData.name || profileData.username;
+
+                      // Check if client with this username already exists in our CRM
+                      const existingClient = await prisma.client.findFirst({
+                        where: { instagramUsername: username }
+                      });
+
+                      if (existingClient) {
+                        client = await prisma.client.update({
+                          where: { id: existingClient.id },
+                          data: {
+                            instagramId: clientIgId,
+                            name: clientName
+                          }
+                        });
+                        console.log(`[Instagram Webhook] Re-mapped client ${client.name} (ID: ${client.id}) to new ID: ${clientIgId}`);
+                      }
                     }
                   } catch (profileErr) {
                     console.error('Error fetching instagram profile:', profileErr);
                   }
                 }
 
-                const previewText = text ? text.substring(0, 50) : `[${attachmentType || 'Fayl'}]`;
-                client = await prisma.client.create({
-                  data: {
-                    name: clientName,
-                    instagramId: clientIgId,
-                    instagramUsername: username,
-                    notes: `Instagram orqali yangi murojaat. Xabar: "${previewText}..."`
-                  }
-                });
-
-                // Auto-create a Deal for this new client
-                const pipeline = await prisma.pipeline.findFirst({
-                  where: { isDefault: true },
-                  include: { stages: { orderBy: { order: 'asc' }, take: 1 } }
-                });
-
-                if (pipeline && pipeline.stages.length > 0) {
-                  await prisma.deal.create({
+                // If still no client found/mapped, create a new one
+                if (!client) {
+                  const previewText = text ? text.substring(0, 50) : `[${attachmentType || 'Fayl'}]`;
+                  client = await prisma.client.create({
                     data: {
-                      productName: `Instagram Lead - ${clientIgId}`,
-                      clientId: client.id,
-                      pipelineId: pipeline.id,
-                      stageId: pipeline.stages[0].id,
-                      status: 'new',
-                      amount: 0,
-                      notes: `Avtomatik yaratildi. Instagram xabari: "${text || `[${attachmentType || 'Fayl'}]`}"`
+                      name: clientName,
+                      instagramId: clientIgId,
+                      instagramUsername: username,
+                      notes: `Instagram orqali yangi murojaat. Xabar: "${previewText}..."`
                     }
                   });
+
+                  // Auto-create a Deal for this new client
+                  const pipeline = await prisma.pipeline.findFirst({
+                    where: { isDefault: true },
+                    include: { stages: { orderBy: { order: 'asc' }, take: 1 } }
+                  });
+
+                  if (pipeline && pipeline.stages.length > 0) {
+                    await prisma.deal.create({
+                      data: {
+                        productName: `Instagram Lead - ${clientIgId}`,
+                        clientId: client.id,
+                        pipelineId: pipeline.id,
+                        stageId: pipeline.stages[0].id,
+                        status: 'new',
+                        amount: 0,
+                        notes: `Avtomatik yaratildi. Instagram xabari: "${text || `[${attachmentType || 'Fayl'}]`}"`
+                      }
+                    });
+                  }
                 }
               }
 
