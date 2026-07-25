@@ -38,7 +38,10 @@ router.post('/webhook', async (req, res) => {
       if (msg.chatType !== 'instagram') continue; // only handle Instagram messages
 
       const messageId = msg.messageId;
-      const text = msg.text || '';
+      let text = msg.text || '';
+      if (msg.instPost && msg.instPost.url) {
+        text += `\n\n[Instagram Post: ${msg.instPost.url}]`;
+      }
       const isEcho = msg.isEcho || false;
       const clientIgId = msg.chatId;
 
