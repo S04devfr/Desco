@@ -337,7 +337,8 @@ router.post('/messages', async (req, res) => {
     }
 
     const recipientId = client.instagramId;
-    const WAZZUP_API_KEY = process.env.WAZZUP_API_KEY;
+    const settings = await prisma.companySettings.findFirst();
+    const WAZZUP_API_KEY = process.env.WAZZUP_API_KEY || (settings?.instagramAccessToken && settings.instagramAccessToken.length === 32 ? settings.instagramAccessToken : null);
 
     // 1. If Wazzup API Key is present, send via Wazzup
     if (WAZZUP_API_KEY) {
@@ -417,8 +418,7 @@ router.post('/messages', async (req, res) => {
     }
 
     // 2. Fallback to Meta API if Wazzup is not configured
-    const settings = await prisma.companySettings.findFirst();
-    const PAGE_ACCESS_TOKEN = settings?.instagramAccessToken || process.env.META_PAGE_ACCESS_TOKEN;
+    const PAGE_ACCESS_TOKEN = (settings?.instagramAccessToken && settings.instagramAccessToken.length > 32) ? settings.instagramAccessToken : process.env.META_PAGE_ACCESS_TOKEN;
 
     // Save to DB first
     const messageId = `out_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
