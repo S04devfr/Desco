@@ -297,4 +297,41 @@ process.on('uncaughtException', (error) => {
   // Tizim holatini tekshirib sekinlashtirish mumkin, lekin crash qildirmaymiz
 });
 
+// Automatic Static Uploads Storage Cleanup (Older than 15 days) to prevent server disk space leak
+function runUploadsCleanup() {
+  const uploadsDir = path.join(__dirname, '../public/uploads');
+  if (!fs.existsSync(uploadsDir)) return;
+
+  fs.readdir(uploadsDir, (err, files) => {
+    if (err) {
+      console.error('[Cleanup] Directory read error:', err);
+      return;
+    }
+
+    const now = Date.now();
+    const maxAge = 15 * 24 * 60 * 60 * 1000; // 15 days
+
+    files.forEach(file => {
+      if (file.startsWith('.')) return; // Skip dotfiles
+
+      const filePath = path.join(uploadsDir, file);
+      fs.stat(filePath, (err, stats) => {
+        if (err) return;
+
+        if (now - stats.mtimeMs > maxAge) {
+          fs.unlink(filePath, (err) => {
+            if (err) console.error(`[Cleanup] Failed to delete expired file ${file}:`, err);
+            else console.log(`[Cleanup] Deleted expired temporary file: ${file}`);
+          });
+        }
+      });
+    });
+  });
+}
+
+// Start cleanup check on startup
+runUploadsCleanup();
+// Run cleanup check every 24 hours
+setInterval(runUploadsCleanup, 24 * 60 * 60 * 1000);
+
 module.exports = { app, server };
