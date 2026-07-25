@@ -2,11 +2,16 @@ const express = require('express');
 const router = express.Router();
 const prisma = require('../config/database');
 
-// Webhook Verification (Instagram needs this when subscribing)
+// Webhook Verification (Instagram/Wazzup needs this when subscribing)
 router.get('/webhook', async (req, res) => {
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
+
+  // Handle Wazzup verification ping
+  if (!mode && !token && !challenge) {
+    return res.status(200).send('OK');
+  }
 
   const settings = await prisma.companySettings.findFirst();
   const VERIFY_TOKEN = settings?.instagramVerifyToken || process.env.INSTAGRAM_VERIFY_TOKEN || 'desco-crm-verify-token';
@@ -23,10 +28,114 @@ router.get('/webhook', async (req, res) => {
   }
 });
 
-// Receive messages from Instagram
+// Receive messages from Instagram / Wazzup
 router.post('/webhook', async (req, res) => {
   const body = req.body;
 
+  // Handle Wazzup Webhook Payload
+  if (body.messages && Array.isArray(body.messages)) {
+    for (const msg of body.messages) {
+      if (msg.chatType !== 'instagram') continue; // only handle Instagram messages
+
+      const messageId = msg.messageId;
+      const text = msg.text || '';
+      const isEcho = msg.isEcho || false;
+      const clientIgId = msg.chatId;
+
+      // Extract attachment if present
+      let attachmentType = null;
+      let attachmentUrl = null;
+      if (msg.type && msg.type !== 'text') {
+        attachmentType = msg.type; // image, audio, video, document, etc.
+        attachmentUrl = msg.contentUri || null;
+      }
+
+      try {
+        // Find or create Client
+        let client = await prisma.client.findUnique({
+          where: { instagramId: clientIgId }
+        });
+
+        if (!client) {
+          // Use name/username from contact if provided
+          let clientName = msg.contact?.name || `Instagram Lead (${clientIgId})`;
+          let username = msg.contact?.username || null;
+
+          client = await prisma.client.create({
+            data: {
+              name: clientName,
+              instagramId: clientIgId,
+              instagramUsername: username,
+              notes: 'Instagram (Wazzup) orqali yangi murojaat.'
+            }
+          });
+
+          // Auto-create a Deal in default pipeline
+          const pipeline = await prisma.pipeline.findFirst({
+            where: { isDefault: true },
+            include: { stages: { orderBy: { order: 'asc' }, take: 1 } }
+          });
+
+          if (pipeline && pipeline.stages.length > 0) {
+            await prisma.deal.create({
+              data: {
+                productName: `Instagram Lead - ${clientIgId}`,
+                clientId: client.id,
+                pipelineId: pipeline.id,
+                stageId: pipeline.stages[0].id,
+                status: 'new',
+                amount: 0,
+                notes: `Avtomatik yaratildi. Wazzup xabari: "${text.substring(0, 100)}"`
+              }
+            });
+          }
+        }
+
+        // Determine sender/recipient based on isEcho
+        const senderId = isEcho ? 'CRM' : clientIgId;
+        const recipientId = isEcho ? clientIgId : 'CRM';
+
+        // Save the message in database
+        const savedMsg = await prisma.instagramMessage.upsert({
+          where: { messageId },
+          update: {
+            text,
+            attachmentType,
+            attachmentUrl
+          },
+          create: {
+            messageId,
+            text,
+            senderId,
+            recipientId,
+            timestamp: msg.timestamp ? new Date(msg.timestamp * 1000) : new Date(),
+            isOutgoing: isEcho,
+            clientId: client.id,
+            attachmentType,
+            attachmentUrl
+          }
+        });
+
+        // Broadcast to client-side UI
+        const broadcast = req.app.get('broadcast');
+        if (broadcast) {
+          broadcast({
+            type: 'instagram_message',
+            clientId: client.id,
+            message: {
+              ...savedMsg,
+              timestamp: savedMsg.timestamp.toISOString()
+            }
+          });
+        }
+      } catch (err) {
+        console.error('Error processing Wazzup message:', err);
+      }
+    }
+    return res.status(200).send('EVENT_RECEIVED');
+  }
+
+  // Handle Meta API Webhook Payload
   if (body.object === 'instagram') {
     for (const entry of body.entry) {
       if (entry.messaging) {
@@ -228,6 +337,86 @@ router.post('/messages', async (req, res) => {
     }
 
     const recipientId = client.instagramId;
+    const WAZZUP_API_KEY = process.env.WAZZUP_API_KEY;
+
+    // 1. If Wazzup API Key is present, send via Wazzup
+    if (WAZZUP_API_KEY) {
+      // Save to DB first with a temp ID
+      const messageId = `out_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+      const savedMsg = await prisma.instagramMessage.create({
+        data: {
+          messageId,
+          text,
+          senderId: 'CRM', // CRM sending
+          recipientId,
+          timestamp: new Date(),
+          isOutgoing: true,
+          clientId: client.id
+        }
+      });
+
+      try {
+        // Fetch the Wazzup Channel ID dynamically
+        const channelRes = await fetch('https://api.wazzup24.com/v3/channels', {
+          headers: {
+            'Authorization': `Bearer ${WAZZUP_API_KEY}`
+          }
+        });
+        const channels = await channelRes.json();
+        
+        // Find the active Instagram channel
+        const igChannel = channels.find(c => c.transport === 'instagram' && c.state === 'active') || channels[0];
+        
+        if (!igChannel) {
+          await prisma.instagramMessage.delete({ where: { id: savedMsg.id } });
+          return res.status(400).json({ error: 'Faol Wazzup Instagram kanali topilmadi.' });
+        }
+
+        // Send message via Wazzup API
+        const sendRes = await fetch('https://api.wazzup24.com/v3/message', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${WAZZUP_API_KEY}`
+          },
+          body: JSON.stringify({
+            channelId: igChannel.channelId,
+            chatId: recipientId,
+            chatType: 'instagram',
+            text: text,
+            crmMessageId: messageId
+          })
+        });
+
+        const sendResult = await sendRes.json();
+        if (sendRes.status >= 400 || (sendResult && sendResult.error)) {
+          console.error('Wazzup API Error:', sendResult);
+          await prisma.instagramMessage.delete({ where: { id: savedMsg.id } });
+          return res.status(400).json({ error: (sendResult && sendResult.error) || 'Wazzup API Error' });
+        }
+
+        // Broadcast the message via WebSocket
+        const broadcast = req.app.get('broadcast');
+        if (broadcast) {
+          broadcast({
+            type: 'instagram_message',
+            clientId: client.id,
+            message: {
+              ...savedMsg,
+              timestamp: savedMsg.timestamp.toISOString()
+            }
+          });
+        }
+
+        return res.json(savedMsg);
+      } catch (apiErr) {
+        console.error('Failed to send via Wazzup API:', apiErr);
+        await prisma.instagramMessage.delete({ where: { id: savedMsg.id } });
+        return res.status(500).json({ error: apiErr.message || 'Failed to connect to Wazzup API' });
+      }
+    }
+
+    // 2. Fallback to Meta API if Wazzup is not configured
     const settings = await prisma.companySettings.findFirst();
     const PAGE_ACCESS_TOKEN = settings?.instagramAccessToken || process.env.META_PAGE_ACCESS_TOKEN;
 
@@ -245,7 +434,6 @@ router.post('/messages', async (req, res) => {
       }
     });
 
-    // If we have token, actually send to Meta
     if (PAGE_ACCESS_TOKEN) {
       try {
         const response = await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`, {
