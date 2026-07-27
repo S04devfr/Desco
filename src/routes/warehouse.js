@@ -72,7 +72,7 @@ router.post('/fill', requireRole('admin', 'manager'), async (req, res) => {
         changeQty: parsedQty,
         action: 'fill',
         notes: notes || null,
-        userName: req.session?.user?.fullName || null
+        userName: req.user?.fullName || req.session?.user?.fullName || null
       }
     });
 
@@ -120,7 +120,7 @@ router.post('/transfer', requireRole('admin', 'manager'), async (req, res) => {
           changeQty: -parseInt(qty),
           action: 'transfer',
           notes: `${toWarehouse}ga ko'chirildi${notes ? '. ' + notes : ''}`,
-          userName: req.session?.user?.fullName || null
+          userName: req.user?.fullName || req.session?.user?.fullName || null
         }
       }),
       prisma.warehouseLog.create({
@@ -130,7 +130,7 @@ router.post('/transfer', requireRole('admin', 'manager'), async (req, res) => {
           changeQty: parseInt(qty),
           action: 'transfer',
           notes: `${fromWarehouse}dan olindi${notes ? '. ' + notes : ''}`,
-          userName: req.session?.user?.fullName || null
+          userName: req.user?.fullName || req.session?.user?.fullName || null
         }
       })
     ]);

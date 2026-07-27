@@ -245,7 +245,7 @@ router.post('/', async (req, res, next) => {
           create: { warehouse: deal.warehouse, productName: deal.productName, stock: -1 }
         });
         await prisma.warehouseLog.create({
-          data: { warehouse: deal.warehouse, productName: deal.productName, changeQty: -1, action: 'ship', dealId: deal.id, notes: 'Sdelka #' + deal.id + ' — sotuv (yaratilganda)', userName: req.session?.user?.fullName || null }
+          data: { warehouse: deal.warehouse, productName: deal.productName, changeQty: -1, action: 'ship', dealId: deal.id, notes: 'Sdelka #' + deal.id + ' — sotuv (yaratilganda)', userName: req.user?.fullName || req.session?.user?.fullName || null }
         });
         await prisma.deal.update({ where: { id: deal.id }, data: { stockDecremented: true } });
         deal.stockDecremented = true;
@@ -451,7 +451,7 @@ router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => 
           create: { warehouse: deal.warehouse, productName: deal.productName, stock: -1 }
         });
         await prisma.warehouseLog.create({
-          data: { warehouse: deal.warehouse, productName: deal.productName, changeQty: -1, action: 'ship', dealId: deal.id, notes: 'Sdelka #' + deal.id + ' — sotuv', userName: req.session?.user?.fullName || null }
+          data: { warehouse: deal.warehouse, productName: deal.productName, changeQty: -1, action: 'ship', dealId: deal.id, notes: 'Sdelka #' + deal.id + ' — sotuv', userName: req.user?.fullName || req.session?.user?.fullName || null }
         });
         await prisma.deal.update({ where: { id: deal.id }, data: { stockDecremented: true } });
         deal.stockDecremented = true;
@@ -463,7 +463,7 @@ router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => 
           create: { warehouse: existing.warehouse, productName: existing.productName, stock: 1 }
         });
         await prisma.warehouseLog.create({
-          data: { warehouse: existing.warehouse, productName: existing.productName, changeQty: 1, action: 'return', dealId: deal.id, notes: 'Sdelka #' + deal.id + ' — qaytarildi', userName: req.session?.user?.fullName || null }
+          data: { warehouse: existing.warehouse, productName: existing.productName, changeQty: 1, action: 'return', dealId: deal.id, notes: 'Sdelka #' + deal.id + ' — qaytarildi', userName: req.user?.fullName || req.session?.user?.fullName || null }
         });
         await prisma.deal.update({ where: { id: deal.id }, data: { stockDecremented: false } });
         deal.stockDecremented = false;
@@ -650,7 +650,7 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
           create: { warehouse: deal.warehouse, productName: deal.productName, stock: -1 }
         });
         await prisma.warehouseLog.create({
-          data: { warehouse: deal.warehouse, productName: deal.productName, changeQty: -1, action: 'ship', dealId: deal.id, notes: 'Sdelka #' + deal.id + ' — bosqich o\'zgardi', userName: req.session?.user?.fullName || null }
+          data: { warehouse: deal.warehouse, productName: deal.productName, changeQty: -1, action: 'ship', dealId: deal.id, notes: 'Sdelka #' + deal.id + ' — bosqich o\'zgardi', userName: req.user?.fullName || req.session?.user?.fullName || null }
         });
         await prisma.deal.update({ where: { id: deal.id }, data: { stockDecremented: true } });
         deal.stockDecremented = true;
@@ -661,7 +661,7 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
           create: { warehouse: existing.warehouse, productName: existing.productName, stock: 1 }
         });
         await prisma.warehouseLog.create({
-          data: { warehouse: existing.warehouse, productName: existing.productName, changeQty: 1, action: 'return', dealId: deal.id, notes: 'Sdelka #' + deal.id + ' — qaytarildi', userName: req.session?.user?.fullName || null }
+          data: { warehouse: existing.warehouse, productName: existing.productName, changeQty: 1, action: 'return', dealId: deal.id, notes: 'Sdelka #' + deal.id + ' — qaytarildi', userName: req.user?.fullName || req.session?.user?.fullName || null }
         });
         await prisma.deal.update({ where: { id: deal.id }, data: { stockDecremented: false } });
         deal.stockDecremented = false;
@@ -697,7 +697,7 @@ router.delete('/:id', requireRole('admin', 'manager'), async (req, res, next) =>
           create: { warehouse: existing.warehouse, productName: existing.productName, stock: 1 }
         });
         await prisma.warehouseLog.create({
-          data: { warehouse: existing.warehouse, productName: existing.productName, changeQty: 1, action: 'return', dealId: existing.id, notes: 'Sdelka #' + existing.id + " — o'chirildi, tovar qaytarildi", userName: req.session?.user?.fullName || null }
+          data: { warehouse: existing.warehouse, productName: existing.productName, changeQty: 1, action: 'return', dealId: existing.id, notes: 'Sdelka #' + existing.id + " — o'chirildi, tovar qaytarildi", userName: req.user?.fullName || req.session?.user?.fullName || null }
         });
       } catch(stockErr) { console.error('[Stock delete-rollback]', stockErr); }
     }

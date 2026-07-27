@@ -28,6 +28,7 @@
 
   /* Text */
   --text-900: #1C1C1E;
+  --text-800: #242426;
   --text-700: #2C2C2E;
   --text-500: #3C3C43;
   --text-300: #8E8E93;
@@ -110,6 +111,7 @@
 
   /* Text — issiq oq, ko'z uchun qulay */
   --text-900: #F9FAFB;
+  --text-800: #F0F1F3;
   --text-700: #E5E7EB;
   --text-500: #9CA3AF;
   --text-300: #6B7280;
