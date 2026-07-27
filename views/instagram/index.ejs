@@ -483,7 +483,8 @@
 let currentClientId = null;
 let currentClientName = '';
 let allPipelines = [];
-let unreadMessageCounts = {}; // Track client unread counts locally if needed
+let unreadMessageCounts = {}; // Track client unread counts locally
+let clientsCache = []; // Cache of currently loaded clients
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadClients();
@@ -521,23 +522,56 @@ function initWebSocket() {
   };
 }
 
-function handleIncomingWebSocketMessage(data) {
+async function handleIncomingWebSocketMessage(data) {
   const { clientId, message } = data;
 
-  // Sound play for client sent message
+  // Faqat kiruvchi xabarlar uchun:
   if (!message.isOutgoing) {
     playNotificationSound();
     
-    // Update local unread tracking if not current active client
+    // Agar bu aktiv chat bo'lmasa - xabarsiz hisoblash
     if (clientId !== currentClientId) {
       unreadMessageCounts[clientId] = (unreadMessageCounts[clientId] || 0) + 1;
     }
   }
 
-  // Refresh client list to move updated client to top
-  loadClients();
+  // Klient ro'yxatida bu klientni yangilash (tepaga ko'tarish + oxirgi xabar + badge)
+  const existingItem = document.querySelector(`.chat-client-item[data-id="${clientId}"]`);
+  
+  if (existingItem) {
+    // Klient allaqachon ro'yxatda - faqat yangilash va tepaga ko'tarish
+    const lastMsgEl = existingItem.querySelector('.chat-client-msg');
+    if (lastMsgEl) {
+      const previewText = message.text ? message.text.substring(0, 60) : 
+                          (message.attachmentType === 'image' ? '[Rasm]' : 
+                           message.attachmentType === 'audio' ? '[Ovozli xabar]' :
+                           message.attachmentType === 'video' ? '[Video]' : '[Fayl]');
+      lastMsgEl.textContent = previewText;
+    }
+    
+    // Badge qo'shish yoki yangilash
+    const count = unreadMessageCounts[clientId] || 0;
+    let badge = existingItem.querySelector('.unread-badge');
+    if (count > 0 && clientId !== currentClientId) {
+      if (!badge) {
+        badge = document.createElement('div');
+        badge.className = 'unread-badge';
+        existingItem.appendChild(badge);
+      }
+      badge.textContent = count;
+    } else if (badge && clientId === currentClientId) {
+      badge.remove();
+    }
+    
+    // Tepaga ko'tarish
+    const list = document.getElementById('clientList');
+    list.prepend(existingItem);
+  } else {
+    // Yangi klient keldi - to'liq ro'yxatni qayta yukla
+    await loadClients();
+  }
 
-  // If we are looking at the client that received/sent the message, update the messages list
+  // Agar hozir shu klientni ko'rmoqda bo'lsak - xabarlarni yangilash
   if (currentClientId === clientId) {
     loadMessages(clientId);
   }
@@ -576,6 +610,7 @@ async function loadClients() {
   try {
     const res = await fetch('/api/instagram/clients');
     const clients = await res.json();
+    clientsCache = clients;
     
     const list = document.getElementById('clientList');
     list.innerHTML = '';
@@ -589,7 +624,10 @@ async function loadClients() {
       let lastMsg = 'Yangi mijoz';
       if (c.messages && c.messages.length > 0) {
         const msg = c.messages[0];
-        lastMsg = msg.text ? msg.text : `[${msg.attachmentType === 'image' ? 'Rasm' : 'Ovozli xabar'}]`;
+        if (msg.attachmentType === 'image') lastMsg = '[📷 Rasm]';
+        else if (msg.attachmentType === 'audio') lastMsg = '[🎤 Ovozli xabar]';
+        else if (msg.attachmentType === 'video') lastMsg = '[🎥 Video]';
+        else lastMsg = msg.text || 'Yangi xabar';
       }
       
       const div = document.createElement('div');
@@ -597,18 +635,20 @@ async function loadClients() {
       div.setAttribute('data-id', c.id);
       div.onclick = () => selectClient(c.id, c.name, c.instagramUsername);
       
-      const usernameSpan = c.instagramUsername ? ` <span style="font-size: 11px; font-weight: normal; color: var(--text-300);">@${c.instagramUsername}</span>` : '';
+      const usernameSpan = c.instagramUsername 
+        ? ` <span style="font-size: 11px; font-weight: normal; color: var(--text-300);">@${c.instagramUsername}</span>` 
+        : '';
       
       const count = unreadMessageCounts[c.id] || 0;
-      const badge = count > 0 ? `<div class="unread-badge">${count}</div>` : '';
+      const badgeHtml = count > 0 ? `<div class="unread-badge">${count}</div>` : '';
 
       div.innerHTML = `
         <div class="chat-avatar"><i class="fas fa-user"></i></div>
         <div class="chat-client-info">
           <div class="chat-client-name">${c.name}${usernameSpan}</div>
-          <div class="chat-client-msg">${lastMsg}</div>
+          <div class="chat-client-msg" style="color: ${count > 0 && c.id !== currentClientId ? 'var(--brand)' : 'var(--text-500)'}; font-weight: ${count > 0 && c.id !== currentClientId ? '600' : 'normal'}">${lastMsg}</div>
         </div>
-        ${badge}
+        ${badgeHtml}
       `;
       list.appendChild(div);
     });
@@ -649,6 +689,12 @@ async function selectClient(id, name, instagramUsername) {
     // Remove badge if present
     const badge = activeItem.querySelector('.unread-badge');
     if (badge) badge.remove();
+    // Reset last message text to normal color (was bold/brand when unread)
+    const msgEl = activeItem.querySelector('.chat-client-msg');
+    if (msgEl) {
+      msgEl.style.color = 'var(--text-500)';
+      msgEl.style.fontWeight = 'normal';
+    }
   }
 
   // Active chat state on container for mobile toggle
