@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const cors = require('cors');
 const compression = require('compression');
 const path = require('path');
+const fs = require('fs');
 const session = require('express-session');
 const http = require('http');
 const { WebSocketServer } = require('ws');

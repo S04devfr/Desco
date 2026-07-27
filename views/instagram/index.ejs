@@ -11,19 +11,48 @@
 </div>
 
 <style>
+/* Custom Scrollbars */
+.chat-client-list::-webkit-scrollbar,
+.chat-messages::-webkit-scrollbar,
+.chat-details::-webkit-scrollbar {
+  width: 6px;
+}
+.chat-client-list::-webkit-scrollbar-track,
+.chat-messages::-webkit-scrollbar-track,
+.chat-details::-webkit-scrollbar-track {
+  background: transparent;
+}
+.chat-client-list::-webkit-scrollbar-thumb,
+.chat-messages::-webkit-scrollbar-thumb,
+.chat-details::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--radius-full);
+}
+.chat-client-list::-webkit-scrollbar-thumb:hover,
+.chat-messages::-webkit-scrollbar-thumb:hover,
+.chat-details::-webkit-scrollbar-thumb:hover {
+  background: var(--text-300);
+}
+
 .chat-container {
   display: flex;
-  height: calc(100vh - 160px);
+  height: calc(100vh - 165px);
   background: var(--surface-card);
   border: 1px solid var(--border);
-  border-radius: var(--r-md);
+  border-radius: var(--r-lg);
   overflow: hidden;
-  margin-top: 20px;
+  margin-top: 15px;
   box-shadow: var(--shadow-sm);
+  position: relative;
+  transition: box-shadow 0.3s ease;
+}
+
+.chat-container:hover {
+  box-shadow: var(--shadow-md);
 }
 
 .chat-sidebar {
-  width: 300px;
+  width: 320px;
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
@@ -32,9 +61,10 @@
 }
 
 .chat-sidebar-header {
-  padding: 15px;
+  padding: 18px 20px;
   border-bottom: 1px solid var(--border);
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 15.5px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -44,17 +74,20 @@
 .chat-client-list {
   flex: 1;
   overflow-y: auto;
+  padding: 8px 0;
 }
 
 .chat-client-item {
-  padding: 12px 15px;
-  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+  margin: 4px 10px;
+  border-radius: var(--r-sm);
   cursor: pointer;
-  transition: background var(--dur-fast) var(--ease);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
-  gap: 12px;
+  gap: 14px;
   align-items: center;
   position: relative;
+  border: 1px solid transparent;
 }
 
 .chat-client-item:hover {
@@ -63,29 +96,32 @@
 
 .chat-client-item.active {
   background: var(--brand-soft);
+  border-color: var(--brand-glow);
 }
 
 .chat-client-item.active::before {
   content: "";
   position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
+  left: 3px;
+  top: 14px;
+  bottom: 14px;
   width: 3.5px;
+  border-radius: 2px;
   background: var(--brand);
+  box-shadow: 0 0 6px var(--brand);
 }
 
 .chat-avatar {
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
-  background: var(--surface-input);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
-  color: var(--text-500);
+  font-size: 15px;
+  color: white;
   flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .chat-client-info {
@@ -102,16 +138,30 @@
   text-overflow: ellipsis;
   display: flex;
   align-items: center;
-  gap: 5px;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.chat-client-name span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.client-username {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-300);
 }
 
 .chat-client-msg {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-500);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-top: 3px;
+  margin-top: 4px;
+  transition: color 0.15s ease;
 }
 
 .chat-main {
@@ -120,55 +170,72 @@
   flex-direction: column;
   min-width: 0;
   background: var(--surface-base);
+  position: relative;
 }
 
 .chat-header {
-  padding: 12px 20px;
+  padding: 14px 20px;
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-between;
   background: var(--surface-card);
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
 }
 
 .chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 20px 24px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
+  background: var(--surface-base);
 }
 
 .msg-bubble {
-  max-width: 70%;
-  padding: 10px 14px;
-  border-radius: 16px;
+  max-width: 65%;
+  padding: 10px 16px;
   font-size: 13.5px;
-  line-height: 1.45;
+  line-height: 1.5;
   word-wrap: break-word;
-  box-shadow: var(--shadow-xs);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  position: relative;
+  animation: messageSlideIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes messageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .msg-in {
   align-self: flex-start;
   background: var(--surface-card);
   color: var(--text-900);
-  border-bottom-left-radius: 4px;
+  border-radius: 18px 18px 18px 4px;
   border: 1px solid var(--border);
 }
 
 .msg-out {
   align-self: flex-end;
-  background: var(--brand);
+  background: linear-gradient(135deg, var(--brand) 0%, #4F46E5 100%);
   color: white;
-  border-bottom-right-radius: 4px;
+  border-radius: 18px 18px 4px 18px;
+  box-shadow: var(--shadow-brand);
 }
 
 .msg-time {
   font-size: 9.5px;
-  margin-top: 5px;
-  opacity: 0.7;
+  margin-top: 4px;
+  opacity: 0.6;
   text-align: right;
 }
 
@@ -178,31 +245,41 @@
 
 .msg-attachment-container {
   margin-bottom: 4px;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .msg-img-attachment {
-  max-width: 240px;
-  max-height: 200px;
-  border-radius: 8px;
+  max-width: 260px;
+  max-height: 220px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
   display: block;
 }
 
 .msg-img-attachment:hover {
   transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .msg-audio-attachment {
-  max-width: 220px;
+  max-width: 240px;
   outline: none;
+  display: block;
+}
+
+.msg-video-attachment {
+  max-width: 260px;
+  max-height: 220px;
+  border-radius: 10px;
   display: block;
 }
 
 .chat-date-divider {
   display: flex;
   justify-content: center;
-  margin: 15px 0;
+  margin: 20px 0;
   position: relative;
 }
 
@@ -219,43 +296,58 @@
 
 .chat-date-divider span {
   background: var(--surface-base);
-  padding: 4px 12px;
+  padding: 4px 14px;
   font-size: 11px;
-  color: var(--text-300);
+  color: var(--text-500);
   border-radius: 20px;
   position: relative;
   z-index: 2;
   border: 1px solid var(--border);
-  font-weight: 500;
+  font-weight: 600;
+  box-shadow: var(--shadow-xs);
 }
 
 .chat-input-area {
-  padding: 15px 20px;
+  padding: 16px 20px;
   border-top: 1px solid var(--border);
   display: flex;
-  gap: 10px;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface-card);
+  z-index: 10;
+}
+
+.chat-input-container {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--surface-base);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 2px 8px 2px 18px;
+  transition: all 0.25s ease;
+}
+
+.chat-input-container:focus-within {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-glow);
   background: var(--surface-card);
 }
 
 .chat-input {
   flex: 1;
-  padding: 10px 16px;
-  border: 1px solid var(--border);
-  border-radius: 24px;
-  background: var(--surface-base);
+  border: none;
+  background: transparent;
   color: var(--text-900);
   font-size: 13.5px;
   outline: none;
-  transition: border var(--dur-fast) var(--ease);
-}
-
-.chat-input:focus {
-  border-color: var(--brand);
+  padding: 9px 0;
 }
 
 .chat-send-btn {
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   border: none;
   background: var(--brand);
@@ -265,43 +357,62 @@
   align-items: center;
   justify-content: center;
   font-size: 14px;
-  transition: background var(--dur-fast) var(--ease);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
 }
 
 .chat-send-btn:hover {
   background: var(--brand-hover);
+  transform: scale(1.05);
+  box-shadow: 0 4px 10px rgba(99, 102, 241, 0.25);
+}
+
+.chat-send-btn:active {
+  transform: scale(0.95);
 }
 
 .chat-details {
-  width: 280px;
+  width: 320px;
   border-left: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   background: var(--surface-card);
   overflow-y: auto;
   flex-shrink: 0;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, border-left 0.3s ease;
+}
+
+.chat-details.collapsed {
+  width: 0;
+  opacity: 0;
+  border-left: none;
+  overflow: hidden;
 }
 
 .chat-details-header {
-  padding: 15px 20px;
+  padding: 18px 20px;
   border-bottom: 1px solid var(--border);
-  font-weight: 600;
-  font-size: 14px;
+  font-weight: 700;
+  font-size: 15px;
   color: var(--text-900);
   background: var(--surface-card);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .chat-details-body {
-  padding: 20px 15px;
+  padding: 24px 20px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .detail-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .detail-label {
@@ -309,31 +420,38 @@
   text-transform: uppercase;
   color: var(--text-300);
   font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
 }
 
 .detail-value {
-  font-size: 13px;
-  color: var(--text-700);
+  font-size: 13.5px;
+  color: var(--text-900);
   word-break: break-word;
+  font-weight: 500;
 }
 
 .detail-card {
   background: var(--surface-base);
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
-  padding: 10px 12px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  box-shadow: var(--shadow-xs);
 }
 
 .detail-deal-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 0;
+  padding: 10px 0;
   border-bottom: 1px solid var(--border);
+  transition: all 0.2s ease;
+}
+
+.detail-deal-item:hover {
+  transform: translateX(2px);
 }
 
 .detail-deal-item:last-child {
@@ -346,27 +464,246 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: var(--text-300);
+  color: var(--text-500);
   font-size: 14px;
   text-align: center;
   padding: 40px;
+  background: radial-gradient(circle at center, rgba(99, 102, 241, 0.03) 0%, transparent 70%);
+}
+
+.empty-chat h3 {
+  margin-top: 16px;
+  margin-bottom: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-900);
+}
+
+.empty-chat p {
+  font-size: 13.5px;
+  max-width: 320px;
+  margin: 0 auto;
+  color: var(--text-500);
+  line-height: 1.6;
+}
+
+.instagram-icon-glow {
+  width: 80px;
+  height: 80px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 38px;
+  color: white;
+  box-shadow: 0 8px 24px rgba(220, 39, 67, 0.3);
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(2deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
 }
 
 .unread-badge {
   background: var(--danger);
   color: white;
   font-size: 10px;
-  font-weight: 600;
-  padding: 2px 6px;
+  font-weight: 700;
+  padding: 2px 7px;
   border-radius: 10px;
-  min-width: 16px;
+  min-width: 18px;
   text-align: center;
   margin-left: auto;
+  box-shadow: 0 2px 5px rgba(255, 59, 48, 0.3);
+}
+
+.pulse-badge {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.6); }
+  70% { box-shadow: 0 0 0 6px rgba(255, 59, 48, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); }
+}
+
+.active-dot-green {
+  width: 7px;
+  height: 7px;
+  background-color: var(--success);
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 8px var(--success);
+  animation: pulse-green 2s infinite;
+}
+
+@keyframes pulse-green {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(48, 209, 88, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 5px rgba(48, 209, 88, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(48, 209, 88, 0); }
+}
+
+.chat-header-ig-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(225, 48, 108, 0.1);
+  transition: all 0.2s ease;
+}
+
+.chat-header-ig-link:hover {
+  background: rgba(225, 48, 108, 0.2);
+  transform: scale(1.1);
+}
+
+.deal-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+
+.deal-status-new {
+  background: var(--info-bg);
+  color: var(--info);
+  border: 1px solid var(--info-border);
+}
+.deal-status-active {
+  background: var(--warning-bg);
+  color: var(--warning);
+  border: 1px solid var(--warning-border);
+}
+.deal-status-won {
+  background: var(--success-bg);
+  color: var(--success);
+  border: 1px solid var(--success-border);
+}
+.deal-status-lost {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
+}
+
+/* Modal Enhancements */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  transition: opacity 0.25s ease;
+}
+
+.modal-box {
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-xl);
+  width: 100%;
+  max-width: 460px;
+  overflow: hidden;
+  animation: modalScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalScaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-900);
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 22px;
+  color: var(--text-300);
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.15s ease;
+}
+
+.modal-close:hover {
+  color: var(--text-900);
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-base);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+#imageModal {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(12px);
+}
+
+#modalImg {
+  border-radius: var(--r-md);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#imageModal .close-btn {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+#imageModal .close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 @media (max-width: 992px) {
   .chat-details {
-    display: none;
+    display: none !important;
   }
 }
 
@@ -394,16 +731,16 @@
   <div class="chat-sidebar">
     <div class="chat-sidebar-header">
       Suhbatlar
-      <button class="btn btn-sm btn-icon" onclick="loadClients()" title="Yangilash" style="border: 1px solid var(--border); background: var(--surface-card); width: 28px; height: 28px; border-radius: 6px;">
-        <i class="fas fa-sync-alt" style="font-size: 12px; color: var(--text-500);"></i>
+      <button class="btn btn-sm btn-icon" onclick="loadClients()" title="Yangilash" style="border: 1px solid var(--border); background: var(--surface-card); width: 32px; height: 32px; border-radius: var(--r-xs); display: flex; align-items: center; justify-content: center;">
+        <i class="fas fa-sync-alt" style="font-size: 13px; color: var(--text-500);"></i>
       </button>
     </div>
 
     <!-- Client Search -->
-    <div style="padding: 10px 15px; border-bottom: 1px solid var(--border); background: var(--surface-card);">
+    <div class="search-wrapper" style="padding: 12px 15px; border-bottom: 1px solid var(--border); background: var(--surface-card);">
       <div style="position: relative;">
-        <input type="text" id="searchClientsInput" class="form-control" placeholder="Mijozlarni qidirish..." oninput="filterClients()" style="padding-left: 32px; border-radius: 20px; font-size: 12.5px; height: 34px;">
-        <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-300); font-size: 11px;"></i>
+        <input type="text" id="searchClientsInput" class="form-control search-input" placeholder="Mijozlarni qidirish..." oninput="filterClients()" style="padding-left: 36px; border-radius: 20px; font-size: 12.5px; height: 36px; border: 1px solid var(--border); background: var(--surface-base); color: var(--text-900); width: 100%;">
+        <i class="fas fa-search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-300); font-size: 12px;"></i>
       </div>
     </div>
 
@@ -415,66 +752,68 @@
   <!-- 2. MAIN CHAT AREA -->
   <div class="chat-main" id="chatMain">
     <div class="empty-chat">
-      <i class="fab fa-instagram" style="font-size: 48px; margin-bottom: 16px; color: var(--text-300); opacity: 0.8;"></i>
-      <h3 style="margin-bottom: 6px; font-size: 16px; font-weight: 600; color: var(--text-900);">Instagram Chat</h3>
-      <p style="font-size: 13px; max-width: 250px; margin: 0 auto; color: var(--text-500); line-height: 1.4;">Muloqotni boshlash uchun chap tarafdagi ro'yxatdan mijozni tanlang</p>
+      <div class="instagram-icon-glow">
+        <i class="fab fa-instagram"></i>
+      </div>
+      <h3>Instagram Direct</h3>
+      <p>Muloqotni boshlash va xabarlarni CRM sdelkalari bilan bog'lash uchun chap tarafdagi ro'yxatdan mijozni tanlang</p>
     </div>
   </div>
 
   <!-- 3. DETAILS SIDEBAR -->
   <div class="chat-details" id="chatDetails">
     <div style="padding: 20px; text-align: center; color: var(--text-300); font-size: 13px; margin: auto;">
-      <i class="fas fa-info-circle" style="font-size: 24px; margin-bottom: 10px; opacity: 0.5;"></i>
+      <i class="fas fa-info-circle" style="font-size: 26px; margin-bottom: 12px; color: var(--text-300); opacity: 0.6;"></i>
       <div>Suhbatdosh tafsilotlarini ko'rish uchun mijozni tanlang</div>
     </div>
   </div>
 </div>
 
 <!-- IMAGE LIGHTBOX MODAL -->
-<div id="imageModal" class="modal-overlay hidden" onclick="closeImageModal()" style="z-index: 9999; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.75);">
+<div id="imageModal" class="modal-overlay hidden" onclick="closeImageModal()" style="z-index: 9999; display: flex; align-items: center; justify-content: center;">
   <div style="position: relative; max-width: 90%; max-height: 90%;" onclick="event.stopPropagation()">
-    <img id="modalImg" src="" style="max-width: 100%; max-height: 85vh; border-radius: var(--r-sm); box-shadow: var(--shadow-xl); display: block;">
-    <button onclick="closeImageModal()" style="position: absolute; top: -35px; right: 0; background: none; border: none; color: white; font-size: 28px; cursor: pointer; line-height: 1;">&times;</button>
+    <img id="modalImg" src="" style="max-width: 100%; max-height: 85vh; display: block;">
+    <button class="close-btn" onclick="closeImageModal()">&times;</button>
   </div>
 </div>
 
 <!-- CREATE DEAL MODAL -->
 <div class="modal-overlay hidden" id="dealModal" style="z-index: 1000;">
-  <div class="modal-box" style="max-width: 440px;">
+  <div class="modal-box">
     <div class="modal-header">
       <h2>Yangi Sdelka Yaratish</h2>
       <button class="modal-close" onclick="closeDealModal()">&times;</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="dealClientId">
-      <div class="form-group" style="margin-bottom: 12px;">
-        <label class="form-label">Mijoz</label>
-        <input type="text" id="dealClientName" class="form-control" readonly style="background: var(--surface-input); font-weight: 500;">
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-500); display: block; margin-bottom: 6px;">Mijoz</label>
+        <input type="text" id="dealClientName" class="form-control" readonly style="background: var(--surface-input); font-weight: 600; border-radius: var(--r-xs); height: 38px; font-size: 13.5px; width: 100%; padding: 0 12px;">
       </div>
-      <div class="form-group" style="margin-bottom: 12px;">
-        <label class="form-label">Mahsulot Nomi *</label>
-        <input type="text" id="dealProductName" class="form-control" placeholder="Masalan: Maxsus Mahsulot x2" required>
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-500); display: block; margin-bottom: 6px;">Mahsulot Nomi *</label>
+        <input type="text" id="dealProductName" class="form-control" placeholder="Masalan: Maxsus Mahsulot x2" required style="border-radius: var(--r-xs); height: 38px; font-size: 13.5px; width: 100%; padding: 0 12px; border: 1px solid var(--border); background: var(--surface-card); color: var(--text-900);">
       </div>
-      <div class="form-group" style="margin-bottom: 12px;">
-        <label class="form-label">Summa (UZS)</label>
-        <input type="number" id="dealAmount" class="form-control" placeholder="0" value="0">
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-500); display: block; margin-bottom: 6px;">Summa (UZS)</label>
+        <input type="number" id="dealAmount" class="form-control" placeholder="0" value="0" style="border-radius: var(--r-xs); height: 38px; font-size: 13.5px; width: 100%; padding: 0 12px; border: 1px solid var(--border); background: var(--surface-card); color: var(--text-900);">
       </div>
-      <div class="form-group" style="margin-bottom: 12px;">
-        <label class="form-label">Voronka *</label>
-        <select id="dealPipelineId" class="form-control" onchange="onPipelineChange()" required></select>
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-500); display: block; margin-bottom: 6px;">Voronka *</label>
+        <select id="dealPipelineId" class="form-control" onchange="onPipelineChange()" required style="border-radius: var(--r-xs); height: 38px; font-size: 13.5px; width: 100%; padding: 0 12px; border: 1px solid var(--border); background: var(--surface-card); color: var(--text-900);"></select>
       </div>
-      <div class="form-group" style="margin-bottom: 12px;">
-        <label class="form-label">Bosqich *</label>
-        <select id="dealStageId" class="form-control" required></select>
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-500); display: block; margin-bottom: 6px;">Bosqich *</label>
+        <select id="dealStageId" class="form-control" required style="border-radius: var(--r-xs); height: 38px; font-size: 13.5px; width: 100%; padding: 0 12px; border: 1px solid var(--border); background: var(--surface-card); color: var(--text-900);"></select>
       </div>
-      <div class="form-group" style="margin-bottom: 12px;">
-        <label class="form-label">Izoh</label>
-        <textarea id="dealNotes" class="form-control" rows="2" placeholder="Sdelka haqida batafsil ma'lumot..."></textarea>
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-500); display: block; margin-bottom: 6px;">Izoh</label>
+        <textarea id="dealNotes" class="form-control" rows="3" placeholder="Sdelka haqida batafsil ma'lumot..." style="border-radius: var(--r-xs); font-size: 13px; width: 100%; padding: 10px 12px; border: 1px solid var(--border); background: var(--surface-card); color: var(--text-900); resize: vertical;"></textarea>
       </div>
     </div>
-    <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 15px;">
-      <button class="btn btn-secondary" onclick="closeDealModal()">Bekor qilish</button>
-      <button class="btn btn-primary" onclick="submitCreateDeal()">Yaratish</button>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeDealModal()" style="height: 38px; padding: 0 16px; font-size: 13px; font-weight: 600;">Bekor qilish</button>
+      <button class="btn btn-primary" onclick="submitCreateDeal()" style="height: 38px; padding: 0 16px; font-size: 13px; font-weight: 600; background: var(--brand); border-color: var(--brand); color: white;">Yaratish</button>
     </div>
   </div>
 </div>
@@ -491,6 +830,50 @@ document.addEventListener('DOMContentLoaded', async () => {
   await fetchPipelines();
   initWebSocket();
 });
+
+// Initials-based random gradient avatar generator
+function getAvatarHtml(name) {
+  const initials = name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'IG';
+  let hash = 0;
+  const cleanName = name || 'User';
+  for (let i = 0; i < cleanName.length; i++) {
+    hash = cleanName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const gradients = [
+    'linear-gradient(135deg, #6366F1 0%, #a21caf 100%)',
+    'linear-gradient(135deg, #FF512F 0%, #DD2476 100%)',
+    'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+    'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
+    'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+    'linear-gradient(135deg, #EC4899 0%, #BE185D 100%)',
+    'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)',
+    'linear-gradient(135deg, #06B6D4 0%, #0891B2 100%)'
+  ];
+  const index = Math.abs(hash) % gradients.length;
+  return `<div class="chat-avatar-inner" style="background: ${gradients[index]}; color: white; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; border-radius: 50%; font-weight: 700; font-size: 13.5px; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">${initials}</div>`;
+}
+
+// Collapsible sidebar visibility functions
+function toggleDetailsSidebar() {
+  const details = document.getElementById('chatDetails');
+  const isCollapsed = details.classList.toggle('collapsed');
+  localStorage.setItem('ig-chat-details-collapsed', isCollapsed ? 'true' : 'false');
+  updateDetailsToggleIcon();
+}
+
+function updateDetailsToggleIcon() {
+  const details = document.getElementById('chatDetails');
+  const btn = document.getElementById('toggleDetailsBtn');
+  if (!btn) return;
+  const icon = btn.querySelector('i');
+  if (details.classList.contains('collapsed')) {
+    icon.style.color = 'var(--text-300)';
+    btn.style.borderColor = 'var(--border)';
+  } else {
+    icon.style.color = 'var(--brand)';
+    btn.style.borderColor = 'var(--brand-glow)';
+  }
+}
 
 // Setup WebSocket connection
 function initWebSocket() {
@@ -616,7 +999,7 @@ async function loadClients() {
     list.innerHTML = '';
     
     if (clients.length === 0) {
-      list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-300);">Suhbatlar yo\'q</div>';
+      list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-300); font-size: 13.5px;">Suhbatlar yo\'q</div>';
       return;
     }
     
@@ -636,16 +1019,16 @@ async function loadClients() {
       div.onclick = () => selectClient(c.id, c.name, c.instagramUsername);
       
       const usernameSpan = c.instagramUsername 
-        ? ` <span style="font-size: 11px; font-weight: normal; color: var(--text-300);">@${c.instagramUsername}</span>` 
+        ? ` <span class="client-username">@${c.instagramUsername}</span>` 
         : '';
       
       const count = unreadMessageCounts[c.id] || 0;
-      const badgeHtml = count > 0 ? `<div class="unread-badge">${count}</div>` : '';
+      const badgeHtml = count > 0 ? `<div class="unread-badge pulse-badge">${count}</div>` : '';
 
       div.innerHTML = `
-        <div class="chat-avatar"><i class="fas fa-user"></i></div>
+        <div class="chat-avatar">${getAvatarHtml(c.name)}</div>
         <div class="chat-client-info">
-          <div class="chat-client-name">${c.name}${usernameSpan}</div>
+          <div class="chat-client-name"><span>${c.name}</span>${usernameSpan}</div>
           <div class="chat-client-msg" style="color: ${count > 0 && c.id !== currentClientId ? 'var(--brand)' : 'var(--text-500)'}; font-weight: ${count > 0 && c.id !== currentClientId ? '600' : 'normal'}">${lastMsg}</div>
         </div>
         ${badgeHtml}
@@ -704,35 +1087,62 @@ async function selectClient(id, name, instagramUsername) {
   
   chatMain.innerHTML = `
     <div class="chat-header">
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <button class="btn btn-sm btn-icon chat-back-btn" onclick="goBack()" style="display: none; border: 1px solid var(--border); background: var(--surface-card); width: 28px; height: 28px; border-radius: 6px; align-items: center; justify-content: center; margin-right: 6px;">
-          <i class="fas fa-arrow-left" style="font-size: 12px; color: var(--text-500);"></i>
+      <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+        <button class="btn btn-sm btn-icon chat-back-btn" onclick="goBack()" style="display: none; border: 1px solid var(--border); background: var(--surface-card); width: 34px; height: 34px; border-radius: var(--r-xs); align-items: center; justify-content: center;">
+          <i class="fas fa-arrow-left" style="font-size: 13px; color: var(--text-500);"></i>
         </button>
-        <div class="chat-avatar"><i class="fas fa-user"></i></div>
-        <div>
-          <div style="font-weight: 600; font-size: 14px; color: var(--text-900);">${name}</div>
-          <div style="font-size: 11px; color: var(--text-300); margin-top: 1px;">Instagram Direct</div>
+        <div class="chat-avatar">${getAvatarHtml(name)}</div>
+        <div style="min-width: 0;">
+          <div style="font-weight: 700; font-size: 14.5px; color: var(--text-900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px;">
+            ${name}
+            ${instagramUsername ? `<a href="https://instagram.com/${instagramUsername}" target="_blank" class="chat-header-ig-link" title="Instagram profilini ochish"><i class="fab fa-instagram" style="color: #E1306C; font-size: 13px;"></i></a>` : ''}
+          </div>
+          <div style="font-size: 11px; color: var(--text-300); margin-top: 2px; display: flex; align-items: center; gap: 4px;">
+            <span class="active-dot-green"></span>
+            Instagram Direct orqali bog'langan
+          </div>
         </div>
       </div>
+      
+      <div style="display: flex; gap: 8px;">
+        <button class="btn btn-sm btn-icon" id="toggleDetailsBtn" onclick="toggleDetailsSidebar()" title="Mijoz tafsilotlarini yopish/ochish" style="border: 1px solid var(--border); background: var(--surface-card); width: 34px; height: 34px; border-radius: var(--r-xs); display: flex; align-items: center; justify-content: center;">
+          <i class="fas fa-info-circle" style="font-size: 14px;"></i>
+        </button>
+      </div>
     </div>
+    
     <div class="chat-messages" id="chatMessages">
       <div style="text-align: center; color: var(--text-300); padding: 20px;">Yuklanmoqda...</div>
     </div>
-    <div id="attachmentPreview" style="display: none; align-items: center; justify-content: space-between; background: var(--bg-secondary); padding: 8px 16px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+    
+    <div id="attachmentPreview" style="display: none; align-items: center; justify-content: space-between;">
       <div id="attachmentPreviewContent" style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-700);"></div>
       <button onclick="clearAttachment()" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 13px;"><i class="fas fa-times"></i></button>
     </div>
-    <div class="chat-input-area" style="position: relative;">
+    
+    <div class="chat-input-area">
       <input type="file" id="msgFileInput" style="display: none;" onchange="handleFileSelect(this)">
-      <button class="btn btn-ghost" onclick="document.getElementById('msgFileInput').click()" style="padding: 10px; width: 40px; height: 40px; min-width: 40px; border-radius: 50%; font-size: 16px; display: flex; align-items: center; justify-content: center; color: var(--text-500); margin-right: 6px;" title="Fayl biriktirish (Rasm, Video, Audio)">
-        <i class="fas fa-paperclip"></i>
+      <button class="btn btn-ghost" onclick="document.getElementById('msgFileInput').click()" style="padding: 0; width: 36px; height: 36px; min-width: 36px; border-radius: 50%; font-size: 16px; display: flex; align-items: center; justify-content: center; color: var(--text-500); border: 1px solid var(--border); background: var(--surface-card);" title="Fayl biriktirish (Rasm, Video, Audio)">
+        <i class="fas fa-paperclip" style="font-size: 13px;"></i>
       </button>
-      <input type="text" id="msgInput" class="chat-input" placeholder="Xabar yozing..." onkeypress="if(event.key === 'Enter') sendMessage()" style="flex: 1;">
+      <div class="chat-input-container">
+        <input type="text" id="msgInput" class="chat-input" placeholder="Xabar yozing..." onkeypress="if(event.key === 'Enter') sendMessage()">
+      </div>
       <button class="chat-send-btn" onclick="sendMessage()">
         <i class="fas fa-paper-plane"></i>
       </button>
     </div>
   `;
+
+  // Apply collateral collapse state
+  const isDetailsCollapsed = localStorage.getItem('ig-chat-details-collapsed') === 'true';
+  const details = document.getElementById('chatDetails');
+  if (isDetailsCollapsed) {
+    details.classList.add('collapsed');
+  } else {
+    details.classList.remove('collapsed');
+  }
+  updateDetailsToggleIcon();
   
   await loadClientDetails(id);
   loadMessages(id);
@@ -760,18 +1170,18 @@ async function loadClientDetails(id) {
     if (client.deals && client.deals.length > 0) {
       client.deals.forEach(deal => {
         const amountStr = Number(deal.amount).toLocaleString('uz-UZ') + ' UZS';
-        let statusBadgeColor = 'var(--text-300)';
-        if (deal.status === 'won') statusBadgeColor = 'var(--success)';
-        else if (deal.status === 'lost') statusBadgeColor = 'var(--danger)';
-        else if (deal.status === 'new' || deal.status === 'active') statusBadgeColor = 'var(--info)';
+        let badgeClass = 'deal-status-new';
+        if (deal.status === 'won') badgeClass = 'deal-status-won';
+        else if (deal.status === 'lost') badgeClass = 'deal-status-lost';
+        else if (deal.status === 'active') badgeClass = 'deal-status-active';
         
         dealsHtml += `
-          <div class="detail-deal-item">
-            <div>
-              <div style="font-weight: 500; font-size: 12.5px; color: var(--text-900);">${deal.productName}</div>
-              <div style="font-size: 10px; color: ${statusBadgeColor}; font-weight: 700; text-transform: uppercase; margin-top: 2px;">${deal.status}</div>
+          <div class="detail-deal-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border);">
+            <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; padding-right: 8px;">
+              <div style="font-weight: 600; font-size: 13px; color: var(--text-900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${deal.productName}">${deal.productName}</div>
+              <div style="display: flex; align-items: center;"><span class="deal-badge ${badgeClass}">${deal.status}</span></div>
             </div>
-            <div style="font-weight: 600; font-size: 12px; color: var(--text-900);">${amountStr}</div>
+            <div style="font-weight: 700; font-size: 12.5px; color: var(--text-900); white-space: nowrap;">${amountStr}</div>
           </div>
         `;
       });
@@ -780,46 +1190,46 @@ async function loadClientDetails(id) {
     }
     
     detailsPanel.innerHTML = `
-      <div class="chat-details-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+      <div class="chat-details-header">
         <span>Mijoz Tafsilotlari</span>
-        <button class="btn btn-ghost" id="editDetailsBtn" onclick="toggleDetailsEdit(true)" style="padding: 2px 6px; font-size: 11px; font-weight: 600; color: var(--brand); cursor: pointer; height: auto; border: 1px solid var(--brand-soft); border-radius: 4px; background: var(--brand-soft); display: flex; align-items: center; gap: 4px;">
-          <i class="fas fa-edit"></i> O'zgartirish
+        <button class="btn btn-ghost" id="editDetailsBtn" onclick="toggleDetailsEdit(true)" style="padding: 4px 10px; font-size: 11px; font-weight: 600; color: var(--brand); cursor: pointer; height: auto; border: 1px solid var(--brand-glow); border-radius: var(--r-xs); background: var(--brand-soft); display: flex; align-items: center; gap: 6px; transition: all 0.15s ease;">
+          <i class="fas fa-edit" style="font-size: 10px;"></i> Tahrirlash
         </button>
       </div>
       
       <div class="chat-details-body" id="detailsViewMode" style="display: block;">
-        <div style="text-align: center; margin-bottom: 5px;">
-          <div class="chat-avatar" style="width: 56px; height: 56px; font-size: 22px; margin: 0 auto 10px auto; background: var(--brand-soft); color: var(--brand);"><i class="fas fa-user"></i></div>
-          <h4 style="margin: 0; font-size: 14.5px; font-weight: 600; color: var(--text-900);">${client.name}</h4>
-          ${client.instagramUsername ? `<span style="font-size: 11px; color: var(--text-300);">@${client.instagramUsername}</span>` : ''}
+        <div style="text-align: center; margin-bottom: 16px;">
+          <div class="chat-avatar" style="width: 56px; height: 56px; margin: 0 auto 12px auto; display: flex; align-items: center; justify-content: center;">${getAvatarHtml(client.name)}</div>
+          <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--text-900);">${client.name}</h4>
+          ${client.instagramUsername ? `<span style="font-size: 11.5px; color: var(--text-300); margin-top: 4px; display: block;">@${client.instagramUsername}</span>` : ''}
         </div>
         
         <div class="detail-item">
           <div class="detail-label">Telefon</div>
-          <div class="detail-value">${client.phone || '<span style="color: var(--text-300);">Kiritilmagan</span>'}</div>
+          <div class="detail-value">${client.phone || '<span style="color: var(--text-300); font-weight: normal; font-style: italic;">Kiritilmagan</span>'}</div>
         </div>
 
         <div class="detail-item">
           <div class="detail-label">Email</div>
-          <div class="detail-value">${client.email || '<span style="color: var(--text-300);">Kiritilmagan</span>'}</div>
+          <div class="detail-value">${client.email || '<span style="color: var(--text-300); font-weight: normal; font-style: italic;">Kiritilmagan</span>'}</div>
         </div>
 
         <div class="detail-item">
           <div class="detail-label">Shahar</div>
-          <div class="detail-value">${client.city || '<span style="color: var(--text-300);">Kiritilmagan</span>'}</div>
+          <div class="detail-value">${client.city || '<span style="color: var(--text-300); font-weight: normal; font-style: italic;">Kiritilmagan</span>'}</div>
         </div>
 
         <div class="detail-item">
           <div class="detail-label">Qaydlar</div>
-          <div class="detail-value" style="font-style: italic; background: var(--surface-base); border-radius: 6px; padding: 8px; border: 1px dashed var(--border); font-size: 12.5px; white-space: pre-line;">${client.notes || 'Izoh yo\'q'}</div>
+          <div class="detail-value" style="font-style: italic; background: var(--surface-base); border-radius: 8px; padding: 10px 12px; border: 1px dashed var(--border); font-size: 12.5px; color: var(--text-700); white-space: pre-line; line-height: 1.4;">${client.notes || 'Izoh yo\'q'}</div>
         </div>
 
-        <hr style="border: none; border-top: 1px solid var(--border); margin: 5px 0;">
+        <hr style="border: none; border-top: 1px solid var(--border); margin: 8px 0;">
 
         <div class="detail-item">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <div class="detail-label" style="margin-bottom: 0;">Sdelkalar</div>
-            <button class="btn btn-sm btn-primary" onclick="openCreateDealModal(${client.id}, '${escapeQuotes(client.name)}')" style="font-size: 10px; padding: 4px 8px; height: auto; display: flex; align-items: center; gap: 4px;">
+            <button class="btn btn-sm btn-primary" onclick="openCreateDealModal(${client.id}, '${escapeQuotes(client.name)}')" style="font-size: 10px; padding: 4px 10px; height: auto; display: flex; align-items: center; gap: 4px; border-radius: var(--r-xs); background: var(--brand); border-color: var(--brand); color: white; font-weight: 600;">
               <i class="fas fa-plus" style="font-size: 8px;"></i> Yangi sdelka
             </button>
           </div>
@@ -828,37 +1238,37 @@ async function loadClientDetails(id) {
           </div>
         </div>
 
-        <div style="margin-top: 10px;">
-          <a class="btn btn-secondary btn-sm" href="/clients?id=${client.id}" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; height: 34px;">
-            <i class="fas fa-external-link-alt"></i> Mijoz profilini ochish
+        <div style="margin-top: 15px;">
+          <a class="btn btn-secondary btn-sm" href="/clients?id=${client.id}" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12.5px; height: 38px; border-radius: var(--r-xs); font-weight: 600; border: 1px solid var(--border); background: var(--surface-card); color: var(--text-700); transition: all 0.2s ease;">
+            <i class="fas fa-external-link-alt" style="font-size: 11px;"></i> Mijoz profilini ochish
           </a>
         </div>
       </div>
-
-      <div class="chat-details-body" id="detailsEditMode" style="display: none; display: flex; flex-direction: column; gap: 12px; padding: 15px;">
+      
+      <div class="chat-details-body" id="detailsEditMode" style="display: none; display: flex; flex-direction: column; gap: 14px; padding: 20px;">
         <div>
-          <label style="font-size: 11px; font-weight: 600; color: var(--text-500); display: block; margin-bottom: 4px;">Mijoz Ismi</label>
-          <input type="text" id="editClientName" class="form-control form-control-sm" value="${escapeQuotes(client.name)}" style="width: 100%;">
+          <label style="font-size: 11px; font-weight: 700; color: var(--text-500); display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Mijoz Ismi</label>
+          <input type="text" id="editClientName" class="form-control form-control-sm" value="${escapeQuotes(client.name)}" style="width: 100%; height: 36px; padding: 0 10px; border-radius: var(--r-xs); border: 1px solid var(--border); background: var(--surface-card); color: var(--text-900);">
         </div>
         <div>
-          <label style="font-size: 11px; font-weight: 600; color: var(--text-500); display: block; margin-bottom: 4px;">Telefon Raqami</label>
-          <input type="text" id="editClientPhone" class="form-control form-control-sm" value="${escapeQuotes(client.phone || '')}" placeholder="+998901234567" style="width: 100%;">
+          <label style="font-size: 11px; font-weight: 700; color: var(--text-500); display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Telefon Raqami</label>
+          <input type="text" id="editClientPhone" class="form-control form-control-sm" value="${escapeQuotes(client.phone || '')}" placeholder="+998901234567" style="width: 100%; height: 36px; padding: 0 10px; border-radius: var(--r-xs); border: 1px solid var(--border); background: var(--surface-card); color: var(--text-900);">
         </div>
         <div>
-          <label style="font-size: 11px; font-weight: 600; color: var(--text-500); display: block; margin-bottom: 4px;">Elektron Pochta (Email)</label>
-          <input type="text" id="editClientEmail" class="form-control form-control-sm" value="${escapeQuotes(client.email || '')}" placeholder="example@mail.com" style="width: 100%;">
+          <label style="font-size: 11px; font-weight: 700; color: var(--text-500); display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Elektron Pochta (Email)</label>
+          <input type="text" id="editClientEmail" class="form-control form-control-sm" value="${escapeQuotes(client.email || '')}" placeholder="example@mail.com" style="width: 100%; height: 36px; padding: 0 10px; border-radius: var(--r-xs); border: 1px solid var(--border); background: var(--surface-card); color: var(--text-900);">
         </div>
         <div>
-          <label style="font-size: 11px; font-weight: 600; color: var(--text-500); display: block; margin-bottom: 4px;">Shahar / Viloyat</label>
-          <input type="text" id="editClientCity" class="form-control form-control-sm" value="${escapeQuotes(client.city || '')}" placeholder="Toshkent" style="width: 100%;">
+          <label style="font-size: 11px; font-weight: 700; color: var(--text-500); display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Shahar / Viloyat</label>
+          <input type="text" id="editClientCity" class="form-control form-control-sm" value="${escapeQuotes(client.city || '')}" placeholder="Toshkent" style="width: 100%; height: 36px; padding: 0 10px; border-radius: var(--r-xs); border: 1px solid var(--border); background: var(--surface-card); color: var(--text-900);">
         </div>
         <div>
-          <label style="font-size: 11px; font-weight: 600; color: var(--text-500); display: block; margin-bottom: 4px;">Qaydlar / Izoh</label>
-          <textarea id="editClientNotes" class="form-control form-control-sm" rows="3" style="width: 100%; font-size: 12px; resize: vertical;" placeholder="Mijoz haqida qaydlar...">${escapeQuotes(client.notes || '')}</textarea>
+          <label style="font-size: 11px; font-weight: 700; color: var(--text-500); display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Qaydlar / Izoh</label>
+          <textarea id="editClientNotes" class="form-control form-control-sm" rows="3" style="width: 100%; font-size: 12.5px; resize: vertical; padding: 8px 10px; border-radius: var(--r-xs); border: 1px solid var(--border); background: var(--surface-card); color: var(--text-900);" placeholder="Mijoz haqida qaydlar...">${escapeQuotes(client.notes || '')}</textarea>
         </div>
-        <div style="display: flex; gap: 8px; margin-top: 5px;">
-          <button class="btn btn-secondary btn-sm" onclick="toggleDetailsEdit(false)" style="flex: 1; height: 32px; font-size: 12px;">Bekor qilish</button>
-          <button class="btn btn-primary btn-sm" onclick="saveClientDetails(${client.id})" id="btnSaveDetails" style="flex: 1; height: 32px; font-size: 12px;">Saqlash</button>
+        <div style="display: flex; gap: 8px; margin-top: 10px;">
+          <button class="btn btn-secondary btn-sm" onclick="toggleDetailsEdit(false)" style="flex: 1; height: 36px; font-size: 12.5px; font-weight: 600; border-radius: var(--r-xs);">Bekor qilish</button>
+          <button class="btn btn-primary btn-sm" onclick="saveClientDetails(${client.id})" id="btnSaveDetails" style="flex: 1; height: 36px; font-size: 12.5px; font-weight: 600; border-radius: var(--r-xs); background: var(--brand); border-color: var(--brand); color: white;">Saqlash</button>
         </div>
       </div>
     `;
