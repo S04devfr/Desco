@@ -35,8 +35,45 @@ router.post('/webhook', async (req, res) => {
 
   // Handle Wazzup Webhook Payload
   if (body.messages && Array.isArray(body.messages)) {
+    // Senior implementation: fetch active Wazzup channels list to find target channel ID matching configured settings
+    const settings = await prisma.companySettings.findFirst();
+    const WAZZUP_API_KEY = process.env.WAZZUP_API_KEY || (settings?.instagramAccessToken && settings.instagramAccessToken.length === 32 ? settings.instagramAccessToken : null);
+    let targetChannelId = null;
+
+    if (WAZZUP_API_KEY) {
+      try {
+        const channelRes = await fetch('https://api.wazzup24.com/v3/channels', {
+          headers: {
+            'Authorization': `Bearer ${WAZZUP_API_KEY}`
+          }
+        });
+        if (channelRes.ok) {
+          const channels = await channelRes.json();
+          if (Array.isArray(channels)) {
+            const targetPageId = settings?.instagramPageId;
+            const matchedChannel = channels.find(c => c.transport === 'instagram' && c.state === 'active' && c.instId === targetPageId)
+              || channels.find(c => c.transport === 'instagram' && c.state === 'active' && c.plainId === 'desco.premium')
+              || channels.find(c => c.transport === 'instagram' && c.state === 'active');
+            
+            if (matchedChannel) {
+              targetChannelId = matchedChannel.channelId;
+              console.log(`[Wazzup Webhook] Resolved active channel to ${matchedChannel.plainId} (ID: ${targetChannelId})`);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('[Wazzup Webhook] Error resolving active channel:', err);
+      }
+    }
+
     for (const msg of body.messages) {
       if (msg.chatType !== 'instagram') continue; // only handle Instagram messages
+
+      // Skip messages from non-configured Wazzup channel
+      if (targetChannelId && msg.channelId && msg.channelId !== targetChannelId) {
+        console.log(`[Wazzup Webhook] Skipping message from non-target channel ${msg.channelId} (expected target channel ${targetChannelId})`);
+        continue;
+      }
 
       const messageId = msg.messageId;
       let text = msg.text || '';
@@ -441,8 +478,12 @@ router.post('/messages', protect, async (req, res) => {
         });
         const channels = await channelRes.json();
         
-        // Find the active Instagram channel
-        const igChannel = channels.find(c => c.transport === 'instagram' && c.state === 'active') || channels[0];
+        // Find the active Instagram channel matching the configured page ID or default name
+        const targetPageId = settings?.instagramPageId;
+        const igChannel = channels.find(c => c.transport === 'instagram' && c.state === 'active' && c.instId === targetPageId)
+          || channels.find(c => c.transport === 'instagram' && c.state === 'active' && c.plainId === 'desco.premium')
+          || channels.find(c => c.transport === 'instagram' && c.state === 'active')
+          || channels[0];
         
         if (!igChannel) {
           await prisma.instagramMessage.delete({ where: { id: savedMsg.id } });
