@@ -1005,12 +1005,29 @@ async function loadClients() {
     
     clients.forEach(c => {
       let lastMsg = 'Yangi mijoz';
+      let lastMsgTime = '';
       if (c.messages && c.messages.length > 0) {
         const msg = c.messages[0];
         if (msg.attachmentType === 'image') lastMsg = '[📷 Rasm]';
         else if (msg.attachmentType === 'audio') lastMsg = '[🎤 Ovozli xabar]';
         else if (msg.attachmentType === 'video') lastMsg = '[🎥 Video]';
         else lastMsg = msg.text || 'Yangi xabar';
+        
+        if (msg.timestamp) {
+          const date = new Date(msg.timestamp);
+          const today = new Date();
+          if (date.toDateString() === today.toDateString()) {
+            lastMsgTime = date.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
+          } else {
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            if (date.toDateString() === yesterday.toDateString()) {
+              lastMsgTime = 'Kecha';
+            } else {
+              lastMsgTime = date.toLocaleDateString('uz-UZ', { day: 'numeric', month: 'short' });
+            }
+          }
+        }
       }
       
       const div = document.createElement('div');
@@ -1019,7 +1036,7 @@ async function loadClients() {
       div.onclick = () => selectClient(c.id, c.name, c.instagramUsername);
       
       const usernameSpan = c.instagramUsername 
-        ? ` <span class="client-username">@${c.instagramUsername}</span>` 
+        ? ` <span class="client-username" style="font-size: 10.5px; opacity: 0.7;">@${c.instagramUsername}</span>` 
         : '';
       
       const count = unreadMessageCounts[c.id] || 0;
@@ -1027,8 +1044,12 @@ async function loadClients() {
 
       div.innerHTML = `
         <div class="chat-avatar">${getAvatarHtml(c.name)}</div>
-        <div class="chat-client-info">
-          <div class="chat-client-name"><span>${c.name}</span>${usernameSpan}</div>
+        <div class="chat-client-info" style="min-width: 0; flex: 1;">
+          <div class="chat-client-name" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px;" title="${c.name}">${c.name}</span>
+            ${usernameSpan}
+            <span class="chat-time-label" style="font-size: 10px; color: var(--text-300); font-weight: normal; margin-left: auto; white-space: nowrap;">${lastMsgTime}</span>
+          </div>
           <div class="chat-client-msg" style="color: ${count > 0 && c.id !== currentClientId ? 'var(--brand)' : 'var(--text-500)'}; font-weight: ${count > 0 && c.id !== currentClientId ? '600' : 'normal'}">${lastMsg}</div>
         </div>
         ${badgeHtml}

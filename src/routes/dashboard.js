@@ -515,18 +515,151 @@ router.get('/instagram-stats', async (req, res) => {
         mktWhere.date = dateRange;
       }
     }
-    const [totalMessages, incomingMessages, linkedClients, mktLogs] = await Promise.all([
+
+    const [totalMessages, incomingMessages, linkedClients, mktLogs, messages] = await Promise.all([
       prisma.instagramMessage.count({ where: msgWhere }),
       prisma.instagramMessage.count({ where: { ...msgWhere, isOutgoing: false } }),
       prisma.client.count({ where: { instagramId: { not: null } } }),
-      prisma.marketingLog.findMany({ where: mktWhere, select: { spent: true, leads: true } })
+      prisma.marketingLog.findMany({ where: mktWhere, select: { spent: true, leads: true } }),
+      prisma.instagramMessage.findMany({
+        where: msgWhere,
+        orderBy: { timestamp: 'asc' },
+        select: { text: true, senderId: true, recipientId: true, timestamp: true, clientId: true, isOutgoing: true }
+      })
     ]);
+
     const igSpent = mktLogs.reduce((s, l) => s + (l.spent || 0), 0);
     const igLeads = mktLogs.reduce((s, l) => s + (l.leads || 0), 0);
     const igCpl = igLeads > 0 ? igSpent / igLeads : 0;
-    res.json({ totalMessages, incomingMessages, linkedClients, igSpent, igLeads, igCpl });
+
+    // Advanced Text Analytics
+    const dailyChatsMap = {};
+    const clientMessages = {};
+
+    messages.forEach(msg => {
+      if (!msg.clientId) return;
+      
+      const dateStr = new Date(msg.timestamp).toISOString().slice(0, 10);
+      if (!dailyChatsMap[dateStr]) {
+        dailyChatsMap[dateStr] = new Set();
+      }
+      dailyChatsMap[dateStr].add(msg.clientId);
+
+      if (!msg.isOutgoing && msg.text) {
+        if (!clientMessages[msg.clientId]) {
+          clientMessages[msg.clientId] = [];
+        }
+        clientMessages[msg.clientId].push(msg.text.toLowerCase());
+      }
+    });
+
+    const dailyActiveChats = Object.entries(dailyChatsMap).map(([date, clientsSet]) => ({
+      date,
+      count: clientsSet.size
+    })).sort((a, b) => a.date.localeCompare(b.date));
+
+    let nasiyaCount = 0;
+    let naqdCount = 0;
+    let unspecifiedCount = 0;
+
+    let expensiveCount = 0;
+    let deliveryCount = 0;
+    let hesitantCount = 0;
+    let followUpCount = 0;
+
+    let purchaseCount = 0;
+    let inquiryCount = 0;
+    let otherCount = 0;
+
+    const sampleOpinions = [];
+
+    Object.entries(clientMessages).forEach(([clientId, texts]) => {
+      const combinedText = texts.join(' ');
+
+      const hasNasiyaKeywords = /nasiya|muddatli|bo'lib|bolib|kredit|oyiga|oyma|ijara|variant/i.test(combinedText);
+      const hasNaqdKeywords = /naqd|naqt|click|payme|karta|plastik|terminal|bitta to'lov|naxt/i.test(combinedText);
+
+      if (hasNasiyaKeywords) {
+        nasiyaCount++;
+      } else if (hasNaqdKeywords) {
+        naqdCount++;
+      } else {
+        unspecifiedCount++;
+      }
+
+      const isExpensive = /qimmat|qmat|arzon|skidka|chegirma|narxi baland|qimat/i.test(combinedText);
+      const isDeliveryIssue = /dostavka|yetkaz|viloyat|uzoq|pochta|rayonga|dastavka/i.test(combinedText);
+      const isHesitant = /o'ylab|oylab|keyinroq|maslahat|uydegilar|ertaga/i.test(combinedText);
+      const isFollowUpIssue = /javob|bog'lan|tel qilmadi|qo'ng'iroq/i.test(combinedText);
+
+      if (isExpensive) expensiveCount++;
+      if (isDeliveryIssue) deliveryCount++;
+      if (isHesitant) hesitantCount++;
+      if (isFollowUpIssue) followUpCount++;
+
+      const hasPurchaseIntent = /olaman|olmoqchiman|zakaz|buyurtma|kuryer|dostavka qiling|sotib ol/i.test(combinedText);
+      const hasPriceInquiry = /narx|narxi|qancha|necha|pul|bahosi/i.test(combinedText);
+
+      if (hasPurchaseIntent) {
+        purchaseCount++;
+      } else if (hasPriceInquiry) {
+        inquiryCount++;
+      } else {
+        otherCount++;
+      }
+
+      texts.forEach(t => {
+        const trimmed = t.trim();
+        if (trimmed.length > 10 && trimmed.length < 100 && sampleOpinions.length < 10) {
+          if (!sampleOpinions.includes(trimmed)) {
+            const capitalized = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+            sampleOpinions.push(capitalized);
+          }
+        }
+      });
+    });
+
+    res.json({
+      totalMessages,
+      incomingMessages,
+      linkedClients,
+      igSpent,
+      igLeads,
+      igCpl,
+      dailyActiveChats,
+      paymentPreferences: {
+        nasiya: nasiyaCount,
+        naqd: naqdCount,
+        unspecified: unspecifiedCount
+      },
+      reasonsNotBuying: {
+        expensive: expensiveCount,
+        delivery: deliveryCount,
+        hesitant: hesitantCount,
+        followUp: followUpCount
+      },
+      purchaseIntent: {
+        purchase: purchaseCount,
+        inquiry: inquiryCount,
+        other: otherCount
+      },
+      sampleOpinions: sampleOpinions.slice(0, 6)
+    });
   } catch(e) {
-    res.json({ totalMessages: 0, incomingMessages: 0, linkedClients: 0, igSpent: 0, igLeads: 0, igCpl: 0 });
+    console.error('Instagram stats error:', e);
+    res.json({
+      totalMessages: 0,
+      incomingMessages: 0,
+      linkedClients: 0,
+      igSpent: 0,
+      igLeads: 0,
+      igCpl: 0,
+      dailyActiveChats: [],
+      paymentPreferences: { nasiya: 0, naqd: 0, unspecified: 0 },
+      reasonsNotBuying: { expensive: 0, delivery: 0, hesitant: 0, followUp: 0 },
+      purchaseIntent: { purchase: 0, inquiry: 0, other: 0 },
+      sampleOpinions: []
+    });
   }
 });
 
