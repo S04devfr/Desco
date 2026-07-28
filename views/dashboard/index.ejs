@@ -501,34 +501,66 @@
     </div>
   </div>
 
-  <!-- 2. Obstacles and customer comments -->
+  <!-- 2. Product interests and customer comments -->
   <div class="card">
     <div class="card-header flex justify-between items-center">
-      <h3 class="section-title"><i class="fas fa-comments text-brand"></i>Rad Sabablari & Fikrlar</h3>
+      <h3 class="section-title"><i class="fas fa-heart text-brand"></i>Qaysi massajorga qiziqishyapti?</h3>
       <span class="badge badge-purple" id="igActiveDayText">Kunlik faol: 0 ta</span>
     </div>
     <div class="card-body" style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
-      <!-- Lost reasons -->
-      <div>
-        <h4 style="font-size: 12px; font-weight: 700; color: var(--text-primary); margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
-          <i class="fas fa-ban" style="color: #FF3B30; font-size: 12px;"></i> Nima uchun sotib olmadi? (Rad sabablari)
+      <!-- Product interests progress bars -->
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <h4 style="font-size: 12px; font-weight: 700; color: var(--text-primary); margin: 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+          <i class="fas fa-fire" style="color: #FF9500; font-size: 12px;"></i> Qiziqishlar statistikasi (Chat tahlili)
         </h4>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px;">
-          <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: var(--bg-secondary); border-radius: 6px; border: 1px solid var(--border);">
-            <span style="color: var(--text-secondary);"><i class="fas fa-dollar-sign text-danger"></i> Qimmatlik</span>
-            <strong id="igReasonExpensive" style="color: var(--text-primary);">0 ta</strong>
+        
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); margin-bottom: 3px;">
+            <span>6-funksiyalik massajor</span>
+            <strong id="igProd6Text">0 ta (0%)</strong>
           </div>
-          <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: var(--bg-secondary); border-radius: 6px; border: 1px solid var(--border);">
-            <span style="color: var(--text-secondary);"><i class="fas fa-shipping-fast text-brand"></i> Dostavka muammosi</span>
-            <strong id="igReasonDelivery" style="color: var(--text-primary);">0 ta</strong>
+          <div style="height: 5px; background: var(--border); border-radius: 3px; overflow: hidden;">
+            <div id="igProd6Bar" style="height: 100%; background: #5856D6; border-radius: 3px; width: 0%; transition: width 0.5s ease;"></div>
           </div>
-          <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: var(--bg-secondary); border-radius: 6px; border: 1px solid var(--border);">
-            <span style="color: var(--text-secondary);"><i class="fas fa-hourglass-half text-warning"></i> Keyinroq / O'ylashga ketgan</span>
-            <strong id="igReasonHesitant" style="color: var(--text-primary);">0 ta</strong>
+        </div>
+
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); margin-bottom: 3px;">
+            <span>3-funksiyalik massajor</span>
+            <strong id="igProd3Text">0 ta (0%)</strong>
           </div>
-          <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: var(--bg-secondary); border-radius: 6px; border: 1px solid var(--border);">
-            <span style="color: var(--text-secondary);"><i class="fas fa-phone-slash text-muted"></i> Bog'lanib bo'lmagan</span>
-            <strong id="igReasonFollowUp" style="color: var(--text-primary);">0 ta</strong>
+          <div style="height: 5px; background: var(--border); border-radius: 3px; overflow: hidden;">
+            <div id="igProd3Bar" style="height: 100%; background: #6366F1; border-radius: 3px; width: 0%; transition: width 0.5s ease;"></div>
+          </div>
+        </div>
+
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); margin-bottom: 3px;">
+            <span>Oyoq massajori</span>
+            <strong id="igProdOyoqText">0 ta (0%)</strong>
+          </div>
+          <div style="height: 5px; background: var(--border); border-radius: 3px; overflow: hidden;">
+            <div id="igProdOyoqBar" style="height: 100%; background: #30B0C7; border-radius: 3px; width: 0%; transition: width 0.5s ease;"></div>
+          </div>
+        </div>
+
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); margin-bottom: 3px;">
+            <span>Hadiya to'plami</span>
+            <strong id="igProdHadiyaText">0 ta (0%)</strong>
+          </div>
+          <div style="height: 5px; background: var(--border); border-radius: 3px; overflow: hidden;">
+            <div id="igProdHadiyaBar" style="height: 100%; background: #FF2D55; border-radius: 3px; width: 0%; transition: width 0.5s ease;"></div>
+          </div>
+        </div>
+
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); margin-bottom: 3px;">
+            <span>Boshqa mahsulotlar / Aniqlanmagan</span>
+            <strong id="igProdOtherText">0 ta (0%)</strong>
+          </div>
+          <div style="height: 5px; background: var(--border); border-radius: 3px; overflow: hidden;">
+            <div id="igProdOtherBar" style="height: 100%; background: #8E8E93; border-radius: 3px; width: 0%; transition: width 0.5s ease;"></div>
           </div>
         </div>
       </div>
@@ -1262,16 +1294,39 @@ async function loadDashboard() {
     if (igInquiryTextEl) igInquiryTextEl.textContent = `${intents.inquiry} kishi (${pctInquiry}%)`;
     if (igInquiryBarEl) igInquiryBarEl.style.width = pctInquiry + '%';
 
-    const reasons = igStats.reasonsNotBuying || { expensive: 0, delivery: 0, hesitant: 0, followUp: 0 };
-    const igExpensiveEl = document.getElementById('igReasonExpensive');
-    const igDeliveryEl = document.getElementById('igReasonDelivery');
-    const igHesitantEl = document.getElementById('igReasonHesitant');
-    const igFollowUpEl = document.getElementById('igReasonFollowUp');
+    const prodInts = igStats.productInterests || { func6: 0, func3: 0, oyoq: 0, hadiya: 0, other: 0 };
+    const totalProds = (prodInts.func6 + prodInts.func3 + prodInts.oyoq + prodInts.hadiya + prodInts.other) || 1;
+    
+    const pctP6 = Math.round((prodInts.func6 / totalProds) * 100);
+    const pctP3 = Math.round((prodInts.func3 / totalProds) * 100);
+    const pctOyoq = Math.round((prodInts.oyoq / totalProds) * 100);
+    const pctHadiya = Math.round((prodInts.hadiya / totalProds) * 100);
+    const pctOther = Math.round((prodInts.other / totalProds) * 100);
 
-    if (igExpensiveEl) igExpensiveEl.textContent = (reasons.expensive || 0) + ' ta';
-    if (igDeliveryEl) igDeliveryEl.textContent = (reasons.delivery || 0) + ' ta';
-    if (igHesitantEl) igHesitantEl.textContent = (reasons.hesitant || 0) + ' ta';
-    if (igFollowUpEl) igFollowUpEl.textContent = (reasons.followUp || 0) + ' ta';
+    const igProd6TextEl = document.getElementById('igProd6Text');
+    const igProd6BarEl = document.getElementById('igProd6Bar');
+    if (igProd6TextEl) igProd6TextEl.textContent = `${prodInts.func6} ta (${pctP6}%)`;
+    if (igProd6BarEl) igProd6BarEl.style.width = pctP6 + '%';
+
+    const igProd3TextEl = document.getElementById('igProd3Text');
+    const igProd3BarEl = document.getElementById('igProd3Bar');
+    if (igProd3TextEl) igProd3TextEl.textContent = `${prodInts.func3} ta (${pctP3}%)`;
+    if (igProd3BarEl) igProd3BarEl.style.width = pctP3 + '%';
+
+    const igProdOyoqTextEl = document.getElementById('igProdOyoqText');
+    const igProdOyoqBarEl = document.getElementById('igProdOyoqBar');
+    if (igProdOyoqTextEl) igProdOyoqTextEl.textContent = `${prodInts.oyoq} ta (${pctOyoq}%)`;
+    if (igProdOyoqBarEl) igProdOyoqBarEl.style.width = pctOyoq + '%';
+
+    const igProdHadiyaTextEl = document.getElementById('igProdHadiyaText');
+    const igProdHadiyaBarEl = document.getElementById('igProdHadiyaBar');
+    if (igProdHadiyaTextEl) igProdHadiyaTextEl.textContent = `${prodInts.hadiya} ta (${pctHadiya}%)`;
+    if (igProdHadiyaBarEl) igProdHadiyaBarEl.style.width = pctHadiya + '%';
+
+    const igProdOtherTextEl = document.getElementById('igProdOtherText');
+    const igProdOtherBarEl = document.getElementById('igProdOtherBar');
+    if (igProdOtherTextEl) igProdOtherTextEl.textContent = `${prodInts.other} ta (${pctOther}%)`;
+    if (igProdOtherBarEl) igProdOtherBarEl.style.width = pctOther + '%';
 
     const opinionsContainer = document.getElementById('igOpinionsContainer');
     if (opinionsContainer) {

@@ -562,10 +562,11 @@ router.get('/instagram-stats', async (req, res) => {
     let naqdCount = 0;
     let unspecifiedCount = 0;
 
-    let expensiveCount = 0;
-    let deliveryCount = 0;
-    let hesitantCount = 0;
-    let followUpCount = 0;
+    let count3Func = 0;
+    let count6Func = 0;
+    let countOyoq = 0;
+    let countHadiya = 0;
+    let countOtherProduct = 0;
 
     let purchaseCount = 0;
     let inquiryCount = 0;
@@ -587,15 +588,32 @@ router.get('/instagram-stats', async (req, res) => {
         unspecifiedCount++;
       }
 
-      const isExpensive = /qimmat|qmat|arzon|skidka|chegirma|narxi baland|qimat/i.test(combinedText);
-      const isDeliveryIssue = /dostavka|yetkaz|viloyat|uzoq|pochta|rayonga|dastavka/i.test(combinedText);
-      const isHesitant = /o'ylab|oylab|keyinroq|maslahat|uydegilar|ertaga/i.test(combinedText);
-      const isFollowUpIssue = /javob|bog'lan|tel qilmadi|qo'ng'iroq/i.test(combinedText);
+      const has6Func = /6-funksiyalik|6-funksiya|6 talik|6-talik|6 lik|6lik|6 ta|olti talik|6-ta|massajor 6|е6/i.test(combinedText);
+      const has3Func = /3-funksiyalik|3-funkiyalik|3-funksiya|3 talik|3-talik|3 lik|3lik|3 ta|uch talik|3-ta/i.test(combinedText);
+      const hasOyoq = /oyoq|nog|stup|tavon/i.test(combinedText);
+      const hasHadiya = /hadiya|hadya|sovg'a|sovga|toplam|to'plam/i.test(combinedText);
 
-      if (isExpensive) expensiveCount++;
-      if (isDeliveryIssue) deliveryCount++;
-      if (isHesitant) hesitantCount++;
-      if (isFollowUpIssue) followUpCount++;
+      let matched = false;
+      if (has6Func) {
+        count6Func++;
+        matched = true;
+      }
+      if (has3Func) {
+        count3Func++;
+        matched = true;
+      }
+      if (hasOyoq) {
+        countOyoq++;
+        matched = true;
+      }
+      if (hasHadiya) {
+        countHadiya++;
+        matched = true;
+      }
+
+      if (!matched && combinedText.trim().length > 0) {
+        countOtherProduct++;
+      }
 
       const hasPurchaseIntent = /olaman|olmoqchiman|zakaz|buyurtma|kuryer|dostavka qiling|sotib ol/i.test(combinedText);
       const hasPriceInquiry = /narx|narxi|qancha|necha|pul|bahosi/i.test(combinedText);
@@ -632,11 +650,12 @@ router.get('/instagram-stats', async (req, res) => {
         naqd: naqdCount,
         unspecified: unspecifiedCount
       },
-      reasonsNotBuying: {
-        expensive: expensiveCount,
-        delivery: deliveryCount,
-        hesitant: hesitantCount,
-        followUp: followUpCount
+      productInterests: {
+        func6: count6Func,
+        func3: count3Func,
+        oyoq: countOyoq,
+        hadiya: countHadiya,
+        other: countOtherProduct
       },
       purchaseIntent: {
         purchase: purchaseCount,
@@ -656,7 +675,7 @@ router.get('/instagram-stats', async (req, res) => {
       igCpl: 0,
       dailyActiveChats: [],
       paymentPreferences: { nasiya: 0, naqd: 0, unspecified: 0 },
-      reasonsNotBuying: { expensive: 0, delivery: 0, hesitant: 0, followUp: 0 },
+      productInterests: { func6: 0, func3: 0, oyoq: 0, hadiya: 0, other: 0 },
       purchaseIntent: { purchase: 0, inquiry: 0, other: 0 },
       sampleOpinions: []
     });
