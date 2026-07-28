@@ -539,61 +539,98 @@ router.post('/telegram', verifyTelegramSecret, async (req, res) => {
       return res.status(200).json({ status: 'ignored', message: 'No text message' });
     }
 
-    // 1. Matndan lead ma'lumotlarini parse qilamiz
-    const parsed = parseTelegramMessage(text);
-    console.log(`[Telegram Webhook Parse] Natija: Ism="${parsed.name}", Tel="${parsed.phone}", Mahsulot="${parsed.product}"`);
+    const isYuboraman = text.includes("📝 Ma'lumotlar:") || text.includes("Telegram uchun tayyor") || text.includes("📄 Nomi:");
 
-    let cleanPhone = null;
-    if (parsed.phone && parsed.phone.trim() !== "Noma'lum") {
-      try {
-        cleanPhone = leadService.normalizeUniversalPhone(parsed.phone);
-      } catch (phoneErr) {
-        console.warn(`[Telegram Webhook Fail-safe] Telefon normalizatsiyasida ogohlantirish: ${phoneErr.message}`);
-        parsed.notes = `[Yaroqsiz Telefon: ${parsed.phone}]\n${parsed.notes}`;
-        cleanPhone = null;
+    // Find or create Client by telegramId
+    let client = await prisma.client.findUnique({
+      where: { telegramId: String(chatId) }
+    });
+
+    const clientName = fromUser?.first_name 
+      ? (fromUser.first_name + (fromUser.last_name ? ' ' + fromUser.last_name : ''))
+      : "Telegram Foydalanuvchisi";
+
+    const username = fromUser?.username || null;
+
+    if (!client) {
+      // Fuzzy lead extraction to look for phone numbers
+      const parsed = parseTelegramMessage(text);
+      let cleanPhone = null;
+      if (parsed.phone && parsed.phone.trim() !== "Noma'lum") {
+        try {
+          cleanPhone = leadService.normalizeUniversalPhone(parsed.phone);
+        } catch (e) {}
       }
-    }
 
-    // 2. Client va Deal yaratishni tranzaksiyaga olamiz (Direct Prisma Transaction, latency uchun 15s)
-    const { client, deal } = await prisma.$transaction(async (tx) => {
-      let currentClient = null;
+      // If we found a phone number, see if client already exists by phone
       if (cleanPhone) {
-        currentClient = await tx.client.findFirst({
+        client = await prisma.client.findFirst({
           where: { phone: { contains: cleanPhone } }
         });
       }
 
-      // Build client notes dynamically
-      const clientNotesParts = [];
-      if (parsed.source && parsed.source !== 'telegram') {
-        clientNotesParts.push(`Manba: ${parsed.source}`);
-      }
-      clientNotesParts.push(`Integratsiya usuli: telegram`);
-      clientNotesParts.push(`Telegram Chat ID: ${chatId || 'Noma\'lum'}`);
-      clientNotesParts.push(`Username: ${fromUser?.username ? '@' + fromUser.username : 'Noma\'lum'}`);
-      const clientNotes = clientNotesParts.join('\n');
-
-      if (!currentClient) {
-        currentClient = await tx.client.create({
+      if (client) {
+        // Map telegramId to existing client
+        client = await prisma.client.update({
+          where: { id: client.id },
           data: {
-            name: parsed.name || "Noma'lum",
-            phone: cleanPhone || null,
-            city: parsed.city || null,
-            notes: clientNotes
+            telegramId: String(chatId),
+            telegramUsername: username
           }
         });
       } else {
-        // Agar yangi shahar nomi parse qilingan bo'lsa va mijozda shahar bo'lmasa, uni yangilaymiz
-        if (parsed.city && !currentClient.city) {
-          currentClient = await tx.client.update({
-            where: { id: currentClient.id },
-            data: { city: parsed.city }
-          });
-        }
+        // Create new client
+        client = await prisma.client.create({
+          data: {
+            name: clientName,
+            telegramId: String(chatId),
+            telegramUsername: username,
+            phone: cleanPhone || null,
+            city: parsed.city || null,
+            notes: `Telegram orqali yangi suhbat. Username: ${username ? '@' + username : 'yo\'q'}`
+          }
+        });
       }
+    }
 
-      // 3. Voronka va Bosqichni topish
-      const pipeline = await tx.pipeline.findFirst({
+    // Save Telegram Message
+    const messageId = `tg_${message.message_id || Date.now()}`;
+    const savedMsg = await prisma.telegramMessage.upsert({
+      where: { messageId },
+      update: {
+        text
+      },
+      create: {
+        messageId,
+        text,
+        senderId: String(fromUser?.id || chatId),
+        recipientId: 'BOT',
+        timestamp: new Date(message.date * 1000 || Date.now()),
+        isOutgoing: false,
+        clientId: client.id
+      }
+    });
+
+    // Real-time WebSocket broadcast
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) {
+      broadcast({
+        type: 'telegram_message',
+        clientId: client.id,
+        message: {
+          ...savedMsg,
+          timestamp: savedMsg.timestamp.toISOString()
+        }
+      });
+    }
+
+    // If it is a structured Yuboraman lead, automatically create a Deal
+    if (isYuboraman) {
+      console.log(`[Telegram Webhook] Yuboraman lead aniqlandi, deal avtomatik yaratiladi...`);
+      const parsed = parseTelegramMessage(text);
+      
+      // Check if pipeline has default stages
+      const pipeline = await prisma.pipeline.findFirst({
         where: { isDefault: true },
         include: { stages: { orderBy: { order: 'asc' }, take: 1 } }
       });
@@ -605,7 +642,7 @@ router.post('/telegram', verifyTelegramSecret, async (req, res) => {
         targetPipelineId = pipeline.id;
         targetStageId = pipeline.stages[0].id;
       } else {
-        const fallbackPipeline = await tx.pipeline.findFirst({
+        const fallbackPipeline = await prisma.pipeline.findFirst({
           include: { stages: { orderBy: { order: 'asc' }, take: 1 } }
         });
         if (fallbackPipeline && fallbackPipeline.stages.length > 0) {
@@ -614,67 +651,46 @@ router.post('/telegram', verifyTelegramSecret, async (req, res) => {
         }
       }
 
-      // 4. Sdelka (Deal) yaratish using Prisma
       const dealNotes = parsed.isYuboramanFormat
         ? parsed.notes
         : `Integratsiya usuli: telegram\nOriginal Xabar:\n${text}`;
 
-      const newDeal = await tx.deal.create({
+      const newDeal = await prisma.deal.create({
         data: {
           productName: parsed.product || 'Telegram orqali Lead',
           amount: 0,
           status: 'new',
-          clientId: currentClient.id,
+          clientId: client.id,
           pipelineId: targetPipelineId,
           stageId: targetStageId,
           notes: dealNotes
         }
       });
 
-      return { client: currentClient, deal: newDeal };
-    }, { timeout: 15000 });
-
-    console.log(`[Telegram Webhook] ✓ Yangi sdelka (Deal) muvaffaqiyatli yaratildi. ID: ${deal.id}`);
-
-    // UI real-vaqtda yangilanishi uchun socket signalini yuboramiz
-    const broadcast = req.app.get('broadcast');
-    if (broadcast) {
-      const fullDeal = await prisma.deal.findUnique({
-        where: { id: deal.id },
-        include: {
-          client: { select: { id: true, name: true, company: true, phone: true, city: true } },
-          manager: { select: { id: true, fullName: true, email: true, role: true } },
-          stage: { select: { id: true, name: true, color: true, order: true } },
-          installments: { select: { id: true } }
-        }
-      });
-      broadcast({ type: 'deal_created', dealId: deal.id, deal: fullDeal });
+      console.log(`[Telegram Webhook] ✓ Avtomatik sdelka yaratildi. ID: ${newDeal.id}`);
+      
+      if (broadcast) {
+        const fullDeal = await prisma.deal.findUnique({
+          where: { id: newDeal.id },
+          include: {
+            client: { select: { id: true, name: true, company: true, phone: true, city: true } },
+            manager: { select: { id: true, fullName: true, email: true, role: true } },
+            stage: { select: { id: true, name: true, color: true, order: true } },
+            installments: { select: { id: true } }
+          }
+        });
+        broadcast({ type: 'deal_created', dealId: newDeal.id, deal: fullDeal });
+      }
     }
 
     res.status(200).json({
       success: true,
-      message: 'Telegram lead muvaffaqiyatli sdelkaga aylantirildi',
-      dealId: deal.id,
-      clientId: client.id,
-      client: {
-        id: client.id,
-        name: client.name,
-        phone: client.phone,
-        city: client.city,
-        notes: client.notes,
-        createdAt: client.createdAt
-      },
-      deal: {
-        id: deal.id,
-        productName: deal.productName,
-        notes: deal.notes,
-        createdAt: deal.createdAt
-      }
+      message: 'Telegram event muvaffaqiyatli qayta ishlandi',
+      clientId: client.id
     });
 
   } catch (error) {
-    console.error('[Telegram Webhook Error] Leadni qayta ishlashda xatolik:', error.message);
-    // Telegram qayta urinishlarini oldini olish uchun xato holatida ham 200 qaytaramiz
+    console.error('[Telegram Webhook Error] Xabar qayta ishlashda xatolik:', error.message);
     res.status(200).json({
       success: false,
       error: error.message

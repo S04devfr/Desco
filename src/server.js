@@ -125,6 +125,7 @@ app.use('/api/instagram',       require('./routes/instagram'));
 app.use('/api/webhook',         require('./routes/webhook'));
 app.use('/api/ai',              require('./routes/ai'));
 app.use('/api/telegram',        require('./routes/telegram'));
+app.use('/api/telegram-chat',   require('./routes/telegramChat'));
 app.use('/api/warehouse',       require('./routes/warehouse'));
 app.use('/api/marketing',       require('./routes/marketing'));
 app.use('/api/delivery',        require('./routes/delivery'));
@@ -152,6 +153,7 @@ app.get('/extra/drivers',  requireAuth, requireRole('admin', 'manager'), (req, r
 app.get('/extra/branches', requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('extra/index',  { user: req.session.user, activePage: 'extra-branches', subPage: 'branches' }));
 app.get('/tasks',    requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('tasks/index',    { user: req.session.user, activePage: 'tasks' }));
 app.get('/instagram', requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('instagram/index', { user: req.session.user, activePage: 'instagram' }));
+app.get('/telegram',  requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('telegram/index',  { user: req.session.user, activePage: 'telegram' }));
 app.get('/ai',        requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('ai/index',        { user: req.session.user, activePage: 'ai' }));
 app.get('/warehouse', requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('warehouse/index', { user: req.session.user, activePage: 'warehouse' }));
 app.get('/nasiya',   requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('deals/index',    { user: req.session.user, activePage: 'nasiya' }));

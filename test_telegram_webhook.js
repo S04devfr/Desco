@@ -1,7 +1,7 @@
 require('dotenv').config();
 
 const PORT = process.env.PORT || 3000;
-const WEBHOOK_URL = `http://localhost:${PORT}/api/webhooks/telegram`;
+const WEBHOOK_URL = `http://localhost:${PORT}/api/webhook/telegram`;
 const SECRET_TOKEN = process.env.TELEGRAM_WEBHOOK_SECRET || 'desco-telegram-webhook-secret-token-2026';
 
 async function runTest(testName, payload, headers = {}, useToken = true) {
