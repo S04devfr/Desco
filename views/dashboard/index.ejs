@@ -1445,7 +1445,7 @@ async function loadDashboard() {
       if (mktLogsBody) {
         const logs = mkt.logs || [];
         if (!logs.length) {
-          mktLogsBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-500)">Hali ma\'lumot yo\'q — + tugmasini bosing</td></tr>';
+          mktLogsBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-secondary)">Hozircha ma\'lumotlar mavjud emas — qo\'shish uchun "+" tugmasini bosing</td></tr>';
         } else {
           mktLogsBody.innerHTML = logs.map(l => {
             const cpl2 = l.leads > 0 ? l.spent / l.leads : 0;

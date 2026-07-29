@@ -62,11 +62,18 @@
   --surface-input: var(--bg-surface-hover);
   --border: var(--border-subtle);
   --border-strong: var(--border-strong);
+  --bg-primary: var(--bg-app);
+  --bg-secondary: var(--bg-surface-hover);
+  --bg-tertiary: var(--border-subtle);
+  --text-tertiary: #64748B;
+  --text-400: #94A3B8;
+  --text-muted: #94A3B8;
   --text-900: var(--text-primary);
   --text-800: var(--text-primary);
   --text-700: var(--text-primary);
   --text-500: var(--text-secondary);
   --text-300: var(--text-secondary);
+  --surface-elevated: #FFFFFF;
   --r-xs: var(--radius-sm);
   --r-sm: var(--radius-md);
   --r-md: var(--radius-md);
@@ -83,27 +90,26 @@
   --sidebar-border: var(--border-subtle);
 }
 
-/* Dark mode */
 [data-theme="dark"] {
-  --bg-app: #09090B;
-  --bg-surface: #18181B;
-  --bg-surface-hover: #27272A;
-  --bg-sidebar: #09090B;
-  --bg-sidebar-hover: #18181B;
-  --bg-sidebar-active: #27272A;
+  --bg-app: #0B0E14;
+  --bg-surface: #1A1F2C;
+  --bg-surface-hover: #252D3F;
+  --bg-sidebar: #0B0E14;
+  --bg-sidebar-hover: #1A1F2C;
+  --bg-sidebar-active: #252D3F;
 
   --primary: #818CF8;
   --primary-hover: #6366F1;
   --primary-light: rgba(129, 140, 248, 0.12);
 
-  --text-primary: #F4F4F5;
-  --text-secondary: #A1A1AA;
+  --text-primary: #F3F4F6;
+  --text-secondary: #9CA3AF;
   --text-inverse: #FFFFFF;
-  --text-muted-sidebar: #A1A1AA;
+  --text-muted-sidebar: #9CA3AF;
   --sidebar-text-active: #FFFFFF;
 
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.15);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.14);
 
   --success: #34D399;
   --warning: #FBBF24;
@@ -124,11 +130,18 @@
   --surface-input: var(--bg-surface-hover);
   --border: var(--border-subtle);
   --border-strong: var(--border-strong);
+  --bg-primary: var(--bg-app);
+  --bg-secondary: var(--bg-surface-hover);
+  --bg-tertiary: var(--border-subtle);
+  --text-tertiary: #A1A1AA;
+  --text-400: #71717A;
+  --text-muted: #71717A;
   --text-900: var(--text-primary);
   --text-800: var(--text-primary);
   --text-700: var(--text-primary);
   --text-500: var(--text-secondary);
   --text-300: var(--text-secondary);
+  --surface-elevated: #27272A;
 
   /* Sidebar styling maps */
   --sidebar-bg: var(--bg-sidebar);
