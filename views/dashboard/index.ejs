@@ -1159,9 +1159,11 @@ async function loadDashboard() {
           <div class="stat-icon green"><i class="fas fa-chart-line"></i></div>
           <div class="stat-info">
             <div class="stat-label">Sof foyda</div>
-            <div class="stat-value ${profitClass}" style="filter: blur(5px); cursor: pointer; transition: filter 0.25s; display: inline-flex; align-items: center; gap: 8px;" onclick="event.stopPropagation(); this.style.filter = this.style.filter === 'none' ? 'blur(5px)' : 'none'; const icon = this.querySelector('i'); if (icon) { icon.className = this.style.filter === 'none' ? 'fas fa-eye' : 'fas fa-eye-slash'; }" title="Ko'rish / Yashirish uchun bosing">
-              <span>${renderCardMoney(netProfitVal)}</span>
-              <i class="fas fa-eye-slash" style="font-size: 11px; opacity: 0.6;"></i>
+            <div class="stat-value ${profitClass}" style="display: inline-flex; align-items: center; gap: 8px;">
+              <span id="netProfitValueSpan" style="transition: filter 0.2s ease;">${renderCardMoney(netProfitVal)}</span>
+              <button class="btn btn-ghost" onclick="event.stopPropagation(); toggleNetProfitVisibility(this)" style="padding: 2px; height: 20px; width: 20px; display: inline-flex; align-items: center; justify-content: center; min-width: 0; border: none; background: transparent; cursor: pointer;" title="Ko'rish / Yashirish">
+                <i class="fas fa-eye" style="font-size: 11px; opacity: 0.6;"></i>
+              </button>
             </div>
             <div class="stat-sub">Savdo − Tannarx − Xarajat</div>
           </div>
@@ -3319,5 +3321,19 @@ loadDashboard();
   // Sahifa yuklangandan keyin ulan
   window.addEventListener('load', connect);
 })();
+
+function toggleNetProfitVisibility(btn) {
+  const span = document.getElementById('netProfitValueSpan');
+  const icon = btn.querySelector('i');
+  if (span.style.filter === 'blur(5px)') {
+    span.style.filter = 'none';
+    icon.className = 'fas fa-eye';
+    btn.title = "Yashirish";
+  } else {
+    span.style.filter = 'blur(5px)';
+    icon.className = 'fas fa-eye-slash';
+    btn.title = "Ko'rish";
+  }
+}
 </script>
 <%- include('../layouts/footer') %>
