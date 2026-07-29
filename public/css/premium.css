@@ -8,12 +8,12 @@
 ───────────────────────────────────────────────────── */
 :root {
   /* Fon va sirt */
-  --bg-app: #F7F8FA;
+  --bg-app: #F8FAFC;
   --bg-surface: #FFFFFF;
-  --bg-surface-hover: #F1F3F6;
-  --bg-sidebar: #14141F;          /* to'q, hashamatli sidebar */
-  --bg-sidebar-hover: #1F1F2E;
-  --bg-sidebar-active: #4F46E5;   /* aktiv nav item fon */
+  --bg-surface-hover: #F1F5F9;
+  --bg-sidebar: #FFFFFF;
+  --bg-sidebar-hover: #F1F5F9;
+  --bg-sidebar-active: #EEF2FF;
 
   /* Asosiy brend rang */
   --primary: #4F46E5;             /* indigo-600 */
@@ -21,10 +21,11 @@
   --primary-light: #EEF2FF;
 
   /* Matn */
-  --text-primary: #111827;
-  --text-secondary: #6B7280;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
   --text-inverse: #FFFFFF;
-  --text-muted-sidebar: #9CA3AF;
+  --text-muted-sidebar: #475569;
+  --sidebar-text-active: #4F46E5;
 
   /* Chegaralar */
   --border-subtle: #E5E7EB;
@@ -88,17 +89,18 @@
   --bg-surface: #1A1A24;
   --bg-surface-hover: #252538;
   --bg-sidebar: #0B0B11;
-  --bg-sidebar-hover: #151522;
-  --bg-sidebar-active: #4F46E5;
+  --bg-sidebar-hover: #1E293B;
+  --bg-sidebar-active: #1E293B;
 
   --primary: #818CF8;
   --primary-hover: #6366F1;
   --primary-light: rgba(129, 140, 248, 0.12);
 
-  --text-primary: #F9FAFB;
-  --text-secondary: #9CA3AF;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
   --text-inverse: #FFFFFF;
-  --text-muted-sidebar: #6B7280;
+  --text-muted-sidebar: #94A3B8;
+  --sidebar-text-active: #818CF8;
 
   --border-subtle: rgba(255,255,255,0.06);
   --border-strong: rgba(255,255,255,0.12);
@@ -174,19 +176,19 @@ body {
    SIDEBAR
 ───────────────────────────────────────────────────── */
 .sidebar {
-  background: #14141F !important;
-  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: var(--sidebar-bg) !important;
+  border-right: 1px solid var(--sidebar-border) !important;
   height: 100%;
 }
 
 [data-theme="dark"] .sidebar {
-  background: #0B0B11 !important;
-  border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+  background: var(--sidebar-bg) !important;
+  border-right: 1px solid var(--sidebar-border) !important;
 }
 
 /* Logo */
 .sidebar-logo {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-bottom: 1px solid var(--sidebar-border) !important;
 }
 
 .sidebar-logo-icon {
@@ -196,24 +198,25 @@ body {
 }
 
 .sidebar-logo-text {
-  color: #FFFFFF !important;
+  color: var(--text-primary) !important;
   font-weight: 700;
   font-size: 16px;
   letter-spacing: -0.3px;
 }
 
-.sidebar-logo-text span { color: #818CF8 !important; }
+.sidebar-logo-text span { color: var(--primary) !important; }
 
 /* Nav */
 .nav-section-label {
-  color: rgba(255, 255, 255, 0.35) !important;
+  color: var(--text-secondary) !important;
   font-size: 10px;
   letter-spacing: 0.8px;
+  opacity: 0.8;
 }
 
 .sidebar-nav a,
 .sidebar-nav-btn {
-  color: rgba(255, 255, 255, 0.6) !important;
+  color: var(--text-secondary) !important;
   font-size: 13.5px;
   font-weight: 500;
   border-radius: 8px;
@@ -223,15 +226,15 @@ body {
 
 .sidebar-nav a:hover,
 .sidebar-nav-btn:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
-  color: #FFFFFF !important;
+  background: var(--sidebar-hover) !important;
+  color: var(--sidebar-text-active) !important;
 }
 
 .sidebar-nav a.active {
-  background: var(--primary) !important;
-  color: #FFFFFF !important;
+  background: var(--sidebar-active) !important;
+  color: var(--sidebar-text-active) !important;
   font-weight: 600;
-  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3) !important;
+  box-shadow: var(--shadow-sm) !important;
   position: relative;
 }
 
@@ -242,65 +245,68 @@ body {
   top: 8px;
   bottom: 8px;
   width: 3px;
-  background: #FFFFFF;
+  background: var(--sidebar-text-active);
   border-radius: 0 4px 4px 0;
 }
 
-.sidebar-nav a.active .nav-icon { opacity: 1; color: #FFFFFF !important; }
+.sidebar-nav a.active .nav-icon { opacity: 1; color: var(--sidebar-text-active) !important; }
 .nav-icon { opacity: 0.70; font-size: 15px; }
 
 /* Submenu */
 .sidebar-submenu-header {
-  color: rgba(255, 255, 255, 0.6) !important;
+  color: var(--text-secondary) !important;
   font-size: 13.5px;
   border-radius: 8px;
   height: 38px;
   transition: all 150ms ease;
 }
 .sidebar-submenu-header:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
-  color: #FFFFFF !important;
+  background: var(--sidebar-hover) !important;
+  color: var(--sidebar-text-active) !important;
 }
 .sidebar-submenu-header.active {
-  background: rgba(255, 255, 255, 0.08) !important;
-  color: #FFFFFF !important;
+  background: var(--sidebar-active) !important;
+  color: var(--sidebar-text-active) !important;
 }
 
 .sub-item {
-  color: rgba(255, 255, 255, 0.5) !important;
+  color: var(--text-secondary) !important;
   font-size: 12.5px;
   border-radius: 6px;
   transition: all 150ms ease;
 }
-.sub-item:hover { background: rgba(255, 255, 255, 0.05) !important; color: #FFFFFF !important; }
-.sub-item.active { color: #818CF8 !important; background: rgba(255, 255, 255, 0.05) !important; font-weight: 600; }
+.sub-item:hover { background: var(--sidebar-hover) !important; color: var(--sidebar-text-active) !important; }
+.sub-item.active { color: var(--sidebar-text-active) !important; background: var(--sidebar-active) !important; font-weight: 600; }
 
-.nav-divider { background: rgba(255, 255, 255, 0.08) !important; }
+.nav-divider { background: var(--sidebar-border) !important; }
 
 /* Bottom */
 .sidebar-bottom {
-  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
-  background: #0E0E16 !important;
+  border-top: 1px solid var(--sidebar-border) !important;
+  background: var(--bg-surface) !important;
   padding: 12px;
+}
+[data-theme="dark"] .sidebar-bottom {
+  background: var(--bg-sidebar) !important;
 }
 .sidebar-user {
   transition: all 150ms ease;
   border-radius: 8px;
   padding: 6px 8px;
 }
-.sidebar-user:hover { background: rgba(255, 255, 255, 0.05) !important; }
+.sidebar-user:hover { background: var(--sidebar-hover) !important; }
 .sidebar-user-avatar {
   background: linear-gradient(135deg, var(--primary), var(--primary-hover)) !important;
   color: #FFFFFF !important;
   font-weight: 700;
   font-size: 12px;
-  border: 1.5px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
+  border: 1.5px solid var(--bg-surface) !important;
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.15);
 }
-.sidebar-user-info .name { color: #FFFFFF !important; font-size: 13px; font-weight: 600 !important; }
-.sidebar-user-info .role { color: rgba(255, 255, 255, 0.45) !important; font-size: 11px; font-weight: 500 !important; }
+.sidebar-user-info .name { color: var(--text-primary) !important; font-size: 13px; font-weight: 600 !important; }
+.sidebar-user-info .role { color: var(--text-secondary) !important; font-size: 11px; font-weight: 500 !important; }
 
-.sidebar-logout-btn { color: rgba(255, 255, 255, 0.5) !important; font-size: 12.5px; transition: all 150ms ease; }
+.sidebar-logout-btn { color: var(--text-secondary) !important; font-size: 12.5px; transition: all 150ms ease; }
 .sidebar-logout-btn:hover { background: rgba(239, 68, 68, 0.1) !important; color: #EF4444 !important; }
 
 .nav-badge {
