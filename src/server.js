@@ -332,7 +332,7 @@ function runUploadsCleanup() {
   });
 }
 
-// Automatic Wazzup CRM Users Sync on Startup
+// Automatic Wazzup CRM Webhook and Users Sync on Startup
 async function syncWazzupUsers() {
   try {
     const prisma = require('./config/database');
@@ -340,6 +340,29 @@ async function syncWazzupUsers() {
     const WAZZUP_API_KEY = process.env.WAZZUP_API_KEY || (settings?.instagramAccessToken && settings.instagramAccessToken.length === 32 ? settings.instagramAccessToken : null);
     if (!WAZZUP_API_KEY) return;
 
+    // 1. Sync Webhook URL
+    const domain = process.env.APP_URL || 'https://desco-production.up.railway.app';
+    const webhookUrl = `${domain}/api/instagram/webhook`;
+    const webhookRes = await fetch('https://api.wazzup24.com/v3/webhooks', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${WAZZUP_API_KEY}`
+      },
+      body: JSON.stringify({
+        webhooksUri: webhookUrl,
+        subscriptions: {
+          messagesAndStatuses: true
+        }
+      })
+    });
+    if (webhookRes.ok) {
+      console.log('[Wazzup Auto-Sync] Webhook registered successfully:', webhookUrl);
+    } else {
+      console.error('[Wazzup Auto-Sync] Webhook registration failed:', webhookRes.status, await webhookRes.text());
+    }
+
+    // 2. Sync Users
     const users = await prisma.user.findMany({ where: { isActive: true } });
     if (!users.length) return;
 
