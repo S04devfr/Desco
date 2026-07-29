@@ -516,7 +516,7 @@ router.get('/instagram-stats', async (req, res) => {
       }
     }
 
-    const [totalMessages, incomingMessages, linkedClients, mktLogs, messages] = await Promise.all([
+    const [totalMessages, incomingMessages, linkedClients, mktLogs, messages, clientsWithDeals] = await Promise.all([
       prisma.instagramMessage.count({ where: msgWhere }),
       prisma.instagramMessage.count({ where: { ...msgWhere, isOutgoing: false } }),
       prisma.client.count({ where: { instagramId: { not: null } } }),
@@ -525,6 +525,20 @@ router.get('/instagram-stats', async (req, res) => {
         where: msgWhere,
         orderBy: { timestamp: 'asc' },
         select: { text: true, senderId: true, recipientId: true, timestamp: true, clientId: true, isOutgoing: true }
+      }),
+      prisma.client.findMany({
+        where: { instagramId: { not: null } },
+        select: {
+          id: true,
+          deals: {
+            select: {
+              status: true,
+              stage: {
+                select: { name: true }
+              }
+            }
+          }
+        }
       })
     ]);
 
@@ -571,6 +585,32 @@ router.get('/instagram-stats', async (req, res) => {
     let purchaseCount = 0;
     let inquiryCount = 0;
     let otherCount = 0;
+
+    let lostPriceCount = 0;
+    let lostDeliveryCount = 0;
+    let lostThinkingCount = 0;
+    let lostLateResponseCount = 0;
+    let lostOtherCount = 0;
+
+    const lostClientIds = new Set();
+    const isDealCanceled = (d) => {
+      if (d.status === 'lost') return true;
+      const stageName = (d.stage?.name || '').toLowerCase();
+      return stageName.includes('rad') || 
+             stageName.includes('otkaz') || 
+             stageName.includes('negativ') || 
+             stageName.includes('qaytdi') ||
+             stageName.includes('yo\'qotilgan') ||
+             stageName.includes('lost');
+    };
+
+    if (Array.isArray(clientsWithDeals)) {
+      clientsWithDeals.forEach(client => {
+        if (client.deals && client.deals.some(isDealCanceled)) {
+          lostClientIds.add(client.id);
+        }
+      });
+    }
 
     const sampleOpinions = [];
 
@@ -626,6 +666,30 @@ router.get('/instagram-stats', async (req, res) => {
         otherCount++;
       }
 
+      // Calculate lost reasons for lost clients
+      if (lostClientIds.has(Number(clientId))) {
+        let lostMatched = false;
+        if (/qimmat|qmat|dorogo|baland|qimmatroq/i.test(combinedText)) {
+          lostPriceCount++;
+          lostMatched = true;
+        }
+        if (/dostavka|yetkaz|pochta|kuryer|yolkira|yo'lkira|uzoq/i.test(combinedText)) {
+          lostDeliveryCount++;
+          lostMatched = true;
+        }
+        if (/o'ylab|oylab|maslahat|ertaga|keyinroq|ko'ray|koray/i.test(combinedText)) {
+          lostThinkingCount++;
+          lostMatched = true;
+        }
+        if (/kech javob|kechikdi|kutdim|javob yoz|uyqu|kech yoz/i.test(combinedText)) {
+          lostLateResponseCount++;
+          lostMatched = true;
+        }
+        if (!lostMatched) {
+          lostOtherCount++;
+        }
+      }
+
       texts.forEach(t => {
         const trimmed = t.trim();
         if (trimmed.length > 10 && trimmed.length < 100 && sampleOpinions.length < 10) {
@@ -662,6 +726,13 @@ router.get('/instagram-stats', async (req, res) => {
         inquiry: inquiryCount,
         other: otherCount
       },
+      lostReasons: {
+        price: lostPriceCount,
+        delivery: lostDeliveryCount,
+        thinking: lostThinkingCount,
+        lateResponse: lostLateResponseCount,
+        other: lostOtherCount
+      },
       sampleOpinions: sampleOpinions.slice(0, 6)
     });
   } catch(e) {
@@ -677,6 +748,7 @@ router.get('/instagram-stats', async (req, res) => {
       paymentPreferences: { nasiya: 0, naqd: 0, unspecified: 0 },
       productInterests: { func6: 0, func3: 0, oyoq: 0, hadiya: 0, other: 0 },
       purchaseIntent: { purchase: 0, inquiry: 0, other: 0 },
+      lostReasons: { price: 0, delivery: 0, thinking: 0, lateResponse: 0, other: 0 },
       sampleOpinions: []
     });
   }

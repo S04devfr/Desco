@@ -39,6 +39,7 @@ router.post('/webhook', async (req, res) => {
     const settings = await prisma.companySettings.findFirst();
     const WAZZUP_API_KEY = process.env.WAZZUP_API_KEY || (settings?.instagramAccessToken && settings.instagramAccessToken.length === 32 ? settings.instagramAccessToken : null);
     let targetChannelId = null;
+    let telegramChannelId = null;
 
     if (WAZZUP_API_KEY) {
       try {
@@ -57,27 +58,38 @@ router.post('/webhook', async (req, res) => {
             
             if (matchedChannel) {
               targetChannelId = matchedChannel.channelId;
-              console.log(`[Wazzup Webhook] Resolved active channel to ${matchedChannel.plainId} (ID: ${targetChannelId})`);
+              console.log(`[Wazzup Webhook] Resolved active Instagram channel to ${matchedChannel.plainId} (ID: ${targetChannelId})`);
+            }
+
+            const matchedTgChannel = channels.find(c => c.transport === 'telegram' && c.state === 'active');
+            if (matchedTgChannel) {
+              telegramChannelId = matchedTgChannel.channelId;
+              console.log(`[Wazzup Webhook] Resolved active Telegram channel to ${matchedTgChannel.plainId} (ID: ${telegramChannelId})`);
             }
           }
         }
       } catch (err) {
-        console.error('[Wazzup Webhook] Error resolving active channel:', err);
+        console.error('[Wazzup Webhook] Error resolving active channels:', err);
       }
     }
 
     for (const msg of body.messages) {
-      if (msg.chatType !== 'instagram') continue; // only handle Instagram messages
+      if (msg.chatType !== 'instagram' && msg.chatType !== 'telegram' && msg.chatType !== 'instagramComment') continue;
 
       // Skip messages from non-configured Wazzup channel
-      if (targetChannelId && msg.channelId && msg.channelId !== targetChannelId) {
-        console.log(`[Wazzup Webhook] Skipping message from non-target channel ${msg.channelId} (expected target channel ${targetChannelId})`);
+      if ((msg.chatType === 'instagram' || msg.chatType === 'instagramComment') && targetChannelId && msg.channelId && msg.channelId !== targetChannelId) {
+        console.log(`[Wazzup Webhook] Skipping Instagram message from non-target channel ${msg.channelId} (expected target channel ${targetChannelId})`);
+        continue;
+      }
+      if (msg.chatType === 'telegram' && telegramChannelId && msg.channelId && msg.channelId !== telegramChannelId) {
+        console.log(`[Wazzup Webhook] Skipping Telegram message from non-target channel ${msg.channelId} (expected target channel ${telegramChannelId})`);
         continue;
       }
 
-      const messageId = msg.messageId;
+      // Prefix messageId if it is a comment
+      const messageId = msg.chatType === 'instagramComment' ? `comment_${msg.messageId}` : msg.messageId;
       let text = msg.text || '';
-      if (msg.instPost && msg.instPost.url) {
+      if ((msg.chatType === 'instagram' || msg.chatType === 'instagramComment') && msg.instPost && msg.instPost.url) {
         text += `\n\n[Instagram Post: ${msg.instPost.url}]`;
       }
       const isEcho = msg.isEcho || false;
@@ -93,54 +105,104 @@ router.post('/webhook', async (req, res) => {
 
       try {
         // Find or create Client
-        let client = await prisma.client.findUnique({
-          where: { instagramId: clientIgId }
-        });
-
-        if (!client) {
-          // Use name/username from contact if provided
-          let clientName = msg.contact?.name || `Instagram Lead (${clientIgId})`;
-          let username = msg.contact?.username || null;
-
-          // Try to look up existing client by username to avoid duplicates when switching accounts
-          if (username) {
-            try {
-              const existingClient = await prisma.client.findFirst({
-                where: { instagramUsername: username }
-              });
-              if (existingClient) {
-                client = await prisma.client.update({
-                  where: { id: existingClient.id },
-                  data: {
-                    instagramId: clientIgId,
-                    name: clientName
-                  }
-                });
-                console.log(`[Wazzup Webhook] Re-mapped client ${client.name} (ID: ${client.id}) to new chatId: ${clientIgId}`);
-              }
-            } catch (findErr) {
-              console.error('Error looking up client by username in Wazzup webhook:', findErr);
-            }
-          }
+        let client = null;
+        if (msg.chatType === 'instagram' || msg.chatType === 'instagramComment') {
+          client = await prisma.client.findUnique({
+            where: { instagramId: clientIgId }
+          });
 
           if (!client) {
-            try {
-              client = await prisma.client.create({
-                data: {
-                  name: clientName,
-                  instagramId: clientIgId,
-                  instagramUsername: username,
-                  notes: 'Instagram (Wazzup) orqali yangi murojaat.'
-                }
-              });
-            } catch (createErr) {
-              if (createErr.code === 'P2002') {
-                // Concurrency safety fallback: fetch client created by parallel request
-                client = await prisma.client.findUnique({
-                  where: { instagramId: clientIgId }
+            let clientName = msg.contact?.name || `Instagram Lead (${clientIgId})`;
+            let username = msg.contact?.username || null;
+
+            if (username) {
+              try {
+                const existingClient = await prisma.client.findFirst({
+                  where: { instagramUsername: username }
                 });
-              } else {
-                throw createErr;
+                if (existingClient) {
+                  client = await prisma.client.update({
+                    where: { id: existingClient.id },
+                    data: {
+                      instagramId: clientIgId,
+                      name: clientName
+                    }
+                  });
+                  console.log(`[Wazzup Webhook] Re-mapped client ${client.name} (ID: ${client.id}) to new chatId: ${clientIgId}`);
+                }
+              } catch (findErr) {
+                console.error('Error looking up client by username in Wazzup webhook:', findErr);
+              }
+            }
+
+            if (!client) {
+              try {
+                client = await prisma.client.create({
+                  data: {
+                    name: clientName,
+                    instagramId: clientIgId,
+                    instagramUsername: username,
+                    notes: 'Instagram (Wazzup) orqali yangi murojaat.'
+                  }
+                });
+              } catch (createErr) {
+                if (createErr.code === 'P2002') {
+                  client = await prisma.client.findUnique({
+                    where: { instagramId: clientIgId }
+                  });
+                } else {
+                  throw createErr;
+                }
+              }
+            }
+          }
+        } else if (msg.chatType === 'telegram') {
+          client = await prisma.client.findUnique({
+            where: { telegramId: clientIgId }
+          });
+
+          if (!client) {
+            let clientName = msg.contact?.name || `Telegram Lead (${clientIgId})`;
+            let username = msg.contact?.username || null;
+
+            if (username) {
+              try {
+                const existingClient = await prisma.client.findFirst({
+                  where: { telegramUsername: username }
+                });
+                if (existingClient) {
+                  client = await prisma.client.update({
+                    where: { id: existingClient.id },
+                    data: {
+                      telegramId: clientIgId,
+                      name: clientName
+                    }
+                  });
+                  console.log(`[Wazzup Webhook] Re-mapped client ${client.name} (ID: ${client.id}) to new Telegram chatId: ${clientIgId}`);
+                }
+              } catch (findErr) {
+                console.error('Error looking up client by username in Wazzup webhook:', findErr);
+              }
+            }
+
+            if (!client) {
+              try {
+                client = await prisma.client.create({
+                  data: {
+                    name: clientName,
+                    telegramId: clientIgId,
+                    telegramUsername: username,
+                    notes: 'Telegram (Wazzup) orqali yangi murojaat.'
+                  }
+                });
+              } catch (createErr) {
+                if (createErr.code === 'P2002') {
+                  client = await prisma.client.findUnique({
+                    where: { telegramId: clientIgId }
+                  });
+                } else {
+                  throw createErr;
+                }
               }
             }
           }
@@ -167,38 +229,74 @@ router.post('/webhook', async (req, res) => {
         const senderId = isEcho ? 'CRM' : clientIgId;
         const recipientId = isEcho ? clientIgId : 'CRM';
 
-        // Save the message in database
-        const savedMsg = await prisma.instagramMessage.upsert({
-          where: { messageId },
-          update: {
-            text,
-            attachmentType,
-            attachmentUrl
-          },
-          create: {
-            messageId,
-            text,
-            senderId,
-            recipientId,
-            timestamp: msg.timestamp ? new Date(msg.timestamp * 1000) : new Date(),
-            isOutgoing: isEcho,
-            clientId: client.id,
-            attachmentType,
-            attachmentUrl
-          }
-        });
-
-        // Broadcast to client-side UI
-        const broadcast = req.app.get('broadcast');
-        if (broadcast) {
-          broadcast({
-            type: 'instagram_message',
-            clientId: client.id,
-            message: {
-              ...savedMsg,
-              timestamp: savedMsg.timestamp.toISOString()
+        if (msg.chatType === 'telegram') {
+          // Save the message in database
+          const savedMsg = await prisma.telegramMessage.upsert({
+            where: { messageId },
+            update: {
+              text,
+              attachmentType,
+              attachmentUrl
+            },
+            create: {
+              messageId,
+              text,
+              senderId,
+              recipientId,
+              timestamp: msg.timestamp ? new Date(msg.timestamp * 1000) : new Date(),
+              isOutgoing: isEcho,
+              clientId: client.id,
+              attachmentType,
+              attachmentUrl
             }
           });
+
+          // Broadcast to client-side UI
+          const broadcast = req.app.get('broadcast');
+          if (broadcast) {
+            broadcast({
+              type: 'telegram_message',
+              clientId: client.id,
+              message: {
+                ...savedMsg,
+                timestamp: savedMsg.timestamp.toISOString()
+              }
+            });
+          }
+        } else {
+          // Save the message in database
+          const savedMsg = await prisma.instagramMessage.upsert({
+            where: { messageId },
+            update: {
+              text,
+              attachmentType,
+              attachmentUrl
+            },
+            create: {
+              messageId,
+              text,
+              senderId,
+              recipientId,
+              timestamp: msg.timestamp ? new Date(msg.timestamp * 1000) : new Date(),
+              isOutgoing: isEcho,
+              clientId: client.id,
+              attachmentType,
+              attachmentUrl
+            }
+          });
+
+          // Broadcast to client-side UI
+          const broadcast = req.app.get('broadcast');
+          if (broadcast) {
+            broadcast({
+              type: 'instagram_message',
+              clientId: client.id,
+              message: {
+                ...savedMsg,
+                timestamp: savedMsg.timestamp.toISOString()
+              }
+            });
+          }
         }
       } catch (err) {
         console.error('Error processing Wazzup message:', err);

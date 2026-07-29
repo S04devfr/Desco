@@ -49,81 +49,172 @@ router.post('/messages', protect, async (req, res) => {
     }
 
     const recipientId = client.telegramId;
-    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+    const settings = await prisma.companySettings.findFirst();
+    const WAZZUP_API_KEY = process.env.WAZZUP_API_KEY || (settings?.instagramAccessToken && settings.instagramAccessToken.length === 32 ? settings.instagramAccessToken : null);
 
-    // Save to DB first with a temp ID
-    const messageId = `out_tg_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-    const savedMsg = await prisma.telegramMessage.create({
-      data: {
-        messageId,
-        text: text || null,
-        senderId: 'CRM_BOT',
-        recipientId,
-        timestamp: new Date(),
-        isOutgoing: true,
-        clientId: client.id,
-        attachmentType: attachmentType || null,
-        attachmentUrl: attachmentUrl || null
-      }
-    });
+    if (WAZZUP_API_KEY) {
+      // Save to DB first with a temp ID
+      const messageId = `out_tg_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+      const savedMsg = await prisma.telegramMessage.create({
+        data: {
+          messageId,
+          text: text || null,
+          senderId: 'CRM_BOT', // CRM sending
+          recipientId,
+          timestamp: new Date(),
+          isOutgoing: true,
+          clientId: client.id,
+          attachmentType: attachmentType || null,
+          attachmentUrl: attachmentUrl || null
+        }
+      });
 
-    if (BOT_TOKEN) {
       try {
-        let telegramApiUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
-        let payload = {
-          chat_id: recipientId,
-          text: text || ''
+        // Fetch the Wazzup Channel ID dynamically
+        const channelRes = await fetch('https://api.wazzup24.com/v3/channels', {
+          headers: {
+            'Authorization': `Bearer ${WAZZUP_API_KEY}`
+          }
+        });
+        const channels = await channelRes.json();
+        
+        // Find the active Telegram channel
+        const tgChannel = channels.find(c => c.transport === 'telegram' && c.state === 'active')
+          || channels[0];
+        
+        if (!tgChannel) {
+          await prisma.telegramMessage.delete({ where: { id: savedMsg.id } });
+          return res.status(400).json({ error: 'Faol Wazzup Telegram kanali topilmadi.' });
+        }
+
+        // Construct correct Wazzup payload (do NOT send "type" parameter, Wazzup v3 uses contentUri to identify attachment sends)
+        const wazzupPayload = {
+          channelId: tgChannel.channelId,
+          chatId: recipientId,
+          chatType: 'telegram',
+          crmMessageId: messageId
         };
 
         if (attachmentUrl) {
-          if (attachmentType === 'image') {
-            telegramApiUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`;
-            payload = {
-              chat_id: recipientId,
-              photo: attachmentUrl,
-              caption: text || ''
-            };
-          } else {
-            telegramApiUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`;
-            payload = {
-              chat_id: recipientId,
-              document: attachmentUrl,
-              caption: text || ''
-            };
-          }
+          wazzupPayload.contentUri = attachmentUrl;
+          if (text) wazzupPayload.text = text;
+        } else {
+          wazzupPayload.text = text;
         }
 
-        const response = await fetch(telegramApiUrl, {
+        // Send message via Wazzup API
+        const sendRes = await fetch('https://api.wazzup24.com/v3/message', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${WAZZUP_API_KEY}`
           },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(wazzupPayload)
         });
 
-        const result = await response.json();
-        if (!response.ok || !result.ok) {
-          console.error('[Telegram Send API Error]:', result);
+        const sendResult = await sendRes.json();
+        if (sendRes.status >= 400 || (sendResult && sendResult.error)) {
+          console.error('Wazzup API Error:', sendResult);
+          await prisma.telegramMessage.delete({ where: { id: savedMsg.id } });
+          return res.status(400).json({ error: (sendResult && sendResult.error) || 'Wazzup API Error' });
         }
-      } catch (apiErr) {
-        console.error('Failed to send via Telegram Bot API:', apiErr);
-      }
-    }
 
-    // Broadcast the message via WebSocket
-    const broadcast = req.app.get('broadcast');
-    if (broadcast) {
-      broadcast({
-        type: 'telegram_message',
-        clientId: client.id,
-        message: {
-          ...savedMsg,
-          timestamp: savedMsg.timestamp.toISOString()
+        // Broadcast the message via WebSocket
+        const broadcast = req.app.get('broadcast');
+        if (broadcast) {
+          broadcast({
+            type: 'telegram_message',
+            clientId: client.id,
+            message: {
+              ...savedMsg,
+              timestamp: savedMsg.timestamp.toISOString()
+            }
+          });
+        }
+
+        return res.json(savedMsg);
+      } catch (apiErr) {
+        console.error('Failed to send via Wazzup API:', apiErr);
+        await prisma.telegramMessage.delete({ where: { id: savedMsg.id } });
+        return res.status(500).json({ error: apiErr.message || 'Failed to connect to Wazzup API' });
+      }
+    } else {
+      const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+
+      // Save to DB first with a temp ID
+      const messageId = `out_tg_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+      const savedMsg = await prisma.telegramMessage.create({
+        data: {
+          messageId,
+          text: text || null,
+          senderId: 'CRM_BOT',
+          recipientId,
+          timestamp: new Date(),
+          isOutgoing: true,
+          clientId: client.id,
+          attachmentType: attachmentType || null,
+          attachmentUrl: attachmentUrl || null
         }
       });
-    }
 
-    return res.json(savedMsg);
+      if (BOT_TOKEN) {
+        try {
+          let telegramApiUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+          let payload = {
+            chat_id: recipientId,
+            text: text || ''
+          };
+
+          if (attachmentUrl) {
+            if (attachmentType === 'image') {
+              telegramApiUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`;
+              payload = {
+                chat_id: recipientId,
+                photo: attachmentUrl,
+                caption: text || ''
+              };
+            } else {
+              telegramApiUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`;
+              payload = {
+                chat_id: recipientId,
+                document: attachmentUrl,
+                caption: text || ''
+              };
+            }
+          }
+
+          const response = await fetch(telegramApiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+          });
+
+          const result = await response.json();
+          if (!response.ok || !result.ok) {
+            console.error('[Telegram Send API Error]:', result);
+          }
+        } catch (apiErr) {
+          console.error('Failed to send via Telegram Bot API:', apiErr);
+        }
+      }
+
+      // Broadcast the message via WebSocket
+      const broadcast = req.app.get('broadcast');
+      if (broadcast) {
+        broadcast({
+          type: 'telegram_message',
+          clientId: client.id,
+          message: {
+            ...savedMsg,
+            timestamp: savedMsg.timestamp.toISOString()
+          }
+        });
+      }
+
+      return res.json(savedMsg);
+    }
   } catch (error) {
     console.error('Error sending telegram message:', error);
     res.status(500).json({ error: 'Failed to send telegram message' });

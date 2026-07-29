@@ -11,9 +11,38 @@ const ownerSelect = { select: { id: true, fullName: true, email: true, role: tru
 router.get('/', async (req, res, next) => {
   try {
     const { q } = req.query
+    
+    // Exclude clients who are just chat contacts (have chat ID, no phone, and no deals)
+    const baseWhere = {
+      NOT: {
+        AND: [
+          {
+            OR: [
+              { instagramId: { not: null } },
+              { telegramId: { not: null } }
+            ]
+          },
+          {
+            OR: [
+              { phone: null },
+              { phone: "" }
+            ]
+          },
+          {
+            deals: { none: {} }
+          }
+        ]
+      }
+    };
+
     const where = q
-      ? { OR: [{ name: { contains: q } }, { company: { contains: q } }, { phone: { contains: q } }] }
-      : {}
+      ? {
+          AND: [
+            baseWhere,
+            { OR: [{ name: { contains: q } }, { company: { contains: q } }, { phone: { contains: q } }] }
+          ]
+        }
+      : baseWhere;
 
     const clients = await prisma.client.findMany({
       where,

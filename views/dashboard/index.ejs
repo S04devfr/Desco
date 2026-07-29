@@ -424,63 +424,70 @@
   <div class="section-line"></div>
 </div>
 
-<div class="dashboard-grid-2" style="margin-bottom: 25px;">
-  <!-- 1. Stats and preferences -->
-  <div class="card">
-    <div class="card-header flex justify-between items-center">
-      <h3 class="section-title"><i class="fas fa-chart-bar text-brand"></i>Mijozlar Istaklari & Tahlil</h3>
-      <span class="badge" style="background: rgba(225, 48, 108, 0.1); color: #E1306C; font-weight: 700;">Instagram Direct</span>
-    </div>
-    <div class="card-body" style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-        <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 4px;">
-          <span style="font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; font-weight: 600;">Jami xabarlar</span>
-          <span id="igTotalMessages" style="font-size: 18px; font-weight: 800; color: var(--text-primary);">0 ta</span>
-          <span id="igIncomingSub" style="font-size: 10px; color: var(--text-secondary);">Kiruvchi xabarlar: 0 ta</span>
+<div class="card" style="margin-bottom: 25px;">
+  <div class="card-header flex justify-between items-center" style="background: linear-gradient(135deg, rgba(240, 148, 51, 0.05) 0%, rgba(225, 48, 108, 0.05) 100%); border-bottom: 1px solid var(--border);">
+    <h3 class="section-title" style="margin: 0;"><i class="fab fa-instagram" style="color:#E1306C; margin-right: 8px;"></i> Instagram Direct Tahlili</h3>
+    <span class="badge" style="background: rgba(225, 48, 108, 0.1); color: #E1306C; font-weight: 700;">Dashboard Widget</span>
+  </div>
+  <div class="card-body" style="padding: 24px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px;">
+      
+      <!-- 1. Suhbatlar oqimi (Chats volume) -->
+      <div style="display: flex; flex-direction: column; gap: 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 18px; box-shadow: var(--shadow-xs);">
+        <h4 style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin: 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
+          <i class="fas fa-chart-line" style="color: var(--brand); font-size: 13px;"></i> Suhbatlar oqimi
+        </h4>
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 4px;">
+          <span id="igTotalMessages" style="font-size: 22px; font-weight: 800; color: var(--text-primary);">0 ta</span>
+          <span id="igActiveDayText" style="font-size: 12px; font-weight: 600; color: var(--brand);">Bugun faol: 0 ta</span>
         </div>
-        <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 4px;">
-          <span style="font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; font-weight: 600;">Muloqotlar soni</span>
-          <span id="igTotalClients" style="font-size: 18px; font-weight: 800; color: var(--text-primary);">0 kishi</span>
-          <span style="font-size: 10px; color: var(--text-secondary);">Bazada saqlangan profillar</span>
+        <span id="igIncomingSub" style="font-size: 11px; color: var(--text-secondary); margin-top: -6px;">Kiruvchi xabarlar: 0 ta</span>
+        
+        <!-- Daily volume visualization -->
+        <div id="igChatsVolumeContainer" style="display: flex; gap: 8px; align-items: flex-end; height: 80px; margin-top: 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px;">
+          <div style="color: var(--text-tertiary); font-size: 11px; text-align: center; width: 100%; padding-bottom: 10px;">Yuklanmoqda...</div>
         </div>
+        <div style="font-size: 10px; color: var(--text-tertiary); text-align: center; margin-top: 4px;">Oxirgi kunlardagi faollik ko'rsatkichi</div>
       </div>
 
-      <!-- Payment preference -->
-      <div>
-        <h4 style="font-size: 12px; font-weight: 700; color: var(--text-primary); margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
-          <i class="fas fa-wallet" style="color: #34C759; font-size: 12px;"></i> To'lov usuli bo'yicha tahlil
+      <!-- 2. To'lov afzalligi (Payment Preference) -->
+      <div style="display: flex; flex-direction: column; gap: 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 18px; box-shadow: var(--shadow-xs);">
+        <h4 style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin: 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
+          <i class="fas fa-wallet" style="color: #34C759; font-size: 13px;"></i> To'lov afzalligi
         </h4>
-        <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 10px;">
           <div>
-            <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-secondary); margin-bottom: 4px;">
-              <span>Muddatli to'lov (Nasiya) olmoqchi</span>
-              <strong id="igNasiyaText">0 kishi (0%)</strong>
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary); margin-bottom: 5px;">
+              <span>Nasiya (Muddatli to'lov)</span>
+              <strong id="igNasiyaText" style="color: #FF9500;">0 kishi (0%)</strong>
             </div>
-            <div style="height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;">
-              <div id="igNasiyaBar" style="height: 100%; background: #FF9500; border-radius: 3px; width: 0%; transition: width 0.5s ease;"></div>
+            <div style="height: 8px; background: var(--border); border-radius: 4px; overflow: hidden;">
+              <div id="igNasiyaBar" style="height: 100%; background: linear-gradient(90deg, #FF9500, #FFB300); border-radius: 4px; width: 0%; transition: width 0.5s ease;"></div>
             </div>
           </div>
           <div>
-            <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-secondary); margin-bottom: 4px;">
-              <span>Naqd / Plastik orqali olmoqchi</span>
-              <strong id="igNaqdText">0 kishi (0%)</strong>
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary); margin-bottom: 5px;">
+              <span>Naqd / Plastik (Karta)</span>
+              <strong id="igNaqdText" style="color: #34C759;">0 kishi (0%)</strong>
             </div>
-            <div style="height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;">
-              <div id="igNaqdBar" style="height: 100%; background: #34C759; border-radius: 3px; width: 0%; transition: width 0.5s ease;"></div>
+            <div style="height: 8px; background: var(--border); border-radius: 4px; overflow: hidden;">
+              <div id="igNaqdBar" style="height: 100%; background: linear-gradient(90deg, #34C759, #28CD41); border-radius: 4px; width: 0%; transition: width 0.5s ease;"></div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Purchase Intent -->
-      <div>
-        <h4 style="font-size: 12px; font-weight: 700; color: var(--text-primary); margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
-          <i class="fas fa-shopping-cart" style="color: var(--brand); font-size: 12px;"></i> Sotib olish niyati
+      <!-- 3. Rad sabablari va Sotib olish niyati -->
+      <div style="display: flex; flex-direction: column; gap: 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 18px; box-shadow: var(--shadow-xs);">
+        <h4 style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin: 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
+          <i class="fas fa-shopping-basket" style="color: #5856D6; font-size: 13px;"></i> Rad sabablari & Niyat
         </h4>
-        <div style="display: flex; flex-direction: column; gap: 10px;">
+        
+        <!-- Purchase intent summary -->
+        <div style="display: flex; flex-direction: column; gap: 10px; border-bottom: 1px dashed var(--border); padding-bottom: 12px;">
           <div>
             <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-secondary); margin-bottom: 4px;">
-              <span>Sotib olish niyati yuqori (Buyurtmachilar)</span>
+              <span>Sotib olmoqchilar (Niyati yuqori)</span>
               <strong id="igPurchaseText">0 kishi (0%)</strong>
             </div>
             <div style="height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;">
@@ -489,7 +496,7 @@
           </div>
           <div>
             <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-secondary); margin-bottom: 4px;">
-              <span>Faqat narx qiziqtirganlar (Qiziquvchilar)</span>
+              <span>Faqat narx so'raganlar</span>
               <strong id="igInquiryText">0 kishi (0%)</strong>
             </div>
             <div style="height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;">
@@ -497,83 +504,41 @@
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- 2. Product interests and customer comments -->
-  <div class="card">
-    <div class="card-header flex justify-between items-center">
-      <h3 class="section-title"><i class="fas fa-heart text-brand"></i>Qaysi massajorga qiziqishyapti?</h3>
-      <span class="badge badge-purple" id="igActiveDayText">Kunlik faol: 0 ta</span>
-    </div>
-    <div class="card-body" style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
-      <!-- Product interests progress bars -->
-      <div style="display: flex; flex-direction: column; gap: 10px;">
-        <h4 style="font-size: 12px; font-weight: 700; color: var(--text-primary); margin: 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
-          <i class="fas fa-fire" style="color: #FF9500; font-size: 12px;"></i> Qiziqishlar statistikasi (Chat tahlili)
+        <!-- Rad sabablari breakdown -->
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <span style="font-size: 11px; color: var(--text-tertiary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Sotib olmaslik sabablari (Rad)</span>
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="color: var(--text-secondary);"><i class="fas fa-tags" style="color: #FF3B30; margin-right: 4px;"></i> Narx qimmatligi:</span>
+              <strong id="lostReasonPrice" style="color: var(--text-primary);">0 ta</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="color: var(--text-secondary);"><i class="fas fa-truck" style="color: #FF9500; margin-right: 4px;"></i> Yetkazib berish muammosi:</span>
+              <strong id="lostReasonDelivery" style="color: var(--text-primary);">0 ta</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="color: var(--text-secondary);"><i class="fas fa-hourglass-half" style="color: #5856D6; margin-right: 4px;"></i> O'ylash uchun ketgan vaqt:</span>
+              <strong id="lostReasonThinking" style="color: var(--text-primary);">0 ta</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="color: var(--text-secondary);"><i class="fas fa-reply-all" style="color: #007AFF; margin-right: 4px;"></i> Javob kechikishi:</span>
+              <strong id="lostReasonLateResponse" style="color: var(--text-primary);">0 ta</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Odamlar nima deb yozishmoqda -->
+      <div style="display: flex; flex-direction: column; gap: 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 18px; box-shadow: var(--shadow-xs);">
+        <h4 style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin: 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
+          <i class="fas fa-quote-left" style="color: #cc2366; font-size: 13px;"></i> Odamlar nima deb yozishmoqda?
         </h4>
-        
-        <div>
-          <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); margin-bottom: 3px;">
-            <span>6-funksiyalik massajor</span>
-            <strong id="igProd6Text">0 ta (0%)</strong>
-          </div>
-          <div style="height: 5px; background: var(--border); border-radius: 3px; overflow: hidden;">
-            <div id="igProd6Bar" style="height: 100%; background: #5856D6; border-radius: 3px; width: 0%; transition: width 0.5s ease;"></div>
-          </div>
-        </div>
-
-        <div>
-          <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); margin-bottom: 3px;">
-            <span>3-funksiyalik massajor</span>
-            <strong id="igProd3Text">0 ta (0%)</strong>
-          </div>
-          <div style="height: 5px; background: var(--border); border-radius: 3px; overflow: hidden;">
-            <div id="igProd3Bar" style="height: 100%; background: #6366F1; border-radius: 3px; width: 0%; transition: width 0.5s ease;"></div>
-          </div>
-        </div>
-
-        <div>
-          <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); margin-bottom: 3px;">
-            <span>Oyoq massajori</span>
-            <strong id="igProdOyoqText">0 ta (0%)</strong>
-          </div>
-          <div style="height: 5px; background: var(--border); border-radius: 3px; overflow: hidden;">
-            <div id="igProdOyoqBar" style="height: 100%; background: #30B0C7; border-radius: 3px; width: 0%; transition: width 0.5s ease;"></div>
-          </div>
-        </div>
-
-        <div>
-          <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); margin-bottom: 3px;">
-            <span>Hadiya to'plami</span>
-            <strong id="igProdHadiyaText">0 ta (0%)</strong>
-          </div>
-          <div style="height: 5px; background: var(--border); border-radius: 3px; overflow: hidden;">
-            <div id="igProdHadiyaBar" style="height: 100%; background: #FF2D55; border-radius: 3px; width: 0%; transition: width 0.5s ease;"></div>
-          </div>
-        </div>
-
-        <div>
-          <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); margin-bottom: 3px;">
-            <span>Boshqa mahsulotlar / Aniqlanmagan</span>
-            <strong id="igProdOtherText">0 ta (0%)</strong>
-          </div>
-          <div style="height: 5px; background: var(--border); border-radius: 3px; overflow: hidden;">
-            <div id="igProdOtherBar" style="height: 100%; background: #8E8E93; border-radius: 3px; width: 0%; transition: width 0.5s ease;"></div>
-          </div>
+        <div id="igOpinionsContainer" style="display: flex; flex-direction: column; gap: 6px; overflow-y: auto; max-height: 200px; padding-right: 4px; flex: 1;">
+          <div style="color: var(--text-tertiary); font-size: 11.5px; font-style: italic; text-align: center; padding: 15px;">Yozishmalar fikri yo'q</div>
         </div>
       </div>
 
-      <!-- Customer opinions -->
-      <div style="flex: 1; display: flex; flex-direction: column;">
-        <h4 style="font-size: 12px; font-weight: 700; color: var(--text-primary); margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
-          <i class="fas fa-quote-left" style="color: #cc2366; font-size: 12px;"></i> Odamlar nima deb yozishyapti?
-        </h4>
-        <div id="igOpinionsContainer" style="display: flex; flex-direction: column; gap: 6px; overflow-y: auto; max-height: 125px; padding-right: 4px; flex: 1;">
-          <div style="color: var(--text-tertiary); font-size: 11.5px; font-style: italic; text-align: center; padding: 10px;">Yozishmalar fikri yo'q</div>
-        </div>
-      </div>
     </div>
   </div>
 </div>
@@ -1264,6 +1229,31 @@ async function loadDashboard() {
       : 0;
     if (igActiveDayEl) igActiveDayEl.textContent = 'Bugun faol: ' + latestActiveCount + ' ta';
 
+    // Suhbatlar oqimi mini-chart
+    const chatsVolContainer = document.getElementById('igChatsVolumeContainer');
+    if (chatsVolContainer) {
+      const dailyChats = igStats.dailyActiveChats || [];
+      if (dailyChats.length === 0) {
+        chatsVolContainer.innerHTML = '<div style="color: var(--text-tertiary); font-size: 11.5px; text-align: center; width: 100%; padding-bottom: 20px;">Ma\'lumot yo\'q</div>';
+      } else {
+        const maxCount = Math.max(...dailyChats.map(d => d.count), 1);
+        chatsVolContainer.innerHTML = dailyChats.slice(-7).map(d => {
+          const pct = Math.round((d.count / maxCount) * 100);
+          const date = new Date(d.date);
+          const label = date.getDate().toString().padStart(2, '0') + '/' + (date.getMonth()+1).toString().padStart(2, '0');
+          return `
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0;">
+              <div style="font-size: 9px; font-weight: 700; color: var(--text-primary);">${d.count}</div>
+              <div style="width: 100%; height: 50px; display: flex; align-items: flex-end; background: var(--surface-elevated); border-radius: 3px;">
+                <div style="width: 100%; height: ${Math.max(pct, 10)}%; background: linear-gradient(180deg, var(--brand) 0%, #4F46E5 100%); border-radius: 3px;" title="${d.date}: ${d.count} kishi"></div>
+              </div>
+              <div style="font-size: 8px; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">${label}</div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
     const prefs = igStats.paymentPreferences || { nasiya: 0, naqd: 0, unspecified: 0 };
     const totalPrefs = (prefs.nasiya + prefs.naqd + prefs.unspecified) || 1;
     const pctNasiya = Math.round((prefs.nasiya / totalPrefs) * 100);
@@ -1294,45 +1284,23 @@ async function loadDashboard() {
     if (igInquiryTextEl) igInquiryTextEl.textContent = `${intents.inquiry} kishi (${pctInquiry}%)`;
     if (igInquiryBarEl) igInquiryBarEl.style.width = pctInquiry + '%';
 
-    const prodInts = igStats.productInterests || { func6: 0, func3: 0, oyoq: 0, hadiya: 0, other: 0 };
-    const totalProds = (prodInts.func6 + prodInts.func3 + prodInts.oyoq + prodInts.hadiya + prodInts.other) || 1;
-    
-    const pctP6 = Math.round((prodInts.func6 / totalProds) * 100);
-    const pctP3 = Math.round((prodInts.func3 / totalProds) * 100);
-    const pctOyoq = Math.round((prodInts.oyoq / totalProds) * 100);
-    const pctHadiya = Math.round((prodInts.hadiya / totalProds) * 100);
-    const pctOther = Math.round((prodInts.other / totalProds) * 100);
+    // Rad sabablari (Lost Reasons)
+    const lostRes = igStats.lostReasons || { price: 0, delivery: 0, thinking: 0, lateResponse: 0, other: 0 };
+    const lostPriceEl = document.getElementById('lostReasonPrice');
+    const lostDeliveryEl = document.getElementById('lostReasonDelivery');
+    const lostThinkingEl = document.getElementById('lostReasonThinking');
+    const lostLateEl = document.getElementById('lostReasonLateResponse');
 
-    const igProd6TextEl = document.getElementById('igProd6Text');
-    const igProd6BarEl = document.getElementById('igProd6Bar');
-    if (igProd6TextEl) igProd6TextEl.textContent = `${prodInts.func6} ta (${pctP6}%)`;
-    if (igProd6BarEl) igProd6BarEl.style.width = pctP6 + '%';
-
-    const igProd3TextEl = document.getElementById('igProd3Text');
-    const igProd3BarEl = document.getElementById('igProd3Bar');
-    if (igProd3TextEl) igProd3TextEl.textContent = `${prodInts.func3} ta (${pctP3}%)`;
-    if (igProd3BarEl) igProd3BarEl.style.width = pctP3 + '%';
-
-    const igProdOyoqTextEl = document.getElementById('igProdOyoqText');
-    const igProdOyoqBarEl = document.getElementById('igProdOyoqBar');
-    if (igProdOyoqTextEl) igProdOyoqTextEl.textContent = `${prodInts.oyoq} ta (${pctOyoq}%)`;
-    if (igProdOyoqBarEl) igProdOyoqBarEl.style.width = pctOyoq + '%';
-
-    const igProdHadiyaTextEl = document.getElementById('igProdHadiyaText');
-    const igProdHadiyaBarEl = document.getElementById('igProdHadiyaBar');
-    if (igProdHadiyaTextEl) igProdHadiyaTextEl.textContent = `${prodInts.hadiya} ta (${pctHadiya}%)`;
-    if (igProdHadiyaBarEl) igProdHadiyaBarEl.style.width = pctHadiya + '%';
-
-    const igProdOtherTextEl = document.getElementById('igProdOtherText');
-    const igProdOtherBarEl = document.getElementById('igProdOtherBar');
-    if (igProdOtherTextEl) igProdOtherTextEl.textContent = `${prodInts.other} ta (${pctOther}%)`;
-    if (igProdOtherBarEl) igProdOtherBarEl.style.width = pctOther + '%';
+    if (lostPriceEl) lostPriceEl.textContent = (lostRes.price || 0) + ' ta';
+    if (lostDeliveryEl) lostDeliveryEl.textContent = (lostRes.delivery || 0) + ' ta';
+    if (lostThinkingEl) lostThinkingEl.textContent = (lostRes.thinking || 0) + ' ta';
+    if (lostLateEl) lostLateEl.textContent = (lostRes.lateResponse || 0) + ' ta';
 
     const opinionsContainer = document.getElementById('igOpinionsContainer');
     if (opinionsContainer) {
       const opinions = igStats.sampleOpinions || [];
       if (opinions.length === 0) {
-        opinionsContainer.innerHTML = '<div style="color: var(--text-tertiary); font-size: 11.5px; font-style: italic; text-align: center; padding: 10px;">Yozishmalar fikri yo\'q</div>';
+        opinionsContainer.innerHTML = '<div style="color: var(--text-tertiary); font-size: 11.5px; font-style: italic; text-align: center; padding: 15px;">Yozishmalar fikri yo\'q</div>';
       } else {
         opinionsContainer.innerHTML = opinions.map(op => `
           <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; font-size: 12px; color: var(--text-secondary); line-height: 1.4; border-left: 3px solid #cc2366; font-style: italic; text-align: left; margin-bottom: 4px;">

@@ -91,36 +91,39 @@ async function runMigrations(prisma) {
     }
   } catch (e) { console.log('ℹ️  CompanySettings:', e.message?.slice(0, 80)) }
 
-  // Ensure Telegram columns exist in CompanySettings (SQLite auto-migration)
-  try {
-    await prisma.$executeRawUnsafe(`ALTER TABLE "CompanySettings" ADD COLUMN "telegramSessionString" TEXT`);
-  } catch (e) {}
-  try {
-    await prisma.$executeRawUnsafe(`ALTER TABLE "CompanySettings" ADD COLUMN "telegramPhone" TEXT`);
-  } catch (e) {}
-  try {
-    await prisma.$executeRawUnsafe(`ALTER TABLE "CompanySettings" ADD COLUMN "telegramApiId" TEXT`);
-  } catch (e) {}
-  try {
-    await prisma.$executeRawUnsafe(`ALTER TABLE "CompanySettings" ADD COLUMN "telegramApiHash" TEXT`);
-  } catch (e) {}
-  try {
-    await prisma.$executeRawUnsafe(`ALTER TABLE "CompanySettings" ADD COLUMN "instagramAccessToken" TEXT`);
-  } catch (e) {}
-  try {
-    await prisma.$executeRawUnsafe(`ALTER TABLE "CompanySettings" ADD COLUMN "instagramPageId" TEXT`);
-  } catch (e) {}
-  try {
-    await prisma.$executeRawUnsafe(`ALTER TABLE "CompanySettings" ADD COLUMN "instagramVerifyToken" TEXT`);
-  } catch (e) {}
+  // Ensure Telegram/Instagram columns exist (SQLite fallback auto-migration)
+  const isSQLite = process.env.DATABASE_URL && (process.env.DATABASE_URL.includes('.db') || process.env.DATABASE_URL.startsWith('file:'));
+  if (isSQLite) {
+    try {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "CompanySettings" ADD COLUMN "telegramSessionString" TEXT`);
+    } catch (e) {}
+    try {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "CompanySettings" ADD COLUMN "telegramPhone" TEXT`);
+    } catch (e) {}
+    try {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "CompanySettings" ADD COLUMN "telegramApiId" TEXT`);
+    } catch (e) {}
+    try {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "CompanySettings" ADD COLUMN "telegramApiHash" TEXT`);
+    } catch (e) {}
+    try {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "CompanySettings" ADD COLUMN "instagramAccessToken" TEXT`);
+    } catch (e) {}
+    try {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "CompanySettings" ADD COLUMN "instagramPageId" TEXT`);
+    } catch (e) {}
+    try {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "CompanySettings" ADD COLUMN "instagramVerifyToken" TEXT`);
+    } catch (e) {}
 
-  // Ensure attachment columns exist in InstagramMessage
-  try {
-    await prisma.$executeRawUnsafe(`ALTER TABLE "InstagramMessage" ADD COLUMN "attachmentType" TEXT`);
-  } catch (e) {}
-  try {
-    await prisma.$executeRawUnsafe(`ALTER TABLE "InstagramMessage" ADD COLUMN "attachmentUrl" TEXT`);
-  } catch (e) {}
+    // Ensure attachment columns exist in InstagramMessage
+    try {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "InstagramMessage" ADD COLUMN "attachmentType" TEXT`);
+    } catch (e) {}
+    try {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "InstagramMessage" ADD COLUMN "attachmentUrl" TEXT`);
+    } catch (e) {}
+  }
 
   // 4. Admin user (agar mavjud bo'lmasa)
   try {
@@ -198,24 +201,45 @@ async function runMigrations(prisma) {
     console.log('✅ ManagerSalary jadvali mavjud')
   } catch (e) {
     try {
-      await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "ManagerSalary" (
-        "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-        "managerId" INTEGER NOT NULL UNIQUE,
-        "baseSalary" REAL NOT NULL DEFAULT 0,
-        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        CONSTRAINT "ManagerSalary_managerId_fkey" FOREIGN KEY ("managerId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
-      )`)
-      await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "ManagerFine" (
-        "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-        "managerId" INTEGER NOT NULL,
-        "month" TEXT NOT NULL,
-        "amount" REAL NOT NULL DEFAULT 0,
-        "reason" TEXT,
-        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        CONSTRAINT "ManagerFine_managerId_fkey" FOREIGN KEY ("managerId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
-      )`)
+      if (isSQLite) {
+        await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "ManagerSalary" (
+          "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+          "managerId" INTEGER NOT NULL UNIQUE,
+          "baseSalary" REAL NOT NULL DEFAULT 0,
+          "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "ManagerSalary_managerId_fkey" FOREIGN KEY ("managerId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+        )`)
+        await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "ManagerFine" (
+          "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+          "managerId" INTEGER NOT NULL,
+          "month" TEXT NOT NULL,
+          "amount" REAL NOT NULL DEFAULT 0,
+          "reason" TEXT,
+          "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "ManagerFine_managerId_fkey" FOREIGN KEY ("managerId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+        )`)
+      } else {
+        await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "ManagerSalary" (
+          "id" SERIAL PRIMARY KEY,
+          "managerId" INTEGER NOT NULL UNIQUE,
+          "baseSalary" DOUBLE PRECISION NOT NULL DEFAULT 0,
+          "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "ManagerSalary_managerId_fkey" FOREIGN KEY ("managerId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+        )`)
+        await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "ManagerFine" (
+          "id" SERIAL PRIMARY KEY,
+          "managerId" INTEGER NOT NULL,
+          "month" VARCHAR(10) NOT NULL,
+          "amount" DOUBLE PRECISION NOT NULL DEFAULT 0,
+          "reason" TEXT,
+          "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "ManagerFine_managerId_fkey" FOREIGN KEY ("managerId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+        )`)
+      }
       console.log('✅ ManagerSalary va ManagerFine jadvallari yaratildi')
     } catch (err) { console.log('⚠️  ManagerSalary/Fine jadval:', err.message?.slice(0, 80)) }
   }
@@ -226,20 +250,37 @@ async function runMigrations(prisma) {
     console.log('✅ UserActivityLog jadvali mavjud')
   } catch (e) {
     try {
-      await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "UserActivityLog" (
-        "id"           INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-        "userId"       INTEGER NOT NULL,
-        "date"         TEXT NOT NULL,
-        "sessionStart" TEXT NOT NULL,
-        "lastPing"     TEXT NOT NULL,
-        "durationMin"  INTEGER NOT NULL DEFAULT 0,
-        "isActive"     INTEGER NOT NULL DEFAULT 1,
-        "createdAt"    TEXT NOT NULL,
-        "updatedAt"    TEXT NOT NULL,
-        CONSTRAINT "UAL_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
-      )`)
-      await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_ual_userId_date" ON "UserActivityLog"("userId","date")`)
-      await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_ual_lastPing"    ON "UserActivityLog"("lastPing")`)
+      if (isSQLite) {
+        await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "UserActivityLog" (
+          "id"           INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+          "userId"       INTEGER NOT NULL,
+          "date"         TEXT NOT NULL,
+          "sessionStart" TEXT NOT NULL,
+          "lastPing"     TEXT NOT NULL,
+          "durationMin"  INTEGER NOT NULL DEFAULT 0,
+          "isActive"     INTEGER NOT NULL DEFAULT 1,
+          "createdAt"    TEXT NOT NULL,
+          "updatedAt"    TEXT NOT NULL,
+          CONSTRAINT "UAL_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+        )`)
+        await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_ual_userId_date" ON "UserActivityLog"("userId","date")`)
+        await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_ual_lastPing"    ON "UserActivityLog"("lastPing")`)
+      } else {
+        await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "UserActivityLog" (
+          "id"           SERIAL PRIMARY KEY,
+          "userId"       INTEGER NOT NULL,
+          "date"         VARCHAR(50) NOT NULL,
+          "sessionStart" VARCHAR(50) NOT NULL,
+          "lastPing"     VARCHAR(50) NOT NULL,
+          "durationMin"  INTEGER NOT NULL DEFAULT 0,
+          "isActive"     INTEGER NOT NULL DEFAULT 1,
+          "createdAt"    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt"    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "UAL_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+        )`)
+        await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_ual_userId_date" ON "UserActivityLog"("userId","date")`)
+        await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_ual_lastPing"    ON "UserActivityLog"("lastPing")`)
+      }
       console.log('✅ UserActivityLog jadvali yaratildi')
     } catch (err) { console.log('⚠️  UserActivityLog:', err.message?.slice(0, 80)) }
   }

@@ -1019,21 +1019,26 @@ async function loadClients() {
           if (date.toDateString() === today.toDateString()) {
             lastMsgTime = date.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
           } else {
-            const yesterday = new Date(today);
-            yesterday.setDate(yesterday.getDate() - 1);
-            if (date.toDateString() === yesterday.toDateString()) {
-              lastMsgTime = 'Kecha';
-            } else {
-              lastMsgTime = date.toLocaleDateString('uz-UZ', { day: 'numeric', month: 'short' });
-            }
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            lastMsgTime = `${day}.${month}.${year}`;
           }
         }
       }
       
+      let isComment = false;
+      if (c.messages && c.messages.length > 0) {
+        const msg = c.messages[0];
+        if (msg.messageId && msg.messageId.startsWith('comment_')) {
+          isComment = true;
+        }
+      }
+
       const div = document.createElement('div');
       div.className = `chat-client-item ${c.id === currentClientId ? 'active' : ''}`;
       div.setAttribute('data-id', c.id);
-      div.onclick = () => selectClient(c.id, c.name, c.instagramUsername);
+      div.onclick = () => selectClient(c.id, c.name, c.instagramUsername, isComment);
       
       const usernameSpan = c.instagramUsername 
         ? ` <span class="client-username" style="font-size: 10.5px; opacity: 0.7;">@${c.instagramUsername}</span>` 
@@ -1046,11 +1051,11 @@ async function loadClients() {
         <div class="chat-avatar">${getAvatarHtml(c.name)}</div>
         <div class="chat-client-info" style="min-width: 0; flex: 1;">
           <div class="chat-client-name" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px;" title="${c.name}">${c.name}</span>
+            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;" title="${c.name}">${c.name}</span>
             ${usernameSpan}
-            <span class="chat-time-label" style="font-size: 10px; color: var(--text-300); font-weight: normal; margin-left: auto; white-space: nowrap;">${lastMsgTime}</span>
+            <span class="chat-time-label" style="position: absolute; top: 10px; right: 12px; font-size: 9.5px; color: var(--text-400); font-weight: 500;">${lastMsgTime}</span>
           </div>
-          <div class="chat-client-msg" style="color: ${count > 0 && c.id !== currentClientId ? 'var(--brand)' : 'var(--text-500)'}; font-weight: ${count > 0 && c.id !== currentClientId ? '600' : 'normal'}">${lastMsg}</div>
+          <div class="chat-client-msg" style="color: ${count > 0 && c.id !== currentClientId ? 'var(--brand)' : 'var(--text-500)'}; font-weight: ${count > 0 && c.id !== currentClientId ? '600' : 'normal'}; padding-right: 40px;">${lastMsg}</div>
         </div>
         ${badgeHtml}
       `;
@@ -1077,7 +1082,7 @@ function filterClients() {
   });
 }
 
-async function selectClient(id, name, instagramUsername) {
+async function selectClient(id, name, instagramUsername, isComment) {
   currentClientId = id;
   currentClientName = name;
   
@@ -1120,7 +1125,7 @@ async function selectClient(id, name, instagramUsername) {
           </div>
           <div style="font-size: 11px; color: var(--text-300); margin-top: 2px; display: flex; align-items: center; gap: 4px;">
             <span class="active-dot-green"></span>
-            Instagram Direct orqali bog'langan
+            ${isComment ? 'Instagram Comment orqali bog\'langan' : 'Instagram Direct orqali bog\'langan'}
           </div>
         </div>
       </div>
