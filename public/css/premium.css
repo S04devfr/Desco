@@ -7,64 +7,64 @@
    TOKENS — yagona rang tizimi
 ───────────────────────────────────────────────────── */
 :root {
-  /* Brand (Fluxen Purple) */
-  --brand:        #84cc16;
-  --brand-hover:  #65a30d;
-  --brand-soft:   rgba(132, 204, 22, 0.08);
-  --brand-glow:   rgba(132, 204, 22, 0.18);
+  /* Brand (Premium Indigo) */
+  --brand:        #6366F1;
+  --brand-hover:  #4F46E5;
+  --brand-soft:   rgba(99, 102, 241, 0.08);
+  --brand-glow:   rgba(99, 102, 241, 0.18);
 
-  /* Surfaces (Light) */
-  --surface-base:   #ebf2ee;
+  /* Surfaces (Light Slate-Grey) */
+  --surface-base:   #F8FAFC;
   --surface-card:   #FFFFFF;
-  --surface-input:  #f4f6f5;
+  --surface-input:  #F1F5F9;
 
   /* Sidebar (macOS style light sidebar) */
   --sidebar-bg:          #FFFFFF;
   --sidebar-border:      rgba(0,0,0,0.06);
-  --sidebar-hover:       #f1f5f3;
-  --sidebar-active:      #d2f24d;
-  --sidebar-text:        #4b5563;
-  --sidebar-text-active: #0f172a;
+  --sidebar-hover:       #F1F5F9;
+  --sidebar-active:      #EEF2FF;
+  --sidebar-text:        #475569;
+  --sidebar-text-active: #6366F1;
 
   /* Text */
-  --text-900: #0f172a;
-  --text-800: #1e293b;
+  --text-900: #0F172A;
+  --text-800: #1E293B;
   --text-700: #334155;
   --text-500: #475569;
-  --text-300: #94a3b8;
+  --text-300: #94A3B8;
 
   /* Semantic (Apple SF Colors) */
-  --success:        #22c55e;
-  --success-bg:     #f0fdf4;
-  --success-border: rgba(34, 197, 94, 0.2);
-  --warning:        #f59e0b;
-  --warning-bg:     #fffbeb;
-  --warning-border: rgba(245, 158, 11, 0.2);
-  --danger:         #ef4444;
-  --danger-bg:      #fef2f2;
-  --danger-border:  rgba(239, 68, 68, 0.2);
-  --info:           #0ea5e9;
-  --info-bg:        #f0f9ff;
-  --info-border:    rgba(14, 165, 233, 0.2);
+  --success:        #10B981;
+  --success-bg:     #F0FDF4;
+  --success-border: rgba(16, 185, 129, 0.25);
+  --warning:        #F59E0B;
+  --warning-bg:     #FFFBEB;
+  --warning-border: rgba(245, 158, 11, 0.25);
+  --danger:         #EF4444;
+  --danger-bg:      #FEF2F2;
+  --danger-border:  rgba(239, 68, 68, 0.25);
+  --info:           #3B82F6;
+  --info-bg:        #EFF6FF;
+  --info-border:    rgba(59, 130, 246, 0.25);
 
   /* Borders */
   --border:        rgba(0,0,0,0.06);
   --border-strong: rgba(0,0,0,0.12);
 
-  /* Shadows (Apple diffuse style) */
+  /* Shadows (Linear style diffuse shadows) */
   --shadow-xs: 0 1px 2px rgba(0,0,0,0.02);
-  --shadow-sm: 0 2px 8px rgba(0,0,0,0.03);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.04);
-  --shadow-lg: 0 10px 30px rgba(0,0,0,0.05);
-  --shadow-xl: 0 20px 50px rgba(0,0,0,0.08);
-  --shadow-brand: 0 4px 14px rgba(132, 204, 22, 0.25);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 30px rgba(0,0,0,0.08);
+  --shadow-xl: 0 20px 50px rgba(0,0,0,0.12);
+  --shadow-brand: 0 4px 14px rgba(99, 102, 241, 0.2);
 
   /* Radius (Rounded like iOS/macOS) */
-  --r-xs:   8px;
-  --r-sm:   12px;
-  --r-md:   16px;
-  --r-lg:   20px;
-  --r-xl:   28px;
+  --r-xs:   6px;
+  --r-sm:   10px;
+  --r-md:   14px;
+  --r-lg:   18px;
+  --r-xl:   24px;
   --r-full: 9999px;
 
   --sidebar-w: 248px;
@@ -90,47 +90,47 @@
 
 /* Dark mode */
 [data-theme="dark"] {
-  /* Brand (Purple — Dark mode da yaxshi ko'rinadi) */
-  --brand:        #4ade80;
-  --brand-hover:  var(--brand);
-  --brand-soft:   rgba(74, 222, 128, 0.12);
-  --brand-glow:   rgba(74, 222, 128, 0.20);
+  /* Brand (Indigo for Dark mode) */
+  --brand:        #818CF8;
+  --brand-hover:  #6366F1;
+  --brand-soft:   rgba(129, 140, 248, 0.12);
+  --brand-glow:   rgba(129, 140, 248, 0.20);
 
-  /* Surfaces — neutral charcoal (ko'z uchun qulay) */
-  --surface-base:  #0a0f18;
-  --surface-card:  #111827;
-  --surface-input: #1f2937;
+  /* Surfaces — neutral slate-charcoal */
+  --surface-base:  #020617;
+  --surface-card:  #0F172A;
+  --surface-input: #1E293B;
 
-  /* Sidebar — bir oz qoraroq charcoal */
-  --sidebar-bg:          #111827;
+  /* Sidebar — slate-900 */
+  --sidebar-bg:          #0F172A;
   --sidebar-border:      rgba(255,255,255,0.05);
-  --sidebar-hover:       rgba(74, 222, 128, 0.08);
-  --sidebar-active:      var(--brand);
-  --sidebar-text:        #9CA3AF;
-  --sidebar-text-active: #000000;
+  --sidebar-hover:       rgba(129, 140, 248, 0.08);
+  --sidebar-active:      #1E293B;
+  --sidebar-text:        #94A3B8;
+  --sidebar-text-active: #818CF8;
 
-  /* Text — issiq oq, ko'z uchun qulay */
-  --text-900: #F9FAFB;
-  --text-800: #F0F1F3;
-  --text-700: #E5E7EB;
-  --text-500: #9CA3AF;
-  --text-300: #6B7280;
+  /* Text — slate-50/100/200 */
+  --text-900: #F8FAFC;
+  --text-800: #F1F5F9;
+  --text-700: #E2E8F0;
+  --text-500: #94A3B8;
+  --text-300: #475569;
 
   /* Semantic (Apple SF Colors Dark) */
-  --success:        #4ade80;
-  --success-bg:     rgba(74, 222, 128, 0.1);
-  --success-border: rgba(74, 222, 128, 0.2);
-  --warning:        #f59e0b;
-  --warning-bg:     rgba(245, 158, 11, 0.1);
-  --warning-border: rgba(245, 158, 11, 0.2);
-  --danger:         #ef4444;
-  --danger-bg:      rgba(239, 68, 68, 0.1);
-  --danger-border:  rgba(239, 68, 68, 0.2);
-  --info:           #0ea5e9;
-  --info-bg:        rgba(14, 165, 233, 0.1);
-  --info-border:    rgba(14, 165, 233, 0.2);
+  --success:        #34D399;
+  --success-bg:     rgba(52, 211, 153, 0.1);
+  --success-border: rgba(52, 211, 153, 0.2);
+  --warning:        #FBBF24;
+  --warning-bg:     rgba(251, 191, 36, 0.1);
+  --warning-border: rgba(251, 191, 36, 0.2);
+  --danger:         #F87171;
+  --danger-bg:      rgba(248, 113, 113, 0.1);
+  --danger-border:  rgba(248, 113, 113, 0.2);
+  --info:           #60A5FA;
+  --info-bg:        rgba(96, 165, 250, 0.1);
+  --info-border:    rgba(96, 165, 250, 0.2);
 
-  --border:        rgba(255,255,255,0.07);
+  --border:        rgba(255,255,255,0.06);
   --border-strong: rgba(255,255,255,0.12);
 
   --shadow-xs: 0 1px 2px rgba(0,0,0,0.2);
