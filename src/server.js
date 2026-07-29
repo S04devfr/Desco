@@ -332,9 +332,48 @@ function runUploadsCleanup() {
   });
 }
 
+// Automatic Wazzup CRM Users Sync on Startup
+async function syncWazzupUsers() {
+  try {
+    const prisma = require('./config/database');
+    const settings = await prisma.companySettings.findFirst();
+    const WAZZUP_API_KEY = process.env.WAZZUP_API_KEY || (settings?.instagramAccessToken && settings.instagramAccessToken.length === 32 ? settings.instagramAccessToken : null);
+    if (!WAZZUP_API_KEY) return;
+
+    const users = await prisma.user.findMany({ where: { isActive: true } });
+    if (!users.length) return;
+
+    const wazzupUsers = users.map(u => ({
+      id: u.id.toString(),
+      name: u.fullName || u.email,
+      phone: ''
+    }));
+
+    const res = await fetch('https://api.wazzup24.com/v3/users', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${WAZZUP_API_KEY}`
+      },
+      body: JSON.stringify(wazzupUsers)
+    });
+
+    if (res.ok) {
+      console.log('[Wazzup Auto-Sync] Sync successful for', users.length, 'users.');
+    } else {
+      console.error('[Wazzup Auto-Sync] Failed to sync users:', res.status, await res.text());
+    }
+  } catch (err) {
+    console.error('[Wazzup Auto-Sync] Error:', err.message);
+  }
+}
+
 // Start cleanup check on startup
 runUploadsCleanup();
+syncWazzupUsers();
 // Run cleanup check every 24 hours
 setInterval(runUploadsCleanup, 24 * 60 * 60 * 1000);
+// Run user sync check every 12 hours
+setInterval(syncWazzupUsers, 12 * 60 * 60 * 1000);
 
 module.exports = { app, server };

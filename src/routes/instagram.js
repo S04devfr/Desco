@@ -61,7 +61,7 @@ router.post('/webhook', async (req, res) => {
               console.log(`[Wazzup Webhook] Resolved active Instagram channel to ${matchedChannel.plainId} (ID: ${targetChannelId})`);
             }
 
-            const matchedTgChannel = channels.find(c => c.transport === 'telegram' && c.state === 'active');
+            const matchedTgChannel = channels.find(c => (c.transport === 'telegram' || c.transport === 'tgapi') && c.state === 'active');
             if (matchedTgChannel) {
               telegramChannelId = matchedTgChannel.channelId;
               console.log(`[Wazzup Webhook] Resolved active Telegram channel to ${matchedTgChannel.plainId} (ID: ${telegramChannelId})`);

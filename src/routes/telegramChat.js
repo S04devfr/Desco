@@ -79,7 +79,7 @@ router.post('/messages', protect, async (req, res) => {
         const channels = await channelRes.json();
         
         // Find the active Telegram channel
-        const tgChannel = channels.find(c => c.transport === 'telegram' && c.state === 'active')
+        const tgChannel = channels.find(c => (c.transport === 'telegram' || c.transport === 'tgapi') && c.state === 'active')
           || channels[0];
         
         if (!tgChannel) {
