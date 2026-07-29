@@ -616,13 +616,14 @@ router.get('/instagram-stats', async (req, res) => {
         const deals = client.deals || [];
 
         // 1. Payment Preference (Nasiya vs Naqd)
-        const hasNasiyaKeywords = /nasiya|muddatli|bo'lib|bolib|kredit|oyiga|oyma|ijara|variant/i.test(combinedText);
-        const hasNaqdKeywords = /naqd|naqt|click|payme|karta|plastik|terminal|bitta to'lov|naxt/i.test(combinedText);
+        const hasNasiyaKeywords = /nasiya|muddatli|bo'lib|bolib|kredit|oyiga|oyma|ijara|variant|rassrochka|рассрочка|кредит|насия|булиб|бўлиб|ойига|oylik/i.test(combinedText);
+        const hasNaqdKeywords = /naqd|naqt|click|payme|karta|plastik|terminal|bitta to'lov|naxt|dostavka payt|yetib borganda|kuryerga|cash|накт|нақд|клик|пейми|карта|пластик|курьерга|нақт/i.test(combinedText);
         
         const hasNasiyaDeal = deals.some(d => {
           const stageName = (d.stage?.name || '').toLowerCase();
           const notes = (d.notes || '').toLowerCase();
-          return stageName.includes('nasiya') || stageName.includes('kredit') || /nasiya|muddatli|bo'lib|bolib|kredit|oyiga/i.test(notes);
+          const prodName = (d.productName || '').toLowerCase();
+          return stageName.includes('nasiya') || stageName.includes('kredit') || /nasiya|muddatli|bo'lib|bolib|kredit|oyiga/i.test(notes) || /nasiya|muddatli|bo'lib|bolib|kredit/i.test(prodName);
         });
         const hasNaqdDeal = deals.some(d => {
           const stageName = (d.stage?.name || '').toLowerCase();
@@ -673,10 +674,12 @@ router.get('/instagram-stats', async (req, res) => {
         // 3. Purchase Intent
         const hasWonOrActiveDeal = deals.some(d => d.status === 'won' || d.status === 'active');
         const hasLostDeal = deals.some(d => d.status === 'lost' || isDealCanceled(d));
-        const hasPurchaseIntent = /olaman|olmoqchiman|zakaz|buyurtma|kuryer|dostavka qiling|sotib ol/i.test(combinedText);
-        const hasPriceInquiry = /narx|narxi|qancha|necha|pul|bahosi/i.test(combinedText);
+        const hasPhone = /\d{2}[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}/.test(combinedText) || /\b\d{9}\b/.test(combinedText);
+        const hasDeliveryAddress = /manzil|lokatsiya|lakatsiya|adress|address|uyga|nestone|shahar|rayon|etkaz|dostavka|доставка|адрес|уйимга/i.test(combinedText);
+        const hasBuyKeywords = /olaman|olmoqchiman|zakaz|buyurtma|kuryer|sotib ol|оламан|буюртма|заказ|олмокчиман/i.test(combinedText);
+        const hasPriceInquiry = /narx|narxi|qancha|necha|pul|bahosi|неч пул|нечи пул|нечпул|қанча|баҳоси|нархи|нарх/i.test(combinedText);
 
-        if (hasWonOrActiveDeal || hasPurchaseIntent) {
+        if (hasWonOrActiveDeal || hasPhone || hasDeliveryAddress || hasBuyKeywords) {
           purchaseCount++;
         } else if (hasLostDeal || hasPriceInquiry) {
           inquiryCount++;
@@ -690,19 +693,19 @@ router.get('/instagram-stats', async (req, res) => {
           const dealNotesText = deals.map(d => d.notes || '').join(' ').toLowerCase();
           const fullLostText = combinedText + ' ' + dealNotesText;
 
-          if (/qimmat|qmat|dorogo|baland|qimmatroq/i.test(fullLostText)) {
+          if (/qimmat|qmat|dorogo|baland|qimmatroq|arzon|arzonroq|дорого|киммат/i.test(fullLostText)) {
             lostPriceCount++;
             lostMatched = true;
           }
-          if (/dostavka|yetkaz|pochta|kuryer|yolkira|yo'lkira|uzoq/i.test(fullLostText)) {
+          if (/dostavka|yetkaz|pochta|kuryer|yolkira|yo'lkira|uzoq|доставка/i.test(fullLostText)) {
             lostDeliveryCount++;
             lostMatched = true;
           }
-          if (/o'ylab|oylab|maslahat|ertaga|keyinroq|ko'ray|koray/i.test(fullLostText)) {
+          if (/o'ylab|oylab|maslahat|ertaga|keyinroq|ko'ray|koray|подумаю|подумаем|маслахат/i.test(fullLostText)) {
             lostThinkingCount++;
             lostMatched = true;
           }
-          if (/kech javob|kechikdi|kutdim|javob yoz|uyqu|kech yoz/i.test(fullLostText)) {
+          if (/kech javob|kechikdi|kutdim|javob yoz|uyqu|kech yoz|поздно|долго/i.test(fullLostText)) {
             lostLateResponseCount++;
             lostMatched = true;
           }
@@ -714,8 +717,12 @@ router.get('/instagram-stats', async (req, res) => {
         texts.forEach(t => {
           const trimmed = t.trim();
           if (trimmed.length > 10 && trimmed.length < 100 && sampleOpinions.length < 10) {
-            if (!sampleOpinions.includes(trimmed)) {
-              const capitalized = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+            // Skip phone numbers and system/promotional message templates
+            if (/\+?998|9[012345789]\s?\d{3}|desco\.premium|murojat uchun|murojaat uchun|murojat/i.test(trimmed)) return;
+            if (trimmed.includes('http') || trimmed.includes('www.')) return;
+
+            const capitalized = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+            if (!sampleOpinions.some(op => op.toLowerCase() === trimmed.toLowerCase())) {
               sampleOpinions.push(capitalized);
             }
           }
