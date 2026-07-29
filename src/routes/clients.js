@@ -61,7 +61,7 @@ router.get('/', async (req, res, next) => {
 // Get client details
 router.get('/:id', async (req, res, next) => {
   try {
-    const client = await prisma.client.findUnique({
+    let client = await prisma.client.findUnique({
       where: { id: Number(req.params.id) },
       include: {
         owner: ownerSelect,
@@ -69,6 +69,60 @@ router.get('/:id', async (req, res, next) => {
       }
     })
     if (!client) return res.status(404).json({ message: 'Mijoz topilmadi' })
+
+    // Dynamically resolve missing Instagram/Telegram profile info from Wazzup
+    if ((client.instagramId && (!client.instagramUsername || client.name.startsWith('Instagram Lead'))) ||
+        (client.telegramId && !client.telegramUsername)) {
+      const settings = await prisma.companySettings.findFirst();
+      const WAZZUP_API_KEY = process.env.WAZZUP_API_KEY || (settings?.instagramAccessToken && settings.instagramAccessToken.length === 32 ? settings.instagramAccessToken : null);
+      if (WAZZUP_API_KEY) {
+        try {
+          const contactId = client.instagramId || client.telegramId;
+          const contactRes = await fetch(`https://api.wazzup24.com/v3/contacts/${contactId}`, {
+            headers: { 'Authorization': `Bearer ${WAZZUP_API_KEY}` }
+          });
+          if (contactRes.ok) {
+            const contactData = await contactRes.json();
+            const updateData = {};
+            
+            // Extract username from contactData array
+            if (contactData.contactData && Array.isArray(contactData.contactData)) {
+              if (client.instagramId) {
+                const igData = contactData.contactData.find(c => c.chatType === 'instagram' || c.chatType === 'instagramComment');
+                if (igData && igData.username) {
+                  updateData.instagramUsername = igData.username;
+                }
+              } else if (client.telegramId) {
+                const tgData = contactData.contactData.find(c => c.chatType === 'telegram');
+                if (tgData && tgData.username) {
+                  updateData.telegramUsername = tgData.username;
+                }
+              }
+            }
+
+            // Extract contact name if it is not generic and is set
+            if (contactData.name && contactData.name !== contactId && !contactData.name.startsWith('Instagram Lead') && !contactData.name.startsWith('Telegram Lead')) {
+              updateData.name = contactData.name;
+            }
+
+            if (Object.keys(updateData).length > 0) {
+              client = await prisma.client.update({
+                where: { id: client.id },
+                data: updateData,
+                include: {
+                  owner: ownerSelect,
+                  deals: { include: { manager: ownerSelect } }
+                }
+              });
+              console.log(`[Wazzup Profile Sync] Successfully resolved and updated contact:`, updateData);
+            }
+          }
+        } catch (err) {
+          console.error('[Wazzup Profile Sync] Failed to fetch contact from Wazzup:', err);
+        }
+      }
+    }
+
     res.json(client)
   } catch (error) {
     next(error)
