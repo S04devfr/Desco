@@ -930,6 +930,21 @@ async function handleIncomingWebSocketMessage(data) {
                            message.attachmentType === 'audio' ? '[Ovozli xabar]' :
                            message.attachmentType === 'video' ? '[Video]' : '[Fayl]');
       lastMsgEl.textContent = previewText;
+      
+      const count = unreadMessageCounts[clientId] || 0;
+      if (count > 0 && clientId !== currentClientId) {
+        lastMsgEl.style.color = 'var(--brand)';
+        lastMsgEl.style.fontWeight = '600';
+      } else {
+        lastMsgEl.style.color = 'var(--text-500)';
+        lastMsgEl.style.fontWeight = 'normal';
+      }
+    }
+
+    const timeLabel = existingItem.querySelector('.chat-time-label');
+    if (timeLabel) {
+      const date = new Date(message.timestamp);
+      timeLabel.textContent = date.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
     }
     
     // Badge qo'shish yoki yangilash
