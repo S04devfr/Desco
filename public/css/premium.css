@@ -86,7 +86,7 @@
   --sidebar-hover: var(--bg-sidebar-hover);
   --sidebar-active: var(--bg-sidebar-active);
   --sidebar-text: var(--text-muted-sidebar);
-  --sidebar-text-active: var(--text-inverse);
+  --sidebar-text-active: var(--primary);
   --sidebar-border: var(--border-subtle);
 }
 

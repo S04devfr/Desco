@@ -1065,7 +1065,7 @@ async function loadClients() {
       div.setAttribute('data-id', c.id);
       div.onclick = () => selectClient(c.id, c.name, c.instagramUsername, isComment);
       
-      const count = unreadMessageCounts[c.id] || 0;
+      const count = unreadMessageCounts[c.id] !== undefined ? unreadMessageCounts[c.id] : (c.instagramUnreadCount || 0);
       const badgeHtml = count > 0 ? `<div class="unread-badge pulse-badge">${count}</div>` : '';
 
       div.innerHTML = `
@@ -1112,9 +1112,7 @@ async function selectClient(id, name, instagramUsername, isComment) {
   isWazzupIframeActive = false;
   
   // Clear unread counts for this client
-  if (unreadMessageCounts[id]) {
-    delete unreadMessageCounts[id];
-  }
+  unreadMessageCounts[id] = 0;
   
   document.querySelectorAll('.chat-client-item').forEach(el => el.classList.remove('active'));
   const activeItem = document.querySelector(`.chat-client-item[data-id="${id}"]`);
