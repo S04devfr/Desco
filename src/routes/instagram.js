@@ -764,4 +764,78 @@ router.post('/update-client', protect, async (req, res) => {
   }
 });
 
+// POST /api/instagram/iframe-url
+router.post('/iframe-url', protect, async (req, res) => {
+  try {
+    const { clientId, chatType } = req.body;
+    if (!clientId) {
+      return res.status(400).json({ error: 'clientId is required' });
+    }
+
+    const client = await prisma.client.findUnique({
+      where: { id: Number(clientId) }
+    });
+
+    if (!client) {
+      return res.status(404).json({ error: 'Client not found' });
+    }
+
+    const settings = await prisma.companySettings.findFirst();
+    const WAZZUP_API_KEY = process.env.WAZZUP_API_KEY || (settings?.instagramAccessToken && settings.instagramAccessToken.length === 32 ? settings.instagramAccessToken : null);
+
+    if (!WAZZUP_API_KEY) {
+      return res.status(400).json({ error: 'Wazzup API Key not configured' });
+    }
+
+    const chatId = chatType === 'telegram' ? client.telegramId : client.instagramId;
+    if (!chatId) {
+      return res.status(400).json({ error: 'Client has no chatId for ' + chatType });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: Number(req.userId) }
+    });
+    const userName = user?.fullName || user?.email || 'Manager';
+
+    const payload = {
+      user: {
+        id: req.userId.toString(),
+        name: userName
+      },
+      scope: 'card',
+      filter: [
+        {
+          chatType: chatType === 'telegram' ? 'telegram' : 'instagram',
+          chatId: chatId
+        }
+      ],
+      activeChat: {
+        chatType: chatType === 'telegram' ? 'telegram' : 'instagram',
+        chatId: chatId
+      }
+    };
+
+    const wazzupRes = await fetch('https://api.wazzup24.com/v3/iframe', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${WAZZUP_API_KEY}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (wazzupRes.ok) {
+      const data = await wazzupRes.json();
+      res.json({ url: data.url });
+    } else {
+      const errorText = await wazzupRes.text();
+      console.error('Wazzup Iframe API Error:', wazzupRes.status, errorText);
+      res.status(500).json({ error: 'Failed to fetch iframe URL from Wazzup' });
+    }
+  } catch (error) {
+    console.error('Error generating iframe URL:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;

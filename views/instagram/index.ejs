@@ -1100,6 +1100,7 @@ function filterClients() {
 async function selectClient(id, name, instagramUsername, isComment) {
   currentClientId = id;
   currentClientName = name;
+  isWazzupIframeActive = false;
   
   // Clear unread counts for this client
   if (unreadMessageCounts[id]) {
@@ -1147,6 +1148,9 @@ async function selectClient(id, name, instagramUsername, isComment) {
       </div>
       
       <div style="display: flex; gap: 8px;">
+        <button class="btn btn-sm btn-icon" id="toggleWazzupBtn" onclick="toggleWazzupIframe(${id})" title="Instagram chatini to'liq ko'rish (Wazzup)" style="border: 1px solid var(--border); background: var(--surface-card); width: 34px; height: 34px; border-radius: var(--r-xs); display: flex; align-items: center; justify-content: center;">
+          <i class="fab fa-instagram" style="font-size: 14px; color: #E1306C;"></i>
+        </button>
         <button class="btn btn-sm btn-icon" id="toggleDetailsBtn" onclick="toggleDetailsSidebar()" title="Mijoz tafsilotlarini yopish/ochish" style="border: 1px solid var(--border); background: var(--surface-card); width: 34px; height: 34px; border-radius: var(--r-xs); display: flex; align-items: center; justify-content: center;">
           <i class="fas fa-info-circle" style="font-size: 14px;"></i>
         </button>
@@ -1707,6 +1711,73 @@ function _toast(msg, type) {
     showToast(msg, type);
   } else {
     alert(msg);
+  }
+}
+
+let isWazzupIframeActive = false;
+
+async function toggleWazzupIframe(clientId) {
+  const chatMessages = document.getElementById('chatMessages');
+  const chatInputArea = document.querySelector('.chat-input-area');
+  const toggleBtn = document.getElementById('toggleWazzupBtn');
+  
+  let iframeContainer = document.getElementById('wazzupIframeContainer');
+  
+  if (isWazzupIframeActive) {
+    if (iframeContainer) iframeContainer.style.display = 'none';
+    chatMessages.style.display = 'block';
+    chatInputArea.style.display = 'flex';
+    toggleBtn.style.background = 'var(--surface-card)';
+    isWazzupIframeActive = false;
+  } else {
+    chatMessages.style.display = 'none';
+    chatInputArea.style.display = 'none';
+    
+    if (!iframeContainer) {
+      iframeContainer = document.createElement('div');
+      iframeContainer.id = 'wazzupIframeContainer';
+      iframeContainer.style.flex = '1';
+      iframeContainer.style.width = '100%';
+      iframeContainer.style.height = 'calc(100% - 55px)';
+      iframeContainer.style.display = 'flex';
+      iframeContainer.style.alignItems = 'center';
+      iframeContainer.style.justifyContent = 'center';
+      chatMessages.parentNode.insertBefore(iframeContainer, chatInputArea);
+    }
+    
+    iframeContainer.style.display = 'flex';
+    iframeContainer.innerHTML = '<div style="color: var(--text-300); font-size: 13.5px;"><i class="fas fa-spinner fa-spin" style="margin-right: 6px;"></i> Wazzup asl chat oynasi yuklanmoqda...</div>';
+    toggleBtn.style.background = 'var(--surface-elevated)';
+    
+    try {
+      const res = await fetch('/api/instagram/iframe-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ clientId, chatType: 'instagram' })
+      });
+      
+      if (!res.ok) throw new Error('Failed to load Wazzup iframe URL');
+      const data = await res.json();
+      
+      iframeContainer.innerHTML = `
+        <iframe src="${data.url}" 
+                allow="microphone *; clipboard-write *" 
+                style="width: 100%; height: 100%; border: none; background: var(--bg-primary);"
+                frameborder="0">
+        </iframe>
+      `;
+      isWazzupIframeActive = true;
+    } catch (err) {
+      console.error(err);
+      iframeContainer.innerHTML = `
+        <div style="color: var(--danger); font-size: 13px; text-align: center; padding: 20px;">
+          <i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i>
+          Wazzup oynasini yuklab bo'lmadi. API kalit yoki ulanishni tekshiring.
+        </div>
+      `;
+    }
   }
 }
 </script>
