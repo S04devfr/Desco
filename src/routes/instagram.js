@@ -76,16 +76,6 @@ router.post('/webhook', async (req, res) => {
     for (const msg of body.messages) {
       if (msg.chatType !== 'instagram' && msg.chatType !== 'telegram' && msg.chatType !== 'instagramComment') continue;
 
-      // Skip messages from non-configured Wazzup channel
-      if ((msg.chatType === 'instagram' || msg.chatType === 'instagramComment') && targetChannelId && msg.channelId && msg.channelId !== targetChannelId) {
-        console.log(`[Wazzup Webhook] Skipping Instagram message from non-target channel ${msg.channelId} (expected target channel ${targetChannelId})`);
-        continue;
-      }
-      if (msg.chatType === 'telegram' && telegramChannelId && msg.channelId && msg.channelId !== telegramChannelId) {
-        console.log(`[Wazzup Webhook] Skipping Telegram message from non-target channel ${msg.channelId} (expected target channel ${telegramChannelId})`);
-        continue;
-      }
-
       // Prefix messageId if it is a comment
       const messageId = msg.chatType === 'instagramComment' ? `comment_${msg.messageId}` : msg.messageId;
       let text = msg.text || '';
