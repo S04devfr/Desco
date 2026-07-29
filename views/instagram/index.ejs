@@ -80,9 +80,9 @@
 .chat-client-item {
   padding: 12px 16px;
   margin: 4px 10px;
-  border-radius: var(--r-sm);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 150ms ease;
   display: flex;
   gap: 14px;
   align-items: center;
@@ -91,37 +91,38 @@
 }
 
 .chat-client-item:hover {
-  background: var(--sidebar-hover);
+  background: var(--bg-surface-hover);
 }
 
 .chat-client-item.active {
-  background: var(--brand-soft);
-  border-color: var(--brand-glow);
+  background: var(--primary-light) !important;
+  border-color: transparent !important;
 }
 
 .chat-client-item.active::before {
   content: "";
   position: absolute;
-  left: 3px;
-  top: 14px;
-  bottom: 14px;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
   width: 3.5px;
-  border-radius: 2px;
-  background: var(--brand);
-  box-shadow: 0 0 6px var(--brand);
+  border-radius: 0 4px 4px 0;
+  background: var(--primary);
+  box-shadow: 0 0 6px var(--primary);
 }
 
 .chat-avatar {
   width: 42px;
   height: 42px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 15px;
   color: white;
   flex-shrink: 0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover)) !important;
 }
 
 .chat-client-info {
@@ -218,18 +219,19 @@
 
 .msg-in {
   align-self: flex-start;
-  background: var(--surface-card);
-  color: var(--text-900);
-  border-radius: 18px 18px 18px 4px;
-  border: 1px solid var(--border);
+  background: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) 4px !important;
+  border: 1px solid var(--border-subtle) !important;
+  box-shadow: var(--shadow-sm);
 }
 
 .msg-out {
   align-self: flex-end;
-  background: linear-gradient(135deg, var(--brand) 0%, #4F46E5 100%);
-  color: white;
-  border-radius: 18px 18px 4px 18px;
-  box-shadow: var(--shadow-brand);
+  background: var(--primary) !important;
+  color: #FFFFFF !important;
+  border-radius: var(--radius-lg) var(--radius-lg) 4px var(--radius-lg) !important;
+  box-shadow: var(--shadow-sm) !important;
 }
 
 .msg-time {
@@ -348,24 +350,24 @@
 .chat-send-btn {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   border: none;
-  background: var(--brand);
+  background: var(--primary);
   color: white;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 150ms ease;
   box-shadow: var(--shadow-sm);
   flex-shrink: 0;
 }
 
 .chat-send-btn:hover {
-  background: var(--brand-hover);
-  transform: scale(1.05);
-  box-shadow: 0 4px 10px rgba(99, 102, 241, 0.25);
+  background: var(--primary-hover);
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.25);
 }
 
 .chat-send-btn:active {
@@ -416,29 +418,29 @@
 }
 
 .detail-label {
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
-  color: var(--text-300);
-  font-weight: 700;
-  letter-spacing: 0.8px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  letter-spacing: 0.05em;
 }
 
 .detail-value {
-  font-size: 13.5px;
-  color: var(--text-900);
+  font-size: 14px;
+  color: var(--text-primary);
   word-break: break-word;
   font-weight: 500;
 }
 
 .detail-card {
-  background: var(--surface-base);
-  border: 1px solid var(--border);
-  border-radius: var(--r-sm);
+  background: var(--bg-surface-hover);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  box-shadow: var(--shadow-xs);
+  box-shadow: var(--shadow-sm);
 }
 
 .detail-deal-item {
@@ -1251,7 +1253,7 @@ async function loadClientDetails(id) {
     detailsPanel.innerHTML = `
       <div class="chat-details-header">
         <span>Mijoz Tafsilotlari</span>
-        <button class="btn btn-ghost" id="editDetailsBtn" onclick="toggleDetailsEdit(true)" style="padding: 4px 10px; font-size: 11px; font-weight: 600; color: var(--brand); cursor: pointer; height: auto; border: 1px solid var(--brand-glow); border-radius: var(--r-xs); background: var(--brand-soft); display: flex; align-items: center; gap: 6px; transition: all 0.15s ease;">
+        <button class="btn btn-ghost" id="editDetailsBtn" onclick="toggleDetailsEdit(true)" style="padding: 6px 12px; font-size: 11.5px; font-weight: 600; color: var(--primary); cursor: pointer; height: 30px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: transparent; display: flex; align-items: center; gap: 6px; transition: all 150ms ease;" onmouseover="this.style.background='var(--primary-light)'" onmouseout="this.style.background='transparent'">
           <i class="fas fa-edit" style="font-size: 10px;"></i> Tahrirlash
         </button>
       </div>
@@ -1288,7 +1290,7 @@ async function loadClientDetails(id) {
         <div class="detail-item">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <div class="detail-label" style="margin-bottom: 0;">Sdelkalar</div>
-            <button class="btn btn-sm btn-primary" onclick="openCreateDealModal(${client.id}, '${escapeQuotes(client.name)}')" style="font-size: 10px; padding: 4px 10px; height: auto; display: flex; align-items: center; gap: 4px; border-radius: var(--r-xs); background: var(--brand); border-color: var(--brand); color: white; font-weight: 600;">
+            <button class="btn btn-sm btn-primary" onclick="openCreateDealModal(${client.id}, '${escapeQuotes(client.name)}')" style="font-size: 11px; padding: 6px 12px; height: 32px; display: flex; align-items: center; gap: 6px; border-radius: var(--radius-md); background: var(--primary); border: 1px solid var(--primary); color: white; font-weight: 600; box-shadow: var(--shadow-sm); cursor: pointer; transition: all 150ms ease;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='none'; this.style.boxShadow='var(--shadow-sm)'">
               <i class="fas fa-plus" style="font-size: 8px;"></i> Yangi sdelka
             </button>
           </div>
