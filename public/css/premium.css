@@ -85,25 +85,25 @@
 
 /* Dark mode */
 [data-theme="dark"] {
-  --bg-app: #0F0F17;
-  --bg-surface: #1A1A24;
-  --bg-surface-hover: #252538;
-  --bg-sidebar: #0B0B11;
-  --bg-sidebar-hover: #1E293B;
-  --bg-sidebar-active: #1E293B;
+  --bg-app: #09090B;
+  --bg-surface: #18181B;
+  --bg-surface-hover: #27272A;
+  --bg-sidebar: #09090B;
+  --bg-sidebar-hover: #18181B;
+  --bg-sidebar-active: #27272A;
 
   --primary: #818CF8;
   --primary-hover: #6366F1;
   --primary-light: rgba(129, 140, 248, 0.12);
 
-  --text-primary: #F8FAFC;
-  --text-secondary: #94A3B8;
+  --text-primary: #F4F4F5;
+  --text-secondary: #A1A1AA;
   --text-inverse: #FFFFFF;
-  --text-muted-sidebar: #94A3B8;
-  --sidebar-text-active: #818CF8;
+  --text-muted-sidebar: #A1A1AA;
+  --sidebar-text-active: #FFFFFF;
 
-  --border-subtle: rgba(255,255,255,0.06);
-  --border-strong: rgba(255,255,255,0.12);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.15);
 
   --success: #34D399;
   --warning: #FBBF24;

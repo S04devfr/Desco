@@ -1135,7 +1135,7 @@ async function selectClient(id, name, telegramUsername) {
         </button>
         <div class="chat-avatar">${getAvatarHtml(name)}</div>
         <div style="min-width: 0;">
-          <div style="font-weight: 700; font-size: 14.5px; color: var(--text-900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px;">
+          <div id="chatHeaderName" style="font-weight: 700; font-size: 14.5px; color: var(--text-900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px;">
             ${name}
             ${telegramUsername ? `<span style="font-size: 12px; font-weight: normal; color: var(--text-400);">(@${telegramUsername})</span>` : ''}
             ${telegramUsername ? `<a href="https://t.me/${telegramUsername}" target="_blank" class="chat-header-ig-link" title="Telegram profilini ochish"><i class="fab fa-telegram" style="color: #0088cc; font-size: 13px;"></i></a>` : ''}
@@ -1213,7 +1213,7 @@ async function loadClientDetails(id) {
     activeClientData = client;
     
     // Update chat header name and username link dynamically if they were resolved
-    const headerTitleDiv = document.querySelector('.chat-header div[style*="font-weight: 700"]');
+    const headerTitleDiv = document.getElementById('chatHeaderName');
     if (headerTitleDiv && client.telegramUsername) {
       headerTitleDiv.innerHTML = `
         ${client.name}
