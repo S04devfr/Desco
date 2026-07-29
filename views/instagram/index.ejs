@@ -1136,6 +1136,7 @@ async function selectClient(id, name, instagramUsername, isComment) {
         <div style="min-width: 0;">
           <div style="font-weight: 700; font-size: 14.5px; color: var(--text-900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px;">
             ${name}
+            ${instagramUsername ? `<span style="font-size: 12px; font-weight: normal; color: var(--text-400);">(@${instagramUsername})</span>` : ''}
             ${instagramUsername ? `<a href="https://instagram.com/${instagramUsername}" target="_blank" class="chat-header-ig-link" title="Instagram profilini ochish"><i class="fab fa-instagram" style="color: #E1306C; font-size: 13px;"></i></a>` : ''}
           </div>
           <div style="font-size: 11px; color: var(--text-300); margin-top: 2px; display: flex; align-items: center; gap: 4px;">
@@ -1206,6 +1207,16 @@ async function loadClientDetails(id) {
     if (!res.ok) throw new Error('Client details fetch failed');
     const client = await res.json();
     activeClientData = client;
+    
+    // Update chat header name and username link dynamically if they were resolved
+    const headerTitleDiv = document.querySelector('.chat-header div[style*="font-weight: 700"]');
+    if (headerTitleDiv && client.instagramUsername) {
+      headerTitleDiv.innerHTML = `
+        ${client.name}
+        <span style="font-size: 12px; font-weight: normal; color: var(--text-400);">(@${client.instagramUsername})</span>
+        <a href="https://instagram.com/${client.instagramUsername}" target="_blank" class="chat-header-ig-link" title="Instagram profilini ochish"><i class="fab fa-instagram" style="color: #E1306C; font-size: 13px;"></i></a>
+      `;
+    }
     
     let dealsHtml = '';
     if (client.deals && client.deals.length > 0) {

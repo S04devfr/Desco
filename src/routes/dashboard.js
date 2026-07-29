@@ -503,6 +503,7 @@ router.get('/today-tasks', async (req, res, next) => {
 })
 
 // ── Instagram leads stats ──
+// ── Instagram leads stats ──
 router.get('/instagram-stats', async (req, res) => {
   try {
     const where = buildWhere(req.query.filter, req);
@@ -511,7 +512,7 @@ router.get('/instagram-stats', async (req, res) => {
     if (where.OR && where.OR.length) {
       const dateRange = where.OR[0]?.updatedAt || where.OR[0]?.createdAt;
       if (dateRange) {
-        msgWhere.createdAt = dateRange;
+        msgWhere.timestamp = dateRange;
         mktWhere.date = dateRange;
       }
     }
@@ -532,6 +533,9 @@ router.get('/instagram-stats', async (req, res) => {
           id: true,
           deals: {
             select: {
+              productName: true,
+              amount: true,
+              notes: true,
               status: true,
               stage: {
                 select: { name: true }
@@ -546,7 +550,7 @@ router.get('/instagram-stats', async (req, res) => {
     const igLeads = mktLogs.reduce((s, l) => s + (l.leads || 0), 0);
     const igCpl = igLeads > 0 ? igSpent / igLeads : 0;
 
-    // Advanced Text Analytics
+    // Advanced Text & Deal Analytics
     const dailyChatsMap = {};
     const clientMessages = {};
 
@@ -592,7 +596,6 @@ router.get('/instagram-stats', async (req, res) => {
     let lostLateResponseCount = 0;
     let lostOtherCount = 0;
 
-    const lostClientIds = new Set();
     const isDealCanceled = (d) => {
       if (d.status === 'lost') return true;
       const stageName = (d.stage?.name || '').toLowerCase();
@@ -604,102 +607,121 @@ router.get('/instagram-stats', async (req, res) => {
              stageName.includes('lost');
     };
 
-    if (Array.isArray(clientsWithDeals)) {
-      clientsWithDeals.forEach(client => {
-        if (client.deals && client.deals.some(isDealCanceled)) {
-          lostClientIds.add(client.id);
-        }
-      });
-    }
-
     const sampleOpinions = [];
 
-    Object.entries(clientMessages).forEach(([clientId, texts]) => {
-      const combinedText = texts.join(' ');
+    if (Array.isArray(clientsWithDeals)) {
+      clientsWithDeals.forEach(client => {
+        const texts = clientMessages[client.id] || [];
+        const combinedText = texts.join(' ');
+        const deals = client.deals || [];
 
-      const hasNasiyaKeywords = /nasiya|muddatli|bo'lib|bolib|kredit|oyiga|oyma|ijara|variant/i.test(combinedText);
-      const hasNaqdKeywords = /naqd|naqt|click|payme|karta|plastik|terminal|bitta to'lov|naxt/i.test(combinedText);
+        // 1. Payment Preference (Nasiya vs Naqd)
+        const hasNasiyaKeywords = /nasiya|muddatli|bo'lib|bolib|kredit|oyiga|oyma|ijara|variant/i.test(combinedText);
+        const hasNaqdKeywords = /naqd|naqt|click|payme|karta|plastik|terminal|bitta to'lov|naxt/i.test(combinedText);
+        
+        const hasNasiyaDeal = deals.some(d => {
+          const stageName = (d.stage?.name || '').toLowerCase();
+          const notes = (d.notes || '').toLowerCase();
+          return stageName.includes('nasiya') || stageName.includes('kredit') || /nasiya|muddatli|bo'lib|bolib|kredit|oyiga/i.test(notes);
+        });
+        const hasNaqdDeal = deals.some(d => {
+          const stageName = (d.stage?.name || '').toLowerCase();
+          const notes = (d.notes || '').toLowerCase();
+          return stageName.includes('naqd') || stageName.includes('100%') || stageName.includes('click') || stageName.includes('payme') || /naqd|naqt|click|payme|karta|plastik/i.test(notes);
+        });
 
-      if (hasNasiyaKeywords) {
-        nasiyaCount++;
-      } else if (hasNaqdKeywords) {
-        naqdCount++;
-      } else {
-        unspecifiedCount++;
-      }
-
-      const has6Func = /6-funksiyalik|6-funksiya|6 talik|6-talik|6 lik|6lik|6 ta|olti talik|6-ta|massajor 6|е6/i.test(combinedText);
-      const has3Func = /3-funksiyalik|3-funkiyalik|3-funksiya|3 talik|3-talik|3 lik|3lik|3 ta|uch talik|3-ta/i.test(combinedText);
-      const hasOyoq = /oyoq|nog|stup|tavon/i.test(combinedText);
-      const hasHadiya = /hadiya|hadya|sovg'a|sovga|toplam|to'plam/i.test(combinedText);
-
-      let matched = false;
-      if (has6Func) {
-        count6Func++;
-        matched = true;
-      }
-      if (has3Func) {
-        count3Func++;
-        matched = true;
-      }
-      if (hasOyoq) {
-        countOyoq++;
-        matched = true;
-      }
-      if (hasHadiya) {
-        countHadiya++;
-        matched = true;
-      }
-
-      if (!matched && combinedText.trim().length > 0) {
-        countOtherProduct++;
-      }
-
-      const hasPurchaseIntent = /olaman|olmoqchiman|zakaz|buyurtma|kuryer|dostavka qiling|sotib ol/i.test(combinedText);
-      const hasPriceInquiry = /narx|narxi|qancha|necha|pul|bahosi/i.test(combinedText);
-
-      if (hasPurchaseIntent) {
-        purchaseCount++;
-      } else if (hasPriceInquiry) {
-        inquiryCount++;
-      } else {
-        otherCount++;
-      }
-
-      // Calculate lost reasons for lost clients
-      if (lostClientIds.has(Number(clientId))) {
-        let lostMatched = false;
-        if (/qimmat|qmat|dorogo|baland|qimmatroq/i.test(combinedText)) {
-          lostPriceCount++;
-          lostMatched = true;
+        if (hasNasiyaDeal || hasNasiyaKeywords) {
+          nasiyaCount++;
+        } else if (hasNaqdDeal || hasNaqdKeywords) {
+          naqdCount++;
+        } else {
+          unspecifiedCount++;
         }
-        if (/dostavka|yetkaz|pochta|kuryer|yolkira|yo'lkira|uzoq/i.test(combinedText)) {
-          lostDeliveryCount++;
-          lostMatched = true;
-        }
-        if (/o'ylab|oylab|maslahat|ertaga|keyinroq|ko'ray|koray/i.test(combinedText)) {
-          lostThinkingCount++;
-          lostMatched = true;
-        }
-        if (/kech javob|kechikdi|kutdim|javob yoz|uyqu|kech yoz/i.test(combinedText)) {
-          lostLateResponseCount++;
-          lostMatched = true;
-        }
-        if (!lostMatched) {
-          lostOtherCount++;
-        }
-      }
 
-      texts.forEach(t => {
-        const trimmed = t.trim();
-        if (trimmed.length > 10 && trimmed.length < 100 && sampleOpinions.length < 10) {
-          if (!sampleOpinions.includes(trimmed)) {
-            const capitalized = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
-            sampleOpinions.push(capitalized);
+        // 2. Product Interests
+        const has6Func = /6-funksiyalik|6-funksiya|6 talik|6-talik|6 lik|6lik|6 ta|olti talik|6-ta|massajor 6|е6/i.test(combinedText) ||
+                         deals.some(d => /6-funksiyalik|6-funksiya|6 talik|6-talik|6 lik|6lik|6 ta|olti talik|6-ta|massajor 6|е6/i.test(d.productName || ''));
+        const has3Func = /3-funksiyalik|3-funkiyalik|3-funksiya|3 talik|3-talik|3 lik|3lik|3 ta|uch talik|3-ta/i.test(combinedText) ||
+                         deals.some(d => /3-funksiyalik|3-funkiyalik|3-funksiya|3 talik|3-talik|3 lik|3lik|3 ta|uch talik|3-ta/i.test(d.productName || ''));
+        const hasOyoq = /oyoq|nog|stup|tavon/i.test(combinedText) ||
+                        deals.some(d => /oyoq|nog|stup|tavon/i.test(d.productName || ''));
+        const hasHadiya = /hadiya|hadya|sovg'a|sovga|toplam|to'plam/i.test(combinedText) ||
+                          deals.some(d => /hadiya|hadya|sovg'a|sovga|toplam|to'plam/i.test(d.productName || ''));
+
+        let matched = false;
+        if (has6Func) {
+          count6Func++;
+          matched = true;
+        }
+        if (has3Func) {
+          count3Func++;
+          matched = true;
+        }
+        if (hasOyoq) {
+          countOyoq++;
+          matched = true;
+        }
+        if (hasHadiya) {
+          countHadiya++;
+          matched = true;
+        }
+
+        if (!matched && (combinedText.trim().length > 0 || deals.length > 0)) {
+          countOtherProduct++;
+        }
+
+        // 3. Purchase Intent
+        const hasWonOrActiveDeal = deals.some(d => d.status === 'won' || d.status === 'active');
+        const hasLostDeal = deals.some(d => d.status === 'lost' || isDealCanceled(d));
+        const hasPurchaseIntent = /olaman|olmoqchiman|zakaz|buyurtma|kuryer|dostavka qiling|sotib ol/i.test(combinedText);
+        const hasPriceInquiry = /narx|narxi|qancha|necha|pul|bahosi/i.test(combinedText);
+
+        if (hasWonOrActiveDeal || hasPurchaseIntent) {
+          purchaseCount++;
+        } else if (hasLostDeal || hasPriceInquiry) {
+          inquiryCount++;
+        } else {
+          otherCount++;
+        }
+
+        // 4. Lost Reasons
+        if (hasLostDeal) {
+          let lostMatched = false;
+          const dealNotesText = deals.map(d => d.notes || '').join(' ').toLowerCase();
+          const fullLostText = combinedText + ' ' + dealNotesText;
+
+          if (/qimmat|qmat|dorogo|baland|qimmatroq/i.test(fullLostText)) {
+            lostPriceCount++;
+            lostMatched = true;
+          }
+          if (/dostavka|yetkaz|pochta|kuryer|yolkira|yo'lkira|uzoq/i.test(fullLostText)) {
+            lostDeliveryCount++;
+            lostMatched = true;
+          }
+          if (/o'ylab|oylab|maslahat|ertaga|keyinroq|ko'ray|koray/i.test(fullLostText)) {
+            lostThinkingCount++;
+            lostMatched = true;
+          }
+          if (/kech javob|kechikdi|kutdim|javob yoz|uyqu|kech yoz/i.test(fullLostText)) {
+            lostLateResponseCount++;
+            lostMatched = true;
+          }
+          if (!lostMatched) {
+            lostOtherCount++;
           }
         }
+
+        texts.forEach(t => {
+          const trimmed = t.trim();
+          if (trimmed.length > 10 && trimmed.length < 100 && sampleOpinions.length < 10) {
+            if (!sampleOpinions.includes(trimmed)) {
+              const capitalized = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+              sampleOpinions.push(capitalized);
+            }
+          }
+        });
       });
-    });
+    }
 
     res.json({
       totalMessages,
@@ -733,7 +755,6 @@ router.get('/instagram-stats', async (req, res) => {
         lateResponse: lostLateResponseCount,
         other: lostOtherCount
       },
-      sampleOpinions: sampleOpinions.slice(0, 6)
     });
   } catch(e) {
     console.error('Instagram stats error:', e);
