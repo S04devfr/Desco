@@ -139,6 +139,11 @@ router.post('/messages', protect, async (req, res) => {
           });
         }
 
+        await prisma.client.update({
+          where: { id: client.id },
+          data: { telegramUnreadCount: 0 }
+        }).catch(err => console.error('Error resetting telegram unread count:', err));
+
         return res.json(savedMsg);
       } catch (apiErr) {
         console.error('Failed to send via Wazzup API:', apiErr);
@@ -219,6 +224,11 @@ router.post('/messages', protect, async (req, res) => {
           }
         });
       }
+
+      await prisma.client.update({
+        where: { id: client.id },
+        data: { telegramUnreadCount: 0 }
+      }).catch(err => console.error('Error resetting telegram unread count:', err));
 
       return res.json(savedMsg);
     }
