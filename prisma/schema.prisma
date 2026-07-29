@@ -51,10 +51,12 @@ model Client {
 
   instagramId       String? @unique
   instagramUsername String?
+  instagramUnreadCount Int @default(0)
   messages          InstagramMessage[]
 
   telegramId        String? @unique
   telegramUsername  String?
+  telegramUnreadCount Int @default(0)
   telegramMessages  TelegramMessage[]
 
   @@index([ownerId])

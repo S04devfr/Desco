@@ -241,6 +241,14 @@ router.post('/webhook', async (req, res) => {
             }
           });
 
+          // Increment telegram unread count if incoming
+          if (!isEcho) {
+            await prisma.client.update({
+              where: { id: client.id },
+              data: { telegramUnreadCount: { increment: 1 } }
+            });
+          }
+
           // Broadcast to client-side UI
           const broadcast = req.app.get('broadcast');
           if (broadcast) {
@@ -274,6 +282,14 @@ router.post('/webhook', async (req, res) => {
               attachmentUrl
             }
           });
+
+          // Increment instagram unread count if incoming
+          if (!isEcho) {
+            await prisma.client.update({
+              where: { id: client.id },
+              data: { instagramUnreadCount: { increment: 1 } }
+            });
+          }
 
           // Broadcast to client-side UI
           const broadcast = req.app.get('broadcast');
@@ -424,6 +440,14 @@ router.post('/webhook', async (req, res) => {
                 }
               });
 
+              // Increment instagram unread count if incoming
+              if (!isOutgoing) {
+                await prisma.client.update({
+                  where: { id: client.id },
+                  data: { instagramUnreadCount: { increment: 1 } }
+                });
+              }
+
               // Real-time WebSocket broadcast
               const broadcast = req.app.get('broadcast');
               if (broadcast) {
@@ -474,6 +498,13 @@ router.get('/clients', protect, async (req, res) => {
 router.get('/messages/:clientId', protect, async (req, res) => {
   try {
     const clientId = Number(req.params.clientId);
+    
+    // Reset unread count when opening the chat
+    await prisma.client.update({
+      where: { id: clientId },
+      data: { instagramUnreadCount: 0 }
+    }).catch(err => console.error('Error resetting unread count:', err));
+
     const messages = await prisma.instagramMessage.findMany({
       where: { clientId },
       orderBy: { timestamp: 'asc' }

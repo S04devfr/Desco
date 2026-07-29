@@ -27,6 +27,13 @@ router.get('/clients', protect, async (req, res) => {
 router.get('/messages/:clientId', protect, async (req, res) => {
   try {
     const clientId = Number(req.params.clientId);
+
+    // Reset unread count when opening the chat
+    await prisma.client.update({
+      where: { id: clientId },
+      data: { telegramUnreadCount: 0 }
+    }).catch(err => console.error('Error resetting telegram unread count:', err));
+
     const messages = await prisma.telegramMessage.findMany({
       where: { clientId },
       orderBy: { timestamp: 'asc' }

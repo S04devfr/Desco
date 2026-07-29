@@ -886,4 +886,25 @@ router.get('/export-csv', async (req, res) => {
   }
 });
 
+// GET /api/dashboard/unread-chats
+router.get('/unread-chats', protect, async (req, res) => {
+  try {
+    const [instagram, telegram] = await Promise.all([
+      prisma.client.count({
+        where: { instagramUnreadCount: { gt: 0 } }
+      }),
+      prisma.client.count({
+        where: { telegramUnreadCount: { gt: 0 } }
+      })
+    ]);
+    res.json({
+      instagram,
+      telegram
+    });
+  } catch (error) {
+    console.error('Error fetching unread chats count:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router

@@ -969,6 +969,11 @@ async function handleIncomingWebSocketMessage(data) {
     await loadClients();
   }
 
+  // Refresh sidebar badge for real-time unread updates
+  if (typeof window.updateSidebarChatBadges === 'function') {
+    window.updateSidebarChatBadges();
+  }
+
   // Agar hozir shu klientni ko'rmoqda bo'lsak - xabarlarni yangilash
   if (currentClientId === clientId) {
     loadMessages(clientId);
@@ -1395,6 +1400,11 @@ async function loadMessages(clientId) {
   try {
     const res = await fetch('/api/instagram/messages/' + clientId);
     const messages = await res.json();
+    
+    // Refresh sidebar unread counts dynamically
+    if (typeof window.updateSidebarChatBadges === 'function') {
+      window.updateSidebarChatBadges();
+    }
     
     const container = document.getElementById('chatMessages');
     container.innerHTML = '';

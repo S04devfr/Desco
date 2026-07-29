@@ -207,8 +207,47 @@ async function updateSidebarTaskBadge() {
 }
 window.updateSidebarTaskBadge = updateSidebarTaskBadge;
 
+// ── UPDATE SIDEBAR CHAT BADGES ──
+async function updateSidebarChatBadges() {
+  const igBadge = document.getElementById('sidebar-instagram-badge');
+  const tgBadge = document.getElementById('sidebar-telegram-badge');
+  if (!igBadge && !tgBadge) return;
+  try {
+    const r = await fetch('/api/dashboard/unread-chats');
+    if (r.ok) {
+      const counts = await r.json();
+      if (igBadge) {
+        const igCount = counts.instagram || 0;
+        if (igCount > 0) {
+          igBadge.textContent = igCount;
+          igBadge.classList.remove('hidden');
+          igBadge.style.display = 'flex';
+        } else {
+          igBadge.classList.add('hidden');
+          igBadge.style.display = 'none';
+        }
+      }
+      if (tgBadge) {
+        const tgCount = counts.telegram || 0;
+        if (tgCount > 0) {
+          tgBadge.textContent = tgCount;
+          tgBadge.classList.remove('hidden');
+          tgBadge.style.display = 'flex';
+        } else {
+          tgBadge.classList.add('hidden');
+          tgBadge.style.display = 'none';
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Error fetching unread chat counts:', e);
+  }
+}
+window.updateSidebarChatBadges = updateSidebarChatBadges;
+
 document.addEventListener('DOMContentLoaded', () => {
   updateSidebarTaskBadge();
+  updateSidebarChatBadges();
 });
 
 // ── MOBILE MENU TOGGLE ──
