@@ -1160,10 +1160,9 @@ function filterClients() {
       return;
     }
     
-    // Check if unanswered (unread count > 0 OR last message is not outgoing)
+    // Check if unanswered (unread count > 0)
     const count = unreadMessageCounts[client.id] !== undefined ? unreadMessageCounts[client.id] : (client.instagramUnreadCount || 0);
-    const lastMsgIsOutgoing = client.messages && client.messages.length > 0 ? client.messages[0].isOutgoing : false;
-    const isUnanswered = (count > 0) || (client.messages && client.messages.length > 0 && !lastMsgIsOutgoing);
+    const isUnanswered = (count > 0);
     
     if (isUnanswered) {
       unansweredCount++;
