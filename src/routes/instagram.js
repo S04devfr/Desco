@@ -74,7 +74,7 @@ router.post('/webhook', async (req, res) => {
     }
 
     for (const msg of body.messages) {
-      if (msg.chatType !== 'instagram' && msg.chatType !== 'telegram' && msg.chatType !== 'instagramComment') continue;
+      if (msg.chatType !== 'instagram' && msg.chatType !== 'telegram') continue;
 
       // Prefix messageId if it is a comment
       const messageId = msg.chatType === 'instagramComment' ? `comment_${msg.messageId}` : msg.messageId;
@@ -247,6 +247,12 @@ router.post('/webhook', async (req, res) => {
               where: { id: client.id },
               data: { telegramUnreadCount: { increment: 1 } }
             });
+          } else {
+            // Reset to 0 since we replied
+            await prisma.client.update({
+              where: { id: client.id },
+              data: { telegramUnreadCount: 0 }
+            }).catch(err => console.error('Error resetting telegram unread count in echo webhook:', err));
           }
 
           // Broadcast to client-side UI
@@ -289,6 +295,12 @@ router.post('/webhook', async (req, res) => {
               where: { id: client.id },
               data: { instagramUnreadCount: { increment: 1 } }
             });
+          } else {
+            // Reset to 0 since we replied
+            await prisma.client.update({
+              where: { id: client.id },
+              data: { instagramUnreadCount: 0 }
+            }).catch(err => console.error('Error resetting instagram unread count in echo webhook:', err));
           }
 
           // Broadcast to client-side UI
@@ -446,6 +458,12 @@ router.post('/webhook', async (req, res) => {
                   where: { id: client.id },
                   data: { instagramUnreadCount: { increment: 1 } }
                 });
+              } else {
+                // Reset to 0 since we replied
+                await prisma.client.update({
+                  where: { id: client.id },
+                  data: { instagramUnreadCount: 0 }
+                }).catch(err => console.error('Error resetting instagram unread count in Meta echo webhook:', err));
               }
 
               // Real-time WebSocket broadcast

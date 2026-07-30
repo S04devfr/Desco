@@ -391,12 +391,80 @@ async function syncWazzupUsers() {
   }
 }
 
+// Fix stuck unread counts for Instagram and Telegram chats
+async function fixStuckUnreadCounts() {
+  try {
+    const prisma = require('./config/database');
+    console.log('[Unread Sync] Fixing stuck unread counts...');
+
+    // 1. Reset counts for clients whose last Instagram message was outgoing (meaning we replied) or have no messages
+    const igUnreadClients = await prisma.client.findMany({
+      where: { instagramUnreadCount: { gt: 0 } },
+      include: {
+        messages: {
+          orderBy: { timestamp: 'desc' },
+          take: 1
+        }
+      }
+    });
+
+    const igIdsToReset = [];
+    for (const client of igUnreadClients) {
+      const lastMsg = client.messages[0];
+      if (!lastMsg || lastMsg.isOutgoing) {
+        igIdsToReset.push(client.id);
+      }
+    }
+
+    if (igIdsToReset.length > 0) {
+      await prisma.client.updateMany({
+        where: { id: { in: igIdsToReset } },
+        data: { instagramUnreadCount: 0 }
+      });
+    }
+
+    // 2. Reset counts for clients whose last Telegram message was outgoing (meaning we replied) or have no messages
+    const tgUnreadClients = await prisma.client.findMany({
+      where: { telegramUnreadCount: { gt: 0 } },
+      include: {
+        telegramMessages: {
+          orderBy: { timestamp: 'desc' },
+          take: 1
+        }
+      }
+    });
+
+    const tgIdsToReset = [];
+    for (const client of tgUnreadClients) {
+      const lastMsg = client.telegramMessages[0];
+      if (!lastMsg || lastMsg.isOutgoing) {
+        tgIdsToReset.push(client.id);
+      }
+    }
+
+    if (tgIdsToReset.length > 0) {
+      await prisma.client.updateMany({
+        where: { id: { in: tgIdsToReset } },
+        data: { telegramUnreadCount: 0 }
+      });
+    }
+
+    console.log(`[Unread Sync] Reset ${igIdsToReset.length} stuck Instagram counts and ${tgIdsToReset.length} stuck Telegram counts.`);
+  } catch (err) {
+    console.error('[Unread Sync] Error during cleanup:', err);
+  }
+}
+
 // Start cleanup check on startup
 runUploadsCleanup();
 syncWazzupUsers();
+fixStuckUnreadCounts();
+
 // Run cleanup check every 24 hours
 setInterval(runUploadsCleanup, 24 * 60 * 60 * 1000);
 // Run user sync check every 12 hours
 setInterval(syncWazzupUsers, 12 * 60 * 60 * 1000);
+// Run unread sync check every 12 hours
+setInterval(fixStuckUnreadCounts, 12 * 60 * 60 * 1000);
 
 module.exports = { app, server };
