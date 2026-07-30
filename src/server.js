@@ -397,7 +397,10 @@ async function fixStuckUnreadCounts() {
     const prisma = require('./config/database');
     console.log('[Unread Sync] Fixing stuck unread counts...');
 
-    // 1. Reset counts for clients whose last Instagram message was outgoing (meaning we replied) or have no messages
+    // Reset all unread counts for messages sent before July 30, 2026 16:00 Tashkent time (one-time history reset)
+    const thresholdDate = new Date('2026-07-30T11:00:00Z');
+
+    // 1. Reset counts for clients whose last Instagram message was outgoing (meaning we replied), before threshold, or have no messages or no Instagram ID
     const igUnreadClients = await prisma.client.findMany({
       where: { instagramUnreadCount: { gt: 0 } },
       include: {
@@ -411,7 +414,7 @@ async function fixStuckUnreadCounts() {
     const igIdsToReset = [];
     for (const client of igUnreadClients) {
       const lastMsg = client.messages[0];
-      if (!lastMsg || lastMsg.isOutgoing) {
+      if (!client.instagramId || !lastMsg || lastMsg.isOutgoing || new Date(lastMsg.timestamp) < thresholdDate) {
         igIdsToReset.push(client.id);
       }
     }
@@ -423,7 +426,7 @@ async function fixStuckUnreadCounts() {
       });
     }
 
-    // 2. Reset counts for clients whose last Telegram message was outgoing (meaning we replied) or have no messages
+    // 2. Reset counts for clients whose last Telegram message was outgoing (meaning we replied), before threshold, or have no messages or no Telegram ID
     const tgUnreadClients = await prisma.client.findMany({
       where: { telegramUnreadCount: { gt: 0 } },
       include: {
@@ -437,7 +440,7 @@ async function fixStuckUnreadCounts() {
     const tgIdsToReset = [];
     for (const client of tgUnreadClients) {
       const lastMsg = client.telegramMessages[0];
-      if (!lastMsg || lastMsg.isOutgoing) {
+      if (!client.telegramId || !lastMsg || lastMsg.isOutgoing || new Date(lastMsg.timestamp) < thresholdDate) {
         tgIdsToReset.push(client.id);
       }
     }
