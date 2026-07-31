@@ -3,12 +3,12 @@
    Uslub: Stripe / Linear — kamroq rang, ko'proq nafosat
    ════════════════════════════════ */
 :root {
-  /* Fon va sirt - Glassmorphism */
-  --bg-app: transparent;
-  --bg-surface: rgba(255, 255, 255, 0.45);
-  --bg-surface-hover: rgba(255, 255, 255, 0.65);
-  --bg-sidebar: rgba(255, 255, 255, 0.35);
-  --bg-sidebar-hover: rgba(255, 255, 255, 0.50);
+  /* Fon va sirt - Soft premium slate colors */
+  --bg-app: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-surface-hover: #F1F5F9;
+  --bg-sidebar: #FFFFFF;
+  --bg-sidebar-hover: #F1F5F9;
   --bg-sidebar-active: rgba(79, 70, 229, 0.08);
 
   /* Asosiy brend rang */
@@ -18,14 +18,14 @@
 
   /* Matn */
   --text-primary: #0F172A;
-  --text-secondary: #475569;
+  --text-secondary: #334155;
   --text-inverse: #FFFFFF;
-  --text-muted-sidebar: #475569;
+  --text-muted-sidebar: #334155;
   --sidebar-text-active: #4F46E5;
 
-  /* Chegaralar - Glass Borders */
-  --border-subtle: rgba(255, 255, 255, 0.35);
-  --border-strong: rgba(255, 255, 255, 0.55);
+  /* Chegaralar - Clean borders */
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.16);
 
   /* Semantik */
   --success: #10B981;
@@ -33,10 +33,10 @@
   --danger: #EF4444;
   --info: #3B82F6;
 
-  /* Soyalar - Soft glass shadows */
-  --shadow-sm: 0 4px 12px rgba(31, 38, 135, 0.04);
-  --shadow-md: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-  --shadow-lg: 0 12px 40px 0 rgba(31, 38, 135, 0.12);
+  /* Soyalar - Soft shadows */
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
 
   /* Radius */
   --radius-sm: 8px;
@@ -52,7 +52,7 @@
   --brand: var(--primary);
   --brand-hover: var(--primary-hover);
   --brand-soft: var(--primary-light);
-  --brand-glow: rgba(79, 70, 229, 0.18);
+  --brand-glow: rgba(79, 70, 229, 0.12);
   --surface-base: var(--bg-app);
   --surface-card: var(--bg-surface);
   --surface-input: var(--bg-surface-hover);
@@ -87,25 +87,25 @@
 }
 
 [data-theme="dark"] {
-  --bg-app: transparent;
-  --bg-surface: rgba(18, 22, 33, 0.55);
-  --bg-surface-hover: rgba(25, 30, 45, 0.70);
-  --bg-sidebar: rgba(12, 15, 24, 0.60);
-  --bg-sidebar-hover: rgba(25, 30, 45, 0.50);
+  --bg-app: #0B0F19;
+  --bg-surface: #131924;
+  --bg-surface-hover: #1A2232;
+  --bg-sidebar: #0C101A;
+  --bg-sidebar-hover: #141A28;
   --bg-sidebar-active: rgba(129, 140, 248, 0.15);
 
   --primary: #818CF8;
   --primary-hover: #6366F1;
   --primary-light: rgba(129, 140, 248, 0.12);
 
-  --text-primary: #F3F4F6;
-  --text-secondary: #9CA3AF;
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1;
   --text-inverse: #FFFFFF;
-  --text-muted-sidebar: #9CA3AF;
+  --text-muted-sidebar: #CBD5E1;
   --sidebar-text-active: #FFFFFF;
 
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.16);
+  --border-subtle: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.20);
 
   --success: #34D399;
   --warning: #FBBF24;
@@ -129,15 +129,15 @@
   --bg-primary: var(--bg-app);
   --bg-secondary: var(--bg-surface-hover);
   --bg-tertiary: var(--border-subtle);
-  --text-tertiary: #A1A1AA;
-  --text-400: #71717A;
-  --text-muted: #71717A;
+  --text-tertiary: #CBD5E1;
+  --text-400: #94A3B8;
+  --text-muted: #94A3B8;
   --text-900: var(--text-primary);
   --text-800: var(--text-primary);
   --text-700: var(--text-primary);
   --text-500: var(--text-secondary);
   --text-300: var(--text-secondary);
-  --surface-elevated: #27272A;
+  --surface-elevated: #1E2533;
 
   /* Sidebar styling maps */
   --sidebar-bg: var(--bg-sidebar);
@@ -154,21 +154,17 @@
 body {
   font-family: var(--font-text);
   font-size: 15px;
-  background: radial-gradient(at 0% 0%, #e0e7ff 0px, transparent 50%), 
-              radial-gradient(at 100% 0%, #fae8ff 0px, transparent 50%), 
-              radial-gradient(at 100% 100%, #e0f2fe 0px, transparent 50%), 
-              radial-gradient(at 0% 100%, #f3e8ff 0px, transparent 50%), 
-              #f8fafc !important;
+  background: radial-gradient(at 0% 0%, #E2E8F0 0px, transparent 50%), 
+              radial-gradient(at 100% 0%, #F1F5F9 0px, transparent 50%), 
+              #F8FAFC !important;
   color: var(--text-900);
   -webkit-font-smoothing: antialiased;
 }
 
 [data-theme="dark"] body {
-  background: radial-gradient(at 0% 0%, #0f172a 0px, transparent 50%), 
-              radial-gradient(at 100% 0%, #1e1b4b 0px, transparent 50%), 
-              radial-gradient(at 100% 100%, #090d16 0px, transparent 50%), 
-              radial-gradient(at 0% 100%, #2e1065 0px, transparent 50%), 
-              #030712 !important;
+  background: radial-gradient(at 0% 0%, #0F172A 0px, transparent 50%), 
+              radial-gradient(at 100% 0%, #1E293B 0px, transparent 50%), 
+              #0B0F19 !important;
 }
 
 /* Ambient glow blobs that sit behind the UI */
@@ -1636,28 +1632,29 @@ a.quick-nav-card .card:hover {
 
 /* Kanban columns */
 .kanban-col {
-  background: #FFFFFF;
-  border: 1px solid rgba(0,0,0,0.06);
+  background: #F1F5F9;
+  border: 1px solid rgba(0,0,0,0.08);
 }
 [data-theme="dark"] .kanban-col {
-  background: var(--surface-card);
-  border-color: rgba(255,255,255,0.07);
+  background: #131924;
+  border-color: rgba(255, 255, 255, 0.10);
 }
 
 /* Lead cards on kanban */
 .lead-card {
   background: #FFFFFF;
-  border: 1px solid rgba(0,0,0,0.06);
-  border-left: 3px solid rgba(0,0,0,0.10);
+  border: 1px solid rgba(0,0,0,0.08);
+  border-left: 3px solid var(--brand);
 }
 [data-theme="dark"] .lead-card {
-  background: var(--surface-card);
-  border-color: rgba(255,255,255,0.07);
+  background: #1C2434;
+  border-color: rgba(255, 255, 255, 0.15);
+  border-left: 3px solid var(--brand);
 }
 
 /* Modal adjustments */
 .modal-box { background: #FFFFFF; }
-[data-theme="dark"] .modal-box { background: var(--surface-card); }
+[data-theme="dark"] .modal-box { background: #131924; }
 
 /* Topbar search overrides */
 .topbar-search input {
