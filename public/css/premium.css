@@ -152,7 +152,7 @@
    BASE
  ───────────────────────────────────────────────────── */
 body {
-  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-text);
   font-size: 15px;
   background: radial-gradient(at 0% 0%, #e0e7ff 0px, transparent 50%), 
               radial-gradient(at 100% 0%, #fae8ff 0px, transparent 50%), 
@@ -734,7 +734,7 @@ body::after {
 ───────────────────────────────────────────────────── */
 .form-label {
   font-size: 12px;
-  font-weight: 550;
+  font-weight: 500;
   color: var(--text-700);
   margin-bottom: 5px;
 }
@@ -869,7 +869,7 @@ body::after {
 
 .modal-header h2 {
   font-size: 15px;
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: -0.2px;
 }
 
@@ -985,7 +985,7 @@ body::after {
 ───────────────────────────────────────────────────── */
 .page-header h1 {
   font-size: 20px;
-  font-weight: 750;
+  font-weight: 700;
   letter-spacing: -0.5px;
   color: var(--text-900);
 }
@@ -1040,11 +1040,11 @@ a.quick-nav-card .card:hover {
 .stat-card.clickable:hover { border-color: var(--brand); }
 
 .financial-tab-btn { color: var(--text-300); font-size: 12.5px; }
-.financial-tab-btn.active { color: var(--brand) !important; border-bottom-color: var(--brand) !important; font-weight: 650; }
+.financial-tab-btn.active { color: var(--brand) !important; border-bottom-color: var(--brand) !important; font-weight: 600; }
 
 .mkt-stat { background: var(--surface-input); border: 1px solid var(--border); border-radius: 10px; }
 .mkt-stat-label { color: var(--text-300); font-size: 10.5px; font-weight: 600; letter-spacing: 0.3px; }
-.mkt-stat-val   { font-size: 15px; font-weight: 750; color: var(--text-900); }
+.mkt-stat-val   { font-size: 15px; font-weight: 700; color: var(--text-900); }
 
 /* Spreadsheet */
 .spreadsheet-input:focus { border-color: var(--brand); box-shadow: 0 0 0 2px var(--brand-soft); }
@@ -1552,7 +1552,7 @@ a.quick-nav-card .card:hover {
 
 .modal-header h3 {
   font-size: 15px;
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: -0.2px;
   color: var(--text-900);
 }
