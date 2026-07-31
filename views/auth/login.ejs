@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <script>(function(){const t=localStorage.getItem('crm-theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <script>document.documentElement.setAttribute('data-theme', 'light');</script>
   <style>
     :root {
       --brand: #4F46E5;
@@ -66,53 +66,107 @@
       background: radial-gradient(circle at top left, #0D0F17, #06070B) !important;
     }
     
-    /* Background Ambient Glowing Blobs */
+    /* Background Ambient Glowing Blobs & Animated Particles */
     .glass-blobs {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
       z-index: 0;
       overflow: hidden;
       pointer-events: none;
+      background: radial-gradient(circle at 50% 50%, #F8FAFC, #E2E8F0) !important;
     }
     .blob {
       position: absolute;
       border-radius: 50%;
-      filter: blur(120px);
-      opacity: 0.7;
-      animation: float-blobs 25s infinite alternate ease-in-out;
-      transition: background 0.5s ease;
+      filter: blur(100px);
+      opacity: 0.72;
+      pointer-events: none;
     }
     .blob-1 {
       top: -10%; left: -10%;
       width: 45vw; height: 45vw;
-      background: radial-gradient(circle, rgba(79, 70, 229, 0.3) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(79, 70, 229, 0.35) 0%, transparent 75%);
+      animation: morph-1 25s infinite alternate ease-in-out;
     }
     .blob-2 {
-      bottom: -10%; right: -10%;
+      bottom: -15%; right: -10%;
       width: 50vw; height: 50vw;
-      background: radial-gradient(circle, rgba(139, 92, 246, 0.25) 0%, transparent 70%);
-      animation-delay: -5s;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, transparent 75%);
+      animation: morph-2 30s infinite alternate ease-in-out;
     }
     .blob-3 {
-      top: 35%; left: 45%;
+      top: 30%; left: 35%;
       width: 35vw; height: 35vw;
-      background: radial-gradient(circle, rgba(236, 72, 153, 0.18) 0%, transparent 70%);
-      animation-delay: -10s;
+      background: radial-gradient(circle, rgba(236, 72, 153, 0.22) 0%, transparent 75%);
+      animation: morph-3 20s infinite alternate ease-in-out;
     }
-    [data-theme="dark"] .blob-1 {
-      background: radial-gradient(circle, rgba(79, 70, 229, 0.18) 0%, transparent 70%);
-    }
-    [data-theme="dark"] .blob-2 {
-      background: radial-gradient(circle, rgba(129, 140, 248, 0.15) 0%, transparent 70%);
-    }
-    [data-theme="dark"] .blob-3 {
-      background: radial-gradient(circle, rgba(219, 39, 119, 0.12) 0%, transparent 70%);
+    .blob-4 {
+      bottom: 40%; left: -15%;
+      width: 40vw; height: 40vw;
+      background: radial-gradient(circle, rgba(45, 212, 191, 0.25) 0%, transparent 75%);
+      animation: morph-4 28s infinite alternate ease-in-out;
     }
     
-    @keyframes float-blobs {
-      0% { transform: translate(0, 0) scale(1); }
-      100% { transform: translate(40px, 60px) scale(1.15); }
+    @keyframes morph-1 {
+      0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+      50% { transform: translate(80px, 60px) scale(1.15) rotate(180deg); }
+      100% { transform: translate(-40px, 100px) scale(0.9) rotate(360deg); }
     }
+    @keyframes morph-2 {
+      0% { transform: translate(0, 0) scale(1.1) rotate(0deg); }
+      50% { transform: translate(-100px, -40px) scale(0.85) rotate(-180deg); }
+      100% { transform: translate(60px, -80px) scale(1.05) rotate(-360deg); }
+    }
+    @keyframes morph-3 {
+      0% { transform: translate(0, 0) scale(0.9) rotate(0deg); }
+      50% { transform: translate(50px, -90px) scale(1.1) rotate(120deg); }
+      100% { transform: translate(-60px, 40px) scale(0.95) rotate(240deg); }
+    }
+    @keyframes morph-4 {
+      0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+      50% { transform: translate(120px, -60px) scale(0.9) rotate(-120deg); }
+      100% { transform: translate(-80px, 80px) scale(1.2) rotate(-240deg); }
+    }
+
+    /* Floating Particles */
+    .particles-container {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      overflow: hidden;
+      z-index: 1;
+    }
+    .particle {
+      position: absolute;
+      bottom: -60px;
+      background: radial-gradient(circle, rgba(79, 70, 229, 0.18) 0%, rgba(139, 92, 246, 0.04) 50%, transparent 100%);
+      border-radius: 50%;
+      pointer-events: none;
+      animation: rise-up 20s infinite linear;
+    }
+    @keyframes rise-up {
+      0% {
+        transform: translateY(0) scale(0.5);
+        opacity: 0;
+      }
+      10% {
+        opacity: 0.6;
+      }
+      90% {
+        opacity: 0.6;
+      }
+      100% {
+        transform: translateY(-110vh) scale(1.2);
+        opacity: 0;
+      }
+    }
+    .p-1 { left: 10%; width: 80px; height: 80px; animation-duration: 22s; animation-delay: 0s; }
+    .p-2 { left: 25%; width: 120px; height: 120px; animation-duration: 28s; animation-delay: -3s; }
+    .p-3 { left: 40%; width: 60px; height: 60px; animation-duration: 18s; animation-delay: -6s; }
+    .p-4 { left: 55%; width: 140px; height: 140px; animation-duration: 32s; animation-delay: -2s; }
+    .p-5 { left: 70%; width: 90px; height: 90px; animation-duration: 25s; animation-delay: -8s; }
+    .p-6 { left: 85%; width: 110px; height: 110px; animation-duration: 27s; animation-delay: -5s; }
+    .p-7 { left: 15%; width: 70px; height: 70px; animation-duration: 20s; animation-delay: -10s; }
+    .p-8 { left: 65%; width: 100px; height: 100px; animation-duration: 24s; animation-delay: -12s; }
     
     /* Center Glass Panel */
     .auth-container {
@@ -476,12 +530,17 @@
   <div class="blob blob-1"></div>
   <div class="blob blob-2"></div>
   <div class="blob blob-3"></div>
-</div>
-
-<div class="header-controls">
-  <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" title="Mavzuni o'zgartirish">
-    <i class="fas fa-moon" id="themeIcon"></i>
-  </button>
+  <div class="blob blob-4"></div>
+  <div class="particles-container">
+    <div class="particle p-1"></div>
+    <div class="particle p-2"></div>
+    <div class="particle p-3"></div>
+    <div class="particle p-4"></div>
+    <div class="particle p-5"></div>
+    <div class="particle p-6"></div>
+    <div class="particle p-7"></div>
+    <div class="particle p-8"></div>
+  </div>
 </div>
 
 <div class="auth-container">
@@ -577,16 +636,9 @@
 
 <script>
 function applyTheme(t){
-  document.documentElement.setAttribute('data-theme',t);
-  localStorage.setItem('crm-theme',t);
-  const icon=document.getElementById('themeIcon');
-  if(icon) icon.className=t==='dark'?'fas fa-sun':'fas fa-moon';
+  document.documentElement.setAttribute('data-theme','light');
 }
-function toggleTheme(){
-  const cur=document.documentElement.getAttribute('data-theme')||'light';
-  applyTheme(cur==='dark'?'light':'dark');
-}
-applyTheme(localStorage.getItem('crm-theme')||'light');
+applyTheme('light');
 
 function togglePw(){
   const inp=document.getElementById('password');
