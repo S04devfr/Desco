@@ -791,6 +791,7 @@ router.get('/instagram-stats', async (req, res) => {
         lateResponse: lostLateResponseCount,
         other: lostOtherCount
       },
+      sampleOpinions
     });
   } catch(e) {
     console.error('Instagram stats error:', e);

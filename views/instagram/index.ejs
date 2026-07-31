@@ -219,19 +219,32 @@
 
 .msg-in {
   align-self: flex-start;
-  background: var(--bg-surface) !important;
-  color: var(--text-primary) !important;
-  border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) 4px !important;
-  border: 1px solid var(--border-subtle) !important;
-  box-shadow: var(--shadow-sm);
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+  border-radius: 16px 16px 16px 4px !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02) !important;
+}
+
+[data-theme="dark"] .msg-in {
+  background: rgba(255, 255, 255, 0.07) !important;
+  color: #F3F4F6 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: none !important;
 }
 
 .msg-out {
   align-self: flex-end;
-  background: var(--primary) !important;
+  background: linear-gradient(135deg, #4F46E5, #6366F1) !important;
   color: #FFFFFF !important;
-  border-radius: var(--radius-lg) var(--radius-lg) 4px var(--radius-lg) !important;
-  box-shadow: var(--shadow-sm) !important;
+  border-radius: 16px 16px 4px 16px !important;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15) !important;
+}
+
+[data-theme="dark"] .msg-out {
+  background: linear-gradient(135deg, #6366F1, #818CF8) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25) !important;
 }
 
 .msg-time {
@@ -243,6 +256,41 @@
 
 .msg-out .msg-time {
   color: rgba(255, 255, 255, 0.85);
+}
+
+.chat-filter-btn {
+  flex: 1;
+  padding: 8px 16px;
+  font-size: 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 200ms ease;
+  outline: none;
+  border: 1px solid var(--border) !important;
+  background: var(--surface-card) !important;
+  color: var(--text-secondary) !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.chat-filter-btn:hover {
+  background: var(--bg-surface-hover) !important;
+  color: var(--text-primary) !important;
+}
+
+.chat-filter-btn.active {
+  background: var(--primary) !important;
+  color: #FFFFFF !important;
+  border-color: var(--primary) !important;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15) !important;
+}
+
+[data-theme="dark"] .chat-filter-btn.active {
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25) !important;
 }
 
 .msg-attachment-container {
@@ -746,11 +794,10 @@
       </div>
     </div>
 
-    <!-- Chat Filters -->
     <div class="chat-filters" style="display: flex; gap: 8px; padding: 10px 15px; border-bottom: 1px solid var(--border); background: var(--surface-card);">
-      <button id="filterAllBtn" class="chat-filter-btn" onclick="setChatFilter('all')" style="flex: 1; border: 1px solid var(--border); background: var(--surface-base); color: var(--text-500); padding: 6px 12px; font-size: 11.5px; border-radius: 16px; cursor: pointer; font-weight: 500; transition: all 0.2s; outline: none;">Barchasi</button>
-      <button id="filterUnansweredBtn" class="chat-filter-btn" onclick="setChatFilter('unanswered')" style="flex: 1; border: 1px solid var(--primary-light); background: var(--primary-light); color: var(--primary); padding: 6px 12px; font-size: 11.5px; border-radius: 16px; cursor: pointer; font-weight: 600; transition: all 0.2s; outline: none; display: flex; align-items: center; justify-content: center; gap: 4px;">
-        Javob berilmaganlar <span id="unansweredFilterBadge" class="badge" style="background: var(--primary); color: white; padding: 1px 6px; font-size: 9px; border-radius: 10px; font-weight: 700; display: none;">0</span>
+      <button id="filterAllBtn" class="chat-filter-btn" onclick="setChatFilter('all')">Barchasi</button>
+      <button id="filterUnansweredBtn" class="chat-filter-btn active" onclick="setChatFilter('unanswered')">
+        Javob berilmaganlar <span id="unansweredFilterBadge" class="badge" style="background: var(--danger); color: white; padding: 1px 6px; font-size: 9px; border-radius: 10px; font-weight: 700; display: none;">0</span>
       </button>
     </div>
 
@@ -845,25 +892,11 @@ function setChatFilter(filter) {
   if (!allBtn || !unansweredBtn) return;
   
   if (filter === 'all') {
-    allBtn.style.background = 'var(--primary-light)';
-    allBtn.style.color = 'var(--primary)';
-    allBtn.style.borderColor = 'var(--primary-light)';
-    allBtn.style.fontWeight = '600';
-    
-    unansweredBtn.style.background = 'var(--surface-base)';
-    unansweredBtn.style.color = 'var(--text-500)';
-    unansweredBtn.style.borderColor = 'var(--border)';
-    unansweredBtn.style.fontWeight = '500';
+    allBtn.classList.add('active');
+    unansweredBtn.classList.remove('active');
   } else {
-    unansweredBtn.style.background = 'var(--primary-light)';
-    unansweredBtn.style.color = 'var(--primary)';
-    unansweredBtn.style.borderColor = 'var(--primary-light)';
-    unansweredBtn.style.fontWeight = '600';
-    
-    allBtn.style.background = 'var(--surface-base)';
-    allBtn.style.color = 'var(--text-500)';
-    allBtn.style.borderColor = 'var(--border)';
-    allBtn.style.fontWeight = '500';
+    unansweredBtn.classList.add('active');
+    allBtn.classList.remove('active');
   }
   
   filterClients();

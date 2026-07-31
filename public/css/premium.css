@@ -1,7 +1,8 @@
 /* ═══════════════════════════════════════════════════════
    DESCO CRM — Clean Premium v3.1
    Uslub: Stripe / Linear — kamroq rang, ko'proq nafosat
-   ════════════════════════════════:root {
+   ════════════════════════════════ */
+:root {
   /* Fon va sirt - Glassmorphism */
   --bg-app: transparent;
   --bg-surface: rgba(255, 255, 255, 0.45);
@@ -404,16 +405,17 @@ body::after {
    TOPBAR
 ───────────────────────────────────────────────────── */
 .topbar {
-  background: var(--bg-sidebar) !important;
-  backdrop-filter: blur(15px) saturate(190%);
-  -webkit-backdrop-filter: blur(15px) saturate(190%);
+  background: rgba(255, 255, 255, 0.70) !important;
+  backdrop-filter: blur(20px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(190%) !important;
   border-bottom: 1px solid var(--border) !important;
-  box-shadow: none;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02) !important;
 }
 
 [data-theme="dark"] .topbar {
-  background: var(--bg-sidebar) !important;
+  background: rgba(15, 18, 28, 0.70) !important;
   border-bottom: 1px solid var(--border) !important;
+  box-shadow: none !important;
 }
 
 .breadcrumb {
@@ -424,17 +426,18 @@ body::after {
 }
 
 .topbar-search input {
-  background: var(--bg-surface-hover) !important;
-  border: 1px solid var(--border-subtle) !important;
-  border-radius: var(--radius-md) !important;
+  background: rgba(0, 0, 0, 0.04) !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px !important;
   font-size: 13px;
   color: var(--text-primary) !important;
-  transition: all 150ms ease;
+  padding-left: 36px !important;
+  transition: all 200ms ease;
 }
 .topbar-search input:focus {
+  background: #FFFFFF !important;
   border-color: var(--primary) !important;
-  background: var(--bg-surface) !important;
-  box-shadow: 0 0 0 3px var(--primary-light) !important;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15) !important;
 }
 
 .topbar-btn {
@@ -1656,20 +1659,26 @@ a.quick-nav-card .card:hover {
 .modal-box { background: #FFFFFF; }
 [data-theme="dark"] .modal-box { background: var(--surface-card); }
 
-/* Topbar search */
+/* Topbar search overrides */
 .topbar-search input {
-  background: var(--surface-base);
-  border: 1px solid rgba(0,0,0,0.07);
+  background: rgba(0, 0, 0, 0.04) !important;
+  border: 1px solid transparent !important;
+  color: var(--text-primary) !important;
 }
 .topbar-search input:focus {
-  background: #FFFFFF;
-  border-color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.10);
+  background: #FFFFFF !important;
+  border-color: var(--brand) !important;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15) !important;
 }
 [data-theme="dark"] .topbar-search input {
-  background: #374151;
-  border-color: rgba(255,255,255,0.08);
-  color: #F9FAFB;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid transparent !important;
+  color: #FFFFFF !important;
+}
+[data-theme="dark"] .topbar-search input:focus {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2) !important;
 }
 
 /* Form controls */
