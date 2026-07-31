@@ -552,16 +552,29 @@ router.get('/instagram-stats', async (req, res) => {
 
     // Advanced Text & Deal Analytics
     const dailyChatsMap = {};
+    const dailyWritersMap = {};
     const clientMessages = {};
 
     messages.forEach(msg => {
       if (!msg.clientId) return;
       
-      const dateStr = new Date(msg.timestamp).toISOString().slice(0, 10);
+      const date = new Date(msg.timestamp);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+
       if (!dailyChatsMap[dateStr]) {
         dailyChatsMap[dateStr] = new Set();
       }
       dailyChatsMap[dateStr].add(msg.clientId);
+
+      if (!msg.isOutgoing) {
+        if (!dailyWritersMap[dateStr]) {
+          dailyWritersMap[dateStr] = new Set();
+        }
+        dailyWritersMap[dateStr].add(msg.clientId);
+      }
 
       if (!msg.isOutgoing && msg.text) {
         if (!clientMessages[msg.clientId]) {
@@ -575,6 +588,19 @@ router.get('/instagram-stats', async (req, res) => {
       date,
       count: clientsSet.size
     })).sort((a, b) => a.date.localeCompare(b.date));
+
+    const dailyIncomingWriters = Object.entries(dailyWritersMap).map(([date, clientsSet]) => ({
+      date,
+      count: clientsSet.size
+    })).sort((a, b) => a.date.localeCompare(b.date));
+
+    const totalDays = dailyIncomingWriters.length;
+    const totalWritersSum = dailyIncomingWriters.reduce((sum, item) => sum + item.count, 0);
+    const averageWritersPerDay = totalDays > 0 ? Math.round(totalWritersSum / totalDays) : 0;
+
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const todayWritersCount = dailyWritersMap[todayStr] ? dailyWritersMap[todayStr].size : 0;
 
     let nasiyaCount = 0;
     let naqdCount = 0;
@@ -738,6 +764,9 @@ router.get('/instagram-stats', async (req, res) => {
       igLeads,
       igCpl,
       dailyActiveChats,
+      dailyIncomingWriters,
+      averageWritersPerDay,
+      todayWritersCount,
       paymentPreferences: {
         nasiya: nasiyaCount,
         naqd: naqdCount,
@@ -891,10 +920,16 @@ router.get('/unread-chats', protect, async (req, res) => {
   try {
     const [instagram, telegram] = await Promise.all([
       prisma.client.count({
-        where: { instagramUnreadCount: { gt: 0 } }
+        where: { 
+          instagramUnreadCount: { gt: 0 },
+          instagramId: { not: null }
+        }
       }),
       prisma.client.count({
-        where: { telegramUnreadCount: { gt: 0 } }
+        where: { 
+          telegramUnreadCount: { gt: 0 },
+          telegramId: { not: null }
+        }
       })
     ]);
     res.json({

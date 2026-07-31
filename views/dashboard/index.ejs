@@ -432,22 +432,43 @@
   <div class="card-body" style="padding: 24px;">
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px;">
       
-      <!-- 1. Suhbatlar oqimi (Chats volume) -->
-      <div style="display: flex; flex-direction: column; gap: 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 18px; box-shadow: var(--shadow-xs);">
-        <h4 style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin: 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
-          <i class="fas fa-chart-line" style="color: var(--brand); font-size: 13px;"></i> Suhbatlar oqimi
+      <!-- 1. Suhbatlar oqimi & Murojaatlar -->
+      <div style="display: flex; flex-direction: column; gap: 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 18px; box-shadow: var(--shadow-xs); grid-column: span 2;">
+        <h4 style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin: 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: space-between;">
+          <span style="display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-chart-line" style="color: var(--brand); font-size: 13px;"></i> Suhbatlar oqimi & Murojaatlar
+          </span>
+          <span style="font-size: 10px; color: var(--text-secondary); font-weight: 500; text-transform: none; display: flex; gap: 10px; align-items: center;">
+            <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 2px; background: var(--brand);"></span> Faol chatlar</span>
+            <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 2px; background: #E1306C;"></span> Murojaatlar (Yangi yozganlar)</span>
+          </span>
         </h4>
-        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 4px;">
-          <span id="igTotalMessages" style="font-size: 22px; font-weight: 800; color: var(--text-primary);">0 ta</span>
-          <span id="igActiveDayText" style="font-size: 12px; font-weight: 600; color: var(--brand);">Bugun faol: 0 ta</span>
-        </div>
-        <span id="igIncomingSub" style="font-size: 11px; color: var(--text-secondary); margin-top: -6px;">Kiruvchi xabarlar: 0 ta</span>
         
-        <!-- Daily volume visualization -->
-        <div id="igChatsVolumeContainer" style="display: flex; gap: 8px; align-items: flex-end; height: 80px; margin-top: 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px;">
-          <div style="color: var(--text-tertiary); font-size: 11px; text-align: center; width: 100%; padding-bottom: 10px;">Yuklanmoqda...</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 4px; border-bottom: 1px dashed var(--border); padding-bottom: 12px;">
+          <div>
+            <div style="font-size: 11px; color: var(--text-secondary); font-weight: 600;">Jami xabarlar / Bugun faol:</div>
+            <div style="display: flex; align-items: baseline; gap: 6px; margin-top: 2px;">
+              <span id="igTotalMessages" style="font-size: 20px; font-weight: 800; color: var(--text-primary);">0 ta</span>
+              <span id="igActiveDayText" style="font-size: 11.5px; font-weight: 700; color: var(--brand);">Bugun faol: 0 ta</span>
+            </div>
+            <div id="igIncomingSub" style="font-size: 10.5px; color: var(--text-tertiary); margin-top: 2px;">Kiruvchi: 0 ta</div>
+          </div>
+          
+          <div>
+            <div style="font-size: 11px; color: var(--text-secondary); font-weight: 600;">Bugun yozganlar / Kunlik o'rtacha:</div>
+            <div style="display: flex; align-items: baseline; gap: 6px; margin-top: 2px;">
+              <span id="igTodayWriters" style="font-size: 20px; font-weight: 800; color: var(--text-primary);">0 kishi</span>
+              <span id="igAvgWriters" style="font-size: 11.5px; font-weight: 700; color: #E1306C;">O'rtacha: 0 kishi</span>
+            </div>
+            <div style="font-size: 10.5px; color: var(--text-tertiary); margin-top: 2px;">Kun davomida yozgan yagona mijozlar</div>
+          </div>
         </div>
-        <div style="font-size: 10px; color: var(--text-tertiary); text-align: center; margin-top: 4px;">Oxirgi kunlardagi faollik ko'rsatkichi</div>
+
+        <!-- Daily volume visualization (Dual Bar Chart) -->
+        <div id="igChatsVolumeContainer" style="display: flex; gap: 12px; align-items: flex-end; height: 95px; margin-top: 8px; border-bottom: 1px solid var(--border); padding-bottom: 6px;">
+          <div style="color: var(--text-tertiary); font-size: 11px; text-align: center; width: 100%; padding-bottom: 15px;">Yuklanmoqda...</div>
+        </div>
+        <div style="font-size: 10px; color: var(--text-tertiary); text-align: center; margin-top: 4px;">Oxirgi kunlardagi faol chatlar (chapda, ko'k) va yeni murojaat qilganlar (o'ngda, pushti) solishtirmasi</div>
       </div>
 
       <!-- 2. To'lov afzalligi (Payment Preference) -->
@@ -529,7 +550,7 @@
         </div>
       </div>
 
-      <!-- 4. Odamlar nima deb yozishmoqda -->
+      <!-- 5. Odamlar nima deb yozishmoqda -->
       <div style="display: flex; flex-direction: column; gap: 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 18px; box-shadow: var(--shadow-xs);">
         <h4 style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin: 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
           <i class="fas fa-quote-left" style="color: #cc2366; font-size: 13px;"></i> Odamlar nima deb yozishmoqda?
@@ -1231,25 +1252,61 @@ async function loadDashboard() {
       : 0;
     if (igActiveDayEl) igActiveDayEl.textContent = 'Bugun faol: ' + latestActiveCount + ' ta';
 
-    // Suhbatlar oqimi mini-chart
+    // Update Kunlik Murojaatlar
+    const igTodayWritersEl = document.getElementById('igTodayWriters');
+    const igAvgWritersEl = document.getElementById('igAvgWriters');
+    if (igTodayWritersEl) igTodayWritersEl.textContent = (igStats.todayWritersCount || 0) + ' kishi';
+    if (igAvgWritersEl) igAvgWritersEl.textContent = "O'rtacha: " + (igStats.averageWritersPerDay || 0) + ' kishi';
+
+    // Suhbatlar oqimi va Murojaatlar dual mini-chart
     const chatsVolContainer = document.getElementById('igChatsVolumeContainer');
     if (chatsVolContainer) {
       const dailyChats = igStats.dailyActiveChats || [];
-      if (dailyChats.length === 0) {
+      const dailyWriters = igStats.dailyIncomingWriters || [];
+      
+      if (dailyChats.length === 0 && dailyWriters.length === 0) {
         chatsVolContainer.innerHTML = '<div style="color: var(--text-tertiary); font-size: 11.5px; text-align: center; width: 100%; padding-bottom: 20px;">Ma\'lumot yo\'q</div>';
       } else {
-        const maxCount = Math.max(...dailyChats.map(d => d.count), 1);
-        chatsVolContainer.innerHTML = dailyChats.slice(-7).map(d => {
-          const pct = Math.round((d.count / maxCount) * 100);
-          const date = new Date(d.date);
-          const label = date.getDate().toString().padStart(2, '0') + '/' + (date.getMonth()+1).toString().padStart(2, '0');
+        // Find all unique dates across both arrays to align columns
+        const allDates = Array.from(new Set([
+          ...dailyChats.map(d => d.date),
+          ...dailyWriters.map(d => d.date)
+        ])).sort().slice(-7); // Last 7 days
+        
+        const maxChats = Math.max(...dailyChats.map(d => d.count), 1);
+        const maxWriters = Math.max(...dailyWriters.map(d => d.count), 1);
+        const overallMax = Math.max(maxChats, maxWriters, 1);
+        
+        chatsVolContainer.innerHTML = allDates.map(dateStr => {
+          const chatItem = dailyChats.find(d => d.date === dateStr);
+          const writerItem = dailyWriters.find(d => d.date === dateStr);
+          
+          const chatCount = chatItem ? chatItem.count : 0;
+          const writerCount = writerItem ? writerItem.count : 0;
+          
+          const pctChat = Math.round((chatCount / overallMax) * 100);
+          const pctWriter = Math.round((writerCount / overallMax) * 100);
+          
+          const dateObj = new Date(dateStr);
+          const label = dateObj.getDate().toString().padStart(2, '0') + '/' + (dateObj.getMonth()+1).toString().padStart(2, '0');
+          
           return `
             <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0;">
-              <div style="font-size: 9px; font-weight: 700; color: var(--text-primary);">${d.count}</div>
-              <div style="width: 100%; height: 50px; display: flex; align-items: flex-end; background: var(--surface-elevated); border-radius: 3px;">
-                <div style="width: 100%; height: ${Math.max(pct, 10)}%; background: linear-gradient(180deg, var(--brand) 0%, #4F46E5 100%); border-radius: 3px;" title="${d.date}: ${d.count} kishi"></div>
+              <!-- Values on top -->
+              <div style="display: flex; gap: 6px; font-size: 8.5px; font-weight: 700; color: var(--text-primary);">
+                <span style="color: var(--brand);">${chatCount}</span>
+                <span style="color: #E1306C;">${writerCount}</span>
               </div>
-              <div style="font-size: 8px; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">${label}</div>
+              
+              <!-- Bars container side-by-side -->
+              <div style="width: 100%; height: 50px; display: flex; align-items: flex-end; justify-content: center; gap: 3px; background: var(--surface-elevated); border-radius: 4px; padding: 2px;">
+                <!-- Active chats (Blue) -->
+                <div style="flex: 1; height: ${Math.max(pctChat, 10)}%; background: linear-gradient(180deg, var(--brand) 0%, #4F46E5 100%); border-radius: 2px;" title="${dateStr}: ${chatCount} faol chat"></div>
+                <!-- Unique writers (Pink) -->
+                <div style="flex: 1; height: ${Math.max(pctWriter, 10)}%; background: linear-gradient(180deg, #E1306C 0%, #C13584 100%); border-radius: 2px;" title="${dateStr}: ${writerCount} kishi yozgan"></div>
+              </div>
+              
+              <div style="font-size: 8.5px; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">${label}</div>
             </div>
           `;
         }).join('');
