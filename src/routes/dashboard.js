@@ -561,10 +561,6 @@ router.get('/instagram-stats', async (req, res) => {
             }
           }
         }
-      }),
-      prisma.client.findMany({
-        where: clientWhere,
-        select: { createdAt: true }
       })
     ]);
 
@@ -574,17 +570,8 @@ router.get('/instagram-stats', async (req, res) => {
 
     // Advanced Text & Deal Analytics
     const dailyChatsMap = {};
-    const dailyNewWritersMap = {};
+    const dailyWritersMap = {};
     const clientMessages = {};
-
-    newClients.forEach(c => {
-      const date = new Date(c.createdAt);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const dateStr = `${year}-${month}-${day}`;
-      dailyNewWritersMap[dateStr] = (dailyNewWritersMap[dateStr] || 0) + 1;
-    });
 
     messages.forEach(msg => {
       if (!msg.clientId) return;
@@ -600,8 +587,12 @@ router.get('/instagram-stats', async (req, res) => {
       }
       dailyChatsMap[dateStr].add(msg.clientId);
 
-      if (!dailyNewWritersMap[dateStr]) {
-        dailyNewWritersMap[dateStr] = 0;
+      // Yozgan yagona mijozlar (incoming messages only)
+      if (!msg.isOutgoing) {
+        if (!dailyWritersMap[dateStr]) {
+          dailyWritersMap[dateStr] = new Set();
+        }
+        dailyWritersMap[dateStr].add(msg.clientId);
       }
 
       if (!msg.isOutgoing && msg.text) {
@@ -617,9 +608,16 @@ router.get('/instagram-stats', async (req, res) => {
       count: clientsSet.size
     })).sort((a, b) => a.date.localeCompare(b.date));
 
-    const dailyIncomingWriters = Object.entries(dailyNewWritersMap).map(([date, count]) => ({
+    // Ensure all active chat dates exist in dailyWritersMap for alignment
+    Object.keys(dailyChatsMap).forEach(dateStr => {
+      if (!dailyWritersMap[dateStr]) {
+        dailyWritersMap[dateStr] = new Set();
+      }
+    });
+
+    const dailyIncomingWriters = Object.entries(dailyWritersMap).map(([date, clientsSet]) => ({
       date,
-      count: count
+      count: clientsSet.size
     })).sort((a, b) => a.date.localeCompare(b.date));
 
     const totalDays = dailyIncomingWriters.length;
@@ -628,7 +626,7 @@ router.get('/instagram-stats', async (req, res) => {
 
     const today = new Date();
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    const todayWritersCount = dailyNewWritersMap[todayStr] || 0;
+    const todayWritersCount = dailyWritersMap[todayStr] ? dailyWritersMap[todayStr].size : 0;
 
     let nasiyaCount = 0;
     let naqdCount = 0;
