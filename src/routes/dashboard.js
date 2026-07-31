@@ -107,6 +107,7 @@ router.get('/kpis', async (req, res, next) => {
     const dlvDeals = dlvPipelineId ? deals.filter(d => d.stage?.pipelineId === dlvPipelineId) : [];
 
     const totalOrders = dlvDeals.length;
+    const totalLeads = dlvPipelineId ? deals.filter(d => d.stage?.pipelineId !== dlvPipelineId).length : deals.length;
     const totalRevenue = deals.reduce((sum, d) => sum + getEffectivePaid(d), 0);
     const totalDebt = deals.reduce((sum, d) => sum + Math.max((d.amount || 0) - (d.paidAmount || 0), 0), 0);
     
@@ -302,6 +303,7 @@ router.get('/kpis', async (req, res, next) => {
     };
 
     res.json({
+      totalLeads,
       totalOrders,
       totalRevenue,
       totalDebt,
@@ -330,6 +332,7 @@ router.get('/kpis', async (req, res, next) => {
   } catch (error) {
     console.error('KPI Error:', error);
     return res.status(200).json({
+      totalLeads: 0,
       totalOrders: 0,
       totalRevenue: 0,
       totalDebt: 0,
