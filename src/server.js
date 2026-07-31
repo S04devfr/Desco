@@ -52,7 +52,7 @@ let sessionConfig = {
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: 'auto',
     httpOnly: true,
     sameSite: 'lax',
     maxAge: 1000 * 60 * 60 * 24 * 30 // 30 kun

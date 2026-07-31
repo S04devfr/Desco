@@ -44,7 +44,7 @@ router.post('/ping', async (req, res) => {
       const dur = minDiff(session.sessionStart, now)
       await prisma.$executeRaw`
         UPDATE "UserActivityLog"
-        SET "lastPing" = ${now}, "durationMin" = ${dur}, "updatedAt" = ${now}
+        SET "lastPing" = CAST(${now} AS timestamp), "durationMin" = ${dur}, "updatedAt" = CAST(${now} AS timestamp)
         WHERE "id" = ${session.id}
       `
     } else {
@@ -53,7 +53,7 @@ router.post('/ping', async (req, res) => {
         const dur = minDiff(session.sessionStart, session.lastPing)
         await prisma.$executeRaw`
           UPDATE "UserActivityLog"
-          SET "isActive" = 0, "durationMin" = ${dur}, "updatedAt" = ${now}
+          SET "isActive" = 0, "durationMin" = ${dur}, "updatedAt" = CAST(${now} AS timestamp)
           WHERE "id" = ${session.id}
         `
       }
@@ -61,7 +61,7 @@ router.post('/ping', async (req, res) => {
       await prisma.$executeRaw`
         INSERT INTO "UserActivityLog"
         ("userId", "date", "sessionStart", "lastPing", "durationMin", "isActive", "createdAt", "updatedAt")
-        VALUES (${userId}, ${today}, ${now}, ${now}, 0, 1, ${now}, ${now})
+        VALUES (${userId}, ${today}, CAST(${now} AS timestamp), CAST(${now} AS timestamp), 0, 1, CAST(${now} AS timestamp), CAST(${now} AS timestamp))
       `
     }
 
@@ -81,7 +81,7 @@ router.get('/online', async (req, res) => {
       SELECT DISTINCT u.id, u.fullName, u.email, u.role
       FROM "UserActivityLog" a
       JOIN "User" u ON u.id = a."userId"
-      WHERE a."lastPing" >= ${cutoff} AND a."isActive" = 1
+      WHERE a."lastPing" >= CAST(${cutoff} AS timestamp) AND a."isActive" = 1
     `
     res.json(rows)
   } catch (err) {
@@ -120,7 +120,7 @@ router.get('/stats', requireRole('admin'), async (req, res) => {
     const onlineRows = await prisma.$queryRaw`
       SELECT DISTINCT "userId"
       FROM "UserActivityLog"
-      WHERE "lastPing" >= ${cutoff5min} AND "isActive" = 1
+      WHERE "lastPing" >= CAST(${cutoff5min} AS timestamp) AND "isActive" = 1
     `
 
     const todayMap  = {}
