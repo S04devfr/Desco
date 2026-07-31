@@ -677,19 +677,22 @@
   border-collapse: collapse !important;
   width: 100% !important;
   border: 1px solid var(--border) !important;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-text);
 }
 .excel-grid-tbl th {
-  background: var(--bg-tertiary) !important;
-  color: var(--text-secondary) !important;
+  background: #F1F5F9 !important;
+  color: #334155 !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
   font-size: 11px !important;
   letter-spacing: 0.5px !important;
   border: 1px solid var(--border) !important;
   padding: 8px 12px !important;
-  text-align: center !important;
   white-space: nowrap;
+}
+[data-theme="dark"] .excel-grid-tbl th {
+  background: #1E293B !important;
+  color: #E2E8F0 !important;
 }
 .excel-grid-tbl td {
   border: 1px solid var(--border) !important;
@@ -746,10 +749,10 @@
           <table class="deals-tbl excel-grid-tbl" style="width:100%;">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Mahsulot Nomi</th>
-                <th>Narxi</th>
-                <th>Izoh</th>
+                <th style="text-align:center; width:60px;">ID</th>
+                <th style="text-align:left;">Mahsulot Nomi</th>
+                <th style="text-align:right; width:120px;">Narxi</th>
+                <th style="text-align:left;">Izoh</th>
                 <th style="width:60px;"></th>
               </tr>
             </thead>
@@ -809,14 +812,14 @@
           <table class="deals-tbl excel-grid-tbl" style="width:100%">
             <thead>
               <tr style="background:var(--bg-tertiary);">
-                <th>ID</th>
-                <th>Mijoz Ismi</th>
-                <th>Telefon</th>
-                <th>Viloyat</th>
-                <th style="width:120px;">Berilgan Sana</th>
-                <th style="width:180px">Klient Qarz (Manual)</th>
-                <th>Izoh</th>
-                <th style="width:150px;">Qo'shgan Menejer</th>
+                <th style="text-align:center;">ID</th>
+                <th style="text-align:left;">Mijoz Ismi</th>
+                <th style="text-align:center;">Telefon</th>
+                <th style="text-align:center;">Viloyat</th>
+                <th style="width:120px; text-align:center;">Berilgan Sana</th>
+                <th style="width:180px; text-align:right;">Klient Qarz (Manual)</th>
+                <th style="text-align:left;">Izoh</th>
+                <th style="width:150px; text-align:center;">Qo'shgan Menejer</th>
                 <th style="width:80px"></th>
               </tr>
             </thead>
