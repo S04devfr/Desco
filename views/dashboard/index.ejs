@@ -1037,6 +1037,7 @@ async function loadDashboard() {
       dashFetch('/api/activity/stats').catch(() => ({ managers: [], daily: [] }))
     ]);
 
+    window.pipelineStats = pipelineStats;
     const safeKpis = kpis || {};
     if (safeKpis.error) {
       document.getElementById('debugErrorContainer').style.display = 'block';
@@ -2964,22 +2965,29 @@ function renderLogisticsTracker() {
   const countBadge = document.getElementById('logisticsActiveCount');
   if (!tbody) return;
 
-  const logisticsDeals = allDealsData.filter(d => d.pipelineId === 3 || d.stage?.pipelineId === 3);
+  const logisticsStages = window.pipelineStats || [];
+  const dlvPipelineId = logisticsStages.length ? logisticsStages[0].pipelineId : null;
+  const lastStage = logisticsStages.length ? logisticsStages[logisticsStages.length - 1] : null;
+  const lastStageId = lastStage ? lastStage.id : -1;
+
+  const logisticsDeals = dlvPipelineId 
+    ? allDealsData.filter(d => d.pipelineId === dlvPipelineId || d.stage?.pipelineId === dlvPipelineId)
+    : [];
 
   logisticsDeals.sort((a, b) => {
-    const aClosed = a.stageId === 29;
-    const bClosed = b.stageId === 29;
+    const aClosed = a.stageId === lastStageId;
+    const bClosed = b.stageId === lastStageId;
     if (aClosed !== bClosed) return aClosed ? 1 : -1;
     return new Date(a.createdAt) - new Date(b.createdAt);
   });
 
-  const activeCount = logisticsDeals.filter(d => d.stageId !== 29).length;
+  const activeCount = logisticsDeals.filter(d => d.stageId !== lastStageId).length;
   if (countBadge) {
     countBadge.textContent = activeCount + ' ta faol dostavka';
   }
 
   if (logisticsDeals.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-tertiary);"><i class="fas fa-shipping-fast" style="font-size:24px; opacity:0.3; display:block; margin-bottom:8px;"></i>Logistika voronkasida hech qanday buyurtma mavjud emas. Sdelkalarni "zakazn holati" voronkasiga o\'tkazing.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-tertiary);"><i class="fas fa-shipping-fast" style="font-size:24px; opacity:0.3; display:block; margin-bottom:8px;"></i>Logistika voronkasida hech qanday buyurtma mavjud emas. Sdelkalarni "zakazlar holati" voronkasiga o\'tkazing.</td></tr>';
     return;
   }
 
@@ -2989,7 +2997,7 @@ function renderLogisticsTracker() {
     const formattedDate = d.createdAt ? new Date(d.createdAt).toLocaleDateString('uz-UZ') : '—';
     
     let agingBadgeHtml = '';
-    if (d.createdAt && d.stageId !== 29) {
+    if (d.createdAt && d.stageId !== lastStageId) {
       const createdTime = new Date(d.createdAt).getTime();
       const diffDays = Math.floor((now.getTime() - createdTime) / (1000 * 60 * 60 * 24));
       if (diffDays >= 3) {
@@ -3006,32 +3014,23 @@ function renderLogisticsTracker() {
     const managerName = d.manager?.fullName || '—';
     const unpaidDebt = Math.max(0, (d.amount || 0) - (d.paidAmount || 0));
 
-    const logisticsStages = [
-      { id: 24, name: 'Qabul qilindi' },
-      { id: 25, name: 'Tayyorlanmoqda' },
-      { id: 26, name: 'Yo\'lga chiqdi' },
-      { id: 27, name: 'Yetib bordi' },
-      { id: 28, name: 'To\'lov kutilmoqda' },
-      { id: 29, name: 'To\'lov olindi' }
-    ];
-
     const optionsHtml = logisticsStages.map(s => {
       const selected = d.stageId === s.id ? 'selected' : '';
       return `<option value="${s.id}" ${selected}>${s.name}</option>`;
     }).join('');
 
-    const selectStyle = d.stageId === 29 
+    const selectStyle = d.stageId === lastStageId 
       ? 'background:rgba(52, 199, 89, 0.12); color:#34C759; font-weight:700; border-color:transparent;'
       : 'background:var(--bg-secondary); color:var(--text-primary);';
 
     return `
-      <tr style="border-bottom:1px solid var(--border); ${d.stageId === 29 ? 'opacity:0.75; background:rgba(52, 199, 89, 0.01);' : ''}">
+      <tr style="border-bottom:1px solid var(--border); ${d.stageId === lastStageId ? 'opacity:0.75; background:rgba(52, 199, 89, 0.01);' : ''}">
         <td style="padding:10px 12.5px; font-size:12.5px; color:var(--text-tertiary);">#${d.id}</td>
         <td style="padding:10px 12.5px;">
           <div style="font-weight:700; font-size:13px; color:var(--text-primary);">${escHtml(clientName)}</div>
           <div style="font-size:10.5px; color:var(--text-tertiary);"><i class="fas fa-map-marker-alt"></i> ${escHtml(clientCity)}</div>
         </td>
-        <td style="padding:10px 12.5px; font-size:12.5px; font-weight:600; color:var(--text-primary);">${escHtml(d.productName)}</td>
+        <td style="padding:10px 12.5px; font-size:12.5px; font-weight:600; color:var(--text-primary);">${escHtml(d.productName || d.name || '—')}</td>
         <td style="padding:10px 12.5px; font-size:12px; color:var(--text-secondary);">
           ${formattedDate}
           ${agingBadgeHtml}

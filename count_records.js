@@ -3,31 +3,14 @@ const prisma = new PrismaClient();
 
 async function countAll() {
   try {
-    const models = [
-      'user',
-      'client',
-      'pipeline',
-      'pipelineStage',
-      'deal',
-      'activityLog',
-      'expense',
-      'task',
-      'companySettings',
-      'instagramAccount',
-      'instagramMessage',
-      'installment',
-      'productCatalog',
-      'shopir',
-      'ishonchFilial'
-    ];
-
-    console.log('--- Database Table Counts ---');
-    for (const model of models) {
-      if (prisma[model]) {
-        const count = await prisma[model].count();
-        console.log(`${model}: ${count}`);
-      } else {
-        console.log(`${model}: Model not found on Prisma Client`);
+    const pipelines = await prisma.pipeline.findMany({
+      include: { stages: true }
+    });
+    console.log('--- Pipelines in Database ---');
+    for (const p of pipelines) {
+      console.log(`Pipeline: "${p.name}" (id=${p.id})`);
+      for (const s of p.stages) {
+        console.log(`  - Stage: "${s.name}" (id=${s.id}, order=${s.order})`);
       }
     }
   } catch (error) {

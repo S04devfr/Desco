@@ -158,9 +158,9 @@ async function runMigrations(prisma) {
     ]
     const DLV_NAMES = DLV_STAGES.map(s => s.name)
 
-    // "zakaz" so'zini o'z ichiga olgan har qanday nomli pipeline
+    // "zakaz" so'zini o'z ichiga olgan har qanday nomli pipeline (case-insensitive)
     let dlvPipeline = await prisma.pipeline.findFirst({
-      where: { name: { contains: 'zakaz' } },
+      where: { name: { contains: 'zakaz', mode: 'insensitive' } },
       include: { stages: { orderBy: { order: 'asc' } } }
     })
 

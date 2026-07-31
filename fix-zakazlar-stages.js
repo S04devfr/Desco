@@ -17,7 +17,7 @@ const DLV_STAGES = [
 
 async function main() {
   const pipeline = await prisma.pipeline.findFirst({
-    where: { name: { contains: 'zakaz' } },
+    where: { name: { contains: 'zakaz', mode: 'insensitive' } },
     include: { stages: true }
   })
 

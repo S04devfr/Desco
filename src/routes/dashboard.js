@@ -99,7 +99,14 @@ router.get('/kpis', async (req, res, next) => {
              stageName.includes('lost');
     };
 
-    const totalOrders = deals.length;
+    const dlvPipeline = await prisma.pipeline.findFirst({
+      where: { name: { contains: 'zakaz', mode: 'insensitive' } },
+      select: { id: true }
+    });
+    const dlvPipelineId = dlvPipeline ? dlvPipeline.id : null;
+    const dlvDeals = dlvPipelineId ? deals.filter(d => d.stage?.pipelineId === dlvPipelineId) : [];
+
+    const totalOrders = dlvDeals.length;
     const totalRevenue = deals.reduce((sum, d) => sum + getEffectivePaid(d), 0);
     const totalDebt = deals.reduce((sum, d) => sum + Math.max((d.amount || 0) - (d.paidAmount || 0), 0), 0);
     
@@ -166,7 +173,7 @@ router.get('/kpis', async (req, res, next) => {
     const marketingRoi = totalMarketingExpenses > 0 ? ((netProfit / totalMarketingExpenses) * 100) : 0;
 
     // ── 2. Cancellation (Otkaz) Metrics ──
-    const canceledDeals = deals.filter(isDealCanceled);
+    const canceledDeals = dlvDeals.filter(isDealCanceled);
     const totalCanceledCount = canceledDeals.length;
     const totalCanceledValue = canceledDeals.reduce((sum, d) => sum + (d.amount || 0), 0);
     const cancellationRate = totalOrders > 0 ? ((totalCanceledCount / totalOrders) * 100) : 0;
