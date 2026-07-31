@@ -817,7 +817,11 @@ router.get('/pipeline-stats', async (req, res) => {
   try {
     const where = buildWhere(req.query.filter, req);
     if (req.user?.role !== 'admin') where.managerId = req.userId;
+    const pipeline = await prisma.pipeline.findFirst({
+      where: { name: { contains: 'zakaz', mode: 'insensitive' } }
+    });
     const stages = await prisma.pipelineStage.findMany({
+      where: { pipelineId: pipeline ? pipeline.id : -1 },
       include: { _count: { select: { deals: { where } } } },
       orderBy: { order: 'asc' }
     });

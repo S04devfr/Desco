@@ -1113,13 +1113,12 @@ async function loadDashboard() {
         </div>
         <div style="display:flex;flex-direction:column;gap:5px;">
           ${(function() {
-            var stgs = Array.isArray(pipelineStats) ? pipelineStats.slice().sort(function(a,b){return b.count-a.count;}).slice(0,4) : [];
+            var stgs = Array.isArray(pipelineStats) ? pipelineStats : [];
             if (!stgs.length) return '<div style="font-size:11px;color:var(--text-muted);">Bosqich yo\'q</div>';
             var total = stgs.reduce(function(s,st){return s+st.count;},0) || 1;
-            var colors = ['#6366F1','#34C759','#FF9500','#FF3B30'];
             return stgs.map(function(st,i) {
               var pct = Math.round((st.count/total)*100);
-              var c = colors[i] || '#888';
+              var c = st.color || '#888';
               return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">'
                 + '<div style="width:7px;height:7px;border-radius:50%;background:' + c + ';flex-shrink:0;"></div>'
                 + '<div style="flex:1;font-size:10.5px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escHtml(st.name) + '</div>'
