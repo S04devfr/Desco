@@ -1099,6 +1099,9 @@ function renderKanban() {
 }
 
 function dcardHtml(d) {
+  const activePipelineObj = _pipelines.find(p => p.id === _activePid);
+  const isZakazlarHolati = activePipelineObj && activePipelineObj.name.toLowerCase().includes('zakaz');
+
   const init = ((d.manager?.fullName || d.manager?.email || '?').charAt(0)).toUpperCase();
   const statusColors = { new:'#007AFF', negotiation:'#FF9500', proposal:'#5856D6', won:'#34C759', lost:'#FF3B30' };
   const statusLabels = { new:'Yangi', negotiation:'Muzokaralar', proposal:'Taklif', won:'Yutilgan', lost:"Yo'qotilgan" };
@@ -1142,6 +1145,61 @@ function dcardHtml(d) {
     } catch (e) {
       console.error('Date parsing failed:', e);
     }
+  }
+
+  if (isZakazlarHolati) {
+    return `
+      <div class="dcard" draggable="true" data-id="${d.id}"
+        ondragstart="onDragStart(event,${d.id})" ondragend="onDragEnd(event)"
+        onclick="openDetail(${d.id})" style="position:relative; padding:12px 14px; box-shadow:0 2px 8px rgba(0,0,0,0.03); border:1px solid var(--border); border-radius:10px; transition:all 0.2s; background:var(--bg-secondary); cursor:pointer; margin-bottom: 10px;">
+        
+        <!-- Tahrirlash tugmasi -->
+        <div onclick="event.stopPropagation(); openDealModal(null, ${d.id})" style="position:absolute; top:10px; right:12px; color:var(--text-tertiary); cursor:pointer; padding: 4px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='var(--bg-secondary)'; this.style.color='var(--accent)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-tertiary)'">
+          <i class="fas fa-edit"></i>
+        </div>
+
+        <div class="dcard-header" style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; padding-right:24px; width:100%;">
+          <span style="font-size:11px; font-weight:700; color:var(--text-secondary); background:var(--bg-tertiary); padding:2px 6px; border-radius:4px; border:1px solid var(--border)">#${d.id}</span>
+        </div>
+        
+        <!-- Labeled fields for easy operator reading -->
+        <div style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px;">
+          <div style="font-size:12.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
+            <span style="font-weight:600; color:var(--text-tertiary); width: 65px; flex-shrink: 0;">Mijoz:</span>
+            <span style="font-weight:600; color:var(--text-primary);">${clientName}</span>
+          </div>
+          <div style="font-size:12.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
+            <span style="font-weight:600; color:var(--text-tertiary); width: 65px; flex-shrink: 0;">Telefon:</span>
+            <span style="font-weight:700; color:var(--accent);">${clientPhone}</span>
+          </div>
+          <div style="font-size:12.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
+            <span style="font-weight:600; color:var(--text-tertiary); width: 65px; flex-shrink: 0;">Manzil:</span>
+            <span style="font-weight:600; color:var(--text-primary);">${clientCity}</span>
+          </div>
+          <div style="font-size:12.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
+            <span style="font-weight:600; color:var(--text-tertiary); width: 65px; flex-shrink: 0;">Mahsulot:</span>
+            <span style="font-weight:700; color:var(--accent);">${productName}</span>
+          </div>
+          <div style="font-size:12.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
+            <span style="font-weight:600; color:var(--text-tertiary); width: 65px; flex-shrink: 0;">Vaqti:</span>
+            <span style="font-weight:600; color:var(--text-primary);">${formattedTime}</span>
+          </div>
+
+          <!-- Dostavka narxi input -->
+          <div style="font-size:12.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px; margin-top: 4px; border-top: 1px dashed var(--border); padding-top: 6px;">
+            <span style="font-weight:600; color:var(--text-tertiary); width: 65px; flex-shrink: 0;">Dostavka:</span>
+            <input type="number" value="${d.deliveryPrice || 0}" onclick="event.stopPropagation();" onchange="updateDeliveryPrice(${d.id}, this.value)" style="width: 110px; padding: 2px 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 11.5px; font-weight: 700; color: var(--text-primary); background: var(--surface-base);" placeholder="Narxi...">
+            <span style="font-size:10px; color:var(--text-muted);">so'm</span>
+          </div>
+
+          <!-- Izoh / Muammo tahrirlash -->
+          <div style="font-size:12.5px; color:var(--text-secondary); display:flex; flex-direction:column; gap:4px; margin-top: 4px;">
+            <span style="font-weight:600; color:var(--text-tertiary);">Izoh / Muammo:</span>
+            <textarea onclick="event.stopPropagation();" onchange="updateDealNotes(${d.id}, this.value)" style="width: 100%; min-height: 40px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 11.5px; color: var(--text-primary); background: var(--surface-base); resize: vertical;" placeholder="Izoh yoki muammo tavsifi...">${_esc(d.notes || '')}</textarea>
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   return `
@@ -2405,6 +2463,33 @@ async function deleteNdInstallmentPlan() {
     else if (typeof fetchDeals === 'function') fetchDeals();
   } catch(e) {
     _toast('O\'chirishda xatolik: ' + e.message, 'error');
+  }
+}
+async function updateDeliveryPrice(dealId, price) {
+  try {
+    const res = await fetch(`/api/deals/${dealId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deliveryPrice: Number(price) || 0 })
+    });
+    if (!res.ok) throw new Error('Dostavka narxini saqlashda xatolik');
+    _toast('Dostavka narxi saqlandi', 'success');
+  } catch (err) {
+    _toast(err.message, 'error');
+  }
+}
+
+async function updateDealNotes(dealId, notes) {
+  try {
+    const res = await fetch(`/api/deals/${dealId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ notes: notes })
+    });
+    if (!res.ok) throw new Error('Izohni saqlashda xatolik');
+    _toast('Izoh saqlandi', 'success');
+  } catch (err) {
+    _toast(err.message, 'error');
   }
 }
   </script>

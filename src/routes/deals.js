@@ -32,11 +32,37 @@ router.get('/', async (req, res, next) => {
     // pipelineId filter: find stageIds belonging to that pipeline
     if (pipelineId) {
       try {
+        const pipe = await prisma.pipeline.findUnique({
+          where: { id: Number(pipelineId) },
+          select: { name: true }
+        });
         const stageRows = await prisma.pipelineStage.findMany({
           where: { pipelineId: Number(pipelineId) },
-          select: { id: true }
-        })
-        where.stageId = { in: stageRows.map(r => r.id) }
+          select: { id: true, name: true }
+        });
+        const stageIds = stageRows.map(r => r.id);
+        
+        if (pipe && pipe.name.toLowerCase().includes('zakaz')) {
+          const yetibBordiStage = stageRows.find(r => r.name.toLowerCase().includes('bordi'));
+          if (yetibBordiStage) {
+            const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+            if (!where.AND) where.AND = [];
+            where.AND.push({ stageId: { in: stageIds } });
+            where.AND.push({
+              OR: [
+                { stageId: { not: yetibBordiStage.id } },
+                {
+                  stageId: yetibBordiStage.id,
+                  updatedAt: { gte: oneDayAgo }
+                }
+              ]
+            });
+          } else {
+            where.stageId = { in: stageIds };
+          }
+        } else {
+          where.stageId = { in: stageIds };
+        }
       } catch(e) { /* ignore, show all */ }
     }
 
@@ -69,13 +95,16 @@ router.get('/', async (req, res, next) => {
       }
 
       if (where.OR) {
-        where.AND = [
-          { OR: where.OR },
-          { OR: searchConditions }
-        ];
+        if (!where.AND) where.AND = [];
+        where.AND.push({ OR: where.OR });
+        where.AND.push({ OR: searchConditions });
         delete where.OR;
       } else {
-        where.OR = searchConditions;
+        if (where.AND) {
+          where.AND.push({ OR: searchConditions });
+        } else {
+          where.OR = searchConditions;
+        }
       }
     }
 
@@ -295,7 +324,7 @@ router.post('/:id/claim', requireRole('admin', 'manager'), async (req, res, next
 router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
     const {
-      productName, amount, paidAmount, status, notes, clientId, deadline, managerId, stageId, costPrice,
+      productName, amount, paidAmount, status, notes, clientId, deadline, managerId, stageId, costPrice, deliveryPrice,
       contactName, contactPhone, city, createdAt, warehouse
     } = req.body
 
@@ -343,6 +372,7 @@ router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => 
     if (amount !== undefined) data.amount = Number(amount)
     if (paidAmount !== undefined) data.paidAmount = Number(paidAmount)
     if (costPrice !== undefined) data.costPrice = Number(costPrice) || 0
+    if (deliveryPrice !== undefined) data.deliveryPrice = Number(deliveryPrice) || 0
     if (status !== undefined) data.status = status
     if (notes !== undefined) data.notes = notes
     if (resolvedClientId !== undefined) data.clientId = resolvedClientId

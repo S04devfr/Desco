@@ -8,12 +8,11 @@ require('dotenv').config()
 const prisma = new PrismaClient()
 
 const DLV_STAGES = [
-  { name: 'Qabul qilindi',     color: '#1565C0', order: 1 },
-  { name: 'Tayyorlanmoqda',    color: '#6A1B9A', order: 2 },
-  { name: "Yo'lga chiqdi",     color: '#E65100', order: 3 },
-  { name: 'Yetib bordi',       color: '#2E7D32', order: 4 },
-  { name: "To'lov kutilmoqda", color: '#C62828', order: 5 },
-  { name: "To'lov olindi",     color: '#00796B', order: 6 },
+  { name: 'Yangi',          color: '#1565C0', order: 1 },
+  { name: 'Taksi kelyapti',  color: '#6A1B9A', order: 2 },
+  { name: 'Kutilyapti',     color: '#E65100', order: 3 },
+  { name: 'Yolda',          color: '#2E7D32', order: 4 },
+  { name: 'Yetib bordi',    color: '#00796B', order: 5 },
 ]
 
 async function main() {

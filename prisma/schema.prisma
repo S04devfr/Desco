@@ -123,6 +123,7 @@ model Deal {
   deliveryLog  DeliveryLog?
   warehouse        String?
   stockDecremented Boolean   @default(false)
+  deliveryPrice    Float     @default(0)
 
   @@index([stageId])
   @@index([managerId])

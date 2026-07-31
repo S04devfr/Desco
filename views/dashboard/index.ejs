@@ -1095,8 +1095,15 @@ async function loadDashboard() {
       `;
     }
 
+    var dlvStatObj = Array.isArray(pipelineStats) ? pipelineStats.find(function(st){
+      var n = (st.name || '').toLowerCase();
+      return n.includes('taksi') || n.includes('yolda') || n.includes('yetib') || n.includes('kutilyapti');
+    }) : null;
+    var dlvPipelineId = dlvStatObj ? dlvStatObj.pipelineId : '';
+    var redirectUrl = dlvPipelineId ? ('/deals?pipelineId=' + dlvPipelineId) : '/deals';
+
     row1Html += `
-      <div class="stat-card clickable" onclick="window.location.href='/deals'" style="padding:14px 16px;">
+      <div class="stat-card clickable" onclick="window.location.href='${redirectUrl}'" style="padding:14px 16px;">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
           <div class="stat-icon blue" style="margin:0;flex-shrink:0;"><i class="fas fa-layer-group"></i></div>
           <div>
