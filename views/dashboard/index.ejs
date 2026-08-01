@@ -445,12 +445,12 @@
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 4px; border-bottom: 1px dashed var(--border); padding-bottom: 12px;">
           <div>
-            <div style="font-size: 11px; color: var(--text-secondary); font-weight: 600;">Jami xabarlar / Bugun faol:</div>
+            <div style="font-size: 11px; color: var(--text-secondary); font-weight: 600;">Jami suhbatlar / Bugun faol:</div>
             <div style="display: flex; align-items: baseline; gap: 6px; margin-top: 2px;">
-              <span id="igTotalMessages" style="font-size: 20px; font-weight: 800; color: var(--text-primary);">0 ta</span>
+              <span id="igTotalChats" style="font-size: 20px; font-weight: 800; color: var(--text-primary);">0 kishi</span>
               <span id="igActiveDayText" style="font-size: 11.5px; font-weight: 700; color: var(--brand);">Bugun faol: 0 ta</span>
             </div>
-            <div id="igIncomingSub" style="font-size: 10.5px; color: var(--text-tertiary); margin-top: 2px;">Kiruvchi xabarlar: 0 ta</div>
+            <div id="igIncomingSub" style="font-size: 10.5px; color: var(--text-tertiary); margin-top: 2px;">Jami xabarlar: 0 ta (Kiruvchi: 0 ta)</div>
           </div>
           
           <div>
@@ -1247,14 +1247,14 @@ async function loadDashboard() {
     }).catch(() => {});
 
     // ── Update Instagram Direct Analytics widget ──
-    const igTotalMsgEl = document.getElementById('igTotalMessages');
+    const igTotalChatsEl = document.getElementById('igTotalChats');
     const igIncomingSubEl = document.getElementById('igIncomingSub');
-    const igTotalClientsEl = document.getElementById('igTotalClients');
     const igActiveDayEl = document.getElementById('igActiveDayText');
 
-    if (igTotalMsgEl) igTotalMsgEl.textContent = (igStats.totalMessages || 0) + ' ta';
-    if (igIncomingSubEl) igIncomingSubEl.textContent = 'Kiruvchi xabarlar: ' + (igStats.incomingMessages || 0) + ' ta';
-    if (igTotalClientsEl) igTotalClientsEl.textContent = (igStats.linkedClients || 0) + ' kishi';
+    if (igTotalChatsEl) igTotalChatsEl.textContent = (igStats.linkedClients || 0) + ' kishi';
+    if (igIncomingSubEl) {
+      igIncomingSubEl.textContent = 'Jami xabarlar: ' + (igStats.totalMessages || 0) + ' ta (Kiruvchi: ' + (igStats.incomingMessages || 0) + ' ta)';
+    }
 
     const latestActiveCount = igStats.dailyActiveChats && igStats.dailyActiveChats.length > 0 
       ? igStats.dailyActiveChats[igStats.dailyActiveChats.length - 1].count 

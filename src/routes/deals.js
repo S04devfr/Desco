@@ -320,6 +320,169 @@ router.post('/:id/claim', requireRole('admin', 'manager'), async (req, res, next
   }
 })
 
+// Bulk update deal stage and/or status
+router.patch('/bulk/stage', requireRole('admin', 'manager'), async (req, res, next) => {
+  try {
+    const { ids, stageId, status } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "Sdelkalar ro'yxati noto'g'ri" });
+    }
+
+    const numericIds = ids.map(Number).filter(id => !isNaN(id) && id > 0);
+    if (numericIds.length === 0) {
+      return res.status(400).json({ message: "Sdelkalar ID ro'yxati bo'sh" });
+    }
+
+    let targetStageId = null;
+    let targetStatus = status || null;
+    let targetStage = null;
+
+    if (stageId !== null && stageId !== undefined && stageId !== '') {
+      targetStageId = Number(stageId);
+      targetStage = await prisma.pipelineStage.findUnique({ where: { id: targetStageId } });
+      if (!targetStage) {
+        return res.status(400).json({ message: "Bosqich topilmadi" });
+      }
+
+      const stageName = targetStage.name.toLowerCase();
+      if (stageName.includes('yutil') || stageName.includes('100%') || stageName.includes('olindi')) {
+        targetStatus = 'won';
+      } else if (stageName.includes('rad') || stageName.includes('otkaz') || stageName.includes('lost') || stageName.includes('negativ') || stageName.includes('yo\'qotilgan')) {
+        targetStatus = 'lost';
+      } else {
+        targetStatus = 'new';
+      }
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const dealsToUpdate = await tx.deal.findMany({
+        where: { id: { in: numericIds } }
+      });
+
+      const allowedDeals = req.user?.role === 'admin'
+        ? dealsToUpdate
+        : dealsToUpdate.filter(d => d.managerId === null || d.managerId === req.userId);
+
+      const allowedIds = allowedDeals.map(d => d.id);
+
+      if (allowedIds.length === 0) {
+        throw new Error("RUXSAT_YOQ");
+      }
+
+      const updateData = {};
+      if (targetStageId !== null) updateData.stageId = targetStageId;
+      if (targetStatus !== null) updateData.status = targetStatus;
+
+      await tx.deal.updateMany({
+        where: { id: { in: allowedIds } },
+        data: updateData
+      });
+
+      for (const deal of allowedDeals) {
+        let details = '';
+        if (targetStage) {
+          const prevName = deal.stageId ? 'avvalgi bosqich' : 'bosqichsiz';
+          details = `Ommaviy ravishda bosqich o'zgartirildi: ${prevName} → ${targetStage.name}`;
+        } else if (targetStatus) {
+          details = `Ommaviy ravishda status o'zgartirildi: ${deal.status} → ${targetStatus}`;
+        }
+
+        await tx.activityLog.create({
+          data: {
+            action: "Ommaviy yangilash",
+            details,
+            dealId: deal.id,
+            userId: req.userId
+          }
+        });
+
+        // ── WAREHOUSE STOCK DECREMENT / ROLLBACK (Bulk execution) ──
+        try {
+          const NON_SHIP_KEYWORDS = ['yangi', 'muzokara', 'peregovor', 'pereg', 'taklif', 'kutish', 'qayta aloqa', 'negativ', 'rad', 'otkaz', 'lost', 'fail', "yo'qotilgan"];
+          const isShippingStage = (name) => {
+            if (!name) return false;
+            const lower = name.toLowerCase();
+            return !NON_SHIP_KEYWORDS.some(kw => lower.includes(kw));
+          };
+
+          const newStageName = targetStage?.name || '';
+          const isShipping = isShippingStage(newStageName);
+
+          if (isShipping && deal.warehouse && !deal.stockDecremented) {
+            await tx.warehouseStock.upsert({
+              where: { warehouse_productName: { warehouse: deal.warehouse, productName: deal.productName } },
+              update: { stock: { decrement: 1 } },
+              create: { warehouse: deal.warehouse, productName: deal.productName, stock: -1 }
+            });
+            await tx.warehouseLog.create({
+              data: {
+                warehouse: deal.warehouse,
+                productName: deal.productName,
+                changeQty: -1,
+                action: 'ship',
+                dealId: deal.id,
+                notes: 'Sdelka #' + deal.id + ' — sotuv (ommaviy)',
+                userName: req.user?.fullName || req.session?.user?.fullName || null
+              }
+            });
+            await tx.deal.update({ where: { id: deal.id }, data: { stockDecremented: true } });
+          } else if (!isShipping && deal.stockDecremented && deal.warehouse) {
+            await tx.warehouseStock.upsert({
+              where: { warehouse_productName: { warehouse: deal.warehouse, productName: deal.productName } },
+              update: { stock: { increment: 1 } },
+              create: { warehouse: deal.warehouse, productName: deal.productName, stock: 1 }
+            });
+            await tx.warehouseLog.create({
+              data: {
+                warehouse: deal.warehouse,
+                productName: deal.productName,
+                changeQty: 1,
+                action: 'return',
+                dealId: deal.id,
+                notes: 'Sdelka #' + deal.id + ' — qaytarildi (ommaviy)',
+                userName: req.user?.fullName || req.session?.user?.fullName || null
+              }
+            });
+            await tx.deal.update({ where: { id: deal.id }, data: { stockDecremented: false } });
+          }
+        } catch (stockErr) {
+          console.error('[Bulk stock update error]', stockErr);
+        }
+      }
+
+      const finalDeals = await tx.deal.findMany({
+        where: { id: { in: allowedIds } },
+        include: {
+          client: { select: { id: true, name: true, company: true, phone: true, city: true } },
+          manager: managerSelect,
+          stage: stageSelect
+        }
+      });
+
+      return { finalDeals, totalUpdated: allowedIds.length, skipped: numericIds.length - allowedIds.length };
+    });
+
+    const broadcast = req.app.get('broadcast');
+    if (broadcast && result.finalDeals) {
+      for (const d of result.finalDeals) {
+        broadcast({ type: 'deal_updated', dealId: d.id, deal: d });
+      }
+    }
+
+    res.json({
+      message: `${result.totalUpdated} ta sdelka muvaffaqiyatli ko'chirildi.`,
+      updatedCount: result.totalUpdated,
+      skippedCount: result.skipped
+    });
+
+  } catch (error) {
+    if (error.message === "RUXSAT_YOQ") {
+      return res.status(403).json({ message: "Tanlangan sdelkalarni o'zgartirish ruxsati sizda yo'q" });
+    }
+    next(error);
+  }
+});
+
 // Update deal
 router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => {
   try {

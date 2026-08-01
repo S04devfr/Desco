@@ -432,6 +432,41 @@ router.get('/sales-by-manager', async (req, res, next) => {
   }
 })
 
+// Helper to parse product name and extract quantity (e.g., "6-funksiyalik 2ta" -> name: "6-funksiyalik", qty: 2)
+function parseProduct(productName) {
+  if (!productName) {
+    return { name: "Noma'lum", qty: 1 };
+  }
+  
+  // Extract quantity if present at the end (e.g. "2ta", "3 ta", "5 dona", "2 шт")
+  const match = productName.match(/(\d+)\s*(?:ta|dona|sht|pcs|штук|шт)\s*$/i);
+  let qty = 1;
+  let baseName = productName;
+  if (match) {
+    qty = parseInt(match[1], 10);
+    baseName = productName.substring(0, productName.lastIndexOf(match[0])).trim();
+  }
+
+  // Normalize baseName to match core product definitions
+  let normalized = baseName;
+  const lower = baseName.toLowerCase();
+  
+  if (/6-funksiyalik|6-funksiya|6 talik|6-talik|6 lik|6lik|6 ta|olti talik|6-ta|massajor 6|е6/i.test(lower)) {
+    normalized = '6-funksiyalik';
+  } else if (/3-funksiyalik|3-funkiyalik|3-funksiya|3 talik|3-talik|3 lik|3lik|3 ta|uch talik|3-ta/i.test(lower)) {
+    normalized = '3-funksiyalik';
+  } else if (/oyoq|nog|stup|tavon/i.test(lower)) {
+    normalized = 'Oyoq massajor';
+  } else if (/hadiya|hadya|sovg'a|sovga|toplam|to'plam|хадия|хадя|совға|совга/i.test(lower)) {
+    normalized = 'Хадия';
+  } else {
+    // Default fallback to trimmed version of the base name
+    normalized = baseName.trim();
+  }
+  
+  return { name: normalized, qty };
+}
+
 // Product popularity
 router.get('/product-popularity', async (req, res, next) => {
   try {
@@ -442,9 +477,9 @@ router.get('/product-popularity', async (req, res, next) => {
 
     const map = {}
     for (const d of deals) {
-      const name = d.productName || 'Noma\'lum'
+      const { name, qty } = parseProduct(d.productName);
       if (!map[name]) map[name] = { count: 0, totalAmount: 0 }
-      map[name].count++
+      map[name].count += qty
       map[name].totalAmount += d.amount || 0
     }
 
