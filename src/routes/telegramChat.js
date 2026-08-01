@@ -241,7 +241,7 @@ const disabledSendRoute = async (req, res) => {
     console.error('Error sending telegram message:', error);
     res.status(500).json({ error: 'Failed to send telegram message' });
   }
-});
+};
 
 // POST /api/telegram/update-client
 router.post('/update-client', protect, async (req, res) => {
