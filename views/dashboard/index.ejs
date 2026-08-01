@@ -1061,10 +1061,16 @@ async function loadDashboard() {
     let row1Html = `
       <div class="stat-card clickable" onclick="window.location.href='/deals'">
         <div class="stat-icon blue"><i class="fas fa-bullseye"></i></div>
-        <div class="stat-info">
+        <div class="stat-info" style="width: 100%;">
           <div class="stat-label">Leadlar</div>
           <div class="stat-value">${safeKpis.totalLeads ?? 0}</div>
-          <div class="stat-sub">Jami kirgan buyurtmalar</div>
+          <div class="stat-sub" style="margin-bottom: 4px;">Jami kirgan buyurtmalar</div>
+          <div style="margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; border-top: 1px dashed var(--border); padding-top: 6px; width: 100%;">
+            <span style="font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 4px; background: rgba(0, 122, 255, 0.1); color: #007AFF;" title="Target reklamalari">Target: ${safeKpis.sourcesCount?.target ?? 0}</span>
+            <span style="font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 4px; background: rgba(225, 48, 108, 0.1); color: #E1306C;" title="Instagram Direct">Insta: ${safeKpis.sourcesCount?.instagram ?? 0}</span>
+            <span style="font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 4px; background: rgba(52, 199, 89, 0.1); color: #34C759;" title="Telegram murojaatlari">TG: ${safeKpis.sourcesCount?.telegram ?? 0}</span>
+            <span style="font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 4px; background: rgba(142, 142, 147, 0.1); color: #8E8E93;" title="Qo'lda kiritilgan / Boshqa">Oddiy: ${safeKpis.sourcesCount?.oddiy ?? 0}</span>
+          </div>
         </div>
       </div>
       <div class="stat-card clickable" onclick="openFinancialModal('installments')">
@@ -1859,6 +1865,7 @@ async function loadDashboard() {
           }).join('');
         }
       }
+      loadFinancialData();
     }
   } catch(e) {
     console.error('Dashboard yuk xatosi:', e);

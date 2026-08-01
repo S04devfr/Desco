@@ -241,7 +241,8 @@ router.post('/', async (req, res, next) => {
         managerId: req.userId,
         stageId: resolvedStageId,
         pipelineId: resolvedPipelineId,
-        warehouse: warehouse || null
+        warehouse: warehouse || null,
+        source: req.body.source || 'oddiy'
       },
       include: {
         client: { select: { id: true, name: true, company: true, phone: true, city: true } },

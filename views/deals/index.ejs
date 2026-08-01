@@ -342,6 +342,16 @@
   }
 
   /* Bulk Select Styles */
+  .dcard-checkbox-wrap, .kb-col-select-btns {
+    display: none !important;
+  }
+  .selection-mode-active .dcard-checkbox-wrap {
+    display: inline-flex !important;
+    align-items: center;
+  }
+  .selection-mode-active .kb-col-select-btns {
+    display: inline-flex !important;
+  }
   .dcard-checkbox {
     width: 14px;
     height: 14px;
@@ -386,6 +396,7 @@
             <i class="fas fa-list"></i> Jadval
           </button>
         </div>
+        <button class="btn btn-ghost btn-sm" id="btnSelectMode" onclick="toggleSelectionMode()" title="Ommaviy tanlash"><i class="fas fa-check-square"></i> Tanlash</button>
         <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %><button class="btn btn-ghost btn-sm kb-settings-btn" id="btnEditMode" onclick="toggleEditMode()" title="Bosqichlarni tahrirlash"><i class="fas fa-cog"></i> Sozlash</button><% } %>
         <button class="btn btn-primary btn-sm" onclick="openDealModal()">
           <i class="fas fa-plus"></i> Yangi sdelka
@@ -720,6 +731,7 @@
     let _colDragId = null;   // stageId currently being dragged (column reorder)
     let _dropPlaceholderStageId = null;  // which column currently shows the drop placeholder
     let _selectedDeals = []; // globally selected deal ids
+    let _selectionMode = false; // toggle status of selection controls
 
     // Local fallback stages — used ONLY for rendering when the active pipeline
     // has no real stages yet (empty DB, freshly created pipeline, deleted
@@ -1050,8 +1062,10 @@ function renderKanban() {
         <div><span>${sDeals.length}</span> sdelka · <span>${_fmt(total,true)}</span></div>
         <div style="display:flex; gap:4px; align-items:center;">
           ${sDeals.length ? `
-            <button onclick="event.stopPropagation(); selectBulkInColumn(${s.id}, 10)" style="font-size:9.5px; padding:1px 4px; border-radius:4px; border:1px solid var(--border); background:var(--bg-primary); color:var(--text-secondary); cursor:pointer; font-weight:700;" title="10 ta tanlash">+10</button>
-            <button onclick="event.stopPropagation(); selectBulkInColumn(${s.id}, 20)" style="font-size:9.5px; padding:1px 4px; border-radius:4px; border:1px solid var(--border); background:var(--bg-primary); color:var(--text-secondary); cursor:pointer; font-weight:700;" title="20 ta tanlash">+20</button>
+            <span class="kb-col-select-btns" style="display:inline-flex; gap:4px;">
+              <button onclick="event.stopPropagation(); selectBulkInColumn(${s.id}, 10)" style="font-size:9.5px; padding:1px 4px; border-radius:4px; border:1px solid var(--border); background:var(--bg-primary); color:var(--text-secondary); cursor:pointer; font-weight:700;" title="10 ta tanlash">+10</button>
+              <button onclick="event.stopPropagation(); selectBulkInColumn(${s.id}, 20)" style="font-size:9.5px; padding:1px 4px; border-radius:4px; border:1px solid var(--border); background:var(--bg-primary); color:var(--text-secondary); cursor:pointer; font-weight:700;" title="20 ta tanlash">+20</button>
+            </span>
           ` : ''}
           ${sortSelectHtml}
         </div>
@@ -1065,8 +1079,10 @@ function renderKanban() {
         <div><span>${sDeals.length}</span> sdelka · <span>${_fmt(total,true)}</span></div>
         <div style="display:flex; gap:4px; align-items:center;">
           ${sDeals.length ? `
-            <button onclick="event.stopPropagation(); selectBulkInColumn(${s.id}, 10)" style="font-size:9.5px; padding:1px 4px; border-radius:4px; border:1px solid var(--border); background:var(--bg-primary); color:var(--text-secondary); cursor:pointer; font-weight:700;" title="10 ta tanlash">+10</button>
-            <button onclick="event.stopPropagation(); selectBulkInColumn(${s.id}, 20)" style="font-size:9.5px; padding:1px 4px; border-radius:4px; border:1px solid var(--border); background:var(--bg-primary); color:var(--text-secondary); cursor:pointer; font-weight:700;" title="20 ta tanlash">+20</button>
+            <span class="kb-col-select-btns" style="display:inline-flex; gap:4px;">
+              <button onclick="event.stopPropagation(); selectBulkInColumn(${s.id}, 10)" style="font-size:9.5px; padding:1px 4px; border-radius:4px; border:1px solid var(--border); background:var(--bg-primary); color:var(--text-secondary); cursor:pointer; font-weight:700;" title="10 ta tanlash">+10</button>
+              <button onclick="event.stopPropagation(); selectBulkInColumn(${s.id}, 20)" style="font-size:9.5px; padding:1px 4px; border-radius:4px; border:1px solid var(--border); background:var(--bg-primary); color:var(--text-secondary); cursor:pointer; font-weight:700;" title="20 ta tanlash">+20</button>
+            </span>
           ` : ''}
           ${sortSelectHtml}
         </div>
@@ -1121,8 +1137,10 @@ function renderKanban() {
           <div><span>${unassigned.length}</span> sdelka</div>
           ${unassigned.length ? `
             <div style="display:flex; gap:4px; align-items:center;">
-              <button onclick="event.stopPropagation(); selectBulkInColumn(null, 10)" style="font-size:9.5px; padding:1px 4px; border-radius:4px; border:1px solid var(--border); background:var(--bg-primary); color:var(--text-secondary); cursor:pointer; font-weight:700;" title="10 ta tanlash">+10</button>
-              <button onclick="event.stopPropagation(); selectBulkInColumn(null, 20)" style="font-size:9.5px; padding:1px 4px; border-radius:4px; border:1px solid var(--border); background:var(--bg-primary); color:var(--text-secondary); cursor:pointer; font-weight:700;" title="20 ta tanlash">+20</button>
+              <span class="kb-col-select-btns" style="display:inline-flex; gap:4px;">
+                <button onclick="event.stopPropagation(); selectBulkInColumn(null, 10)" style="font-size:9.5px; padding:1px 4px; border-radius:4px; border:1px solid var(--border); background:var(--bg-primary); color:var(--text-secondary); cursor:pointer; font-weight:700;" title="10 ta tanlash">+10</button>
+                <button onclick="event.stopPropagation(); selectBulkInColumn(null, 20)" style="font-size:9.5px; padding:1px 4px; border-radius:4px; border:1px solid var(--border); background:var(--bg-primary); color:var(--text-secondary); cursor:pointer; font-weight:700;" title="20 ta tanlash">+20</button>
+              </span>
             </div>
           ` : ''}
         </div>
@@ -1203,7 +1221,9 @@ function dcardHtml(d) {
 
         <div class="dcard-header" style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; padding-right:24px; width:100%;">
           <div style="display:flex; align-items:center; gap:8px;">
-            <input type="checkbox" class="dcard-checkbox" value="${d.id}" onclick="event.stopPropagation(); onCardSelect(this)" ${window._selectedDeals && window._selectedDeals.includes(d.id) ? 'checked' : ''} style="cursor:pointer; width:14px; height:14px; accent-color:var(--accent);">
+            <span class="dcard-checkbox-wrap">
+              <input type="checkbox" class="dcard-checkbox" value="${d.id}" onclick="event.stopPropagation(); onCardSelect(this)" ${window._selectedDeals && window._selectedDeals.includes(d.id) ? 'checked' : ''} style="cursor:pointer; width:14px; height:14px; accent-color:var(--accent);">
+            </span>
             <span style="font-size:11px; font-weight:700; color:var(--text-secondary); background:var(--bg-tertiary); padding:2px 6px; border-radius:4px; border:1px solid var(--border)">#${d.id}</span>
           </div>
         </div>
@@ -1260,7 +1280,9 @@ function dcardHtml(d) {
 
       <div class="dcard-header" style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; padding-right:24px; width:100%;">
         <div style="display:flex; align-items:center; gap:8px;">
-          <input type="checkbox" class="dcard-checkbox" value="${d.id}" onclick="event.stopPropagation(); onCardSelect(this)" ${window._selectedDeals && window._selectedDeals.includes(d.id) ? 'checked' : ''} style="cursor:pointer; width:14px; height:14px; accent-color:var(--accent);">
+          <span class="dcard-checkbox-wrap">
+            <input type="checkbox" class="dcard-checkbox" value="${d.id}" onclick="event.stopPropagation(); onCardSelect(this)" ${window._selectedDeals && window._selectedDeals.includes(d.id) ? 'checked' : ''} style="cursor:pointer; width:14px; height:14px; accent-color:var(--accent);">
+          </span>
           <span class="dcard-badge" style="background:${sc}1A; color:${sc}; padding:2px 6px; font-size:9.5px; border-radius:4px; font-weight:700; text-transform:uppercase;">${sl}</span>
         </div>
         <span style="font-size:11px; font-weight:700; color:var(--text-secondary); background:var(--bg-tertiary); padding:2px 6px; border-radius:4px; border:1px solid var(--border)">#${d.id}</span>
@@ -2638,6 +2660,16 @@ async function bulkMoveToOtkaz() {
     _toast(err.message, 'error');
   } finally {
     if (btn) btn.disabled = false;
+  }
+}
+
+function toggleSelectionMode() {
+  _selectionMode = !_selectionMode;
+  document.querySelector('.deals-page').classList.toggle('selection-mode-active', _selectionMode);
+  const btn = document.getElementById('btnSelectMode');
+  if (btn) btn.classList.toggle('active', _selectionMode);
+  if (!_selectionMode) {
+    clearBulkSelection();
   }
 }
 </script>

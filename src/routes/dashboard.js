@@ -106,8 +106,64 @@ router.get('/kpis', async (req, res, next) => {
     const dlvPipelineId = dlvPipeline ? dlvPipeline.id : null;
     const dlvDeals = dlvPipelineId ? deals.filter(d => d.stage?.pipelineId === dlvPipelineId) : [];
 
+    // Helper to get start and end dates based on filter
+    const getFilterDates = (filter, req) => {
+      if (!filter || filter === 'all') return null;
+      const now = new Date();
+      let start = new Date(now);
+      let end = new Date(now);
+      if (filter === 'today') {
+        start.setHours(0,0,0,0);
+        end.setHours(23,59,59,999);
+      } else if (filter === 'yesterday') {
+        start.setDate(start.getDate() - 1);
+        start.setHours(0,0,0,0);
+        end.setDate(end.getDate() - 1);
+        end.setHours(23,59,59,999);
+      } else if (filter === 'day-before-yesterday') {
+        start.setDate(start.getDate() - 2);
+        start.setHours(0,0,0,0);
+        end.setDate(end.getDate() - 2);
+        end.setHours(23,59,59,999);
+      } else if (filter === 'range') {
+        if (req && req.query.startDate && req.query.endDate) {
+          start = new Date(req.query.startDate);
+          start.setHours(0,0,0,0);
+          end = new Date(req.query.endDate);
+          end.setHours(23,59,59,999);
+        } else {
+          return null;
+        }
+      } else if (filter === 'month') {
+        start.setDate(1);
+        start.setHours(0,0,0,0);
+        end.setHours(23,59,59,999);
+      }
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) return null;
+      return { start, end };
+    };
+
+    const filterDates = getFilterDates(req.query.filter, req);
+    const dealsCreatedInPeriod = filterDates 
+      ? deals.filter(d => {
+          const cd = new Date(d.createdAt);
+          return cd >= filterDates.start && cd <= filterDates.end;
+        })
+      : deals;
+
     const totalOrders = dlvDeals.length;
-    const totalLeads = dlvPipelineId ? deals.filter(d => d.stage?.pipelineId !== dlvPipelineId).length : deals.length;
+    const totalLeads = dlvPipelineId 
+      ? dealsCreatedInPeriod.filter(d => d.stage?.pipelineId !== dlvPipelineId).length 
+      : dealsCreatedInPeriod.length;
+
+    // ── Source Breakdown (instagram, target, telegram, oddiy) ──
+    const sourcesCount = {
+      instagram: dealsCreatedInPeriod.filter(d => d.source === 'instagram').length,
+      target: dealsCreatedInPeriod.filter(d => d.source === 'target').length,
+      telegram: dealsCreatedInPeriod.filter(d => d.source === 'telegram').length,
+      oddiy: dealsCreatedInPeriod.filter(d => d.source === 'oddiy' || !d.source).length
+    };
+
     const totalRevenue = deals.reduce((sum, d) => sum + getEffectivePaid(d), 0);
     const totalDebt = deals.reduce((sum, d) => sum + Math.max((d.amount || 0) - (d.paidAmount || 0), 0), 0);
     
@@ -293,13 +349,13 @@ router.get('/kpis', async (req, res, next) => {
 
     // ── 7. Funnel conversion stages (HubSpot Funnel) ──
     const funnelStages = {
-      yangi: deals.filter(d => d.stage?.name.toLowerCase().includes('yangi')).length,
-      muzokara: deals.filter(d => {
+      yangi: dealsCreatedInPeriod.filter(d => d.stage?.name.toLowerCase().includes('yangi')).length,
+      muzokara: dealsCreatedInPeriod.filter(d => {
         const name = (d.stage?.name || '').toLowerCase();
         return name.includes('muzokara') || name.includes('peregovor') || name.includes('pereg');
       }).length,
-      lost: lost,
-      total: deals.length
+      lost: dealsCreatedInPeriod.filter(isDealCanceled).length,
+      total: dealsCreatedInPeriod.length
     };
 
     res.json({
@@ -327,7 +383,8 @@ router.get('/kpis', async (req, res, next) => {
       geographicSales,
       pipelineForecastValue,
       managersList,
-      funnelStages
+      funnelStages,
+      sourcesCount
     });
   } catch (error) {
     console.error('KPI Error:', error);
@@ -356,6 +413,7 @@ router.get('/kpis', async (req, res, next) => {
       pipelineForecastValue: 0,
       managersList: [],
       funnelStages: { yangi: 0, muzokara: 0, lost: 0, total: 0 },
+      sourcesCount: { instagram: 0, target: 0, telegram: 0, oddiy: 0 },
       error: error.message + "\n" + error.stack
     });
   }

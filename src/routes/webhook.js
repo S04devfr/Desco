@@ -663,7 +663,8 @@ router.post('/telegram', verifyTelegramSecret, async (req, res) => {
           clientId: client.id,
           pipelineId: targetPipelineId,
           stageId: targetStageId,
-          notes: dealNotes
+          notes: dealNotes,
+          source: 'telegram'
         }
       });
 

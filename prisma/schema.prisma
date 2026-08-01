@@ -124,6 +124,7 @@ model Deal {
   warehouse        String?
   stockDecremented Boolean   @default(false)
   deliveryPrice    Float     @default(0)
+  source           String    @default("oddiy") // instagram | target | oddiy
 
   @@index([stageId])
   @@index([managerId])

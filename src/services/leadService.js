@@ -210,7 +210,8 @@ async function handleMetaWebhook(body, broadcast) {
                 clientId: client.id,
                 pipelineId,
                 stageId,
-                notes: `Meta LeadGen ID: ${leadgenId}\nForm ID: ${formId}\nAd ID: ${adId}`
+                notes: `Meta LeadGen ID: ${leadgenId}\nForm ID: ${formId}\nAd ID: ${adId}`,
+                source: 'target'
               }
             });
             console.log(`[Meta Webhook] \u2713 Sdelka muvaffaqiyatli saqlandi! Deal ID: ${deal.id}`);
@@ -738,7 +739,8 @@ async function handleUniversalLead(source, rawData, broadcast) {
           clientId: client.id,
           pipelineId: targetPipelineId,
           stageId: targetStageId,
-          notes: dealNotes
+          notes: dealNotes,
+          source: 'target'
         }
       });
       console.log(`[Universal Lead Transaction] Sdelka yaratildi. ID: ${deal.id}`);

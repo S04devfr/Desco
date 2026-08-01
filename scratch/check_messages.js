@@ -3,35 +3,27 @@ const prisma = new PrismaClient();
 
 async function run() {
   try {
-    const client = await prisma.client.findFirst({
-      where: {
-        OR: [
-          { name: { contains: 'muxammadrafiq1995', mode: 'insensitive' } },
-          { instagramUsername: { contains: 'muxammadrafiq1995', mode: 'insensitive' } }
-        ]
-      },
-      include: {
-        messages: {
-          orderBy: { timestamp: 'asc' }
-        }
-      }
-    });
+    const total = await prisma.instagramMessage.count();
+    console.log('Total Instagram messages:', total);
 
-    if (!client) {
-      console.log('Client not found');
-    } else {
-      console.log('Client found:', { id: client.id, name: client.name, username: client.instagramUsername, instagramId: client.instagramId });
-      console.log('Messages:', client.messages.map(m => ({
-        id: m.id,
-        text: m.text,
-        senderId: m.senderId,
-        recipientId: m.recipientId,
-        isOutgoing: m.isOutgoing,
-        timestamp: m.timestamp
-      })));
-    }
-  } catch (err) {
-    console.error(err);
+    const grouped = await prisma.$queryRaw`
+      SELECT DATE("timestamp") as msg_date, COUNT(*) as cnt
+      FROM "InstagramMessage"
+      GROUP BY msg_date
+      ORDER BY msg_date DESC
+      LIMIT 10
+    `;
+    console.log('Grouped by date:', grouped);
+
+    const samples = await prisma.instagramMessage.findMany({
+      take: 15,
+      orderBy: { timestamp: 'desc' },
+      select: { timestamp: true, text: true, isOutgoing: true }
+    });
+    console.log('Last 15 messages:', JSON.stringify(samples, null, 2));
+
+  } catch(e) {
+    console.error(e);
   } finally {
     await prisma.$disconnect();
   }
