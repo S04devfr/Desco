@@ -14,19 +14,7 @@ const activeLogins = {};
  * Connection status
  */
 router.get('/status', protect, async (req, res) => {
-  try {
-    const settings = await prisma.companySettings.findFirst();
-    if (settings && settings.telegramSessionString) {
-      return res.json({
-        connected: true,
-        phone: settings.telegramPhone,
-        apiId: settings.telegramApiId
-      });
-    }
-    res.json({ connected: false });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+  return res.json({ connected: false, message: 'Telegram ulanishi vaqtincha o\'chirilgan.' });
 });
 
 /**
