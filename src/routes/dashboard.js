@@ -64,7 +64,7 @@ router.get('/kpis', async (req, res, next) => {
       where.managerId = req.userId;
     }
     
-    const deals = await prisma.deal.findMany({ where, include: { stage: true, client: true, manager: { select: { id: true, fullName: true, email: true, role: true } } } });
+    const deals = await prisma.deal.findMany({ where, include: { stage: true, client: true, manager: { select: { id: true, fullName: true, email: true, role: true, isActive: true } } } });
     // Expenses only use createdAt
     const expenseWhere = where.OR ? { createdAt: { gte: where.OR[0].createdAt.gte, lte: where.OR[0].createdAt.lte } } : {};
     const expenses = await prisma.expense.findMany({ where: expenseWhere });
@@ -291,30 +291,39 @@ router.get('/kpis', async (req, res, next) => {
     });
 
     // ── 6. Managers Detailed Performance KPIs ──
-    const managerPerformance = {};
-    deals.forEach(d => {
-      if (!d.manager) return; // Skip unassigned ("Belgilanmagan")
-      if (d.manager.role === 'admin') return; // Skip admin/developer like "Muhammadyusuf"
+    const allUsers = await prisma.user.findMany({
+      where: {
+        role: { in: ['manager', 'operator'] }
+      }
+    });
 
-      const managerName = d.manager.fullName || d.manager.email || 'Menejer';
-      const managerId = d.managerId;
-      if (!managerPerformance[managerName]) {
-        managerPerformance[managerName] = {
-          id: managerId,
-          name: managerName,
-          totalCount: 0,
-          wonCount: 0,
-          wonValue: 0,
-          canceledCount: 0
-        };
-      }
-      managerPerformance[managerName].totalCount += 1;
-      if (d.status === 'won' || (d.stage && (d.stage.name.toLowerCase().includes('100%') || d.stage.name.toLowerCase().includes('yutil')))) {
-        managerPerformance[managerName].wonCount += 1;
-        managerPerformance[managerName].wonValue += d.amount;
-      }
-      if (isDealCanceled(d)) {
-        managerPerformance[managerName].canceledCount += 1;
+    const managerPerformance = {};
+    allUsers.forEach(u => {
+      managerPerformance[u.id] = {
+        id: u.id,
+        name: u.fullName || u.email || 'Menejer',
+        email: u.email,
+        role: u.role,
+        isActive: u.isActive !== false,
+        totalCount: 0,
+        wonCount: 0,
+        wonValue: 0,
+        canceledCount: 0
+      };
+    });
+
+    deals.forEach(d => {
+      if (!d.managerId) return; // Skip unassigned
+      const m = managerPerformance[d.managerId];
+      if (m) {
+        m.totalCount += 1;
+        if (isWonDeal(d)) {
+          m.wonCount += 1;
+          m.wonValue += d.amount;
+        }
+        if (isDealCanceled(d)) {
+          m.canceledCount += 1;
+        }
       }
     });
 
@@ -541,15 +550,15 @@ router.get('/product-popularity', async (req, res, next) => {
       map[name].totalAmount += d.amount || 0
     }
 
-    const totalAmount = Object.values(map).reduce((s, v) => s + v.totalAmount, 0)
+    const totalQty = Object.values(map).reduce((s, v) => s + v.count, 0)
     const result = Object.entries(map)
       .map(([product, v]) => ({
         product,
         count: v.count,
         totalAmount: v.totalAmount,
-        pct: totalAmount > 0 ? Math.round((v.totalAmount / totalAmount) * 100) : 0
+        pct: totalQty > 0 ? Math.round((v.count / totalQty) * 100) : 0
       }))
-      .sort((a, b) => b.totalAmount - a.totalAmount)
+      .sort((a, b) => b.count - a.count)
 
     res.json(result)
   } catch (error) {

@@ -125,6 +125,7 @@ model Deal {
   stockDecremented Boolean   @default(false)
   deliveryPrice    Float     @default(0)
   source           String    @default("oddiy") // instagram | target | oddiy
+  productColor     String    @default("oddiy")
 
   @@index([stageId])
   @@index([managerId])
@@ -306,17 +307,19 @@ model WarehouseStock {
   id          Int      @id @default(autoincrement())
   warehouse   String
   productName String
+  color       String   @default("oddiy")
   stock       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@unique([warehouse, productName])
+  @@unique([warehouse, productName, color])
 }
 
 model WarehouseLog {
   id          Int      @id @default(autoincrement())
   warehouse   String
   productName String
+  color       String   @default("oddiy")
   changeQty   Int
   action      String
   notes       String?

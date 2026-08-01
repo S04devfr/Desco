@@ -708,6 +708,51 @@
   background: rgba(0, 122, 255, 0.05) !important;
 }
 </style>
+
+<!-- EDIT MANAGER MODAL -->
+<div class="modal-overlay hidden" id="editManagerModal" style="z-index: 1200;">
+  <div class="modal-box" style="max-width: 400px;">
+    <div class="modal-header">
+      <h2>Xodimni tahrirlash</h2>
+      <button class="modal-close" onclick="closeEditManagerModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="em-id">
+      <div class="form-group" style="margin-bottom: 14px;">
+        <label class="form-label" style="font-size:12.5px; font-weight:600; display:block; margin-bottom:6px; color:var(--text-secondary)">Ism-familiya *</label>
+        <input type="text" id="em-fullName" class="form-control" placeholder="To'liq ism" style="border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-card); color: var(--text-primary); width:100%; height:38px; padding:0 12px; font-size:13.5px;">
+      </div>
+      <div class="form-group" style="margin-bottom: 14px;">
+        <label class="form-label" style="font-size:12.5px; font-weight:600; display:block; margin-bottom:6px; color:var(--text-secondary)">Email *</label>
+        <input type="email" id="em-email" class="form-control" placeholder="email@example.com" style="border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-card); color: var(--text-primary); width:100%; height:38px; padding:0 12px; font-size:13.5px;">
+      </div>
+      <div class="form-group" style="margin-bottom: 14px;">
+        <label class="form-label" style="font-size:12.5px; font-weight:600; display:block; margin-bottom:6px; color:var(--text-secondary)">Parol <span style="font-size:11px; font-weight:normal; color:var(--text-tertiary)">(Faqat o'zgartirish uchun)</span></label>
+        <input type="password" id="em-password" class="form-control" placeholder="Kamida 8 belgi" style="border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-card); color: var(--text-primary); width:100%; height:38px; padding:0 12px; font-size:13.5px;">
+      </div>
+      <div class="form-group" style="margin-bottom: 14px;">
+        <label class="form-label" style="font-size:12.5px; font-weight:600; display:block; margin-bottom:6px; color:var(--text-secondary)">Rol</label>
+        <select id="em-role" class="form-control" style="border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-card); color: var(--text-primary); width:100%; height:38px; padding:0 12px; font-size:13.5px;">
+          <option value="admin">Administrator</option>
+          <option value="manager">Manager</option>
+          <option value="operator">Operator</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom: 14px;">
+        <label class="form-label" style="font-size:12.5px; font-weight:600; display:block; margin-bottom:6px; color:var(--text-secondary)">Status</label>
+        <select id="em-isActive" class="form-control" style="border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-card); color: var(--text-primary); width:100%; height:38px; padding:0 12px; font-size:13.5px;">
+          <option value="true">Faol</option>
+          <option value="false">Bloklangan</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:8px; border-top:1px solid var(--border); padding-top:12px;">
+      <button class="btn btn-secondary" onclick="closeEditManagerModal()" style="height:36px; padding:0 14px; font-size:13px;">Bekor qilish</button>
+      <button class="btn btn-primary" id="editManagerSaveBtn" onclick="saveManagerDetails()" style="height:36px; padding:0 14px; font-size:13px; background:var(--brand); border-color:var(--brand); color:#fff;"><i class="fas fa-save" style="margin-right:6px"></i>Saqlash</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay hidden" id="financialModal" style="z-index:1100;">
   <div class="modal-box" style="max-width:1100px; width:95%; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; padding:0;">
     <div class="modal-header">
@@ -1190,20 +1235,6 @@ async function loadDashboard() {
             })()}</div>
           </div>
         </div>
-
-        <div class="stat-card clickable" onclick="openProfitModal()">
-          <div class="stat-icon green"><i class="fas fa-chart-line"></i></div>
-          <div class="stat-info">
-            <div class="stat-label">Sof foyda</div>
-            <div class="stat-value ${profitClass}" style="display: inline-flex; align-items: center; gap: 8px;">
-              <span id="netProfitValueSpan" style="transition: filter 0.2s ease;">${renderCardMoney(netProfitVal)}</span>
-              <button class="btn btn-ghost" onclick="event.stopPropagation(); toggleNetProfitVisibility(this)" style="padding: 2px; height: 20px; width: 20px; display: inline-flex; align-items: center; justify-content: center; min-width: 0; border: none; background: transparent; cursor: pointer;" title="Ko'rish / Yashirish">
-                <i class="fas fa-eye" style="font-size: 11px; opacity: 0.6;"></i>
-              </button>
-            </div>
-            <div class="stat-sub">Savdo − Tannarx − Xarajat</div>
-          </div>
-        </div>
       `;
     }
 
@@ -1556,10 +1587,14 @@ async function loadDashboard() {
           const onlineDot = isOnline
             ? '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:#34C759;font-weight:600;"><span style="width:8px;height:8px;border-radius:50%;background:#34C759;display:inline-block;box-shadow:0 0 6px #34C75966;animation:pulse-green 2s infinite;"></span>Online</span>'
             : '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--text-muted);"><span style="width:8px;height:8px;border-radius:50%;background:var(--text-muted);display:inline-block;opacity:0.5;"></span>Offline</span>';
+          const editBtn = USER_ROLE === 'admin'
+            ? `<button class="btn btn-ghost btn-icon btn-sm text-brand" onclick="openEditManagerModal(${m.id}, '${escHtml(m.name)}', '${escHtml(m.email || '')}', '${m.role || 'manager'}', ${m.isActive !== false})" style="padding: 2px; margin-left: auto; display: inline-flex; border: none; background: transparent; cursor: pointer;" title="Tahrirlash"><i class="fas fa-edit" style="font-size: 11px;"></i></button>`
+            : '';
           return '<tr class="kpi-row" data-perf="'+perf+'">'
-            + '<td class="kpi-mgr-cell">'
-            +   '<div class="kpi-avatar">'+initials+'</div>'
-            +   '<span class="kpi-mgr-name">'+escHtml(m.name)+'</span>'
+            + '<td class="kpi-mgr-cell" style="display: flex; align-items: center; gap: 8px;">'
+            +   '<div class="kpi-avatar" style="flex-shrink:0;">'+initials+'</div>'
+            +   '<span class="kpi-mgr-name" style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">'+escHtml(m.name)+'</span>'
+            +   editBtn
             + '</td>'
             + '<td class="tc" style="white-space:nowrap;">'+onlineDot+'</td>'
             + '<td class="tc" style="font-size:11px;font-weight:600;color:'+(todayMin>0?'var(--text-primary)':'var(--text-muted)')+';white-space:nowrap;">'+todayStr+'</td>'
@@ -1612,6 +1647,54 @@ async function loadDashboard() {
         if (typeof showToast === 'function') showToast('Maosh saqlandi', 'success');
       } catch(e) {
         if (typeof showToast === 'function') showToast('Saqlashda xato', 'error');
+      }
+    };
+
+    window.openEditManagerModal = function(id, fullName, email, role, isActive) {
+      document.getElementById('em-id').value = id;
+      document.getElementById('em-fullName').value = fullName || '';
+      document.getElementById('em-email').value = email || '';
+      document.getElementById('em-password').value = '';
+      document.getElementById('em-role').value = role || 'manager';
+      document.getElementById('em-isActive').value = isActive ? 'true' : 'false';
+      document.getElementById('editManagerModal').classList.remove('hidden');
+    };
+
+    window.closeEditManagerModal = function() {
+      document.getElementById('editManagerModal').classList.add('hidden');
+    };
+
+    window.saveManagerDetails = async function() {
+      const id = document.getElementById('em-id').value;
+      const fullName = document.getElementById('em-fullName').value.trim();
+      const email = document.getElementById('em-email').value.trim();
+      const password = document.getElementById('em-password').value;
+      const role = document.getElementById('em-role').value;
+      const isActive = document.getElementById('em-isActive').value === 'true';
+
+      if (!email) { showToast('Email majburiy', 'error'); return; }
+      if (password && password.length < 8) { showToast('Parol kamida 8 ta belgi bo\'lishi kerak', 'error'); return; }
+
+      const body = { fullName, email, role, isActive };
+      if (password) body.password = password;
+
+      const btn = document.getElementById('editManagerSaveBtn');
+      btn.disabled = true;
+      try {
+        const r = await fetch('/api/settings/users/' + id, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const result = await r.json();
+        if (!r.ok) throw new Error(result.message || 'Saqlashda xatolik');
+        showToast('Xodim ma\'lumotlari yangilandi', 'success');
+        closeEditManagerModal();
+        loadDashboard();
+      } catch(e) {
+        showToast(e.message || 'Xatolik yuz berdi', 'error');
+      } finally {
+        btn.disabled = false;
       }
     };
 
@@ -1814,8 +1897,8 @@ async function loadDashboard() {
       } else {
         if (emptyEl) emptyEl.style.display = 'none';
         if (tradingEl) tradingEl.style.display = 'flex';
-        const grandTotal = top.reduce((s,d) => s + (d.totalAmount||0), 0);
-        if (totalBadge) totalBadge.textContent = fmtS(grandTotal) + " so'm";
+        const grandTotal = top.reduce((s,d) => s + (d.count||0), 0);
+        if (totalBadge) totalBadge.textContent = grandTotal + " ta sotildi";
 
         // Default center: top product
         if (centerPct) centerPct.textContent = (top[0].pct||0) + '%';
@@ -1825,13 +1908,13 @@ async function loadDashboard() {
           type: 'doughnut',
           data: {
             labels: top.map(d => d.product || 'Noma\'lum'),
-            datasets: [{ data: top.map(d => d.totalAmount||0), backgroundColor: COLORS.slice(0,top.length), borderWidth: 2, borderColor: 'var(--surface-card, #1e293b)', hoverOffset: 6 }]
+            datasets: [{ data: top.map(d => d.count||0), backgroundColor: COLORS.slice(0,top.length), borderWidth: 2, borderColor: 'var(--surface-card, #1e293b)', hoverOffset: 6 }]
           },
           options: {
             responsive: true, maintainAspectRatio: false,
             cutout: '68%',
             plugins: { legend: { display: false }, tooltip: {
-              callbacks: { label: ctx => ' ' + ctx.label + ': ' + fmtS(ctx.parsed) + ' so\'m' }
+              callbacks: { label: ctx => ' ' + ctx.label + ': ' + ctx.parsed + ' ta' }
             }},
             onHover: (evt, elements) => {
               if (elements.length && centerPct && centerName) {
