@@ -317,6 +317,28 @@
       '<th style="text-align:center;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">Jami</th>';
   }
 
+  function getColorHash(color) {
+    const c = String(color || '').toLowerCase().trim();
+    if (c === 'qizil') return '#FF3B30';
+    if (c === 'ko\'k' || c === 'kok' || c === 'ko`k') return '#007AFF';
+    if (c === 'yashil') return '#34C759';
+    if (c === 'sariq') return '#FFCC00';
+    if (c === 'qora') return '#1C1C1E';
+    if (c === 'oq') return '#E5E5EA';
+    if (c === 'kulrang') return '#8E8E93';
+    if (c === 'tillo' || c === 'tilla') return '#D4AF37';
+    if (c === 'pushti') return '#FF2D55';
+    if (c === 'binafsha') return '#5856D6';
+    
+    // Hash fallback
+    let hash = 0;
+    for (let i = 0; i < c.length; i++) {
+      hash = c.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const colors = ['#007AFF', '#34C759', '#FF9500', '#FF3B30', '#5856D6', '#AF52DE', '#FF2D55'];
+    return colors[Math.abs(hash) % colors.length];
+  }
+
   function renderInventory() {
     const body = document.getElementById('inventoryBody');
     const colspan = _warehouses.length + 2;
@@ -324,13 +346,66 @@
       body.innerHTML = '<tr><td colspan="' + colspan + '" style="text-align:center;padding:40px;color:var(--text-tertiary)"><i class="fas fa-box-open" style="font-size:32px;margin-bottom:8px;display:block"></i>Hozircha mahsulot yo\'q</td></tr>';
       return;
     }
-    body.innerHTML = _inventoryData.map(function(item) {
+
+    let html = '';
+    _inventoryData.forEach(function(item) {
+      const hasVariants = item.variants && (item.variants.length > 1 || (item.variants.length === 1 && item.variants[0].color !== 'oddiy'));
+
+      // 1. MAIN PRODUCT ROW
       const wCells = _warehouses.map(function(w) {
         const val = (item.warehouses && item.warehouses[w] != null) ? item.warehouses[w] : 0;
-        return '<td style="padding:12px 16px;text-align:center">' + stockBadge(val) + '</td>';
+        return '<td style="padding:12px 16px;text-align:center;font-weight:' + (hasVariants ? '700' : '500') + '">' + stockBadge(val) + '</td>';
       }).join('');
-      return '<tr style="border-bottom:1px solid var(--border)"><td style="padding:12px 16px;font-size:14px;font-weight:600;color:var(--text-primary)">' + _esc(item.productName) + '</td>' + wCells + '<td style="padding:12px 16px;text-align:center"><span class="stock-badge" style="background:rgba(99,102,241,0.12);color:#6366F1;font-size:15px">' + (item.total || 0) + '</span></td></tr>';
-    }).join('');
+
+      const mainRowBg = hasVariants ? 'background-color:rgba(0,122,255,0.015); border-left:3px solid var(--accent);' : '';
+      
+      let productNameHtml = '<div style="display:flex;align-items:center;gap:8px">';
+      if (hasVariants) {
+        productNameHtml += '<i class="fas fa-boxes" style="color:var(--accent);font-size:14px"></i>';
+        productNameHtml += '<span style="font-weight:700;color:var(--text-primary)">' + _esc(item.productName) + '</span>';
+        productNameHtml += '<span style="background:rgba(0,122,255,0.08);color:var(--accent);font-size:10.5px;padding:2px 6px;border-radius:4px;font-weight:600">' + item.variants.length + ' xil rang</span>';
+      } else {
+        productNameHtml += '<i class="fas fa-box" style="color:var(--text-tertiary);font-size:14px"></i>';
+        productNameHtml += '<span style="font-weight:600;color:var(--text-primary)">' + _esc(item.productName) + '</span>';
+      }
+      productNameHtml += '</div>';
+
+      html += '<tr style="border-bottom:1px solid var(--border);' + mainRowBg + '">' +
+              '<td style="padding:12px 16px;font-size:14px;">' + productNameHtml + '</td>' +
+              wCells +
+              '<td style="padding:12px 16px;text-align:center">' +
+                '<span class="stock-badge" style="background:' + (hasVariants ? 'rgba(99,102,241,0.15)' : 'rgba(99,102,241,0.08)') + ';color:#6366F1;font-size:15px;font-weight:700">' + (item.total || 0) + '</span>' +
+              '</td>' +
+             '</tr>';
+
+      // 2. SUB-ROWS FOR VARIANTS
+      if (hasVariants) {
+        item.variants.forEach(function(v) {
+          const vWCells = _warehouses.map(function(w) {
+            const val = (v.warehouses && v.warehouses[w] != null) ? v.warehouses[w] : 0;
+            return '<td style="padding:8px 16px;text-align:center;opacity:0.85">' + stockBadge(val) + '</td>';
+          }).join('');
+
+          const colorDot = '<span class="color-dot" style="width:8px;height:8px;border-radius:50%;background-color:' + getColorHash(v.color) + ';display:inline-block"></span>';
+          
+          html += '<tr style="border-bottom:1px solid var(--border);background-color:rgba(0,0,0,0.005);">' +
+                  '<td style="padding:8px 16px 8px 36px;font-size:13px;font-weight:500;color:var(--text-secondary);">' +
+                    '<div style="display:flex;align-items:center;gap:8px">' +
+                      '<span style="color:var(--text-tertiary);font-weight:bold;margin-right:2px">└─</span>' +
+                      colorDot +
+                      '<span>' + _esc(v.color) + '</span>' +
+                    '</div>' +
+                  '</td>' +
+                  vWCells +
+                  '<td style="padding:8px 16px;text-align:center">' +
+                    '<span class="stock-badge" style="background:rgba(120,120,128,0.05);color:var(--text-secondary);font-size:12.5px;font-weight:600">' + (v.total || 0) + '</span>' +
+                  '</td>' +
+                 '</tr>';
+        });
+      }
+    });
+
+    body.innerHTML = html;
   }
 
   

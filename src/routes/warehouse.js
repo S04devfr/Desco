@@ -21,27 +21,64 @@ router.get('/', requireRole('admin', 'manager'), async (req, res) => {
     // Barcha ombor nomlarini dinamik aniqlash (hardcode yo'q)
     const allWarehouses = [...new Set(stocks.map(s => s.warehouse))].sort();
 
-    const stockMap = {};
-    stocks.forEach(s => {
-      const displayName = s.color && s.color !== 'oddiy' ? `${s.productName} (${s.color})` : s.productName;
-      if (!stockMap[displayName]) {
-        stockMap[displayName] = {};
-        allWarehouses.forEach(w => { stockMap[displayName][w] = 0; });
-      }
-      stockMap[displayName][s.warehouse] = s.stock;
-    });
+    const productGroupMap = {};
 
-    // ProductCatalog'dan kelgan mahsulotlarni ham qo'shish
+    // ProductCatalog'dan kelgan mahsulotlarni boshlang'ich qiymat sifatida qo'shish
     products.forEach(p => {
-      if (!stockMap[p.name]) {
-        stockMap[p.name] = {};
-        allWarehouses.forEach(w => { stockMap[p.name][w] = 0; });
-      }
+      productGroupMap[p.name] = {
+        productName: p.name,
+        variants: {}
+      };
     });
 
-    const inventory = Object.entries(stockMap).map(([name, warehouseData]) => {
-      const total = Object.values(warehouseData).reduce((s, v) => s + (v || 0), 0);
-      return { productName: name, warehouses: warehouseData, total };
+    // Ombor zaxiralarini qo'shish va guruhlash
+    stocks.forEach(s => {
+      if (!productGroupMap[s.productName]) {
+        productGroupMap[s.productName] = {
+          productName: s.productName,
+          variants: {}
+        };
+      }
+      
+      const colorKey = s.color || 'oddiy';
+      if (!productGroupMap[s.productName].variants[colorKey]) {
+        productGroupMap[s.productName].variants[colorKey] = {};
+        allWarehouses.forEach(w => {
+          productGroupMap[s.productName].variants[colorKey][w] = 0;
+        });
+      }
+      productGroupMap[s.productName].variants[colorKey][s.warehouse] = s.stock;
+    });
+
+    // Guruhlangan ma'lumotlarni to'g'ri formatga o'tkazish
+    const inventory = Object.values(productGroupMap).map(group => {
+      if (Object.keys(group.variants).length === 0) {
+        group.variants['oddiy'] = {};
+        allWarehouses.forEach(w => { group.variants['oddiy'][w] = 0; });
+      }
+
+      const variantsArr = Object.entries(group.variants).map(([color, warehouses]) => {
+        const total = Object.values(warehouses).reduce((s, v) => s + (v || 0), 0);
+        return { color, warehouses, total };
+      }).sort((a, b) => a.color.localeCompare(b.color));
+
+      const productWarehouses = {};
+      allWarehouses.forEach(w => { productWarehouses[w] = 0; });
+      let productTotal = 0;
+
+      variantsArr.forEach(v => {
+        allWarehouses.forEach(w => {
+          productWarehouses[w] += (v.warehouses[w] || 0);
+        });
+        productTotal += v.total;
+      });
+
+      return {
+        productName: group.productName,
+        warehouses: productWarehouses,
+        total: productTotal,
+        variants: variantsArr
+      };
     }).sort((a, b) => a.productName.localeCompare(b.productName));
 
     res.json({ inventory, logs, warehouses: allWarehouses });
