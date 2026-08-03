@@ -252,4 +252,76 @@ router.post('/update-stock', requireRole('admin', 'manager'), async (req, res) =
   }
 });
 
+// ── POST /api/warehouse/rename-color — Rang (variant) nomini o'zgartirish ──
+router.post('/rename-color', requireRole('admin', 'manager'), async (req, res) => {
+  try {
+    const { productName, oldColor, newColor } = req.body;
+    if (!productName || !oldColor || !newColor) {
+      return res.status(400).json({ message: "Mahsulot nomi, eski rang va yangi rang kiritilishi shart" });
+    }
+    const cleanOldColor = oldColor.trim();
+    const cleanNewColor = newColor.trim();
+
+    if (cleanOldColor === cleanNewColor) {
+      return res.json({ success: true, message: "Rang nomi o'zgarmadi" });
+    }
+
+    // 1. WarehouseStock yangilash (Tranzaksiya ichida xavfsiz bajarish)
+    await prisma.$transaction(async (tx) => {
+      // Barcha eski rangdagi zaxiralarni olamiz
+      const oldStocks = await tx.warehouseStock.findMany({
+        where: { productName, color: cleanOldColor }
+      });
+
+      for (const oldStock of oldStocks) {
+        // Yangi rangdagi zaxira bor-yo'qligini tekshiramiz
+        const existingNewStock = await tx.warehouseStock.findUnique({
+          where: {
+            warehouse_productName_color: {
+              warehouse: oldStock.warehouse,
+              productName,
+              color: cleanNewColor
+            }
+          }
+        });
+
+        if (existingNewStock) {
+          // Agar yangi rangda zaxira allaqachon mavjud bo'lsa, zaxiralarni qo'shamiz
+          await tx.warehouseStock.update({
+            where: { id: existingNewStock.id },
+            data: { stock: existingNewStock.stock + oldStock.stock }
+          });
+          // Eski yozuvni o'chiramiz
+          await tx.warehouseStock.delete({
+            where: { id: oldStock.id }
+          });
+        } else {
+          // Agar mavjud bo'lmasa, shunchaki rang nomini o'zgartiramiz
+          await tx.warehouseStock.update({
+            where: { id: oldStock.id },
+            data: { color: cleanNewColor }
+          });
+        }
+      }
+
+      // 2. Tegishli loglardagi rang nomini yangilash
+      await tx.warehouseLog.updateMany({
+        where: { productName, color: cleanOldColor },
+        data: { color: cleanNewColor }
+      });
+
+      // 3. Tegishli sdelkalardagi rang nomini yangilash
+      await tx.deal.updateMany({
+        where: { productName, productColor: cleanOldColor },
+        data: { productColor: cleanNewColor }
+      });
+    });
+
+    res.json({ success: true, message: "Rang nomi muvaffaqiyatli o'zgartirildi" });
+  } catch (err) {
+    console.error('[Warehouse RENAME COLOR]', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;

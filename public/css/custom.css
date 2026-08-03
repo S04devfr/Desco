@@ -159,6 +159,11 @@
   --bg-tertiary:   var(--surface-input);
 }
 
+[data-theme="dark"] option {
+  background-color: var(--surface-card) !important;
+  color: var(--text-900) !important;
+}
+
 /* ─────────────────────────────────────────────────────
    2. RESET & BASE
 ───────────────────────────────────────────────────── */

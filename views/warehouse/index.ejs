@@ -159,22 +159,39 @@
   }
   .stock-badge {
     display: inline-flex; align-items: center; justify-content: center;
-    min-width: 36px; padding: 4px 10px; border-radius: 8px;
-    font-size: 14px; font-weight: 700;
+    min-width: 40px; height: 26px; padding: 0 8px; border-radius: 6px;
+    font-size: 13px; font-weight: 700; transition: all 150ms ease;
   }
-  .stock-ok { background: rgba(52,199,89,0.12); color: #34C759; }
-  .stock-low { background: rgba(255,149,0,0.12); color: #FF9500; }
-  .stock-zero { background: rgba(255,59,48,0.12); color: #FF3B30; }
-  .action-fill { background: rgba(52,199,89,0.12); color: #34C759; }
-  .action-ship { background: rgba(255,59,48,0.12); color: #FF3B30; }
-  .action-transfer { background: rgba(99,102,241,0.12); color: #6366F1; }
-  .action-return { background: rgba(255,149,0,0.12); color: #FF9500; }
+  .stock-ok { background: rgba(16, 185, 129, 0.1) !important; color: #10B981 !important; border: 1px solid rgba(16, 185, 129, 0.18); }
+  .stock-ok:hover { background: rgba(16, 185, 129, 0.16) !important; transform: translateY(-1px); }
+  
+  .stock-low { background: rgba(245, 158, 11, 0.1) !important; color: #D97706 !important; border: 1px solid rgba(245, 158, 11, 0.18); }
+  .stock-low:hover { background: rgba(245, 158, 11, 0.16) !important; transform: translateY(-1px); }
+  
+  .stock-zero { background: rgba(239, 68, 68, 0.08) !important; color: #EF4444 !important; border: 1px solid rgba(239, 68, 68, 0.12); }
+  .stock-zero:hover { background: rgba(239, 68, 68, 0.14) !important; transform: translateY(-1px); }
+  
+  .stock-total {
+    background: rgba(99, 102, 241, 0.1) !important;
+    color: #6366F1 !important;
+    border: 1px solid rgba(99, 102, 241, 0.18);
+    font-weight: 800;
+  }
+  .stock-total:hover { background: rgba(99, 102, 241, 0.16) !important; transform: translateY(-1px); }
+
+  .action-fill { background: rgba(16, 185, 129, 0.1); color: #10B981; }
+  .action-ship { background: rgba(239, 68, 68, 0.08); color: #EF4444; }
+  .action-transfer { background: rgba(99, 102, 241, 0.1); color: #6366F1; }
+  .action-return { background: rgba(245, 158, 11, 0.1); color: #D97706; }
+
   .stat-card {
-    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px;
     padding: 16px 20px; display: flex; flex-direction: column; gap: 4px;
+    box-shadow: var(--shadow-sm);
   }
-  .stat-card .stat-label { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-card .stat-label { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
   .stat-card .stat-value { font-size: 24px; font-weight: 800; }
+  
   .product-item {
     display: flex; align-items: center; justify-content: space-between;
     padding: 10px 12px; border-bottom: 1px solid var(--border);
@@ -188,7 +205,49 @@
     transition: background-color 0.15s ease;
   }
   .main-product-row:hover {
-    background-color: rgba(0, 122, 255, 0.04) !important;
+    background-color: var(--bg-surface-hover) !important;
+  }
+  
+  .variant-row {
+    transition: background-color 0.15s ease;
+  }
+  .variant-row:hover {
+    background-color: var(--bg-surface-hover) !important;
+  }
+
+  .variant-color-text {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: background-color 0.15s ease;
+  }
+  .variant-color-text:hover {
+    background-color: var(--border-subtle);
+  }
+  .variant-color-text .edit-color-icon {
+    font-size: 10px;
+    opacity: 0;
+    margin-left: 6px;
+    transition: opacity 0.15s ease, color 0.15s ease;
+    color: var(--text-secondary);
+  }
+  .variant-color-text:hover .edit-color-icon {
+    opacity: 0.7;
+  }
+  .variant-color-text:hover .edit-color-icon:hover {
+    opacity: 1;
+    color: var(--primary);
+  }
+  .color-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 0 2px var(--border-subtle);
   }
 </style>
 
@@ -319,6 +378,67 @@
     const w = input.dataset.warehouse;
     
     td.innerHTML = stockBadge(oldStock, p, c, w, true);
+  }
+
+  function initiateColorRename(event, spanEl, productName, oldColor) {
+    event.stopPropagation();
+    const parent = spanEl.parentNode;
+    
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = oldColor;
+    input.className = 'color-rename-input';
+    
+    input.dataset.product = productName;
+    input.dataset.oldColor = oldColor;
+
+    parent.replaceChild(input, spanEl);
+    input.focus();
+    input.select();
+
+    input.addEventListener('click', (e) => e.stopPropagation());
+    input.addEventListener('blur', () => finishColorRename(input, spanEl));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        input.blur();
+      } else if (e.key === 'Escape') {
+        cancelColorRename(input, spanEl);
+      }
+    });
+  }
+
+  async function finishColorRename(input, originalSpan) {
+    const parent = input.parentNode;
+    if (!parent) return;
+    
+    const productName = input.dataset.product;
+    const oldColor = input.dataset.oldColor;
+    const newColor = input.value.trim();
+
+    if (!newColor || newColor === oldColor) {
+      cancelColorRename(input, originalSpan);
+      return;
+    }
+
+    try {
+      await apiFetch('/api/warehouse/rename-color', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productName, oldColor, newColor })
+      });
+      _toast("Rang nomi yangilandi", 'success');
+      await loadData();
+    } catch(e) {
+      _toast(e.message, 'error');
+      cancelColorRename(input, originalSpan);
+    }
+  }
+
+  function cancelColorRename(input, originalSpan) {
+    const parent = input.parentNode;
+    if (parent) {
+      parent.replaceChild(originalSpan, input);
+    }
   }
 
   function actionBadge(action) {
@@ -477,7 +597,7 @@
         return '<td style="padding:12px 16px;text-align:center;font-weight:' + (hasVariants ? '700' : '500') + '">' + stockBadge(val, item.productName, 'oddiy', w, isEditable) + '</td>';
       }).join('');
 
-      const mainRowBg = hasVariants ? 'background-color:rgba(0,122,255,0.015); border-left:3px solid var(--accent);' : '';
+      const mainRowBg = hasVariants ? 'background-color:rgba(99,102,241,0.015); border-left:3px solid var(--accent);' : '';
       const mainRowClass = hasVariants ? 'class="main-product-row" onclick="toggleVariants(' + idx + ', this)"' : '';
       
       let productNameHtml = '<div style="display:flex;align-items:center;gap:8px">';
@@ -485,7 +605,7 @@
         productNameHtml += '<i class="fas fa-chevron-right toggle-icon" style="transition: transform 0.2s ease; color:var(--text-tertiary); font-size:11px; margin-right:4px"></i>';
         productNameHtml += '<i class="fas fa-boxes" style="color:var(--accent);font-size:14px"></i>';
         productNameHtml += '<span style="font-weight:700;color:var(--text-primary)">' + _esc(item.productName) + '</span>';
-        productNameHtml += '<span style="background:rgba(0,122,255,0.08);color:var(--accent);font-size:10.5px;padding:2px 6px;border-radius:4px;font-weight:600">' + item.variants.length + ' xil rang</span>';
+        productNameHtml += '<span style="background:rgba(99,102,241,0.08);color:var(--accent);font-size:10.5px;padding:2px 6px;border-radius:4px;font-weight:600">' + item.variants.length + ' xil rang</span>';
       } else {
         productNameHtml += '<i class="fas fa-box" style="color:var(--text-tertiary);font-size:14px;margin-left:15px"></i>';
         productNameHtml += '<span style="font-weight:600;color:var(--text-primary)">' + _esc(item.productName) + '</span>';
@@ -496,7 +616,7 @@
               '<td style="padding:12px 16px;font-size:14px;">' + productNameHtml + '</td>' +
               wCells +
               '<td style="padding:12px 16px;text-align:center">' +
-                '<span class="stock-badge" style="background:' + (hasVariants ? 'rgba(99,102,241,0.15)' : 'rgba(99,102,241,0.08)') + ';color:#6366F1;font-size:15px;font-weight:700">' + (item.total || 0) + '</span>' +
+                '<span class="stock-badge stock-total">' + (item.total || 0) + '</span>' +
               '</td>' +
              '</tr>';
 
@@ -505,22 +625,25 @@
         item.variants.forEach(function(v) {
           const vWCells = _warehouses.map(function(w) {
             const val = (v.warehouses && v.warehouses[w] != null) ? v.warehouses[w] : 0;
-            return '<td style="padding:8px 16px;text-align:center;opacity:0.85">' + stockBadge(val, item.productName, v.color, w, true) + '</td>';
+            return '<td style="padding:8px 16px;text-align:center;opacity:0.9">' + stockBadge(val, item.productName, v.color, w, true) + '</td>';
           }).join('');
 
-          const colorDot = '<span class="color-dot" style="width:8px;height:8px;border-radius:50%;background-color:' + getColorHash(v.color) + ';display:inline-block"></span>';
+          const colorDot = '<span class="color-dot" style="background-color:' + getColorHash(v.color) + '"></span>';
           
-          html += '<tr class="variant-row-' + idx + ' hidden" style="border-bottom:1px solid var(--border);background-color:rgba(0,0,0,0.005);">' +
+          html += '<tr class="variant-row variant-row-' + idx + ' hidden" style="border-bottom:1px solid var(--border);">' +
                   '<td style="padding:8px 16px 8px 36px;font-size:13px;font-weight:500;color:var(--text-secondary);">' +
                     '<div style="display:flex;align-items:center;gap:8px">' +
                       '<span style="color:var(--text-tertiary);font-weight:bold;margin-right:2px">└─</span>' +
                       colorDot +
-                      '<span>' + _esc(v.color) + '</span>' +
+                      '<span class="variant-color-text" title="Rang nomini tahrirlash" onclick="initiateColorRename(event, this, \'' + _esc(item.productName).replace(/'/g, "\\'") + '\', \'' + _esc(v.color).replace(/'/g, "\\'") + '\')">' + 
+                        _esc(v.color) + 
+                        '<i class="fas fa-pencil-alt edit-color-icon"></i>' +
+                      '</span>' +
                     '</div>' +
                   '</td>' +
                   vWCells +
                   '<td style="padding:8px 16px;text-align:center">' +
-                    '<span class="stock-badge" style="background:rgba(120,120,128,0.05);color:var(--text-secondary);font-size:12.5px;font-weight:600">' + (v.total || 0) + '</span>' +
+                    '<span class="stock-badge" style="background:rgba(120,120,128,0.08);color:var(--text-secondary);font-size:12px;font-weight:700">' + (v.total || 0) + '</span>' +
                   '</td>' +
                  '</tr>';
         });

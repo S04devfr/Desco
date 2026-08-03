@@ -769,6 +769,11 @@ body::after {
   box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2) !important;
 }
 
+[data-theme="dark"] option {
+  background-color: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+}
+
 /* ─────────────────────────────────────────────────────
    TABLES
 ───────────────────────────────────────────────────── */
