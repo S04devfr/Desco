@@ -182,6 +182,14 @@
   }
   .product-item:hover { background: var(--bg-secondary); }
   .product-item:last-child { border-bottom: none; }
+  
+  .main-product-row {
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+  }
+  .main-product-row:hover {
+    background-color: rgba(0, 122, 255, 0.04) !important;
+  }
 </style>
 
 <script>
@@ -341,6 +349,29 @@
     return colors[Math.abs(hash) % colors.length];
   }
 
+  function toggleVariants(idx, rowEl) {
+    const subRows = document.querySelectorAll('.variant-row-' + idx);
+    const icon = rowEl.querySelector('.toggle-icon');
+    let isOpening = false;
+
+    subRows.forEach(r => {
+      if (r.classList.contains('hidden')) {
+        r.classList.remove('hidden');
+        isOpening = true;
+      } else {
+        r.classList.add('hidden');
+      }
+    });
+
+    if (icon) {
+      if (isOpening) {
+        icon.style.transform = 'rotate(90deg)';
+      } else {
+        icon.style.transform = 'rotate(0deg)';
+      }
+    }
+  }
+
   function renderInventory() {
     const body = document.getElementById('inventoryBody');
     const colspan = _warehouses.length + 2;
@@ -350,7 +381,7 @@
     }
 
     let html = '';
-    _inventoryData.forEach(function(item) {
+    _inventoryData.forEach(function(item, idx) {
       const hasVariants = item.variants && (item.variants.length > 1 || (item.variants.length === 1 && item.variants[0].color !== 'oddiy'));
 
       // 1. MAIN PRODUCT ROW
@@ -360,19 +391,21 @@
       }).join('');
 
       const mainRowBg = hasVariants ? 'background-color:rgba(0,122,255,0.015); border-left:3px solid var(--accent);' : '';
+      const mainRowClass = hasVariants ? 'class="main-product-row" onclick="toggleVariants(' + idx + ', this)"' : '';
       
       let productNameHtml = '<div style="display:flex;align-items:center;gap:8px">';
       if (hasVariants) {
+        productNameHtml += '<i class="fas fa-chevron-right toggle-icon" style="transition: transform 0.2s ease; color:var(--text-tertiary); font-size:11px; margin-right:4px"></i>';
         productNameHtml += '<i class="fas fa-boxes" style="color:var(--accent);font-size:14px"></i>';
         productNameHtml += '<span style="font-weight:700;color:var(--text-primary)">' + _esc(item.productName) + '</span>';
         productNameHtml += '<span style="background:rgba(0,122,255,0.08);color:var(--accent);font-size:10.5px;padding:2px 6px;border-radius:4px;font-weight:600">' + item.variants.length + ' xil rang</span>';
       } else {
-        productNameHtml += '<i class="fas fa-box" style="color:var(--text-tertiary);font-size:14px"></i>';
+        productNameHtml += '<i class="fas fa-box" style="color:var(--text-tertiary);font-size:14px;margin-left:15px"></i>';
         productNameHtml += '<span style="font-weight:600;color:var(--text-primary)">' + _esc(item.productName) + '</span>';
       }
       productNameHtml += '</div>';
 
-      html += '<tr style="border-bottom:1px solid var(--border);' + mainRowBg + '">' +
+      html += '<tr style="border-bottom:1px solid var(--border);' + mainRowBg + '" ' + mainRowClass + '>' +
               '<td style="padding:12px 16px;font-size:14px;">' + productNameHtml + '</td>' +
               wCells +
               '<td style="padding:12px 16px;text-align:center">' +
@@ -390,7 +423,7 @@
 
           const colorDot = '<span class="color-dot" style="width:8px;height:8px;border-radius:50%;background-color:' + getColorHash(v.color) + ';display:inline-block"></span>';
           
-          html += '<tr style="border-bottom:1px solid var(--border);background-color:rgba(0,0,0,0.005);">' +
+          html += '<tr class="variant-row-' + idx + ' hidden" style="border-bottom:1px solid var(--border);background-color:rgba(0,0,0,0.005);">' +
                   '<td style="padding:8px 16px 8px 36px;font-size:13px;font-weight:500;color:var(--text-secondary);">' +
                     '<div style="display:flex;align-items:center;gap:8px">' +
                       '<span style="color:var(--text-tertiary);font-weight:bold;margin-right:2px">└─</span>' +
