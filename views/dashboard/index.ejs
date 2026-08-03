@@ -2245,7 +2245,7 @@ function renderCatalogTable() {
     <tr>
       <td style="text-align:center; font-weight:600; color:var(--text-secondary)">#${d.id}</td>
       <td style="font-weight:700; color:var(--text-primary)">${escHtml(d.name)}</td>
-      <td style="text-align:right; font-weight:800; color:var(--text-primary)">${fmtMoney(d.price)}</td>
+      <td style="text-align:right; font-weight:800; color:var(--text-primary)">${d.price > 0 ? fmtMoney(d.price) : '-'}</td>
       <td style="color:var(--text-secondary)">${escHtml(d.notes || '-')}</td>
       <td style="text-align:center;">
         <button class="btn btn-ghost btn-sm text-danger" onclick="deleteCatalogProduct(${d.id})" style="padding:4px 8px;"><i class="fas fa-trash-alt"></i></button>
@@ -2257,18 +2257,15 @@ function renderCatalogTable() {
 function updateCatalogDropdown() {
   const select = document.getElementById('catalogSelect');
   select.innerHTML = '<option value="">Mahsulotni tanlang...</option>' + 
-    allCatalogData.map(c => `<option value="${c.id}" data-price="${c.price}" data-name="${escHtml(c.name)}">${escHtml(c.name)} (${fmtMoney(c.price)})</option>`).join('');
+    allCatalogData.map(c => `<option value="${c.id}" data-price="${c.price}" data-name="${escHtml(c.name)}">${escHtml(c.name)}${c.price > 0 ? ' (' + fmtMoney(c.price) + ')' : ''}</option>`).join('');
 }
 
 function openAddProductModal() {
-  // We'll create a simple prompt-based modal logic for adding
   const name = prompt("Mahsulot nomi:");
   if (!name) return;
-  const price = prompt("Narxi (raqamda):");
-  if (!price) return;
   const notes = prompt("Izoh (masalan qaysi shaharga qancha):");
   
-  saveNewProduct(name, price, notes);
+  saveNewProduct(name, 0, notes);
 }
 
 async function saveNewProduct(name, price, notes) {

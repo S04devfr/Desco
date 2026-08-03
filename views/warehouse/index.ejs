@@ -137,7 +137,6 @@
     <div class="modal-body">
       <div style="display:flex;gap:8px;margin-bottom:16px">
         <input type="text" id="newProductName" class="form-control" placeholder="Yangi mahsulot nomi..." style="flex:1">
-        <input type="number" id="newProductPrice" class="form-control" placeholder="Narx" style="width:120px" min="0">
         <button class="btn btn-primary" onclick="addProduct()" style="white-space:nowrap">
           <i class="fas fa-plus"></i> Qo'shish
         </button>
@@ -424,9 +423,7 @@
 
   async function addProduct() {
     const nameEl = document.getElementById('newProductName');
-    const priceEl = document.getElementById('newProductPrice');
     const name = nameEl.value.trim();
-    const price = parseFloat(priceEl.value) || 0;
 
     if (!name) { _toast('Mahsulot nomi kerak', 'error'); nameEl.focus(); return; }
 
@@ -434,11 +431,10 @@
       await apiFetch('/api/product-catalog', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, price })
+        body: JSON.stringify({ name, price: 0 })
       });
       _toast("Mahsulot turi qo'shildi", 'success');
       nameEl.value = '';
-      priceEl.value = '';
       await loadProducts();
     } catch(e) { _toast(e.message, 'error'); }
   }
