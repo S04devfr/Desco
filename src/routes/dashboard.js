@@ -574,7 +574,7 @@ router.get('/today-tasks', async (req, res, next) => {
     const where = {
       completed: false,
       OR: [
-        { dueDate: { gte: startOfDay, lte: endOfDay } },
+        { dueDate: { lte: endOfDay } },
         { dueDate: null }
       ]
     }

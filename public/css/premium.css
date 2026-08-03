@@ -1689,6 +1689,13 @@ a.quick-nav-card .card:hover {
   box-shadow: 0 0 0 3px rgba(99,102,241,0.10);
 }
 
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select,
+[data-theme="dark"] .form-control {
+  color: var(--text-primary) !important;
+}
+
 /* Btn primary — purple */
 .btn-primary {
   background: linear-gradient(135deg, var(--brand), var(--brand-hover));

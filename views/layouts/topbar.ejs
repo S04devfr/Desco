@@ -129,13 +129,6 @@ async function loadNotifications() {
       countEl.classList.add('hidden');
     }
 
-    // Update sidebar task badge if needed
-    const taskBadge = document.getElementById('sidebar-task-badge');
-    if (taskBadge && unread > 0) {
-      taskBadge.textContent = unread > 9 ? '9+' : unread;
-      taskBadge.classList.remove('hidden');
-    }
-
     const list = document.getElementById('notifList');
     if (!notifs.length) {
       list.innerHTML = "<div class='empty-state' style='padding:24px;'>Bildirishnoma yo'q</div>";

@@ -205,6 +205,39 @@
   .dcard:hover .dcard-edit-btn { opacity:1; }
   .dcard-edit-btn:hover { color:var(--accent); border-color:var(--accent); }
   /* ── Table view ── */
+  .custom-select-wrapper input {
+    padding-right: 32px;
+  }
+  .custom-select-dropdown {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+    background: var(--surface-card, #fff);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  [data-theme="dark"] .custom-select-dropdown {
+    background: #1e293b;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  .cs-option {
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .cs-option:hover {
+    background: var(--brand-soft);
+    color: var(--brand);
+  }
+  [data-theme="dark"] .cs-option:hover {
+    background: rgba(99, 102, 241, 0.15);
+    color: #818cf8;
+  }
+  
   .table-wrap { flex:1; overflow:auto; }
   .deals-tbl { width:100%; border-collapse:collapse; }
   .deals-tbl th {
@@ -524,14 +557,18 @@
           </div>
           <div class="form-group">
             <label class="form-label">Mahsulot rangi</label>
-            <select id="f-color" class="form-control">
-              <option value="oddiy">Oddiy</option>
-              <option value="Brak (Buzilgan)">Brak (Buzilgan)</option>
-              <option value="Kulrang">Kulrang (Grey)</option>
-              <option value="Tillo">Tillo (Gold)</option>
-              <option value="Qora">Qora (Black)</option>
-              <option value="Qizil">Qizil (Red)</option>
-            </select>
+            <div class="custom-select-wrapper" style="position: relative;">
+              <input type="text" id="f-color" class="form-control" autocomplete="off" placeholder="Rangni yozing yoki tanlang" onfocus="document.getElementById('colorSelectDropdown').classList.remove('hidden')" onblur="setTimeout(() => { const el = document.getElementById('colorSelectDropdown'); if(el) el.classList.add('hidden'); }, 200)">
+              <i class="fas fa-chevron-down" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); color:var(--text-tertiary); pointer-events:none;"></i>
+              <div id="colorSelectDropdown" class="custom-select-dropdown hidden">
+                <div class="cs-option" onclick="document.getElementById('f-color').value = 'Oddiy'">Oddiy</div>
+                <div class="cs-option" onclick="document.getElementById('f-color').value = 'Brak (Buzilgan)'">Brak (Buzilgan)</div>
+                <div class="cs-option" onclick="document.getElementById('f-color').value = 'Kulrang'">Kulrang (Grey)</div>
+                <div class="cs-option" onclick="document.getElementById('f-color').value = 'Tillo'">Tillo (Gold)</div>
+                <div class="cs-option" onclick="document.getElementById('f-color').value = 'Qora'">Qora (Black)</div>
+                <div class="cs-option" onclick="document.getElementById('f-color').value = 'Qizil'">Qizil (Red)</div>
+              </div>
+            </div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
             <div class="form-group" style="margin-bottom:0">
@@ -1201,7 +1238,8 @@ function dcardHtml(d) {
   const clientName = d.client ? _esc(d.client.name) : '<span style="color:var(--text-tertiary); font-weight:500; font-style:italic;">Kiritilmagan</span>';
   const clientPhone = (d.client && d.client.phone) ? _esc(d.client.phone) : '<span style="color:var(--text-tertiary); font-weight:500; font-style:italic;">Kiritilmagan</span>';
   const clientCity = (d.client && d.client.city) ? _esc(d.client.city) : '<span style="color:var(--text-tertiary); font-weight:500; font-style:italic;">Kiritilmagan</span>';
-  const productName = _esc(d.productName || d.name || 'Belgilanmagan');
+  const pColorText = (d.productColor && d.productColor.toLowerCase() !== 'oddiy') ? `<span style="font-size:10px; padding:2px 6px; border-radius:4px; background:var(--brand-soft); color:var(--brand); margin-left:6px; font-weight:700;">${_esc(d.productColor)}</span>` : '';
+  const productName = _esc(d.productName || d.name || 'Belgilanmagan') + pColorText;
 
   // Extract 'Kim uchun' (Kim uchun xarid qilmoqchi) from notes
   let kimUchun = 'Noma’lum';
@@ -1366,7 +1404,7 @@ function renderTable() {
     const sc = statusColors[d.status]||'#8E8E93';
     return `<tr onclick="openDetail(${d.id})">
       <td style="color:var(--text-tertiary);font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">#${d.id}</td>
-      <td style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${_esc(d.productName||d.name)}"><strong>${_esc(d.productName||d.name)}</strong>${d.productColor && d.productColor !== 'oddiy' ? ' <span class="badge badge-purple" style="font-size:10px; padding:1px 4px;">' + _esc(d.productColor) + '</span>' : ''}</td>
+      <td style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${_esc(d.productName||d.name)}"><strong>${_esc(d.productName||d.name)}</strong>${d.productColor && d.productColor !== 'oddiy' ? ' <span style="font-size:10px; padding:2px 6px; border-radius:4px; background:var(--brand-soft); color:var(--brand); font-weight:700;">' + _esc(d.productColor) + '</span>' : ''}</td>
       <td style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${d.client ? _esc(d.client.name) : ''}">${d.client ? _esc(d.client.name) : '<span style="color:var(--text-tertiary)">—</span>'}</td>
       <td style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${stage ? `<span class="badge" style="background:${stage.color}22;color:${stage.color}">${_esc(stage.name)}</span>` : '—'}</td>
       <td style="font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${_fmt(d.amount)}</td>
