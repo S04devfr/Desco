@@ -202,4 +202,54 @@ router.get('/logs', requireRole('admin', 'manager'), async (req, res) => {
   }
 });
 
+// ── POST /api/warehouse/update-stock — Zaxirani tahrirlash (to'g'rilash) ──
+router.post('/update-stock', requireRole('admin', 'manager'), async (req, res) => {
+  try {
+    const { warehouse, productName, color, stock } = req.body;
+    const parsedStock = parseInt(stock);
+    if (!warehouse || !productName || isNaN(parsedStock) || parsedStock < 0) {
+      return res.status(400).json({ message: "Ombor, mahsulot va to'g'ri zaxira miqdori majburiy" });
+    }
+    const itemColor = color || 'oddiy';
+
+    // 1. O'zgarishlar farqini hisoblash uchun joriy zaxirani olish (tarixga yozish uchun)
+    const currentRecord = await prisma.warehouseStock.findUnique({
+      where: { warehouse_productName_color: { warehouse, productName, color: itemColor } }
+    });
+
+    const oldStock = currentRecord ? currentRecord.stock : 0;
+    const changeQty = parsedStock - oldStock;
+
+    // Agar o'zgarish bo'lmasa, shunchaki javob qaytaramiz
+    if (changeQty === 0) {
+      return res.json({ success: true, message: "Zaxira o'zgarmadi" });
+    }
+
+    // 2. Yangi zaxirani saqlash
+    await prisma.warehouseStock.upsert({
+      where: { warehouse_productName_color: { warehouse, productName, color: itemColor } },
+      update: { stock: parsedStock },
+      create: { warehouse, productName, color: itemColor, stock: parsedStock }
+    });
+
+    // 3. Tarixga (logs) yozish
+    await prisma.warehouseLog.create({
+      data: {
+        warehouse,
+        productName,
+        color: itemColor,
+        changeQty: changeQty,
+        action: changeQty > 0 ? 'fill' : 'ship',
+        notes: `Zaxira tahrirlandi: ${oldStock} -> ${parsedStock}`,
+        userName: req.user?.fullName || req.session?.user?.fullName || null
+      }
+    });
+
+    res.json({ success: true, message: "Zaxira yangilandi" });
+  } catch (err) {
+    console.error('[Warehouse UPDATE STOCK]', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;

@@ -230,9 +230,95 @@
       ' ' + dt.toLocaleTimeString('uz-UZ', { hour:'2-digit', minute:'2-digit' });
   }
 
-  function stockBadge(val) {
+  function stockBadge(val, pName, color, warehouse, isEditable) {
     const cls = val <= 0 ? 'stock-zero' : val <= 5 ? 'stock-low' : 'stock-ok';
+    if (isEditable) {
+      return '<span class="stock-badge ' + cls + '" style="cursor:pointer" onclick="initiateStockEdit(event, this)" ' +
+        'data-product="' + _esc(pName) + '" ' +
+        'data-color="' + _esc(color) + '" ' +
+        'data-warehouse="' + _esc(warehouse) + '" ' +
+        'data-stock="' + val + '">' + val + '</span>';
+    }
     return '<span class="stock-badge ' + cls + '">' + val + '</span>';
+  }
+
+  function initiateStockEdit(event, badgeEl) {
+    event.stopPropagation();
+    const p = badgeEl.dataset.product;
+    const c = badgeEl.dataset.color;
+    const w = badgeEl.dataset.warehouse;
+    const s = parseInt(badgeEl.dataset.stock) || 0;
+
+    const td = badgeEl.parentNode;
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.value = s;
+    input.style.width = '60px';
+    input.style.padding = '4px 6px';
+    input.style.fontSize = '12.5px';
+    input.style.fontWeight = '700';
+    input.style.textAlign = 'center';
+    input.style.border = '1px solid var(--accent)';
+    input.style.borderRadius = '6px';
+    input.style.background = 'var(--surface-base)';
+    input.style.color = 'var(--text-primary)';
+    input.min = '0';
+    
+    input.dataset.product = p;
+    input.dataset.color = c;
+    input.dataset.warehouse = w;
+    input.dataset.oldStock = s;
+
+    td.innerHTML = '';
+    td.appendChild(input);
+    input.focus();
+    input.select();
+
+    input.addEventListener('click', (e) => e.stopPropagation());
+    input.addEventListener('blur', () => finishStockEdit(input));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        input.blur();
+      } else if (e.key === 'Escape') {
+        cancelStockEdit(input);
+      }
+    });
+  }
+
+  async function finishStockEdit(input) {
+    const p = input.dataset.product;
+    const c = input.dataset.color;
+    const w = input.dataset.warehouse;
+    const oldStock = parseInt(input.dataset.oldStock);
+    const newStock = parseInt(input.value);
+
+    if (isNaN(newStock) || newStock < 0 || newStock === oldStock) {
+      cancelStockEdit(input);
+      return;
+    }
+
+    try {
+      await apiFetch('/api/warehouse/update-stock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productName: p, color: c, warehouse: w, stock: newStock })
+      });
+      _toast("Zaxira yangilandi", 'success');
+      await loadData();
+    } catch(e) {
+      _toast(e.message, 'error');
+      cancelStockEdit(input);
+    }
+  }
+
+  function cancelStockEdit(input) {
+    const td = input.parentNode;
+    const oldStock = parseInt(input.dataset.oldStock);
+    const p = input.dataset.product;
+    const c = input.dataset.color;
+    const w = input.dataset.warehouse;
+    
+    td.innerHTML = stockBadge(oldStock, p, c, w, true);
   }
 
   function actionBadge(action) {
@@ -387,7 +473,8 @@
       // 1. MAIN PRODUCT ROW
       const wCells = _warehouses.map(function(w) {
         const val = (item.warehouses && item.warehouses[w] != null) ? item.warehouses[w] : 0;
-        return '<td style="padding:12px 16px;text-align:center;font-weight:' + (hasVariants ? '700' : '500') + '">' + stockBadge(val) + '</td>';
+        const isEditable = !hasVariants;
+        return '<td style="padding:12px 16px;text-align:center;font-weight:' + (hasVariants ? '700' : '500') + '">' + stockBadge(val, item.productName, 'oddiy', w, isEditable) + '</td>';
       }).join('');
 
       const mainRowBg = hasVariants ? 'background-color:rgba(0,122,255,0.015); border-left:3px solid var(--accent);' : '';
@@ -418,7 +505,7 @@
         item.variants.forEach(function(v) {
           const vWCells = _warehouses.map(function(w) {
             const val = (v.warehouses && v.warehouses[w] != null) ? v.warehouses[w] : 0;
-            return '<td style="padding:8px 16px;text-align:center;opacity:0.85">' + stockBadge(val) + '</td>';
+            return '<td style="padding:8px 16px;text-align:center;opacity:0.85">' + stockBadge(val, item.productName, v.color, w, true) + '</td>';
           }).join('');
 
           const colorDot = '<span class="color-dot" style="width:8px;height:8px;border-radius:50%;background-color:' + getColorHash(v.color) + ';display:inline-block"></span>';
