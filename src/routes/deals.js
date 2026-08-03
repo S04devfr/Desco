@@ -163,7 +163,7 @@ router.post('/', async (req, res, next) => {
     const {
       productName, amount, paidAmount, status, notes, clientId, deadline, stageId, pipelineId,
       contactName, contactPhone, contactEmail, companyName, companyAddress, city, costPrice, createdAt, warehouse,
-      productColor
+      productColor, driverPhone
     } = req.body
     if (!productName) return res.status(400).json({ message: 'Mahsulot nomi majburiy' })
 
@@ -244,7 +244,8 @@ router.post('/', async (req, res, next) => {
         pipelineId: resolvedPipelineId,
         warehouse: warehouse || null,
         source: req.body.source || 'oddiy',
-        productColor: productColor || 'oddiy'
+        productColor: productColor || 'oddiy',
+        driverPhone: driverPhone || null
       },
       include: {
         client: { select: { id: true, name: true, company: true, phone: true, city: true } },
@@ -496,7 +497,7 @@ router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => 
   try {
     const {
       productName, amount, paidAmount, status, notes, clientId, deadline, managerId, stageId, costPrice, deliveryPrice,
-      contactName, contactPhone, city, createdAt, warehouse, productColor
+      contactName, contactPhone, city, createdAt, warehouse, productColor, driverPhone
     } = req.body
 
     const existing = await prisma.deal.findUnique({ where: { id: Number(req.params.id) } })
@@ -575,6 +576,7 @@ router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => 
     }
     if (warehouse !== undefined) data.warehouse = warehouse || null
     if (productColor !== undefined) data.productColor = productColor
+    if (driverPhone !== undefined) data.driverPhone = driverPhone || null
 
     const deal = await prisma.deal.update({
       where: { id: Number(req.params.id) },

@@ -127,6 +127,8 @@ model Deal {
   source           String    @default("oddiy") // instagram | target | oddiy
   productColor     String    @default("oddiy")
 
+  driverPhone      String?
+
   @@index([stageId])
   @@index([managerId])
   @@index([clientId])

@@ -35,9 +35,8 @@ function buildWhere(filter, req) {
       return {};
     }
   } else if (filter === 'month') {
-    start.setDate(1);
-    start.setHours(0,0,0,0);
-    end.setHours(23,59,59,999);
+    start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
   }
 
   // Validate dates to prevent Prisma crash
@@ -135,9 +134,8 @@ router.get('/kpis', async (req, res, next) => {
           return null;
         }
       } else if (filter === 'month') {
-        start.setDate(1);
-        start.setHours(0,0,0,0);
-        end.setHours(23,59,59,999);
+        start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+        end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
       }
       if (isNaN(start.getTime()) || isNaN(end.getTime())) return null;
       return { start, end };

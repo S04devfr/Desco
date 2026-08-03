@@ -39,7 +39,8 @@ router.get('/summary', async (req, res) => {
         start = new Date(now); start.setDate(start.getDate()-1); start.setHours(0,0,0,0)
         end = new Date(start); end.setHours(23,59,59,999)
       } else if (filter === 'month') {
-        start = new Date(now); start.setDate(1); start.setHours(0,0,0,0); end.setHours(23,59,59,999)
+        start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+        end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
       } else if (filter === 'range' && startDate && endDate) {
         start = new Date(startDate); start.setHours(0,0,0,0)
         end = new Date(endDate); end.setHours(23,59,59,999)
