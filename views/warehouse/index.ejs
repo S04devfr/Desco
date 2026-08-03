@@ -103,6 +103,7 @@
         <label class="form-label">Mahsulot rangi *</label>
         <select id="fill-color" class="form-control">
           <option value="oddiy">Oddiy</option>
+          <option value="Brak (Buzilgan)">Brak (Buzilgan)</option>
           <option value="Kulrang">Kulrang (Grey)</option>
           <option value="Tillo">Tillo (Gold)</option>
           <option value="Qora">Qora (Black)</option>
@@ -319,6 +320,7 @@
 
   function getColorHash(color) {
     const c = String(color || '').toLowerCase().trim();
+    if (c.includes('brak') || c.includes('buzilgan')) return '#FF3B30';
     if (c === 'qizil') return '#FF3B30';
     if (c === 'ko\'k' || c === 'kok' || c === 'ko`k') return '#007AFF';
     if (c === 'yashil') return '#34C759';
