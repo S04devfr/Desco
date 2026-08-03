@@ -1100,6 +1100,13 @@ async function loadDashboard() {
     const nasiya = (safeKpis.nasiyaDesco?.amount || 0) + (safeKpis.nasiyaIshonch?.amount || 0) + (safeKpis.nasiyaBaraka?.amount || 0);
     const nasiyaCount = (safeKpis.nasiyaDesco?.count || 0) + (safeKpis.nasiyaIshonch?.count || 0) + (safeKpis.nasiyaBaraka?.count || 0);
 
+    let leadSubText = "Jami kirgan buyurtmalar";
+    if (filter === 'today') leadSubText = "Bugun (24 soat ichida) kirgan";
+    else if (filter === 'yesterday') leadSubText = "Kecha kirgan buyurtmalar";
+    else if (filter === 'day-before-yesterday') leadSubText = "Kuni kecha kirgan buyurtmalar";
+    else if (filter === 'month') leadSubText = "Shu oyda kirgan buyurtmalar";
+    else if (filter === 'range') leadSubText = "Tanlangan oraliqda kirgan";
+
     // ══════════════════════════════════════════
     // QATOR 1: Leadlar | Zakazlar | Nasiya/Savdo/Qarzdorlar | Klientlardagi Qarz (admin) | Zakazlar holati
     // ══════════════════════════════════════════
@@ -1109,7 +1116,7 @@ async function loadDashboard() {
         <div class="stat-info" style="width: 100%;">
           <div class="stat-label">Leadlar</div>
           <div class="stat-value">${safeKpis.totalLeads ?? 0}</div>
-          <div class="stat-sub" style="margin-bottom: 4px;">Jami kirgan buyurtmalar</div>
+          <div class="stat-sub" style="margin-bottom: 4px;">${leadSubText}</div>
           <div style="margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; border-top: 1px dashed var(--border); padding-top: 6px; width: 100%;">
             <span style="font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 4px; background: rgba(0, 122, 255, 0.1); color: #007AFF;" title="Target reklamalari">Target: ${safeKpis.sourcesCount?.target ?? 0}</span>
             <span style="font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 4px; background: rgba(225, 48, 108, 0.1); color: #E1306C;" title="Instagram Direct">Insta: ${safeKpis.sourcesCount?.instagram ?? 0}</span>

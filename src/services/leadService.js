@@ -740,7 +740,20 @@ async function handleUniversalLead(source, rawData, broadcast) {
           pipelineId: targetPipelineId,
           stageId: targetStageId,
           notes: dealNotes,
-          source: 'target'
+          source: (function() {
+            let resolvedSource = 'target';
+            const rawSourceField = String(rawData.source || rawData.Source || rawData.source_type || rawData.manba || parsed.pageName || '').toLowerCase();
+            if (rawSourceField.includes('instagram') || rawSourceField.includes('insta') || rawSourceField.includes('ig')) {
+              resolvedSource = 'instagram';
+            } else if (rawSourceField.includes('telegram') || rawSourceField.includes('tg')) {
+              resolvedSource = 'telegram';
+            } else if (rawSourceField.includes('target') || rawSourceField.includes('fb') || rawSourceField.includes('facebook') || rawSourceField.includes('ads')) {
+              resolvedSource = 'target';
+            } else if (rawSourceField.includes('oddiy') || rawSourceField.includes('manual')) {
+              resolvedSource = 'oddiy';
+            }
+            return resolvedSource;
+          })()
         }
       });
       console.log(`[Universal Lead Transaction] Sdelka yaratildi. ID: ${deal.id}`);
