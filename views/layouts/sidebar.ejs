@@ -44,11 +44,6 @@
       </div>
     </div>
 
-    <a href="/clients" class="<%= activePage === 'clients' ? 'active' : '' %>">
-      <span class="nav-icon"><i class="fas fa-users"></i></span>
-      <span class="nav-label">Mijozlar</span>
-    </a>
-
     <a href="/tasks" class="<%= activePage === 'tasks' ? 'active' : '' %>">
       <span class="nav-icon"><i class="fas fa-check-circle"></i></span>
       <span class="nav-label">Vazifalar</span>
@@ -65,31 +60,43 @@
       <span class="nav-label">Ombor</span>
     </a>
 
-    <a href="/plans" class="<%= activePage === 'plans' ? 'active' : '' %>">
-      <span class="nav-icon"><i class="fas fa-clipboard-list" style="color:#FF9500"></i></span>
-      <span class="nav-label">Rejalar</span>
-    </a>
-
-    <a href="/instagram" class="<%= activePage === 'instagram' ? 'active' : '' %>">
-      <span class="nav-icon"><i class="fab fa-instagram" style="color:#E1306C"></i></span>
-      <span class="nav-label">Instagram</span>
-      <span id="sidebar-instagram-badge" class="nav-badge hidden">0</span>
-    </a>
-
-    <a href="/telegram" class="<%= activePage === 'telegram' ? 'active' : '' %>">
-      <span class="nav-icon"><i class="fab fa-telegram" style="color:#0088cc"></i></span>
-      <span class="nav-label">Telegram</span>
-      <span id="sidebar-telegram-badge" class="nav-badge hidden">0</span>
-    </a>
-
-    <!-- Qo'shimcha submenu -->
+    <!-- ImBox (Instagram & Telegram) Submenu -->
     <div class="sidebar-submenu-container">
-      <div class="sidebar-submenu-header <%= activePage.startsWith('extra') ? 'active' : '' %>" onclick="toggleSubmenu(this)">
+      <div class="sidebar-submenu-header <%= (activePage === 'instagram' || activePage === 'telegram') ? 'active' : '' %>" onclick="toggleSubmenu(this)">
+        <span class="nav-icon"><i class="fas fa-inbox" style="color:var(--brand)"></i></span>
+        <span class="nav-label">ImBox</span>
+        <i class="fas fa-chevron-right arrow-icon"></i>
+      </div>
+      <div class="sidebar-submenu-items">
+        <a href="/instagram" class="sub-item <%= activePage === 'instagram' ? 'active' : '' %>" style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <span class="sub-dot" style="background:#E1306C"></span> Instagram
+          </div>
+          <span id="sidebar-instagram-badge" class="nav-badge hidden" style="margin-right:20px;">0</span>
+        </a>
+        <a href="/telegram" class="sub-item <%= activePage === 'telegram' ? 'active' : '' %>" style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <span class="sub-dot" style="background:#0088cc"></span> Telegram
+          </div>
+          <span id="sidebar-telegram-badge" class="nav-badge hidden" style="margin-right:20px;">0</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Qo'shimcha Submenu (Mijozlar, Rejalar, Shopirlar, Ishonch filiallari) -->
+    <div class="sidebar-submenu-container">
+      <div class="sidebar-submenu-header <%= (activePage.startsWith('extra') || activePage === 'clients' || activePage === 'plans') ? 'active' : '' %>" onclick="toggleSubmenu(this)">
         <span class="nav-icon"><i class="fas fa-plus-circle"></i></span>
         <span class="nav-label">Qo'shimcha</span>
         <i class="fas fa-chevron-right arrow-icon"></i>
       </div>
       <div class="sidebar-submenu-items">
+        <a href="/clients" class="sub-item <%= activePage === 'clients' ? 'active' : '' %>">
+          <span class="sub-dot" style="background:#10B981"></span> Mijozlar
+        </a>
+        <a href="/plans" class="sub-item <%= activePage === 'plans' ? 'active' : '' %>">
+          <span class="sub-dot" style="background:#FF9500"></span> Rejalar
+        </a>
         <a href="/extra/drivers"  class="sub-item <%= activePage === 'extra-drivers'   ? 'active' : '' %>">
           <span class="sub-dot" style="background:#6366F1"></span> Shopirlar
         </a>
