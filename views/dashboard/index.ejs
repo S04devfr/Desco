@@ -90,46 +90,6 @@
   </div>
 
   <!-- Marketing / Target Section (Admin) or Mening Vazifalarim (Manager) -->
-  <% if (isAdmin) { %>
-  <div class="card" id="marketingSection">
-    <div class="card-header flex justify-between items-center">
-      <h3 class="section-title"><i class="fas fa-bullhorn text-brand"></i>Marketing va Target</h3>
-      <button class="btn btn-sm btn-primary" onclick="openMarketingModal()">
-        <i class="fas fa-plus"></i> Kunlik ma'lumot
-      </button>
-    </div>
-    <!-- Marketing body — flex column ichida -->
-    <div class="mkt-inner">
-      <!-- Summary stats -->
-      <div id="marketingSummary" class="mkt-stats-row">
-        <div class="mkt-stat"><span class="mkt-stat-label">Jami xarajat</span><span class="mkt-stat-val" id="mktTotalSpent">—</span></div>
-        <div class="mkt-stat"><span class="mkt-stat-label">Jami lead</span><span class="mkt-stat-val" id="mktTotalLeads">—</span></div>
-        <div class="mkt-stat"><span class="mkt-stat-label">CPL (1 lead)</span><span class="mkt-stat-val" id="mktCpl">—</span></div>
-      </div>
-      <!-- Channel breakdown -->
-      <div id="mktChannelContainer" class="mkt-channel-row"></div>
-      <!-- Recent logs table -->
-      <div class="mkt-table-wrap">
-        <table class="deals-tbl">
-          <thead>
-            <tr>
-              <th>Sana</th>
-              <th>Kanal</th>
-              <th>Kampaniya</th>
-              <th class="tr">Xarajat</th>
-              <th class="tc">Lead</th>
-              <th class="tr">CPL</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="mktLogsBody">
-            <tr><td colspan="7" class="tc" style="padding:20px;"><div class="spinner" style="margin:auto;"></div></td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-  <% } else { %>
   <div class="card" id="myTasksSection">
     <div class="card-header flex justify-between items-center">
       <h3 class="section-title"><i class="fas fa-tasks text-brand"></i>Mening Vazifalarim</h3>
@@ -139,7 +99,6 @@
       <div style="padding:40px;text-align:center"><div class="spinner" style="margin:auto;"></div></div>
     </div>
   </div>
-  <% } %>
 </div>
 
 <% if (isAdmin) { %>
@@ -342,43 +301,28 @@
 <% } %>
 
 <% if (isAdmin) { %>
-<!-- CHARTS GRID: Mahsulot ulushi + Nasiya balansi -->
-<div class="dashboard-grid-2">
-  <!-- Product Trading Chart -->
-  <div class="card">
-    <div class="card-header">
-      <h3 class="section-title"><i class="fas fa-chart-pie text-brand"></i>Mahsulotlar ulushi</h3>
-      <span id="productTotalBadge" class="badge badge-info" style="font-size:11px;"></span>
-    </div>
-    <div class="card-body" style="padding:0;">
-      <div id="productEmpty" style="display:none;height:240px;align-items:center;justify-content:center;color:var(--text-tertiary);font-size:13px;flex-direction:column;gap:6px;">
-        <i class="fas fa-box-open" style="font-size:28px;opacity:.3;"></i>
-        <span>Ma'lumot yo'q</span>
-      </div>
-      <div id="productTrading" style="display:flex;flex-direction:column;">
-        <!-- Donut + center stat -->
-        <div style="position:relative;height:180px;display:flex;align-items:center;justify-content:center;padding:10px 16px 0;">
-          <canvas id="productChart"></canvas>
-          <div id="productCenter" style="position:absolute;text-align:center;pointer-events:none;">
-            <div id="productCenterPct" style="font-size:22px;font-weight:800;color:var(--text-primary);line-height:1;"></div>
-            <div id="productCenterName" style="font-size:10px;color:var(--text-secondary);margin-top:2px;max-width:80px;word-break:break-word;"></div>
-          </div>
-        </div>
-        <!-- Trading rows list -->
-        <div id="productList" style="padding:8px 14px 12px;display:flex;flex-direction:column;gap:5px;overflow-y:auto;max-height:180px;"></div>
-      </div>
-    </div>
+<!-- CHARTS: Mahsulot ulushi (Full Width) -->
+<div class="card mb-6" id="productShareSection">
+  <div class="card-header">
+    <h3 class="section-title"><i class="fas fa-chart-pie text-brand"></i>Mahsulotlar ulushi</h3>
+    <span id="productTotalBadge" class="badge badge-info" style="font-size:11px;"></span>
   </div>
-
-  <!-- Nasiya Tariffs Breakdown -->
-  <div class="card">
-    <div class="card-header">
-      <h3 class="section-title"><i class="fas fa-coins" style="color:#FF9500;"></i>Nasiya va Shopir Balansi</h3>
+  <div class="card-body" style="padding: 16px;">
+    <div id="productEmpty" style="display:none;height:240px;align-items:center;justify-content:center;color:var(--text-tertiary);font-size:13px;flex-direction:column;gap:6px;">
+      <i class="fas fa-box-open" style="font-size:28px;opacity:.3;"></i>
+      <span>Ma'lumot yo'q</span>
     </div>
-    <div class="card-body flex-col gap-3">
-      <div id="nasiyaBreakdownContainer" style="display:flex; flex-direction:column; gap:10px;">
-        <div class="empty-state" style="padding:40px;"><div class="spinner" style="margin:auto;"></div></div>
+    <div id="productTrading" style="display:flex; align-items:center; gap:40px; flex-wrap:wrap; justify-content: center;">
+      <!-- Donut Chart Left -->
+      <div style="position:relative; width: 200px; height: 200px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+        <canvas id="productChart" width="200" height="200"></canvas>
+        <div id="productCenter" style="position:absolute;text-align:center;pointer-events:none;">
+          <div id="productCenterPct" style="font-size:24px;font-weight:800;color:var(--text-primary);line-height:1;"></div>
+          <div id="productCenterName" style="font-size:11px;color:var(--text-secondary);margin-top:4px;max-width:100px;word-break:break-word;"></div>
+        </div>
       </div>
+      <!-- Trading rows list Right -->
+      <div id="productList" style="flex:1; display:flex; flex-direction:column; gap:8px; overflow-y:auto; max-height:200px; min-width: 280px;"></div>
     </div>
   </div>
 </div>
@@ -427,135 +371,117 @@
 <div class="card" style="margin-bottom: 25px;">
   <div class="card-header flex justify-between items-center" style="background: linear-gradient(135deg, rgba(240, 148, 51, 0.05) 0%, rgba(225, 48, 108, 0.05) 100%); border-bottom: 1px solid var(--border);">
     <h3 class="section-title" style="margin: 0;"><i class="fab fa-instagram" style="color:#E1306C; margin-right: 8px;"></i> Instagram Direct Tahlili</h3>
-    <span class="badge" style="background: rgba(225, 48, 108, 0.1); color: #E1306C; font-weight: 700;">Dashboard Widget</span>
+    <span class="badge" style="background: rgba(225, 48, 108, 0.1); color: #E1306C; font-weight: 700;">Direct Tahlili</span>
   </div>
-  <div class="card-body" style="padding: 24px;">
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px;">
+  <div class="card-body" style="padding: 16px;">
+    <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 16px; align-items: stretch;">
       
-      <!-- 1. Suhbatlar oqimi (Yozgan mijozlar) -->
-      <div style="display: flex; flex-direction: column; gap: 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 18px; box-shadow: var(--shadow-xs); grid-column: span 2;">
-        <h4 style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin: 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: space-between;">
-          <span style="display: flex; align-items: center; gap: 8px;">
-            <i class="fas fa-comments" style="color: var(--brand); font-size: 13px;"></i> Suhbatlar oqimi (Yozgan yagona mijozlar)
-          </span>
-          <span style="font-size: 10px; color: var(--text-secondary); font-weight: 500; text-transform: none; display: flex; gap: 10px; align-items: center;">
-            <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 2px; background: var(--brand);"></span> Yozgan mijozlar soni</span>
-          </span>
+      <!-- Column 1: Suhbatlar oqimi -->
+      <div style="display: flex; flex-direction: column; gap: 8px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 12px; box-shadow: var(--shadow-xs); height: 100%;">
+        <h4 style="font-size: 11px; font-weight: 700; color: var(--text-primary); margin: 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: space-between;">
+          <span><i class="fas fa-comments text-brand" style="margin-right: 4px;"></i> Suhbatlar oqimi</span>
+          <span style="font-size: 9px; color: var(--text-tertiary); text-transform: none; font-weight: 500;">Yagona yozganlar</span>
         </h4>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 4px; border-bottom: 1px dashed var(--border); padding-bottom: 12px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; border-bottom: 1px dashed var(--border); padding-bottom: 8px;">
           <div>
-            <div style="font-size: 11px; color: var(--text-secondary); font-weight: 600;">Jami suhbatlar / Bugun faol:</div>
-            <div style="display: flex; align-items: baseline; gap: 6px; margin-top: 2px;">
-              <span id="igTotalChats" style="font-size: 20px; font-weight: 800; color: var(--text-primary);">0 kishi</span>
-              <span id="igActiveDayText" style="font-size: 11.5px; font-weight: 700; color: var(--brand);">Bugun faol: 0 ta</span>
+            <div style="font-size: 10px; color: var(--text-secondary); font-weight: 600;">Jami suhbatlar:</div>
+            <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 1px;">
+              <span id="igTotalChats" style="font-size: 16px; font-weight: 800; color: var(--text-primary);">0 kishi</span>
+              <span id="igActiveDayText" style="font-size: 10px; font-weight: 700; color: var(--brand);">Bugun: 0</span>
             </div>
-            <div id="igIncomingSub" style="font-size: 10.5px; color: var(--text-tertiary); margin-top: 2px;">Jami xabarlar: 0 ta (Kiruvchi: 0 ta)</div>
+            <div id="igIncomingSub" style="font-size: 9px; color: var(--text-tertiary); margin-top: 2px;">Jami xabarlar: 0 ta</div>
           </div>
-          
           <div>
-            <div style="font-size: 11px; color: var(--text-secondary); font-weight: 600;">Bugun yozganlar / Kunlik o'rtacha:</div>
-            <div style="display: flex; align-items: baseline; gap: 6px; margin-top: 2px;">
-              <span id="igTodayWriters" style="font-size: 20px; font-weight: 800; color: var(--text-primary);">0 kishi</span>
-              <span id="igAvgWriters" style="font-size: 11.5px; font-weight: 700; color: var(--brand);">O'rtacha: 0 kishi</span>
+            <div style="font-size: 10px; color: var(--text-secondary); font-weight: 600;">Kunlik o'rtacha:</div>
+            <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 1px;">
+              <span id="igTodayWriters" style="font-size: 16px; font-weight: 800; color: var(--text-primary);">0 kishi</span>
+              <span id="igAvgWriters" style="font-size: 10px; font-weight: 700; color: var(--brand);">O'rtacha: 0</span>
             </div>
-            <div style="font-size: 10.5px; color: var(--text-tertiary); margin-top: 2px;">Kun davomida yozgan yagona mijozlar</div>
           </div>
         </div>
- 
         <!-- Daily volume visualization (Single Bar Chart) -->
-        <div id="igChatsVolumeContainer" style="display: flex; gap: 12px; align-items: flex-end; height: 95px; margin-top: 8px; border-bottom: 1px solid var(--border); padding-bottom: 6px;">
-          <div style="color: var(--text-tertiary); font-size: 11px; text-align: center; width: 100%; padding-bottom: 15px;">Yuklanmoqda...</div>
+        <div id="igChatsVolumeContainer" style="display: flex; gap: 10px; align-items: flex-end; height: 60px; margin-top: 6px;">
+          <div style="color: var(--text-tertiary); font-size: 10px; text-align: center; width: 100%; padding-bottom: 10px;">Yuklanmoqda...</div>
         </div>
-        <div style="font-size: 10px; color: var(--text-tertiary); text-align: center; margin-top: 4px;">Oxirgi kunlarda Instagram orqali yozgan yagona (incoming) mijozlar soni statistikasi</div>
       </div>
 
-      <!-- 2. To'lov afzalligi (Payment Preference) -->
-      <div style="display: flex; flex-direction: column; gap: 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 18px; box-shadow: var(--shadow-xs);">
-        <h4 style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin: 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
-          <i class="fas fa-wallet" style="color: #34C759; font-size: 13px;"></i> To'lov afzalligi
+      <!-- Column 2: To'lov & Niyat (Progress bars) -->
+      <div style="display: flex; flex-direction: column; gap: 10px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 12px; box-shadow: var(--shadow-xs); height: 100%;">
+        <h4 style="font-size: 11px; font-weight: 700; color: var(--text-primary); margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">
+          <i class="fas fa-wallet" style="color: #34C759; margin-right: 4px;"></i> To'lov & Niyat
         </h4>
-        <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 10px;">
+        <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 2px;">
+          <!-- Nasiya -->
           <div>
-            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary); margin-bottom: 5px;">
-              <span>Nasiya (Muddatli to'lov)</span>
-              <strong id="igNasiyaText" style="color: #FF9500;">0 kishi (0%)</strong>
+            <div style="display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text-secondary); margin-bottom: 2px;">
+              <span>Nasiya</span>
+              <strong id="igNasiyaText" style="color: #FF9500;">0 (0%)</strong>
             </div>
-            <div style="height: 8px; background: var(--border); border-radius: 4px; overflow: hidden;">
-              <div id="igNasiyaBar" style="height: 100%; background: linear-gradient(90deg, #FF9500, #FFB300); border-radius: 4px; width: 0%; transition: width 0.5s ease;"></div>
+            <div style="height: 5px; background: var(--border); border-radius: 3px; overflow: hidden;">
+              <div id="igNasiyaBar" style="height: 100%; background: #FF9500; width: 0%; transition: width 0.5s;"></div>
             </div>
           </div>
+          <!-- Naqd -->
           <div>
-            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary); margin-bottom: 5px;">
-              <span>Naqd / Plastik (Karta)</span>
-              <strong id="igNaqdText" style="color: #34C759;">0 kishi (0%)</strong>
+            <div style="display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text-secondary); margin-bottom: 2px;">
+              <span>Naqd / Karta</span>
+              <strong id="igNaqdText" style="color: #34C759;">0 (0%)</strong>
             </div>
-            <div style="height: 8px; background: var(--border); border-radius: 4px; overflow: hidden;">
-              <div id="igNaqdBar" style="height: 100%; background: linear-gradient(90deg, #34C759, #28CD41); border-radius: 4px; width: 0%; transition: width 0.5s ease;"></div>
+            <div style="height: 5px; background: var(--border); border-radius: 3px; overflow: hidden;">
+              <div id="igNaqdBar" style="height: 100%; background: #34C759; width: 0%; transition: width 0.5s;"></div>
+            </div>
+          </div>
+          <!-- Purchase intent -->
+          <div style="margin-top: 4px; border-top: 1px dashed var(--border); padding-top: 4px;">
+            <div style="display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text-secondary); margin-bottom: 2px;">
+              <span>Niyati yuqori</span>
+              <strong id="igPurchaseText" style="color: var(--brand);">0 (0%)</strong>
+            </div>
+            <div style="height: 5px; background: var(--border); border-radius: 3px; overflow: hidden;">
+              <div id="igPurchaseBar" style="height: 100%; background: var(--brand); width: 0%; transition: width 0.5s;"></div>
+            </div>
+          </div>
+          <!-- Inquiries -->
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text-secondary); margin-bottom: 2px;">
+              <span>Faqat narx so'raganlar</span>
+              <strong id="igInquiryText" style="color: #5856D6;">0 (0%)</strong>
+            </div>
+            <div style="height: 5px; background: var(--border); border-radius: 3px; overflow: hidden;">
+              <div id="igInquiryBar" style="height: 100%; background: #5856D6; width: 0%; transition: width 0.5s;"></div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 3. Rad sabablari va Sotib olish niyati -->
-      <div style="display: flex; flex-direction: column; gap: 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 18px; box-shadow: var(--shadow-xs);">
-        <h4 style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin: 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
-          <i class="fas fa-shopping-basket" style="color: #5856D6; font-size: 13px;"></i> Rad sabablari & Niyat
+      <!-- Column 3: Rad sabablari & Fikrlar -->
+      <div style="display: flex; flex-direction: column; gap: 8px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 12px; box-shadow: var(--shadow-xs); height: 100%;">
+        <h4 style="font-size: 11px; font-weight: 700; color: var(--text-primary); margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">
+          <i class="fas fa-exclamation-circle text-danger" style="margin-right: 4px;"></i> Rad etish & Fikrlar
         </h4>
         
-        <!-- Purchase intent summary -->
-        <div style="display: flex; flex-direction: column; gap: 10px; border-bottom: 1px dashed var(--border); padding-bottom: 12px;">
-          <div>
-            <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-secondary); margin-bottom: 4px;">
-              <span>Sotib olmoqchilar (Niyati yuqori)</span>
-              <strong id="igPurchaseText">0 kishi (0%)</strong>
-            </div>
-            <div style="height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;">
-              <div id="igPurchaseBar" style="height: 100%; background: var(--brand); border-radius: 3px; width: 0%; transition: width 0.5s ease;"></div>
-            </div>
+        <div style="display: flex; flex-direction: column; gap: 4px; font-size: 10.5px; border-bottom: 1px dashed var(--border); padding-bottom: 6px;">
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-secondary);">Narx qimmat:</span>
+            <strong id="lostReasonPrice">0 ta</strong>
           </div>
-          <div>
-            <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-secondary); margin-bottom: 4px;">
-              <span>Faqat narx so'raganlar</span>
-              <strong id="igInquiryText">0 kishi (0%)</strong>
-            </div>
-            <div style="height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;">
-              <div id="igInquiryBar" style="height: 100%; background: #5856D6; border-radius: 3px; width: 0%; transition: width 0.5s ease;"></div>
-            </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-secondary);">Dostavka muammo:</span>
+            <strong id="lostReasonDelivery">0 ta</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-secondary);">O'ylashga vaqt:</span>
+            <strong id="lostReasonThinking">0 ta</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-secondary);">Javob kechikdi:</span>
+            <strong id="lostReasonLateResponse">0 ta</strong>
           </div>
         </div>
-
-        <!-- Rad sabablari breakdown -->
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <span style="font-size: 11px; color: var(--text-tertiary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Sotib olmaslik sabablari (Rad)</span>
-          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="color: var(--text-secondary);"><i class="fas fa-tags" style="color: #FF3B30; margin-right: 4px;"></i> Narx qimmatligi:</span>
-              <strong id="lostReasonPrice" style="color: var(--text-primary);">0 ta</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="color: var(--text-secondary);"><i class="fas fa-truck" style="color: #FF9500; margin-right: 4px;"></i> Yetkazib berish muammosi:</span>
-              <strong id="lostReasonDelivery" style="color: var(--text-primary);">0 ta</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="color: var(--text-secondary);"><i class="fas fa-hourglass-half" style="color: #5856D6; margin-right: 4px;"></i> O'ylash uchun ketgan vaqt:</span>
-              <strong id="lostReasonThinking" style="color: var(--text-primary);">0 ta</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="color: var(--text-secondary);"><i class="fas fa-reply-all" style="color: #007AFF; margin-right: 4px;"></i> Javob kechikishi:</span>
-              <strong id="lostReasonLateResponse" style="color: var(--text-primary);">0 ta</strong>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 5. Odamlar nima deb yozishmoqda -->
-      <div style="display: flex; flex-direction: column; gap: 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 18px; box-shadow: var(--shadow-xs);">
-        <h4 style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin: 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
-          <i class="fas fa-quote-left" style="color: #cc2366; font-size: 13px;"></i> Odamlar nima deb yozishmoqda?
-        </h4>
-        <div id="igOpinionsContainer" style="display: flex; flex-direction: column; gap: 6px; overflow-y: auto; max-height: 200px; padding-right: 4px; flex: 1;">
-          <div style="color: var(--text-tertiary); font-size: 11.5px; font-style: italic; text-align: center; padding: 15px;">Yozishmalar fikri yo'q</div>
+        
+        <!-- Quick scroll opinions inside the box -->
+        <div id="igOpinionsContainer" style="display: flex; flex-direction: column; gap: 4px; overflow-y: auto; max-height: 48px; padding-right: 2px; flex: 1;">
+          <div style="color: var(--text-tertiary); font-size: 10px; font-style: italic; text-align: center; padding-top: 4px;">Yozishmalar fikri yo'q</div>
         </div>
       </div>
 
@@ -1395,10 +1321,10 @@ async function loadDashboard() {
     if (opinionsContainer) {
       const opinions = igStats.sampleOpinions || [];
       if (opinions.length === 0) {
-        opinionsContainer.innerHTML = '<div style="color: var(--text-tertiary); font-size: 11.5px; font-style: italic; text-align: center; padding: 15px;">Yozishmalar fikri yo\'q</div>';
+        opinionsContainer.innerHTML = '<div style="color: var(--text-tertiary); font-size: 10px; font-style: italic; text-align: center; padding-top: 4px;">Yozishmalar fikri yo\'q</div>';
       } else {
         opinionsContainer.innerHTML = opinions.map(op => `
-          <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; font-size: 12px; color: var(--text-secondary); line-height: 1.4; border-left: 3px solid #cc2366; font-style: italic; text-align: left; margin-bottom: 4px;">
+          <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; padding: 4px 6px; font-size: 10px; color: var(--text-secondary); line-height: 1.3; border-left: 2px solid #cc2366; font-style: italic; text-align: left; margin-bottom: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
             "${escHtml(op)}"
           </div>
         `).join('');
@@ -1418,146 +1344,102 @@ async function loadDashboard() {
       { label: 'Otmen zakazlar', count: funnel.lost,     pct: pctLost,     color: 'linear-gradient(90deg,#FF3B30,#FF453A)' },
     ];
 
-    document.getElementById('funnelContainer').innerHTML = funnelSteps.map((s, i) => `
-      <div class="funnel-step">
-        <div class="funnel-track">
-          <div class="funnel-fill" style="width:${Math.max(s.pct, 12)}%; background:${s.color};">
-            <span class="funnel-fill-label">${i + 1}. ${s.label}</span>
-            <span class="funnel-fill-count">${s.count} ta</span>
+    const funnelContainer = document.getElementById('funnelContainer');
+    if (funnelContainer) {
+      funnelContainer.innerHTML = funnelSteps.map((s, i) => `
+        <div class="funnel-step">
+          <div class="funnel-track">
+            <div class="funnel-fill" style="width:${Math.max(s.pct, 12)}%; background:${s.color};">
+              <span class="funnel-fill-label">${i + 1}. ${s.label}</span>
+              <span class="funnel-fill-count">${s.count} ta</span>
+            </div>
           </div>
+          <span class="funnel-pct">${s.pct.toFixed(0)}%</span>
         </div>
-        <span class="funnel-pct">${s.pct.toFixed(0)}%</span>
-      </div>
-    `).join('');
+      `).join('');
+    }
 
-    // ── Render Marketing section (Admin only) or Tasks section (Manager only) ──
-    if (USER_ROLE !== 'admin') {
-      try {
-        const myTasks = await dashFetch('/api/tasks?completed=false');
-        const tasksContainer = document.getElementById('myTasksContainer');
-        const tasksCountEl = document.getElementById('myTasksCount');
-        
-        if (tasksContainer) {
-          if (!myTasks || !myTasks.length) {
-            tasksContainer.innerHTML = `
-              <div class="empty-state" style="padding:40px; text-align:center; display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; gap:8px; flex:1;">
-                <i class="fas fa-check-circle" style="font-size:32px; color:var(--success); opacity:0.8;"></i>
-                <div style="font-size:13px; color:var(--text-primary); font-weight:600;">Hamma vazifalar bajarildi!</div>
-                <div style="font-size:11px; color:var(--text-secondary);">Sizda faol vazifalar yo'q.</div>
-              </div>
-            `;
-            if (tasksCountEl) tasksCountEl.textContent = '0 ta faol';
-          } else {
-            if (tasksCountEl) tasksCountEl.textContent = myTasks.length + ' ta faol';
+    // ── Render Tasks section ──
+    try {
+      const myTasks = await dashFetch('/api/tasks?completed=false');
+      const tasksContainer = document.getElementById('myTasksContainer');
+      const tasksCountEl = document.getElementById('myTasksCount');
+      
+      if (tasksContainer) {
+        if (!myTasks || !myTasks.length) {
+          tasksContainer.innerHTML = `
+            <div class="empty-state" style="padding:40px; text-align:center; display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; gap:8px; flex:1;">
+              <i class="fas fa-check-circle" style="font-size:32px; color:var(--success); opacity:0.8;"></i>
+              <div style="font-size:13px; color:var(--text-primary); font-weight:600;">Hamma vazifalar bajarildi!</div>
+              <div style="font-size:11px; color:var(--text-secondary);">Sizda faol vazifalar yo'q.</div>
+            </div>
+          `;
+          if (tasksCountEl) tasksCountEl.textContent = '0 ta faol';
+        } else {
+          if (tasksCountEl) tasksCountEl.textContent = myTasks.length + ' ta faol';
+          
+          tasksContainer.innerHTML = myTasks.map(t => {
+            const pColors = { high: '#FF3B30', medium: '#FF9500', low: '#34C759' };
+            const pLabels = { high: 'Yuqori', medium: 'O\'rta', low: 'Past' };
+            const pColor = pColors[t.priority] || '#8E8E93';
+            const pLabel = pLabels[t.priority] || 'Noma’lum';
             
-            tasksContainer.innerHTML = myTasks.map(t => {
-              const pColors = { high: '#FF3B30', medium: '#FF9500', low: '#34C759' };
-              const pLabels = { high: 'Yuqori', medium: 'O\'rta', low: 'Past' };
-              const pColor = pColors[t.priority] || '#8E8E93';
-              const pLabel = pLabels[t.priority] || 'Noma’lum';
-              
-              const clientName = t.client?.name || 'Noma’lum mijoz';
-              const clientPhone = t.client?.phone || '';
-              
-              const due = new Date(t.dueDate);
-              const today = new Date();
-              today.setHours(0,0,0,0);
-              const isOverdue = due < today;
-              const dueStr = due.toLocaleDateString('uz-UZ') + (t.dueTime ? ' ' + t.dueTime : '');
-              const dueStyle = isOverdue ? 'color:#FF3B30; font-weight:600;' : 'color:var(--text-secondary);';
-              
-              const dealProduct = t.deal?.productName || 'Sdelka';
-              const dealStage = t.deal?.stage?.name || 'Bosqichsiz';
-              
-              return `
-                <div class="stat-card" style="padding: 10px 12px; margin: 0; border-radius: 8px; flex-shrink: 0; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow-xs); background: var(--surface-card); border: 1px solid var(--border); text-align: left;">
-                  <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
-                    <div style="font-weight: 700; font-size: 12.5px; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; flex: 1;">
-                      ${escHtml(t.title)}
-                    </div>
-                    <span style="font-size: 9px; font-weight: 700; color: #fff; background: ${pColor}; padding: 1px 5px; border-radius: 4px; flex-shrink: 0;">
-                      ${pLabel}
-                    </span>
+            const clientName = t.client?.name || 'Noma’lum mijoz';
+            const clientPhone = t.client?.phone || '';
+            
+            const due = new Date(t.dueDate);
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const isOverdue = due < today;
+            const dueStr = due.toLocaleDateString('uz-UZ') + (t.dueTime ? ' ' + t.dueTime : '');
+            const dueStyle = isOverdue ? 'color:#FF3B30; font-weight:600;' : 'color:var(--text-secondary);';
+            
+            const dealProduct = t.deal?.productName || 'Sdelka';
+            const dealStage = t.deal?.stage?.name || 'Bosqichsiz';
+            
+            return `
+              <div class="stat-card" style="padding: 10px 12px; margin: 0; border-radius: 8px; flex-shrink: 0; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow-xs); background: var(--surface-card); border: 1px solid var(--border); text-align: left;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                  <div style="font-weight: 700; font-size: 12.5px; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; flex: 1;">
+                    ${escHtml(t.title)}
                   </div>
-                  
-                  <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                    ${escHtml(t.description || 'Izohsiz')}
+                  <span style="font-size: 9px; font-weight: 700; color: #fff; background: ${pColor}; padding: 1px 5px; border-radius: 4px; flex-shrink: 0;">
+                    ${pLabel}
+                  </span>
+                </div>
+                
+                <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                  ${escHtml(t.description || 'Izohsiz')}
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; border-top: 1px dashed var(--border); padding-top: 5px; margin-top: 2px;">
+                  <div>
+                    <i class="fas fa-user" style="color: var(--text-secondary); margin-right: 3px;"></i>
+                    <strong style="color: var(--text-primary);">${escHtml(clientName)}</strong> ${clientPhone ? `<span style="color: var(--text-secondary); font-size: 10px;">(${escHtml(clientPhone)})</span>` : ''}
                   </div>
-                  
-                  <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; border-top: 1px dashed var(--border); padding-top: 5px; margin-top: 2px;">
-                    <div>
-                      <i class="fas fa-user" style="color: var(--text-secondary); margin-right: 3px;"></i>
-                      <strong style="color: var(--text-primary);">${escHtml(clientName)}</strong> ${clientPhone ? `<span style="color: var(--text-secondary); font-size: 10px;">(${escHtml(clientPhone)})</span>` : ''}
-                    </div>
-                    <div style="${dueStyle}">
-                      <i class="far fa-clock" style="margin-right: 3px;"></i>${dueStr}
-                    </div>
-                  </div>
-                  
-                  <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: var(--text-secondary);">
-                    <div>
-                      <i class="fas fa-shopping-bag" style="margin-right: 3px;"></i>${escHtml(dealProduct)}
-                      <span class="badge badge-brand" style="font-size: 8.5px; padding: 1px 4px; margin-left: 4px; vertical-align: middle;">${escHtml(dealStage)}</span>
-                    </div>
-                    <a href="/deals" style="color: var(--brand); font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 3px; font-size: 10.5px;">
-                      Sdelkaga o'tish <i class="fas fa-arrow-right" style="font-size: 9px;"></i>
-                    </a>
+                  <div style="${dueStyle}">
+                    <i class="far fa-clock" style="margin-right: 3px;"></i>${dueStr}
                   </div>
                 </div>
-              `;
-            }).join('');
-          }
-        }
-      } catch (e) {
-        console.error('[Dashboard Tasks Fetch error]', e);
-      }
-    } else {
-      const mkt = mktSummary || { totalSpent:0, totalLeads:0, cpl:0, byChannel:[], logs:[] };
-      const mktSpentEl = document.getElementById('mktTotalSpent');
-      const mktLeadsEl = document.getElementById('mktTotalLeads');
-      const mktCplEl   = document.getElementById('mktCpl');
-      if (mktSpentEl) mktSpentEl.textContent = fmtMoney(mkt.totalSpent || 0);
-      if (mktLeadsEl) mktLeadsEl.textContent = (mkt.totalLeads || 0) + ' ta';
-      if (mktCplEl)   mktCplEl.textContent   = fmtMoney(mkt.cpl || 0);
-
-      const channelColors = { instagram:'#E1306C', facebook:'#1877F2', google:'#EA4335', tiktok:'#010101', other:'#8E8E93' };
-      const channelContainer = document.getElementById('mktChannelContainer');
-      if (channelContainer && mkt.byChannel && mkt.byChannel.length) {
-        channelContainer.innerHTML = mkt.byChannel.map(c => {
-          const col = channelColors[c.channel] || '#6366F1';
-          const label = c.channel.charAt(0).toUpperCase() + c.channel.slice(1);
-          return `<div class="mkt-channel-chip" style="--ch:${col}">
-            <span class="mkt-ch-dot"></span>
-            <span class="mkt-ch-name">${label}</span>
-            <span class="mkt-ch-stats">${fmtMoney(c.spent)} · ${c.leads} lead · CPL ${fmtMoney(c.cpl)}</span>
-          </div>`;
-        }).join('');
-      }
-
-      const mktLogsBody = document.getElementById('mktLogsBody');
-      if (mktLogsBody) {
-        const logs = mkt.logs || [];
-        if (!logs.length) {
-          mktLogsBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-secondary)">Hozircha ma\'lumotlar mavjud emas — qo\'shish uchun "+" tugmasini bosing</td></tr>';
-        } else {
-          mktLogsBody.innerHTML = logs.map(l => {
-            const cpl2 = l.leads > 0 ? l.spent / l.leads : 0;
-            const col  = channelColors[l.channel] || '#6366F1';
-            return `<tr>
-              <td class="mkt-log-date">${new Date(l.date).toLocaleDateString('uz-UZ')}</td>
-              <td><span class="mkt-ch-tag" style="--ch:${col}">${l.channel}</span></td>
-              <td class="mkt-log-camp">${escHtml(l.campaign||'—')}</td>
-              <td class="tr mkt-log-amt">${fmtMoney(l.spent)}</td>
-              <td class="tc mkt-log-leads">${l.leads}</td>
-              <td class="tr mkt-log-cpl">${fmtMoney(cpl2)}</td>
-              <td class="tr mkt-log-del">
-                <button class="btn btn-ghost btn-icon-sm" style="color:var(--danger)" onclick="deleteMktLog(${l.id})" title="O'chirish"><i class="fas fa-trash" style="font-size:10px;"></i></button>
-              </td>
-            </tr>`;
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: var(--text-secondary);">
+                  <div>
+                    <i class="fas fa-shopping-bag" style="margin-right: 3px;"></i>${escHtml(dealProduct)}
+                    <span class="badge badge-brand" style="font-size: 8.5px; padding: 1px 4px; margin-left: 4px; vertical-align: middle;">${escHtml(dealStage)}</span>
+                  </div>
+                  <a href="/deals" style="color: var(--brand); font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 3px; font-size: 10.5px;">
+                    Sdelkaga o'tish <i class="fas fa-arrow-right" style="font-size: 9px;"></i>
+                  </a>
+                </div>
+              </div>
+            `;
           }).join('');
         }
       }
+    } catch (e) {
+      console.error('[Dashboard Tasks Fetch error]', e);
     }
+
 
     // ── Render Manager KPI + Salary table ──
     const kpiBody = document.getElementById('managerKpiTableBody');
