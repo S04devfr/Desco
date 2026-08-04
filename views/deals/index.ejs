@@ -594,10 +594,22 @@
   .timeline-body {
     flex: 1;
     overflow-y: auto;
-    padding: 24px;
+    padding: 24px 24px 24px 38px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
+    position: relative;
+  }
+  .timeline-body::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 24px;
+    bottom: 24px;
+    width: 2px;
+    background: var(--border);
+    opacity: 0.8;
+    z-index: 1;
   }
   .timeline-footer {
     padding: 16px 24px;
@@ -607,32 +619,25 @@
     flex-direction: column;
     gap: 10px;
   }
+  [data-theme="light"] .timeline-footer {
+    background: #f8fafc;
+  }
 
   /* Group headers */
   .timeline-group-hdr {
-    text-align: center;
+    text-align: left;
     position: relative;
-    margin: 12px 0 4px;
-  }
-  .timeline-group-hdr::before {
-    content: '';
-    position: absolute;
-    left: 0; right: 0; top: 50%;
-    height: 1px;
-    background: var(--border);
-    z-index: 1;
-    opacity: 0.3;
+    margin: 8px 0 0px -18px;
+    z-index: 2;
   }
   .timeline-group-title {
     display: inline-block;
-    padding: 2px 12px;
+    padding: 2px 10px;
     background: #1e293b;
     color: var(--text-secondary);
-    font-size: 11px;
+    font-size: 10.5px;
     font-weight: 700;
     border-radius: 20px;
-    z-index: 2;
-    position: relative;
     border: 1px solid var(--border);
   }
   [data-theme="light"] .timeline-group-title {
@@ -649,11 +654,30 @@
     color: #cbd5e1;
     line-height: 1.4;
     transition: background 0.2s;
+    position: relative;
+    z-index: 2;
   }
   [data-theme="light"] .timeline-entry {
     background: #ffffff;
     border-color: var(--border);
     color: var(--text-primary);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  }
+  .timeline-entry::before {
+    content: '';
+    position: absolute;
+    left: -22px;
+    top: 14px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--bg-secondary);
+    z-index: 3;
+    box-shadow: 0 0 0 3px var(--brand-glow);
+  }
+  [data-theme="light"] .timeline-entry::before {
+    border-color: #ffffff;
   }
   .timeline-entry-meta {
     display: flex;
@@ -675,6 +699,11 @@
   [data-theme="light"] .timeline-entry.note-entry {
     background: #fffbeb;
     border-left: 3px solid #fbbf24;
+    border-color: rgba(251, 191, 36, 0.25);
+  }
+  .timeline-entry.note-entry::before {
+    background: #fbbf24;
+    box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.15);
   }
   .timeline-entry.note-entry .timeline-entry-author {
     color: #fbbf24;
@@ -717,9 +746,29 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    position: relative;
+    z-index: 2;
   }
   [data-theme="light"] .timeline-task-card {
     background: #f5f3ff;
+    border-color: rgba(139, 92, 246, 0.2);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  }
+  .timeline-task-card::before {
+    content: '';
+    position: absolute;
+    left: -22px;
+    top: 18px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #5856d6;
+    border: 2px solid var(--bg-secondary);
+    z-index: 3;
+    box-shadow: 0 0 0 3px rgba(88, 86, 214, 0.15);
+  }
+  [data-theme="light"] .timeline-task-card::before {
+    border-color: #ffffff;
   }
   .timeline-task-header {
     display: flex;
@@ -1764,11 +1813,8 @@ function dcardHtml(d) {
   const activePipelineObj = _pipelines.find(p => p.id === _activePid);
   const isZakazlarHolati = activePipelineObj && activePipelineObj.name.toLowerCase().includes('zakaz');
 
-  const init = ((d.manager?.fullName || d.manager?.email || '?').charAt(0)).toUpperCase();
   const statusColors = { new:'#007AFF', negotiation:'#FF9500', proposal:'#5856D6', won:'#34C759', lost:'#FF3B30' };
   const statusLabels = { new:'Yangi', negotiation:'Muzokaralar', proposal:'Taklif', won:'Yutilgan', lost:"Yo'qotilgan" };
-  const sc = statusColors[d.status] || '#8E8E93';
-  const sl = statusLabels[d.status] || 'Noma’lum';
   
   const clientName = d.client ? _esc(d.client.name) : '<span style="color:var(--text-tertiary); font-weight:500; font-style:italic;">Kiritilmagan</span>';
   const clientPhone = (d.client && d.client.phone) ? _esc(d.client.phone) : '<span style="color:var(--text-tertiary); font-weight:500; font-style:italic;">Kiritilmagan</span>';
@@ -1776,28 +1822,12 @@ function dcardHtml(d) {
   const pColorText = (d.productColor && d.productColor.toLowerCase() !== 'oddiy') ? `<span style="font-size:10px; padding:2px 6px; border-radius:4px; background:var(--brand-soft); color:var(--brand); margin-left:6px; font-weight:700;">${_esc(d.productColor)}</span>` : '';
   const productName = _esc(d.productName || d.name || 'Belgilanmagan') + pColorText;
 
-  // Extract 'Kim uchun' (Kim uchun xarid qilmoqchi) from notes
-  let kimUchun = 'Noma’lum';
-  if (d.notes) {
-    const kimMatch = d.notes.match(/Kim uchun xarid qilmoqchi(?:siz)?[?:]*\s*([^\n]+)/i) || d.notes.match(/Kim uchun[?:]*\s*([^\n]+)/i);
-    if (kimMatch) {
-      kimUchun = kimMatch[1].trim();
-    }
-  }
-  if (kimUchun === 'Noma’lum' && d.client && d.client.notes) {
-    const kimMatch = d.client.notes.match(/Kim uchun xarid qilmoqchi(?:siz)?[?:]*\s*([^\n]+)/i) || d.client.notes.match(/Kim uchun[?:]*\s*([^\n]+)/i);
-    if (kimMatch) {
-      kimUchun = kimMatch[1].trim();
-    }
-  }
-
-  // Format creation date/time nicely and robustly (Safari & mobile friendly)
+  // Format creation date/time nicely and robustly
   let formattedTime = 'Noma’lum';
   if (d.createdAt) {
     try {
       let dateStr = d.createdAt;
       if (typeof dateStr === 'string') {
-        // Replace space with 'T' to fix Safari invalid date parsing
         dateStr = dateStr.replace(' ', 'T');
       }
       const createdAtDate = new Date(dateStr);
@@ -1814,56 +1844,54 @@ function dcardHtml(d) {
     return `
       <div class="dcard" draggable="true" data-id="${d.id}"
         ondragstart="onDragStart(event,${d.id})" ondragend="onDragEnd(event)"
-        onclick="openDetail(${d.id})" style="position:relative; padding:12px 14px; box-shadow:0 2px 8px rgba(0,0,0,0.03); border:1px solid var(--border); border-radius:10px; transition:all 0.2s; background:var(--bg-secondary); cursor:pointer; margin-bottom: 10px;">
+        onclick="openDetail(${d.id})" style="position:relative; padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.03); border:1px solid var(--border); border-radius:10px; transition:all 0.2s; background:var(--bg-secondary); cursor:pointer; margin-bottom: 10px; display:flex; flex-direction:column; gap:8px;">
         
-        <!-- Tahrirlash tugmasi -->
-        <div onclick="event.stopPropagation(); openDealModal(null, ${d.id})" style="position:absolute; top:10px; right:12px; color:var(--text-tertiary); cursor:pointer; padding: 4px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='var(--bg-secondary)'; this.style.color='var(--accent)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-tertiary)'">
-          <i class="fas fa-edit"></i>
+        <!-- Edit Button on Hover -->
+        <div onclick="event.stopPropagation(); openDealModal(null, ${d.id})" style="position:absolute; top:10px; right:10px; color:var(--text-tertiary); cursor:pointer; padding: 4px; border-radius: 4px; transition: background 0.2s; z-index: 5;" onmouseover="this.style.background='var(--bg-secondary)'; this.style.color='var(--accent)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-tertiary)'">
+          <i class="fas fa-edit" style="font-size:12px"></i>
         </div>
 
-        <div class="dcard-header" style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; padding-right:24px; width:100%;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span class="dcard-checkbox-wrap">
-              <input type="checkbox" class="dcard-checkbox" value="${d.id}" onclick="event.stopPropagation(); onCardSelect(this)" ${window._selectedDeals && window._selectedDeals.includes(d.id) ? 'checked' : ''} style="cursor:pointer; width:14px; height:14px; accent-color:var(--accent);">
-            </span>
-            <span style="font-size:11px; font-weight:700; color:var(--text-secondary); background:var(--bg-tertiary); padding:2px 6px; border-radius:4px; border:1px solid var(--border)">#${d.id}</span>
+        <div class="dcard-header" style="display:flex; justify-content:space-between; align-items:flex-start; padding-right:20px; width:100%; gap:8px;">
+          <div style="display:flex; flex-direction:column; gap:2px; flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span class="dcard-checkbox-wrap" style="display:inline-flex;">
+                <input type="checkbox" class="dcard-checkbox" value="${d.id}" onclick="event.stopPropagation(); onCardSelect(this)" ${window._selectedDeals && window._selectedDeals.includes(d.id) ? 'checked' : ''} style="cursor:pointer; width:13px; height:13px; accent-color:var(--accent);">
+              </span>
+              <strong style="font-size:13.5px; color:var(--text-primary); text-overflow:ellipsis; overflow:hidden; white-space:nowrap; font-weight:700;" title="${_esc(d.productName || d.name)}">${_esc(d.productName || d.name)}</strong>
+            </div>
+            <span style="font-size:10px; color:var(--text-muted); font-weight:500;">${formattedTime}</span>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0;">
+            <span style="font-size:10px; font-weight:700; color:var(--text-secondary); background:var(--bg-tertiary); padding:1px 5px; border-radius:4px; border:1px solid var(--border)">#${d.id}</span>
           </div>
         </div>
         
-        <!-- Labeled fields for easy operator reading -->
-        <div style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px;">
-          <div style="font-size:12.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
-            <span style="font-weight:600; color:var(--text-tertiary); width: 65px; flex-shrink: 0;">Mijoz:</span>
-            <span style="font-weight:600; color:var(--text-primary);">${clientName}</span>
+        <div style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 2px;">
+          <!-- Contact Name -->
+          <div style="font-size:12.5px; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
+            <i class="far fa-user" style="color:var(--text-tertiary); font-size:11px; width:12px; text-align:center;"></i>
+            <span style="font-weight:600;">${clientName}</span>
           </div>
-          <div style="font-size:12.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
-            <span style="font-weight:600; color:var(--text-tertiary); width: 65px; flex-shrink: 0;">Telefon:</span>
-            <span style="font-weight:700; color:var(--accent);">${clientPhone}</span>
+          <!-- Phone Number -->
+          <div style="font-size:12px; color:var(--accent); display:flex; align-items:center; gap:6px;">
+            <i class="fas fa-phone-alt" style="color:var(--text-tertiary); font-size:11px; width:12px; text-align:center;"></i>
+            <span style="font-weight:700; letter-spacing:0.2px;">${clientPhone}</span>
           </div>
-          <div style="font-size:12.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
-            <span style="font-weight:600; color:var(--text-tertiary); width: 65px; flex-shrink: 0;">Manzil:</span>
-            <span style="font-weight:600; color:var(--text-primary);">${clientCity}</span>
+          <!-- Address (City) -->
+          <div style="font-size:12px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
+            <i class="fas fa-map-marker-alt" style="color:var(--text-tertiary); font-size:11px; width:12px; text-align:center;"></i>
+            <span>${clientCity}</span>
           </div>
-          <div style="font-size:12.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
-            <span style="font-weight:600; color:var(--text-tertiary); width: 65px; flex-shrink: 0;">Mahsulot:</span>
-            <span style="font-weight:700; color:var(--accent); display: inline-flex; align-items: center; flex-wrap: wrap;">${productName}${d.productColor && d.productColor !== 'oddiy' ? ' <span class="badge badge-purple" style="font-size:10.5px; padding:2px 6px; border-radius:4px; font-weight:600; margin-left:6px">' + _esc(d.productColor) + '</span>' : ''}</span>
-          </div>
-          <div style="font-size:12.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
-            <span style="font-weight:600; color:var(--text-tertiary); width: 65px; flex-shrink: 0;">Vaqti:</span>
-            <span style="font-weight:600; color:var(--text-primary);">${formattedTime}</span>
-          </div>
-
-          <!-- Dostavka narxi input -->
-          <div style="font-size:12.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px; margin-top: 4px; border-top: 1px dashed var(--border); padding-top: 6px;">
+          <!-- Delivery Price -->
+          <div style="font-size:12px; color:var(--text-secondary); display:flex; align-items:center; gap:6px; margin-top: 4px; border-top: 1px dashed var(--border); padding-top: 6px;" onclick="event.stopPropagation();">
             <span style="font-weight:600; color:var(--text-tertiary); width: 65px; flex-shrink: 0;">Dostavka:</span>
-            <input type="number" value="${d.deliveryPrice || 0}" onclick="event.stopPropagation();" onchange="updateDeliveryPrice(${d.id}, this.value)" style="width: 110px; padding: 2px 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 11.5px; font-weight: 700; color: var(--text-primary); background: var(--surface-base);" placeholder="Narxi...">
+            <input type="number" value="${d.deliveryPrice || 0}" onchange="updateDeliveryPrice(${d.id}, this.value)" style="width: 110px; padding: 2px 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 11.5px; font-weight: 700; color: var(--text-primary); background: var(--surface-base);" placeholder="Narxi...">
             <span style="font-size:10px; color:var(--text-muted);">so'm</span>
           </div>
-
-          <!-- Izoh / Muammo tahrirlash -->
-          <div style="font-size:12.5px; color:var(--text-secondary); display:flex; flex-direction:column; gap:4px; margin-top: 4px;">
+          <!-- Notes -->
+          <div style="font-size:12px; color:var(--text-secondary); display:flex; flex-direction:column; gap:4px; margin-top: 4px;" onclick="event.stopPropagation();">
             <span style="font-weight:600; color:var(--text-tertiary);">Izoh / Muammo:</span>
-            <textarea onclick="event.stopPropagation();" onchange="updateDealNotes(${d.id}, this.value)" style="width: 100%; min-height: 40px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 11.5px; color: var(--text-primary); background: var(--surface-base); resize: vertical;" placeholder="Izoh yoki muammo tavsifi...">${_esc(d.notes || '')}</textarea>
+            <textarea onchange="updateDealNotes(${d.id}, this.value)" style="width: 100%; min-height: 40px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 11.5px; color: var(--text-primary); background: var(--surface-base); resize: vertical;" placeholder="Izoh yoki muammo tavsifi...">${_esc(d.notes || '')}</textarea>
           </div>
         </div>
       </div>
@@ -1886,7 +1914,7 @@ function dcardHtml(d) {
   if (activeTasks.length === 0) {
     taskHtml = `
       <div style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: #ef4444; font-weight: 700;">
-        <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
+        <span style="width: 6px; height: 6px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
         Нет задач
       </div>
     `;
@@ -1900,7 +1928,7 @@ function dcardHtml(d) {
     
     taskHtml = `
       <div style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: ${color}; font-weight: 700;" title="${_esc(nextTask.title || '')}">
-        <span style="width: 8px; height: 8px; border-radius: 50%; background: ${color}; display: inline-block;"></span>
+        <span style="width: 6px; height: 6px; border-radius: 50%; background: ${color}; display: inline-block;"></span>
         ${_esc(nextTask.actionType || 'Связаться')}: ${taskDateFormatted}
       </div>
     `;
@@ -1909,55 +1937,65 @@ function dcardHtml(d) {
   return `
     <div class="dcard" draggable="true" data-id="${d.id}"
       ondragstart="onDragStart(event,${d.id})" ondragend="onDragEnd(event)"
-      onclick="openDetail(${d.id})" style="position:relative; padding:12px 14px; box-shadow:0 2px 8px rgba(0,0,0,0.03); border:1px solid var(--border); border-radius:10px; transition:all 0.2s; background:var(--bg-secondary); cursor:pointer; margin-bottom: 10px;">
+      onclick="openDetail(${d.id})" style="position:relative; padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.03); border:1px solid var(--border); border-radius:10px; transition:all 0.2s; background:var(--bg-secondary); cursor:pointer; margin-bottom: 10px; display:flex; flex-direction:column; gap:8px;">
       
-      <!-- Tahrirlash tugmasi -->
-      <div onclick="event.stopPropagation(); openDealModal(null, ${d.id})" style="position:absolute; top:10px; right:12px; color:var(--text-tertiary); cursor:pointer; padding: 4px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='var(--bg-secondary)'; this.style.color='var(--accent)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-tertiary)'">
-        <i class="fas fa-edit"></i>
+      <!-- Edit Button on Hover -->
+      <div onclick="event.stopPropagation(); openDealModal(null, ${d.id})" style="position:absolute; top:10px; right:10px; color:var(--text-tertiary); cursor:pointer; padding: 4px; border-radius: 4px; transition: background 0.2s; z-index: 5;" onmouseover="this.style.background='var(--bg-secondary)'; this.style.color='var(--accent)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-tertiary)'">
+        <i class="fas fa-edit" style="font-size:12px"></i>
       </div>
 
-      <div class="dcard-header" style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:flex-start; padding-right:24px; width:100%;">
-        <div style="display:flex; flex-direction:column; gap:2px;">
+      <div class="dcard-header" style="display:flex; justify-content:space-between; align-items:flex-start; padding-right:20px; width:100%; gap:8px;">
+        <div style="display:flex; flex-direction:column; gap:2px; flex:1; min-width:0;">
           <div style="display:flex; align-items:center; gap:6px;">
-            <span class="dcard-checkbox-wrap">
-              <input type="checkbox" class="dcard-checkbox" value="${d.id}" onclick="event.stopPropagation(); onCardSelect(this)" ${window._selectedDeals && window._selectedDeals.includes(d.id) ? 'checked' : ''} style="cursor:pointer; width:14px; height:14px; accent-color:var(--accent);">
+            <span class="dcard-checkbox-wrap" style="display:inline-flex;">
+              <input type="checkbox" class="dcard-checkbox" value="${d.id}" onclick="event.stopPropagation(); onCardSelect(this)" ${window._selectedDeals && window._selectedDeals.includes(d.id) ? 'checked' : ''} style="cursor:pointer; width:13px; height:13px; accent-color:var(--accent);">
             </span>
-            <strong style="font-size:13.5px; color:var(--text-primary); text-overflow:ellipsis; overflow:hidden; white-space:nowrap; max-width:180px; display:inline-block;" title="${_esc(d.productName || d.name)}">${_esc(d.productName || d.name)}</strong>
+            <strong style="font-size:13.5px; color:var(--text-primary); text-overflow:ellipsis; overflow:hidden; white-space:nowrap; font-weight:700;" title="${_esc(d.productName || d.name)}">${_esc(d.productName || d.name)}</strong>
           </div>
-          <span style="font-size:10px; color:var(--text-muted);">${formattedTime}</span>
+          <span style="font-size:10px; color:var(--text-muted); font-weight:500;">${formattedTime}</span>
         </div>
-        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;">
-          <span style="font-size:11px; font-weight:700; color:var(--text-secondary); background:var(--bg-tertiary); padding:2px 6px; border-radius:4px; border:1px solid var(--border)">#${d.id}</span>
-          <span style="font-size:10px; color:#ef4444; font-weight:700;" title="Stage duration">${stageDurationText}</span>
-        </div>
-      </div>
-      
-      <!-- Labeled fields -->
-      <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px;">
-        <div style="font-size:12px; color:var(--text-secondary); display:flex; gap:6px;">
-          <span style="color:var(--text-tertiary); width: 85px; flex-shrink: 0;">Имя контакта:</span>
-          <span style="font-weight:600; color:var(--text-primary);">${clientName}</span>
-        </div>
-        <div style="font-size:12px; color:var(--text-secondary); display:flex; gap:6px;">
-          <span style="color:var(--text-tertiary); width: 85px; flex-shrink: 0;">Компания:</span>
-          <span style="font-weight:600; color:var(--text-primary);">${d.client && d.client.company ? _esc(d.client.company) : '<span style="color:var(--text-tertiary)">o\'zim_uchun</span>'}</span>
-        </div>
-        <div style="font-size:12px; color:var(--text-secondary); display:flex; gap:6px;">
-          <span style="color:var(--text-tertiary); width: 85px; flex-shrink: 0;">Телефон:</span>
-          <span style="font-weight:700; color:var(--accent);">${clientPhone}</span>
-        </div>
-        <div style="font-size:12px; color:var(--text-secondary); display:flex; gap:6px;">
-          <span style="color:var(--text-tertiary); width: 85px; flex-shrink: 0;">Теги:</span>
-          <div style="display:flex; flex-wrap:wrap; gap:2px;">${tagsHtml || '<span style="color:var(--text-tertiary)">—</span>'}</div>
+        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0;">
+          <span style="font-size:10px; font-weight:700; color:var(--text-secondary); background:var(--bg-tertiary); padding:1px 5px; border-radius:4px; border:1px solid var(--border)">#${d.id}</span>
+          <span style="font-size:10px; color:#ef4444; font-weight:700; background:rgba(239,68,68,0.06); padding:1px 4px; border-radius:4px;" title="Stage duration">${stageDurationText}</span>
         </div>
       </div>
       
-      <!-- Footer details -->
-      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border); padding-top:8px; margin-top:8px;">
-        <div style="font-weight:700; font-size:13px; color:var(--text-primary);">
-          ${_fmt(d.amount)} UZS
+      <!-- Content Area (Clean layout matching amoCRM) -->
+      <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 2px;">
+        <!-- Contact Name -->
+        <div style="font-size:12.5px; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
+          <i class="far fa-user" style="color:var(--text-tertiary); font-size:11px; width:12px; text-align:center;"></i>
+          <span style="font-weight:600;">${clientName}</span>
         </div>
-        <div>
+        
+        <!-- Company Name (optional/if not default) -->
+        ${(d.client && d.client.company && d.client.company !== 'o\'zim_uchun') ? `
+        <div style="font-size:11.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
+          <i class="far fa-building" style="color:var(--text-tertiary); font-size:11px; width:12px; text-align:center;"></i>
+          <span>${_esc(d.client.company)}</span>
+        </div>
+        ` : ''}
+        
+        <!-- Phone Number -->
+        <div style="font-size:12px; color:var(--accent); display:flex; align-items:center; gap:6px;">
+          <i class="fas fa-phone-alt" style="color:var(--text-tertiary); font-size:11px; width:12px; text-align:center;"></i>
+          <span style="font-weight:700; letter-spacing:0.2px;">${clientPhone}</span>
+        </div>
+        
+        <!-- Tags chips list (hidden if empty) -->
+        ${tagsHtml ? `
+        <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">
+          ${tagsHtml}
+        </div>
+        ` : ''}
+      </div>
+      
+      <!-- Footer details: Budget & Next Task status -->
+      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border); padding-top:8px; margin-top:2px;">
+        <div style="font-weight:800; font-size:13px; color:var(--text-primary);">
+          ${_fmt(d.amount)}
+        </div>
+        <div style="display:flex; align-items:center;">
           ${taskHtml}
         </div>
       </div>
