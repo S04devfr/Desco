@@ -4,6 +4,45 @@ const { protect, requireRole } = require('../middleware/auth')
 
 const router = express.Router()
 
+async function validateMandatoryFields(req, body, isUpdate = false) {
+  try {
+    const settings = await prisma.companySettings.findFirst();
+    if (!settings || !settings.mandatoryFields) return null;
+    const fields = settings.mandatoryFields.split(',').map(f => f.trim()).filter(Boolean);
+
+    const labels = {
+      productName: 'Mahsulot nomi',
+      amount: 'Бюджет (Summa)',
+      notes: 'Izoh',
+      deadline: 'Mijoz oladigan vaqt',
+      warehouse: 'Ombor',
+      contactPhone: 'Telefon raqami',
+      contactName: 'Mijoz ismi',
+      city: 'Shahri',
+      source: 'Sdelka manbasi'
+    };
+
+    for (const field of fields) {
+      let value = body[field];
+      if (field === 'contactPhone') value = body.contactPhone || body.phone;
+      if (field === 'contactName') value = body.contactName || body.name;
+
+      const isFieldPassed = req.body[field] !== undefined ||
+        (field === 'contactPhone' && (req.body.contactPhone !== undefined || req.body.phone !== undefined)) ||
+        (field === 'contactName' && (req.body.contactName !== undefined || req.body.name !== undefined));
+
+      if (!isUpdate || isFieldPassed) {
+        if (value === undefined || value === null || String(value).trim() === '' || (field === 'amount' && Number(value) <= 0)) {
+          return `${labels[field] || field} to'ldirilishi majburiy`;
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Validation error:', e);
+  }
+  return null;
+}
+
 router.use(protect)
 
 // NOTE: /fix-unclaim o'chirildi — autentifikatsiyasiz ishlayotgan xavfli debug script edi
@@ -11,7 +50,7 @@ router.use(protect)
 
 
 const managerSelect = { select: { id: true, fullName: true, email: true, role: true } }
-const stageSelect = { select: { id: true, name: true, color: true, order: true } }
+const stageSelect = { select: { id: true, name: true, color: true, order: true, statusType: true } }
 
 async function logActivity(dealId, userId, action, details) {
   try {
@@ -111,10 +150,14 @@ router.get('/', async (req, res, next) => {
     const deals = await prisma.deal.findMany({
       where,
       include: {
-        client: { select: { id: true, name: true, company: true, phone: true, city: true } },
+        client: { select: { id: true, name: true, company: true, phone: true, city: true, companyPhone: true, companyEmail: true, companyWebsite: true, companyAddress: true, email: true } },
         manager: managerSelect,
         stage: stageSelect,
-        installments: { select: { id: true } }
+        installments: { select: { id: true } },
+        tasks: {
+          where: { completed: false },
+          select: { id: true, title: true, dueDate: true, dueTime: true, actionType: true }
+        }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -129,7 +172,7 @@ router.get('/:id', async (req, res, next) => {
     const deal = await prisma.deal.findUnique({
       where: { id: Number(req.params.id) },
       include: {
-        client: { select: { id: true, name: true, company: true, phone: true, city: true } },
+        client: { select: { id: true, name: true, company: true, phone: true, city: true, companyPhone: true, companyEmail: true, companyWebsite: true, companyAddress: true, email: true } },
         manager: managerSelect,
         stage: stageSelect,
         tasks: true,
@@ -158,19 +201,20 @@ router.get('/:id', async (req, res, next) => {
 //     (contactName, contactPhone, contactEmail, companyName, companyAddress).
 //     When clientId is absent but any of those are provided, a new Client
 //     row is auto-created first and the deal is linked to it.
-router.post('/', async (req, res, next) => {
-  try {
+    const valError = await validateMandatoryFields(req, req.body, false);
+    if (valError) return res.status(400).json({ message: valError });
+
     const {
       productName, amount, paidAmount, status, notes, clientId, deadline, stageId, pipelineId,
       contactName, contactPhone, contactEmail, companyName, companyAddress, city, costPrice, createdAt, warehouse,
-      productColor, driverPhone
+      productColor, driverPhone, tags
     } = req.body
     if (!productName) return res.status(400).json({ message: 'Mahsulot nomi majburiy' })
 
     let resolvedClientId = clientId ? Number(clientId) : null
 
     if (!resolvedClientId) {
-      const hasQuickAddFields = [contactName, contactPhone, contactEmail, companyName, companyAddress, city]
+      const hasQuickAddFields = [contactName, contactPhone, contactEmail, companyName, companyAddress, city, req.body.companyPhone, req.body.companyEmail, req.body.companyWebsite]
         .some(v => v !== undefined && v !== null && String(v).trim() !== '')
 
       if (hasQuickAddFields) {
@@ -182,6 +226,9 @@ router.post('/', async (req, res, next) => {
             email: contactEmail || null,
             company: companyName || null,
             companyAddress: companyAddress || null,
+            companyPhone: req.body.companyPhone || null,
+            companyEmail: req.body.companyEmail || null,
+            companyWebsite: req.body.companyWebsite || null,
             ownerId: req.userId
           }
         })
@@ -245,10 +292,12 @@ router.post('/', async (req, res, next) => {
         warehouse: warehouse || null,
         source: req.body.source || 'oddiy',
         productColor: productColor || 'oddiy',
-        driverPhone: driverPhone || null
+        driverPhone: driverPhone || null,
+        tags: tags || '',
+        stageUpdatedAt: new Date()
       },
       include: {
-        client: { select: { id: true, name: true, company: true, phone: true, city: true } },
+        client: { select: { id: true, name: true, company: true, phone: true, city: true, companyPhone: true, companyEmail: true, companyWebsite: true, companyAddress: true, email: true } },
         manager: managerSelect,
         stage: stageSelect
       }
@@ -493,11 +542,12 @@ router.patch('/bulk/stage', requireRole('admin', 'manager'), async (req, res, ne
 });
 
 // Update deal
-router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => {
-  try {
+    const valError = await validateMandatoryFields(req, req.body, true);
+    if (valError) return res.status(400).json({ message: valError });
+
     const {
       productName, amount, paidAmount, status, notes, clientId, deadline, managerId, stageId, costPrice, deliveryPrice,
-      contactName, contactPhone, city, createdAt, warehouse, productColor, driverPhone
+      contactName, contactPhone, city, createdAt, warehouse, productColor, driverPhone, tags
     } = req.body
 
     const existing = await prisma.deal.findUnique({ where: { id: Number(req.params.id) } })
@@ -510,15 +560,20 @@ router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => 
     let resolvedClientId = clientId !== undefined ? (clientId ? Number(clientId) : null) : existing.clientId;
 
     if (!resolvedClientId) {
-      const hasQuickAddFields = [contactName, contactPhone, city]
+      const hasQuickAddFields = [contactName, contactPhone, city, req.body.companyName, req.body.companyAddress, req.body.companyPhone, req.body.companyEmail, req.body.companyWebsite]
         .some(v => v !== undefined && v !== null && String(v).trim() !== '')
 
       if (hasQuickAddFields) {
         const newClient = await prisma.client.create({
           data: {
-            name: (contactName && contactName.trim()) || "Noma'lum mijoz",
+            name: (contactName && contactName.trim()) || req.body.companyName || "Noma'lum mijoz",
             phone: contactPhone || null,
             city: city || null,
+            company: req.body.companyName || null,
+            companyAddress: req.body.companyAddress || null,
+            companyPhone: req.body.companyPhone || null,
+            companyEmail: req.body.companyEmail || null,
+            companyWebsite: req.body.companyWebsite || null,
             ownerId: req.userId
           }
         });
@@ -530,6 +585,12 @@ router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => 
       if (contactName !== undefined && contactName !== null) clientUpdateData.name = contactName.trim();
       if (contactPhone !== undefined && contactPhone !== null) clientUpdateData.phone = contactPhone.trim();
       if (city !== undefined && city !== null) clientUpdateData.city = city.trim();
+      if (req.body.companyPhone !== undefined) clientUpdateData.companyPhone = req.body.companyPhone;
+      if (req.body.companyEmail !== undefined) clientUpdateData.companyEmail = req.body.companyEmail;
+      if (req.body.companyWebsite !== undefined) clientUpdateData.companyWebsite = req.body.companyWebsite;
+      if (req.body.companyName !== undefined) clientUpdateData.company = req.body.companyName;
+      if (req.body.companyAddress !== undefined) clientUpdateData.companyAddress = req.body.companyAddress;
+      if (req.body.contactEmail !== undefined) clientUpdateData.email = req.body.contactEmail;
 
       if (Object.keys(clientUpdateData).length > 0) {
         await prisma.client.update({
@@ -552,6 +613,7 @@ router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => 
     if (createdAt !== undefined) {
       data.createdAt = (createdAt && !isNaN(new Date(createdAt))) ? new Date(createdAt) : new Date();
     }
+    if (tags !== undefined) data.tags = tags;
     if (managerId !== undefined) {
       data.managerId = managerId ? Number(managerId) : null
     } else if (existing.managerId === null) {
@@ -561,15 +623,24 @@ router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => 
     if (stageId !== undefined) {
       data.stageId = stageId ? Number(stageId) : null
       if (stageId) {
+        if (Number(stageId) !== existing.stageId) {
+          data.stageUpdatedAt = new Date();
+        }
         const stage = await prisma.pipelineStage.findUnique({ where: { id: Number(stageId) } })
         if (stage) {
-          const stageName = stage.name.toLowerCase();
-          if (stageName.includes('yutil') || stageName.includes('100%') || stageName.includes('olindi')) {
+          if (stage.statusType === 'won') {
             data.status = 'won';
-          } else if (stageName.includes('rad') || stageName.includes('otkaz') || stageName.includes('lost')) {
+          } else if (stage.statusType === 'lost') {
             data.status = 'lost';
           } else {
-            data.status = 'new';
+            const stageName = stage.name.toLowerCase();
+            if (stageName.includes('yutil') || stageName.includes('100%') || stageName.includes('olindi')) {
+              data.status = 'won';
+            } else if (stageName.includes('rad') || stageName.includes('otkaz') || stageName.includes('lost')) {
+              data.status = 'lost';
+            } else {
+              data.status = 'new';
+            }
           }
         }
       }
@@ -582,7 +653,7 @@ router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => 
       where: { id: Number(req.params.id) },
       data,
       include: {
-        client: { select: { id: true, name: true, company: true, phone: true, city: true } },
+        client: { select: { id: true, name: true, company: true, phone: true, city: true, companyPhone: true, companyEmail: true, companyWebsite: true, companyAddress: true, email: true } },
         manager: managerSelect,
         stage: stageSelect
       }
@@ -761,21 +832,27 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
 
         let finalStatus = txDeal.status;
         if (newStage) {
-          const stageName = newStage.name.toLowerCase();
-          if (stageName.includes('yutil') || stageName.includes('100%') || stageName.includes('olindi')) {
+          if (newStage.statusType === 'won') {
             finalStatus = 'won';
-          } else if (stageName.includes('rad') || stageName.includes('otkaz') || stageName.includes('lost')) {
+          } else if (newStage.statusType === 'lost') {
             finalStatus = 'lost';
           } else {
-            finalStatus = 'new';
+            const stageName = newStage.name.toLowerCase();
+            if (stageName.includes('yutil') || stageName.includes('100%') || stageName.includes('olindi')) {
+              finalStatus = 'won';
+            } else if (stageName.includes('rad') || stageName.includes('otkaz') || stageName.includes('lost')) {
+              finalStatus = 'lost';
+            } else {
+              finalStatus = 'new';
+            }
           }
         }
 
       const updated = await tx.deal.update({
         where: { id },
-        data: { stageId: finalStageId, pipelineId: finalPipelineId, managerId: finalManagerId, status: finalStatus },
+        data: { stageId: finalStageId, pipelineId: finalPipelineId, managerId: finalManagerId, status: finalStatus, stageUpdatedAt: new Date() },
         include: {
-          client: { select: { id: true, name: true, company: true, phone: true, city: true } },
+          client: { select: { id: true, name: true, company: true, phone: true, city: true, companyPhone: true, companyEmail: true, companyWebsite: true, companyAddress: true, email: true } },
           manager: managerSelect,
           stage: stageSelect
         }

@@ -35,6 +35,9 @@ model Client {
   email     String?
   company   String?
   companyAddress String?
+  companyPhone String?
+  companyEmail String?
+  companyWebsite String?
   notes     String?
   city      String?
   debt      Float    @default(0)
@@ -84,6 +87,7 @@ model PipelineStage {
   color     String   @default("#5D4037")
   order     Int      @default(0)
   isDefault Boolean  @default(false)
+  statusType String   @default("new")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -125,6 +129,8 @@ model Deal {
   stockDecremented Boolean   @default(false)
   deliveryPrice    Float     @default(0)
   source           String    @default("oddiy") // instagram | target | oddiy
+  tags             String?   @default("")
+  stageUpdatedAt   DateTime? @default(now())
   productColor     String    @default("oddiy")
 
   driverPhone      String?
@@ -196,6 +202,8 @@ model Task {
   dueTime     String?
   completed   Boolean   @default(false)
   priority    String    @default("medium")
+  actionType  String    @default("Связаться")
+  result      String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -218,6 +226,7 @@ model CompanySettings {
   companyName           String   @default("DESCO CRM")
   currency              String   @default("UZS")
   logoUrl               String?
+  mandatoryFields       String   @default("")
   telegramSessionString String?
   telegramPhone         String?
   telegramApiId         String?

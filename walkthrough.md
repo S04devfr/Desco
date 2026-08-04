@@ -34,11 +34,49 @@ KPI kartalari yangi operatsion ko'rsatkichlar bilan boyitildi:
 ## Qanday test qilish mumkin (Localhost:3000)
 
 1. Local dev server avtomatik ravishda `localhost:3000` portida ishga tushdi.
+# amoCRM Level Deals & Tasks Upgrade Walkthrough
+
+Ushbu loyiha doirasida Desco CRM tizimining "Сделки" (Bitimlar) va "Задачи" (Vazifalar) modullari amoCRM'ning professional funksionalligi va interfeysi darajasiga to'liq ko'tarildi. Barcha ma'lumotlar saqlandi, hech qanday ma'lumot yo'qotilmadi.
+
+## Asosiy o'zgarishlar
+
+### 1. "Сделки" (Bitimlar) Bo'limi va Kanban
+- **Statistika Sarlavhasi (Header):** Kanban tepasida har bir bosqich bo'yicha jami sdelkalar soni va umumiy summasi (UZS) ko'rsatiladi (masalan: `782 bitim: 38,680,000 so'm`).
+- **Tezkor Qo'shish (Quick Add):** Har bir kanban ustuni tagida "Tezkor sdelka qo'shish" tugmasi paydo bo'ldi. U bosilganda ustun ichida inline shaklda form ochilib, mijoz ismi, telefon raqami, mahsulot va shahar kiritilishi bilan bitim shu zaxotiyoq bosqichga qo'shiladi.
+- **Kartochka Dizayni:** Kartalarda bitim nomi, yaratilgan vaqti, ID raqami, mijoz ismi va kompaniyasi, teglari (chip ko'rinishida), telefon raqami, jami summa va vazifa holati indicator (agar vazifa bo'lmasa qizil "задач нет", agar faol bo'lsa vazifa turi va muddati yashil/kulrang nuqta bilan) ko'rsatiladi.
+
+### 2. amoCRM Split Sliding Drawer (Bitim Oynasi)
+Bitim ustiga bosilganda o'ng tomondan amoCRM kabi split sliding panel chiqadi:
+- **Chap panel (Ma'lumotlar):**
+  - **Asosiy (Основное):** Bitim nomi (inline tahrirlash bilan), mas'ul menejer, summa, kontakt ismi, telefoni, emaili hamda kompaniya nomi, telefoni, emaili, sayti, manzili. Har bir maydon o'zgarishi bilan avtomatik tarzda bazaga saqlanadi.
+  - **Teglar:** Bitim teglari chip ko'rinishida chiqadi, ularni osongina qo'shish yoki o'chirish imkoni mavjud.
+  - **Statistika (Статистика):** Yaratilgan va o'zgartirilgan vaqtlar, joriy bosqichda necha kun turganligi, manbasi va ombor ma'lumotlari.
+  - **Fayllar (Файлы):** Bitimga biriktirilgan fayllar ro'yxati (yuklash imkoni bilan).
+  - **Progress Bar:** Tepada bosqichlar zanjiri bo'lib, unga bosish orqali bitim bosqichini o'zgartirish mumkin.
+- **O'ng panel (Xronologiya / Tarix):**
+  - Barcha izohlar va tizim amallari yillar/kunlar bo'yicha guruhlanib, amoCRM xronologik tartibida ko'rsatiladi.
+  - Faol vazifalar alohida sariq bloklarda chiqib, vazifani bajarishda operator natijani yozishi uchun maxsus kiritish maydoni ("Natijani yozing...") va "Bajarildi" tugmasi mavjud.
+  - Izoh yozish qismida yozilgan sharhlar darhol xronologiyaga sariq kartochka (note) bo'lib qo'shiladi.
+
+### 3. "Задачи" (Vazifalar) Tizimi
+- **Kun / Hafta / Oy filtri:** Filtrlar paneli Kun, Hafta, Oy tablari orqali boshqariladi va muddatlar bo'yicha vazifalarni to'g'ri saralaydi.
+- **3 ta ustunli Kanban:** Kanban ko'rinishida strictly 3 ta ustun chiqadi:
+  1. *Muddati o'tgan (Просроченные)*
+  2. *Bugun (Сегодня)*
+  3. *Ertaga (Завтра)*
+- **Vazifa Kartochkalari:** Kartada vazifa turi qalin harflarda (`Связаться: check arrival`), mijoz ismi, bog'langan bitim nomi (bosganda bitimga havola/link bilan), muddati va vaqti ko'rsatiladi.
+- **Drawer Integratsiyasi:** Vazifa kartasiga bosilganda operator deals sahifasiga yo'naltiriladi va o'sha bitimning sliding drawer oynasi avtomatik ravishda ochiladi.
+
+### 4. Sozlamalar (Настройки) va Ma'lumotlarni Himoyalash
+- **Drag-and-Drop Reordering:** Voronka sozlamalarida bosqichlarni sudrab olib o'tish (drag-and-drop) orqali tartibini o'zgartirish imkoniyati qo'shildi. O'zgarishlar zaxotiyoq ma'lumotlar bazasida saqlanadi.
+- **Status Type mapping:** Har bir bosqich turi sozlamalarda (Standard, Won, Lost) belgilanishi mumkin. Won yoki Lost bosqichlariga o'tkazilganda bitim statuslari avtomatik tarzda to'g'ri hisoblanadi.
+- **Majburiy maydonlar:** Sozlamalarda admin yangi sdelka yaratishda qaysi maydonlar majburiyligini belgilashi mumkin (Mijoz ismi, telefon, kompaniya nomi, summa). Ushbu maydonlar kiritilmaganda bitim yaratishga ruxsat berilmaydi.
+
+
+
+---
+
 # Tahlil / Analytics Section Upgrade Walkthrough
-
-Ushbu loyiha doirasida Desco CRM tizimining "Tahlil" sahifasi jahon darajasidagi Stripe, HubSpot, Shopify, Salesforce va Linear loyihalaridan ilhomlangan holda to'liq yangilandi.
-
-Barcha o'zgarishlar faqat **local** tarzda amalga oshirildi (GitHub repository'ga push qilinmadi).
 
 ## Asosiy o'zgarishlar
 

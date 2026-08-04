@@ -98,7 +98,7 @@ router.get('/:id', async (req, res, next) => {
 // Create task
 router.post('/', async (req, res, next) => {
   try {
-    const { title, description, dueDate, dueTime, dealId, assignedToId, priority, clientId, stageId } = req.body
+    const { title, description, dueDate, dueTime, dealId, assignedToId, priority, clientId, stageId, actionType, result } = req.body
     if (!title) return res.status(400).json({ message: 'Sarlavha majburiy' })
 
     const task = await prisma.task.create({
@@ -108,6 +108,8 @@ router.post('/', async (req, res, next) => {
         dueDate: (dueDate && !isNaN(new Date(dueDate))) ? new Date(dueDate) : null,
         dueTime: dueTime || null,
         priority: priority || 'medium',
+        actionType: actionType || 'Связаться',
+        result: result || null,
         dealId: dealId ? Number(dealId) : null,
         clientId: clientId ? Number(clientId) : null,
         assignedToId: assignedToId ? Number(assignedToId) : (typeof req.userId === 'number' ? req.userId : null)
@@ -143,7 +145,7 @@ router.post('/', async (req, res, next) => {
 // Update task
 router.patch('/:id', async (req, res, next) => {
   try {
-    const { title, description, dueDate, dueTime, dealId, assignedToId, priority, completed, clientId, stageId } = req.body
+    const { title, description, dueDate, dueTime, dealId, assignedToId, priority, completed, clientId, stageId, actionType, result } = req.body
 
     const data = {}
     if (title !== undefined) data.title = title
@@ -151,6 +153,8 @@ router.patch('/:id', async (req, res, next) => {
     if (dueDate !== undefined) data.dueDate = (dueDate && !isNaN(new Date(dueDate))) ? new Date(dueDate) : null
     if (dueTime !== undefined) data.dueTime = dueTime
     if (priority !== undefined) data.priority = priority
+    if (actionType !== undefined) data.actionType = actionType
+    if (result !== undefined) data.result = result
     if (completed !== undefined) {
       data.completed = completed
     } else if (stageId !== undefined && stageId !== null && stageId !== '') {
@@ -197,9 +201,10 @@ router.patch('/:id', async (req, res, next) => {
 // Complete task shortcut
 router.patch('/:id/complete', async (req, res, next) => {
   try {
+    const { result } = req.body
     const task = await prisma.task.update({
       where: { id: Number(req.params.id) },
-      data: { completed: true }
+      data: { completed: true, result: result || null }
     })
     res.json(task)
   } catch (error) {

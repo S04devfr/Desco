@@ -151,7 +151,6 @@ const swatchHtml = colorSwatches.map(c =>
       </div>
     </div>
 
-    <% if (isAdmin) { %>
     <!-- 2. COMPANY -->
     <div class="settings-pane" id="pane-company">
       <div class="settings-section">
@@ -174,6 +173,35 @@ const swatchHtml = colorSwatches.map(c =>
               </select>
             </div>
           </div>
+          
+          <div class="settings-section-header" style="margin-top: 24px; padding-bottom: 8px; border-bottom: 1px solid var(--border-light);">
+            <i class="fas fa-check-double" style="color:var(--accent); font-size:16px;"></i>
+            <h3 style="font-size:14px; margin:0;">Yangi sdelka uchun majburiy maydonlar</h3>
+          </div>
+          <div class="settings-section-body" style="padding-top: 12px; padding-bottom: 20px;">
+            <% 
+              const mandatoryList = (company && company.mandatoryFields) ? company.mandatoryFields.split(',') : [];
+            %>
+            <div style="display:flex; flex-direction:column; gap:10px; margin-bottom: 16px;">
+              <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; color:var(--text-primary);">
+                <input type="checkbox" id="mf-contactName" value="contactName" <%= mandatoryList.includes('contactName') ? 'checked' : '' %> style="accent-color:var(--accent);">
+                <span>Mijoz ismi (Имя контакта)</span>
+              </label>
+              <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; color:var(--text-primary);">
+                <input type="checkbox" id="mf-contactPhone" value="contactPhone" <%= mandatoryList.includes('contactPhone') ? 'checked' : '' %> style="accent-color:var(--accent);">
+                <span>Mijoz telefoni (Телефон контакта)</span>
+              </label>
+              <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; color:var(--text-primary);">
+                <input type="checkbox" id="mf-companyName" value="companyName" <%= mandatoryList.includes('companyName') ? 'checked' : '' %> style="accent-color:var(--accent);">
+                <span>Kompaniya nomi (Название компании)</span>
+              </label>
+              <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; color:var(--text-primary);">
+                <input type="checkbox" id="mf-amount" value="amount" <%= mandatoryList.includes('amount') ? 'checked' : '' %> style="accent-color:var(--accent);">
+                <span>Budjet / Summa (Бюджет/Сумма сделки)</span>
+              </label>
+            </div>
+          </div>
+
           <button class="btn btn-primary btn-sm" onclick="saveCompany()"><i class="fas fa-save"></i> Saqlash</button>
         </div>
       </div>
@@ -206,12 +234,12 @@ const swatchHtml = colorSwatches.map(c =>
               <div class="pipeline-card-body" id="pb-<%= p.id %>">
                 <% if ((p.stages||[]).length) { %>
                   <% p.stages.forEach(s => { %>
-                  <div class="stage-row" id="sr-<%= s.id %>">
-                    <div class="stage-color" style="background:<%= s.color %>"></div>
-                    <div class="stage-name-txt"><%= escHtml(s.name) %></div>
-                    <div class="stage-order">#<%= s.order %></div>
+                  <div class="stage-row" id="sr-<%= s.id %>" draggable="true" ondragstart="onStageDragStart(event, <%= s.id %>)" ondragover="onStageDragOver(event)" ondrop="onStageDrop(event, <%= s.id %>, <%= p.id %>)" ondragend="this.style.opacity='1'" style="cursor: move; display:flex; align-items:center; padding:8px 12px; border:1px solid var(--border); border-radius:6px; margin-bottom:6px; background:var(--bg-secondary);">
+                    <div class="stage-color" style="background:<%= s.color %>; width:12px; height:12px; border-radius:50%; margin-right:12px;"></div>
+                    <div class="stage-name-txt" style="flex-grow:1; font-weight:600; color:var(--text-primary);"><%= escHtml(s.name) %> <span style="font-size:11px; color:var(--text-tertiary); font-weight:normal;">(<%= s.statusType === 'won' ? 'Победа' : s.statusType === 'lost' ? 'Провал' : 'Стандарт' %>)</span></div>
+                    <div class="stage-order" style="font-size:12px; color:var(--text-tertiary); margin-right:12px;">#<%= s.order %></div>
                     <div style="display:flex;gap:3px">
-                      <button class="btn btn-ghost btn-icon btn-sm" onclick="openStageModal(<%= p.id %>,<%= s.id %>,'<%= escHtml(s.name) %>','<%= s.color %>')" title="Tahrirlash"><i class="fas fa-edit"></i></button>
+                      <button class="btn btn-ghost btn-icon btn-sm" onclick="openStageModal(<%= p.id %>,<%= s.id %>,'<%= escHtml(s.name) %>','<%= s.color %>','<%= s.statusType %>')" title="Tahrirlash"><i class="fas fa-edit"></i></button>
                       <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="deleteStage(<%= p.id %>,<%= s.id %>)" title="O'chirish"><i class="fas fa-trash"></i></button>
                     </div>
                   </div>
@@ -496,6 +524,14 @@ const swatchHtml = colorSwatches.map(c =>
         <input type="text" id="st-name" class="form-control" placeholder="Masalan: Muzokaralar">
       </div>
       <div class="form-group">
+        <label class="form-label">Bosqich turi (Status Type) *</label>
+        <select id="st-statusType" class="form-control">
+          <option value="new">Standard (Muzokaralar/Kelishuv)</option>
+          <option value="won">Yutilgan (Won)</option>
+          <option value="lost">Yo'qotilgan (Lost)</option>
+        </select>
+      </div>
+      <div class="form-group">
         <label class="form-label">Rang</label>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <input type="color" id="st-color" value="#007AFF"
@@ -691,11 +727,13 @@ async function deletePipeline(id) {
 }
 
 // ── STAGE CRUD ──
-function openStageModal(pipelineId, stageId, name, color) {
+// ── STAGE CRUD ──
+function openStageModal(pipelineId, stageId, name, color, statusType) {
   document.getElementById('stagePipelineId').value = pipelineId || '';
   document.getElementById('stageId').value = stageId || '';
   document.getElementById('st-name').value = name || '';
   document.getElementById('st-color').value = color || '#007AFF';
+  document.getElementById('st-statusType').value = statusType || 'new';
   document.getElementById('stageModalTitle').textContent = stageId ? 'Bosqichni tahrirlash' : 'Yangi bosqich';
   document.getElementById('stageModal').classList.remove('hidden');
   setTimeout(() => document.getElementById('st-name').focus(), 60);
@@ -707,6 +745,7 @@ async function saveStage() {
   const sid  = document.getElementById('stageId').value;
   const name = document.getElementById('st-name').value.trim();
   const color = document.getElementById('st-color').value;
+  const statusType = document.getElementById('st-statusType').value;
   if (!name) { showToast('Nom majburiy', 'error'); return; }
   if (!pid)  { showToast('Pipeline aniqlanmadi', 'error'); return; }
   const btn = document.getElementById('stageSaveBtn');
@@ -718,7 +757,7 @@ async function saveStage() {
     const r = await fetch(url, {
       method: sid ? 'PATCH' : 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, color })
+      body: JSON.stringify({ name, color, statusType })
     });
     if (!r.ok) throw new Error((await r.json()).message);
     showToast(sid ? 'Bosqich yangilandi' : "Bosqich qo'shildi", 'success');
@@ -739,14 +778,79 @@ async function deleteStage(pipelineId, stageId) {
   } catch(e) { showToast(e.message || "O'chirishda xato", 'error'); }
 }
 
+// ── Drag & Drop Stage Sorting ──
+let _draggedStageId = null;
+
+function onStageDragStart(e, stageId) {
+  _draggedStageId = stageId;
+  e.dataTransfer.setData('text/plain', stageId);
+  e.target.style.opacity = '0.5';
+}
+
+function onStageDragOver(e) {
+  e.preventDefault();
+}
+
+async function onStageDrop(e, targetStageId, pipelineId) {
+  e.preventDefault();
+  const sourceStageId = _draggedStageId || Number(e.dataTransfer.getData('text/plain'));
+  if (!sourceStageId || sourceStageId === targetStageId) {
+    const rowEl = document.getElementById('sr-' + targetStageId);
+    if (rowEl) rowEl.style.opacity = '1';
+    return;
+  }
+
+  const container = document.querySelector(`#pb-${pipelineId}`);
+  if (!container) return;
+
+  const stageRows = Array.from(container.querySelectorAll('.stage-row'));
+  const ids = stageRows.map(row => Number(row.id.replace('sr-', '')));
+
+  const sourceIndex = ids.indexOf(sourceStageId);
+  const targetIndex = ids.indexOf(targetStageId);
+
+  if (sourceIndex > -1 && targetIndex > -1) {
+    ids.splice(sourceIndex, 1);
+    ids.splice(targetIndex, 0, sourceStageId);
+  }
+
+  try {
+    const r = await fetch(`/api/pipelines/${pipelineId}/stages/reorder`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids })
+    });
+    if (!r.ok) throw new Error((await r.json()).message);
+    showToast("Bosqichlar tartibi yangilandi", "success");
+    setTimeout(() => location.reload(), 600);
+  } catch(err) {
+    showToast(err.message || "Xatolik yuz berdi", "error");
+    setTimeout(() => location.reload(), 800);
+  }
+}
+
 // ── COMPANY ──
 async function saveCompany() {
   const companyName = document.getElementById('s-companyName').value.trim();
   const currency = document.getElementById('s-currency').value;
+  
+  // Build mandatoryFields comma separated string
+  const mfKeys = ['contactName', 'contactPhone', 'companyName', 'amount'];
+  const checkedKeys = mfKeys.filter(k => {
+    const el = document.getElementById('mf-' + k);
+    return el && el.checked;
+  });
+  const mandatoryFields = checkedKeys.join(',');
+
   try {
-    const r = await fetch('/api/settings/company', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ companyName, currency }) });
+    const r = await fetch('/api/settings/company', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ companyName, currency, mandatoryFields })
+    });
     if (!r.ok) throw new Error();
     showToast('Saqlandi', 'success');
+    setTimeout(() => location.reload(), 600);
   } catch(e) { showToast('Xato', 'error'); }
 }
 

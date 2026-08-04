@@ -393,6 +393,407 @@
     accent-color: var(--accent);
     flex-shrink: 0;
   }
+
+  /* ── Premium Sliding Drawer Styles (amoCRM level) ── */
+  #detailModal {
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: flex-end;
+    align-items: stretch;
+    z-index: 1060;
+    transition: opacity 0.25s ease;
+  }
+  #detailModal.hidden {
+    display: none !important;
+  }
+  #detailModal .modal-box {
+    width: 960px;
+    max-width: 95vw;
+    margin: 0;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    background: var(--bg-surface);
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: -10px 0 40px rgba(0,0,0,0.3);
+    border-left: 1px solid var(--border);
+  }
+  #detailModal:not(.hidden) .modal-box {
+    transform: translateX(0);
+  }
+
+  /* Drawer Columns */
+  .drawer-left {
+    width: 420px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow-y: auto;
+    padding: 24px;
+    background: var(--surface-card);
+  }
+  .drawer-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #0f172a; /* Dark navy timeline backdrop matching screenshot */
+    overflow: hidden;
+  }
+  [data-theme="light"] .drawer-right {
+    background: #f8fafc;
+  }
+
+  /* Inline editable header */
+  .drawer-header-inline {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .drawer-back-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+  }
+  .drawer-back-btn:hover {
+    background: var(--bg-secondary);
+    color: var(--accent);
+  }
+  .drawer-title-input {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 2px 6px;
+    width: 100%;
+    outline: none;
+    transition: border 0.2s, background 0.2s;
+  }
+  .drawer-title-input:focus, .drawer-title-input:hover {
+    border-color: var(--border);
+    background: var(--surface-input);
+  }
+
+  /* Progress bar */
+  .drawer-progress-bar {
+    display: flex;
+    gap: 2px;
+    margin: 14px 0;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-segment {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    transition: background 0.3s;
+  }
+  .progress-segment.active {
+    background: var(--_sc, var(--accent));
+  }
+  .progress-segment.passed {
+    background: var(--accent-soft);
+    opacity: 0.8;
+  }
+
+  /* Tabs inside Drawer */
+  .drawer-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+    gap: 16px;
+  }
+  .drawer-tab {
+    padding: 8px 4px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .drawer-tab:hover {
+    color: var(--text-primary);
+  }
+  .drawer-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* Drawer Tab Contents */
+  .drawer-tab-content {
+    display: none;
+  }
+  .drawer-tab-content.active {
+    display: block;
+  }
+
+  /* Field details */
+  .detail-field-group {
+    margin-bottom: 14px;
+  }
+  .detail-field-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .detail-field-value {
+    font-size: 13.5px;
+    color: var(--text-primary);
+  }
+
+  /* Contact and company card containers */
+  .drawer-card-box {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    background: var(--bg-secondary);
+    margin-bottom: 16px;
+  }
+  .drawer-card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* Timeline on the right */
+  .timeline-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(15, 23, 42, 0.2);
+  }
+  .timeline-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .timeline-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    background: rgba(15, 23, 42, 0.4);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* Group headers */
+  .timeline-group-hdr {
+    text-align: center;
+    position: relative;
+    margin: 12px 0 4px;
+  }
+  .timeline-group-hdr::before {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; top: 50%;
+    height: 1px;
+    background: var(--border);
+    z-index: 1;
+    opacity: 0.3;
+  }
+  .timeline-group-title {
+    display: inline-block;
+    padding: 2px 12px;
+    background: #1e293b;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 20px;
+    z-index: 2;
+    position: relative;
+    border: 1px solid var(--border);
+  }
+  [data-theme="light"] .timeline-group-title {
+    background: #f1f5f9;
+  }
+
+  /* Timeline entry */
+  .timeline-entry {
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 12.5px;
+    color: #cbd5e1;
+    line-height: 1.4;
+    transition: background 0.2s;
+  }
+  [data-theme="light"] .timeline-entry {
+    background: #ffffff;
+    border-color: var(--border);
+    color: var(--text-primary);
+  }
+  .timeline-entry-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #64748b;
+    margin-bottom: 4px;
+  }
+  .timeline-entry-author {
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  /* Notes render as yellow card boxes */
+  .timeline-entry.note-entry {
+    background: rgba(254, 243, 199, 0.08);
+    border-left: 3px solid #fbbf24;
+  }
+  [data-theme="light"] .timeline-entry.note-entry {
+    background: #fffbeb;
+    border-left: 3px solid #fbbf24;
+  }
+  .timeline-entry.note-entry .timeline-entry-author {
+    color: #fbbf24;
+  }
+
+  /* Timeline Collapsible */
+  .timeline-fold {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(30, 41, 59, 0.3);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #94a3b8;
+    cursor: pointer;
+  }
+  .timeline-fold:hover {
+    background: rgba(30, 41, 59, 0.5);
+  }
+  .timeline-fold-content {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+    padding-left: 8px;
+    border-left: 1px dashed var(--border);
+  }
+  .timeline-fold.open + .timeline-fold-content {
+    display: flex;
+  }
+
+  /* Task card in timeline */
+  .timeline-task-card {
+    background: rgba(88, 86, 214, 0.06);
+    border: 1px solid rgba(88, 86, 214, 0.25);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  [data-theme="light"] .timeline-task-card {
+    background: #f5f3ff;
+  }
+  .timeline-task-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #a78bfa;
+    text-transform: uppercase;
+  }
+  .timeline-task-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .timeline-task-result-box {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .timeline-task-input {
+    flex: 1;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface-input);
+    color: var(--text-primary);
+    padding: 0 10px;
+    font-size: 12.5px;
+    outline: none;
+  }
+  .timeline-task-input:focus {
+    border-color: var(--accent);
+  }
+
+  /* Quick-add inside each column */
+  .kb-col-hdr-quickadd-btn {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: inline-flex;
+  }
+  .kb-col-hdr-quickadd-btn:hover {
+    color: var(--accent);
+    background: var(--bg-primary);
+  }
+  .kb-col-qadd-container {
+    padding: 8px 10px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .kb-col-qadd-container.open {
+    display: flex;
+  }
+  .kb-col-qadd-input {
+    width: 100%;
+    height: 28px;
+    font-size: 12px;
+    padding: 0 8px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    outline: none;
+  }
+  .kb-col-qadd-input:focus {
+    border-color: var(--accent);
+  }
   </style>
 
   <div class="deals-page">
@@ -405,6 +806,8 @@
             <span id="pipelineNameText">Yuklanmoqda…</span>
             <i class="fas fa-chevron-down"></i>
           </button>
+        </div>
+        <span id="dealsTotalsBadge" style="font-size:13.5px; font-weight:700; color:var(--text-secondary); margin-left: 8px;"></span>
           <div class="pipeline-dropdown" id="pipelineDropdown">
             <div id="pdropList"></div>
             <div class="pdrop-divider"></div>
@@ -634,22 +1037,136 @@
     </div>
   </div>
 
-  <!-- ════════════ DETAIL MODAL ════════════ -->
-  <div class="modal-overlay hidden" id="detailModal">
-    <div class="modal-box" style="max-width:680px;max-height:90vh;overflow-y:auto">
-      <div class="modal-header">
-        <h2 id="detailTitle">Sdelka</h2>
-        <div style="display:flex;gap:8px;align-items:center">
-          <button class="btn btn-ghost btn-sm btn-icon" onclick="editCurrentDeal()" title="Tahrirlash"><i
-              class="fas fa-edit"></i></button>
-          <button class="btn btn-ghost btn-sm btn-icon text-danger" onclick="deleteCurrentDeal()" title="O'chirish"><i
-              class="fas fa-trash"></i></button>
-          <button class="modal-close" onclick="closeDetail()">&times;</button>
+  <!-- ════════════ DETAIL SLIDING DRAWER ════════════ -->
+  <div class="modal-overlay hidden" id="detailModal" onclick="if(event.target===this)closeDetail()">
+    <div class="modal-box">
+      <!-- Left Details Panel -->
+      <div class="drawer-left">
+        <div class="drawer-header-inline">
+          <button class="drawer-back-btn" onclick="closeDetail()" title="Yopish"><i class="fas fa-arrow-left"></i></button>
+          <div style="flex:1;">
+            <input type="text" id="drawerDealTitle" class="drawer-title-input" onchange="updateDrawerDealTitle(this.value)">
+            <div style="display:flex; gap:8px; align-items:center; margin-top:4px; padding-left:6px;">
+              <span id="drawerDealId" style="font-size:11px; font-weight:700; color:var(--text-secondary); background:var(--bg-tertiary); padding:2px 6px; border-radius:4px; border:1px solid var(--border)">#—</span>
+              <span id="drawerDealPipeline" style="font-size:11px; color:var(--text-tertiary)">Pipeline</span>
+            </div>
+          </div>
+          <div style="display:flex; gap:4px;">
+            <button class="btn btn-ghost btn-sm btn-icon" onclick="editCurrentDeal()" title="Tahrirlash"><i class="fas fa-edit"></i></button>
+            <button class="btn btn-ghost btn-sm btn-icon text-danger" onclick="deleteCurrentDeal()" title="O'chirish"><i class="fas fa-trash"></i></button>
+          </div>
+        </div>
+
+        <!-- Tags Area -->
+        <div style="margin-bottom:12px; padding-left:4px;" id="drawerTagsContainer"></div>
+
+        <!-- Progress/Stages indicator -->
+        <div class="drawer-progress-bar" id="drawerProgressBar"></div>
+
+        <!-- Tabs -->
+        <div class="drawer-tabs">
+          <div class="drawer-tab active" onclick="switchDrawerTab('main', this)">Основное</div>
+          <div class="drawer-tab" onclick="switchDrawerTab('stats', this)">Статистика</div>
+          <div class="drawer-tab" onclick="switchDrawerTab('files', this)">Файлы</div>
+        </div>
+
+        <!-- General Tab Content -->
+        <div class="drawer-tab-content active" id="tab-main">
+          <div class="form-group">
+            <label class="form-label">Отв-ный (Mas'ul)</label>
+            <select id="dw-managerId" class="form-control" onchange="saveDrawerField('managerId', this.value)">
+              <option value="">— Menejersiz —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Бюджет (UZS)</label>
+            <input type="number" id="dw-amount" class="form-control" onchange="saveDrawerField('amount', this.value)">
+          </div>
+
+          <!-- Contact block -->
+          <div class="drawer-card-box">
+            <div class="drawer-card-title"><i class="fas fa-user text-brand"></i> Mijoz ma'lumotlari</div>
+            <div class="form-group">
+              <label class="form-label">Ismi</label>
+              <input type="text" id="dw-contactName" class="form-control" onchange="saveDrawerClientField('contactName', this.value)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Ish telefoni</label>
+              <div style="display:flex; gap:6px;">
+                <input type="text" id="dw-contactPhone" class="form-control" onchange="saveDrawerClientField('contactPhone', this.value)">
+                <button class="btn btn-secondary btn-icon" onclick="dialNumber(document.getElementById('dw-contactPhone').value)" title="Qo'ng'iroq qilish"><i class="fas fa-phone"></i></button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input type="email" id="dw-contactEmail" class="form-control" onchange="saveDrawerClientField('contactEmail', this.value)">
+            </div>
+          </div>
+
+          <!-- Company block -->
+          <div class="drawer-card-box">
+            <div class="drawer-card-title"><i class="fas fa-building text-purple"></i> Kompaniya ma'lumotlari</div>
+            <div class="form-group">
+              <label class="form-label">Kompaniya nomi</label>
+              <input type="text" id="dw-companyName" class="form-control" onchange="saveDrawerClientField('companyName', this.value)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Telefon</label>
+              <input type="text" id="dw-companyPhone" class="form-control" onchange="saveDrawerClientField('companyPhone', this.value)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input type="email" id="dw-companyEmail" class="form-control" onchange="saveDrawerClientField('companyEmail', this.value)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Veb-sayt</label>
+              <input type="text" id="dw-companyWebsite" class="form-control" onchange="saveDrawerClientField('companyWebsite', this.value)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Manzil</label>
+              <input type="text" id="dw-companyAddress" class="form-control" onchange="saveDrawerClientField('companyAddress', this.value)">
+            </div>
+          </div>
+        </div>
+
+        <!-- Statistics Tab Content -->
+        <div class="drawer-tab-content" id="tab-stats">
+          <div class="drawer-card-box">
+            <div class="drawer-card-title"><i class="fas fa-info-circle"></i> Sdelka statistikasi</div>
+            <div style="display:flex; flex-direction:column; gap:8px; font-size:13px;">
+              <div><b>Yaratilgan sana:</b> <span id="st-createdAt">—</span></div>
+              <div><b>Oxirgi o'zgarish:</b> <span id="st-updatedAt">—</span></div>
+              <div><b>Bosqichda turish muddati:</b> <span id="st-duration">—</span></div>
+              <div><b>Sdelka manbasi:</b> <span id="st-source">—</span></div>
+              <div><b>Ombor (Sklad):</b> <span id="st-warehouse">—</span></div>
+              <div><b>Rang:</b> <span id="st-color">—</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Files Tab Content -->
+        <div class="drawer-tab-content" id="tab-files">
+          <div style="text-align:center; padding:30px 10px; color:var(--text-tertiary); font-size:13px;">
+            <i class="fas fa-file-alt" style="font-size:32px; opacity:0.4; display:block; margin-bottom:8px;"></i>
+            Hozircha sdelkaga biriktirilgan fayllar yo'q
+          </div>
         </div>
       </div>
-      <div class="modal-body" id="detailBody">
-        <div class="kb-state">
-          <div class="spinner"></div>
+
+      <!-- Right Timeline Panel -->
+      <div class="drawer-right">
+        <div class="timeline-header">
+          <h3 style="margin:0; font-size:14px; font-weight:700; color:#fff;">Tarix va Izohlar</h3>
+          <span style="font-size:11px; color:#94a3b8;" id="dw-participants-count">Участники: 1</span>
+        </div>
+        <div class="timeline-body" id="drawerTimelineBody">
+          <!-- Timeline entries will be populated here -->
+        </div>
+        <div class="timeline-footer">
+          <div style="display:flex; gap:8px;">
+            <textarea id="dw-newComment" class="timeline-task-input" style="flex:1; height:60px; resize:none; padding:8px 10px;" placeholder="Примечание: введите текст..."></textarea>
+            <button class="btn btn-primary btn-sm" onclick="submitDrawerComment()" style="align-self:flex-end; height:34px;"><i class="fas fa-paper-plane"></i></button>
+          </div>
         </div>
       </div>
     </div>
@@ -1046,6 +1563,14 @@ async function loadDeals() {
     _deals = [];
   }
 
+  // Update Topbar Totals
+  const totalCount = _deals.length;
+  const totalAmount = _deals.reduce((sum, d) => sum + (d.amount || 0), 0);
+  const totalsEl = document.getElementById('dealsTotalsBadge');
+  if (totalsEl) {
+    totalsEl.textContent = `${totalCount} сделки: ${totalAmount.toLocaleString('uz-UZ')} so'm`;
+  }
+
   if (_view === 'kanban') renderKanban();
   else renderTable();
 }
@@ -1155,25 +1680,25 @@ function renderKanban() {
       </div>
     `;
 
-    const quickAddHtml = isFirst ? `
+    const isQaddOpen = window._qaddOpenStageId === s.id;
+    const quickAddHtml = `
       <div style="padding:0 6px 6px">
-        <button class="kb-qadd-toggle" onclick="toggleQuickAdd()">
-          <i class="fas fa-bolt" style="font-size:10px"></i> ${_qaddOpen ? 'Yopish' : "Tezkor qo'shish"}
+        <button class="kb-qadd-toggle" onclick="toggleQuickAddForStage(${s.id})">
+          <i class="fas fa-bolt" style="font-size:10px"></i> ${isQaddOpen ? 'Yopish' : "Быстрое добавление"}
         </button>
       </div>
-      <div class="kb-qadd-panel${_qaddOpen ? ' open' : ''}" id="qaddPanel">
-        <div class="kb-qadd-label">Yangi Buyurtma</div>
-        <input type="text" id="qa-contactName" placeholder="Mijoz ismi *">
-        <input type="text" id="qa-contactPhone" placeholder="Telefon raqami *">
-        <input type="text" id="qa-name" placeholder="Mahsulot nomi *">
-        <input type="text" id="qa-city" placeholder="Shahri">
-        <input type="text" id="qa-notes" placeholder="Izoh">
-        <div class="kb-qadd-actions">
-          <button class="btn btn-primary btn-sm" id="qaSaveBtn" onclick="submitQuickAdd()"><i class="fas fa-save"></i> Qo'shish</button>
-          <button class="btn btn-ghost btn-sm" onclick="toggleQuickAdd()">Bekor</button>
+      <div class="kb-col-qadd-container${isQaddOpen ? ' open' : ''}" id="qaddPanel-${s.id}">
+        <input type="text" id="qa-contactName-${s.id}" class="kb-col-qadd-input" placeholder="Mijoz ismi *">
+        <input type="text" id="qa-contactPhone-${s.id}" class="kb-col-qadd-input" placeholder="Telefon raqami *">
+        <input type="text" id="qa-name-${s.id}" class="kb-col-qadd-input" placeholder="Mahsulot nomi *">
+        <input type="text" id="qa-city-${s.id}" class="kb-col-qadd-input" placeholder="Shahri">
+        <input type="text" id="qa-notes-${s.id}" class="kb-col-qadd-input" placeholder="Izoh">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+          <button class="btn btn-primary btn-sm" style="padding:2px 8px; font-size:11px;" onclick="submitQuickAddForStage(${s.id})">Qo'shish</button>
+          <button class="btn btn-ghost btn-sm" style="padding:2px 8px; font-size:11px;" onclick="toggleQuickAddForStage(${s.id})">Bekor</button>
         </div>
       </div>
-    ` : '';
+    `;
 
     return `
       <div class="kb-col${editable ? ' editing' : ''}" style="--_sc:${s.color||'#007AFF'}">
@@ -1335,6 +1860,42 @@ function dcardHtml(d) {
     `;
   }
 
+  const now = new Date();
+  const stageDate = d.stageUpdatedAt ? new Date(d.stageUpdatedAt) : new Date(d.updatedAt || d.createdAt);
+  const diffTime = Math.abs(now - stageDate);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const stageDurationText = diffDays > 0 ? `${diffDays}дн` : '0дн';
+
+  const tagsHtml = (d.tags || '').split(/[,\s]+/).filter(t => t.trim() !== '').map(t => {
+    const cleanTag = t.startsWith('#') ? t : '#' + t;
+    return `<span class="badge" style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background: rgba(0, 122, 255, 0.1); color: var(--accent); font-weight: 600; margin-right: 4px; margin-bottom: 2px; display: inline-block;">${_esc(cleanTag)}</span>`;
+  }).join('');
+
+  let taskHtml = '';
+  const activeTasks = d.tasks || [];
+  if (activeTasks.length === 0) {
+    taskHtml = `
+      <div style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: #ef4444; font-weight: 700;">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
+        Нет задач
+      </div>
+    `;
+  } else {
+    activeTasks.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+    const nextTask = activeTasks[0];
+    const taskDate = new Date(nextTask.dueDate);
+    const taskDateFormatted = `${String(taskDate.getDate()).padStart(2,'0')}.${String(taskDate.getMonth()+1).padStart(2,'0')}`;
+    const isOverdue = taskDate < new Date().setHours(0,0,0,0);
+    const color = isOverdue ? '#ef4444' : '#10b981';
+    
+    taskHtml = `
+      <div style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: ${color}; font-weight: 700;" title="${_esc(nextTask.title || '')}">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: ${color}; display: inline-block;"></span>
+        ${_esc(nextTask.actionType || 'Связаться')}: ${taskDateFormatted}
+      </div>
+    `;
+  }
+
   return `
     <div class="dcard" draggable="true" data-id="${d.id}"
       ondragstart="onDragStart(event,${d.id})" ondragend="onDragEnd(event)"
@@ -1345,46 +1906,51 @@ function dcardHtml(d) {
         <i class="fas fa-edit"></i>
       </div>
 
-      <div class="dcard-header" style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; padding-right:24px; width:100%;">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <span class="dcard-checkbox-wrap">
-            <input type="checkbox" class="dcard-checkbox" value="${d.id}" onclick="event.stopPropagation(); onCardSelect(this)" ${window._selectedDeals && window._selectedDeals.includes(d.id) ? 'checked' : ''} style="cursor:pointer; width:14px; height:14px; accent-color:var(--accent);">
-          </span>
-          <span class="dcard-badge" style="background:${sc}1A; color:${sc}; padding:2px 6px; font-size:9.5px; border-radius:4px; font-weight:700; text-transform:uppercase;">${sl}</span>
+      <div class="dcard-header" style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:flex-start; padding-right:24px; width:100%;">
+        <div style="display:flex; flex-direction:column; gap:2px;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span class="dcard-checkbox-wrap">
+              <input type="checkbox" class="dcard-checkbox" value="${d.id}" onclick="event.stopPropagation(); onCardSelect(this)" ${window._selectedDeals && window._selectedDeals.includes(d.id) ? 'checked' : ''} style="cursor:pointer; width:14px; height:14px; accent-color:var(--accent);">
+            </span>
+            <strong style="font-size:13.5px; color:var(--text-primary); text-overflow:ellipsis; overflow:hidden; white-space:nowrap; max-width:180px; display:inline-block;" title="${_esc(d.productName || d.name)}">${_esc(d.productName || d.name)}</strong>
+          </div>
+          <span style="font-size:10px; color:var(--text-muted);">${formattedTime}</span>
         </div>
-        <span style="font-size:11px; font-weight:700; color:var(--text-secondary); background:var(--bg-tertiary); padding:2px 6px; border-radius:4px; border:1px solid var(--border)">#${d.id}</span>
+        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;">
+          <span style="font-size:11px; font-weight:700; color:var(--text-secondary); background:var(--bg-tertiary); padding:2px 6px; border-radius:4px; border:1px solid var(--border)">#${d.id}</span>
+          <span style="font-size:10px; color:#ef4444; font-weight:700;" title="Stage duration">${stageDurationText}</span>
+        </div>
       </div>
       
-      <!-- Labeled fields for easy operator reading -->
-      <div style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px;">
-        <div style="font-size:12.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
-          <span style="font-weight:600; color:var(--text-tertiary); width: 65px; flex-shrink: 0;">Mijoz:</span>
+      <!-- Labeled fields -->
+      <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px;">
+        <div style="font-size:12px; color:var(--text-secondary); display:flex; gap:6px;">
+          <span style="color:var(--text-tertiary); width: 85px; flex-shrink: 0;">Имя контакта:</span>
           <span style="font-weight:600; color:var(--text-primary);">${clientName}</span>
         </div>
-        <div style="font-size:12.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
-          <span style="font-weight:600; color:var(--text-tertiary); width: 65px; flex-shrink: 0;">Telefon:</span>
+        <div style="font-size:12px; color:var(--text-secondary); display:flex; gap:6px;">
+          <span style="color:var(--text-tertiary); width: 85px; flex-shrink: 0;">Компания:</span>
+          <span style="font-weight:600; color:var(--text-primary);">${d.client && d.client.company ? _esc(d.client.company) : '<span style="color:var(--text-tertiary)">o\'zim_uchun</span>'}</span>
+        </div>
+        <div style="font-size:12px; color:var(--text-secondary); display:flex; gap:6px;">
+          <span style="color:var(--text-tertiary); width: 85px; flex-shrink: 0;">Телефон:</span>
           <span style="font-weight:700; color:var(--accent);">${clientPhone}</span>
         </div>
-        <div style="font-size:12.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
-          <span style="font-weight:600; color:var(--text-tertiary); width: 65px; flex-shrink: 0;">Shahar:</span>
-          <span style="font-weight:600; color:var(--text-primary);">${clientCity}</span>
+        <div style="font-size:12px; color:var(--text-secondary); display:flex; gap:6px;">
+          <span style="color:var(--text-tertiary); width: 85px; flex-shrink: 0;">Теги:</span>
+          <div style="display:flex; flex-wrap:wrap; gap:2px;">${tagsHtml || '<span style="color:var(--text-tertiary)">—</span>'}</div>
         </div>
-        <div style="font-size:12.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
-          <span style="font-weight:600; color:var(--text-tertiary); width: 65px; flex-shrink: 0;" title="Kim uchun xarid qilmoqchi">Kim uchun:</span>
-          <span style="font-weight:600; color:var(--text-primary);">${kimUchun}</span>
-        </div>
-        <div style="font-size:12.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
-          <span style="font-weight:600; color:var(--text-tertiary); width: 65px; flex-shrink: 0;">Mahsulot:</span>
-          <span style="font-weight:700; color:var(--accent);">${productName}</span>
-        </div>
-        <div style="font-size:12.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
-          <span style="font-weight:600; color:var(--text-tertiary); width: 65px; flex-shrink: 0;">Vaqti:</span>
-          <span style="font-weight:600; color:var(--text-primary);">${formattedTime}</span>
-        </div>
-
       </div>
       
-
+      <!-- Footer details -->
+      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border); padding-top:8px; margin-top:8px;">
+        <div style="font-weight:700; font-size:13px; color:var(--text-primary);">
+          ${_fmt(d.amount)} UZS
+        </div>
+        <div>
+          ${taskHtml}
+        </div>
+      </div>
     </div>
   `;
 }
@@ -1919,159 +2485,442 @@ async function saveDeal() {
 }
 
 // ── Detail modal ───────────────────────────────────────────────
+// ── Detail drawer (amoCRM level) ────────────────────────────────
 async function openDetail(id) {
   _detailId = id;
-  document.getElementById('detailModal').classList.remove('hidden');
-  document.getElementById('detailTitle').textContent = 'Sdelka #' + id;
-  document.getElementById('detailBody').innerHTML = '<div class="kb-state"><div class="spinner"></div></div>';
+  const modal = document.getElementById('detailModal');
+  modal.classList.remove('hidden');
+  
+  // Set default active tab
+  document.querySelectorAll('.drawer-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('.drawer-tab').classList.add('active');
+  document.querySelectorAll('.drawer-tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-main').classList.add('active');
 
   try {
     const deal = await apiFetch('/api/deals/' + id);
-    const stage = deal.stage || _stages.find(s => s.id === deal.stageId);
-    const statusLabels = { new:'Yangi', negotiation:'Muzokaralar', proposal:'Taklif', won:'Yutilgan', lost:"Yo'qotilgan" };
-    const statusColors = { new:'#007AFF', negotiation:'#FF9500', proposal:'#5856D6', won:'#34C759', lost:'#FF3B30' };
-    const paid = deal.amount > 0 ? Math.round(((deal.paidAmount||0)/deal.amount)*100) : 0;
+    window._currentDeal = deal;
+
+    // Header values
+    document.getElementById('drawerDealTitle').value = deal.productName || deal.name || '';
+    document.getElementById('drawerDealId').textContent = '#' + deal.id;
     
-    let parsedNotesItems = '';
-    let remainingNotes = '';
-    if (deal.notes) {
-      const lines = deal.notes.split('\n');
-      const otherLines = [];
-      const items = [];
-      lines.forEach(line => {
-        const colonIdx = line.indexOf(':');
-        const cleanLine = line.trim();
-        if (cleanLine === '--- Tafsilotlar ---') return; // skip this divider
-        
-        if (colonIdx > 0 && colonIdx < 60 && !cleanLine.startsWith('http')) {
-          const key = cleanLine.substring(0, colonIdx).trim();
-          const val = cleanLine.substring(colonIdx + 1).trim();
-          if (key && val) {
-            items.push(`
-              <div>
-                <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:3px">${_esc(key)}</div>
-                <div style="font-size:13px;font-weight:500;color:var(--text-primary)">${_esc(val)}</div>
-              </div>
-            `);
-          } else {
-            otherLines.push(cleanLine);
-          }
-        } else if (cleanLine) {
-          otherLines.push(cleanLine);
-        }
+    const pipelineObj = _pipelines.find(p => p.id === deal.pipelineId) || (_pipelines.length ? _pipelines[0] : null);
+    
+    // Calculate stage duration
+    const now = new Date();
+    const stageDate = deal.stageUpdatedAt ? new Date(deal.stageUpdatedAt) : new Date(deal.updatedAt || deal.createdAt);
+    const diffTime = Math.abs(now - stageDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const stageDurationText = `${diffDays} кун`;
+    
+    document.getElementById('drawerDealPipeline').textContent = (pipelineObj ? pipelineObj.name : 'Voronka') + ` (${stageDurationText})`;
+
+    // Populate tags
+    const tagsContainer = document.getElementById('drawerTagsContainer');
+    tagsContainer.innerHTML = '';
+    const tags = (deal.tags || '').split(/[,\s]+/).filter(t => t.trim() !== '');
+    if (tags.length === 0) {
+      tagsContainer.innerHTML = '<span style="font-size:11px; color:var(--text-tertiary)">Теги нет. Нажмите для добавления</span>';
+    } else {
+      tags.forEach(t => {
+        tagsContainer.innerHTML += `
+          <span class="badge" style="font-size:11px; padding:3px 8px; border-radius:6px; background:rgba(0,122,255,0.1); color:var(--accent); font-weight:600; margin-right:6px; margin-bottom:4px; display:inline-flex; align-items:center; gap:4px;">
+            #${_esc(t)}
+            <i class="fas fa-times" style="font-size:9px; cursor:pointer;" onclick="removeDrawerTag('${_esc(t)}')"></i>
+          </span>
+        `;
       });
-      parsedNotesItems = items.join('');
-      remainingNotes = otherLines.join('\n').trim();
+    }
+    tagsContainer.innerHTML += `
+      <button class="btn btn-secondary btn-xs" onclick="addDrawerTagPrompt()" style="padding:2px 6px; font-size:10px; border-radius:4px; margin-top:2px;">+ Добавить тег</button>
+    `;
+
+    // Progress Bar
+    const progressBar = document.getElementById('drawerProgressBar');
+    progressBar.innerHTML = '';
+    if (pipelineObj && pipelineObj.stages) {
+      const sortedStages = [...pipelineObj.stages].sort((a, b) => a.order - b.order);
+      let passed = true;
+      sortedStages.forEach(st => {
+        const isActive = st.id === deal.stageId;
+        const color = st.color || '#007AFF';
+        const classes = `progress-segment${isActive ? ' active' : passed ? ' passed' : ''}`;
+        
+        progressBar.innerHTML += `
+          <div class="${classes}" style="--_sc: ${color}; cursor:pointer;" onclick="changeDrawerStage(${st.id})" title="${_esc(st.name)}"></div>
+        `;
+        if (isActive) passed = false;
+      });
     }
 
-    document.getElementById('detailTitle').textContent = 'Sdelka #' + deal.id + ': ' + (deal.productName || deal.name);
-    document.getElementById('detailBody').innerHTML = `
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
-        <div>
-          <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:2px">Summa</div>
-          <div style="font-size:20px;font-weight:700;color:var(--accent)">${_fmt(deal.amount)}</div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:2px">To'langan</div>
-          <div style="font-size:20px;font-weight:700;color:var(--success)">${_fmt(deal.paidAmount)}</div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:2px">Qarz</div>
-          <div style="font-size:20px;font-weight:700;color:var(--danger)">${_fmt(Math.max(0, (deal.amount||0) - (deal.paidAmount||0)))}</div>
-        </div>
-      </div>
-      <div class="dcard-progress" style="height:6px;margin-bottom:16px">
-        <div class="dcard-progress-fill" style="width:${paid}%"></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-        <div>
-          <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:3px">Bosqich</div>
-          <div>${stage ? `<span class="badge" style="background:${stage.color}22;color:${stage.color}">${_esc(stage.name)}</span>` : '—'}</div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:3px">Status</div>
-          <div><span class="badge" style="background:${statusColors[deal.status]||'#8E8E93'}22;color:${statusColors[deal.status]||'#8E8E93'}">${statusLabels[deal.status]||deal.status}</span></div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:3px">Mijoz</div>
-          <div style="font-size:13px">${deal.client ? _esc(deal.client.name) : '—'}</div>
-          ${deal.client && deal.client.phone ? `<div style="font-size:12px;margin-top:2px"><a href="tel:${_esc(deal.client.phone)}" style="color:var(--accent);text-decoration:none">${_esc(deal.client.phone)}</a></div>` : ''}
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:3px">Manager</div>
-          <div style="font-size:13px">${deal.manager ? _esc(deal.manager.fullName||deal.manager.email) : '—'}</div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:3px">Muddat</div>
-          <div style="font-size:13px${deal.deadline&&new Date(deal.deadline)<new Date()?';color:var(--danger)':''}">${deal.deadline ? _date(deal.deadline) : '—'}</div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:3px">Yaratilgan</div>
-          <div style="font-size:13px">${_date(deal.createdAt)}</div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:3px">Ombor</div>
-          <div style="font-size:13px">${deal.warehouse ? '<span class="badge" style="background:rgba(99,102,241,0.12);color:#6366F1">' + _esc(deal.warehouse) + '</span>' : '—'}
-          ${deal.stockDecremented ? ' <span class="badge" style="background:rgba(52,199,89,0.12);color:#34C759;font-size:10px">Chiqarilgan ✓</span>' : (deal.warehouse ? ' <span class="badge" style="background:rgba(245,158,11,0.15);color:#F59E0B;font-size:10px">Kutilmoqda</span>' : '')}</div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:3px">Shofyor raqami</div>
-          <div style="font-size:13px">${deal.driverPhone ? `<a href="tel:${_esc(deal.driverPhone)}" style="color:var(--accent);text-decoration:none">${_esc(deal.driverPhone)}</a>` : '—'}</div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:3px">Sdelka manbasi</div>
-          <div style="font-size:13px">
-            ${deal.source === 'instagram' ? '<span class="badge" style="background:rgba(225,48,108,0.1);color:#E1306C"><i class="fab fa-instagram"></i> Instagram</span>' : 
-              deal.source === 'target' ? '<span class="badge" style="background:rgba(0,122,255,0.1);color:#007AFF"><i class="fas fa-bullseye"></i> Target</span>' : 
-              deal.source === 'telegram' ? '<span class="badge" style="background:rgba(52,199,89,0.1);color:#34C759"><i class="fab fa-telegram"></i> Telegram</span>' : 
-              '<span class="badge" style="background:rgba(142,142,147,0.1);color:#8E8E93"><i class="fas fa-user"></i> Oddiy</span>'}
-          </div>
-        </div>
-        ${parsedNotesItems}
-      </div>
-      ${remainingNotes ? `<div style="margin-bottom:16px"><div style="font-size:11px;color:var(--text-tertiary);margin-bottom:4px">Qo'shimcha Izoh</div><div style="font-size:13px;padding:10px;background:var(--bg-secondary);border-radius:8px;white-space:pre-wrap;line-height:1.4;word-wrap:break-word;">${_esc(remainingNotes)}</div></div>` : ''}
-      
-      <div style="margin-bottom:16px">
-        <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:4px">Bosqichni o'zgartirish</div>
-        <select class="form-control" style="font-size:13px; max-width: 300px; cursor: pointer;" onchange="if(this.value) moveDeal(${deal.id}, this.value)">
-          <option value="">— Bosqichni tanlang —</option>
-          ${_stages.map(s => `<option value="${s.id}" ${s.id===deal.stageId?'selected':''}>${_esc(s.name)}</option>`).join('')}
-        </select>
-      </div>
-      <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items:center">
-        <button class="btn btn-primary btn-sm" onclick="createTaskForDeal(${deal.id}, '${_esc(deal.productName || deal.name).replace(/'/g, "\\\'")}')">
-          <i class="fas fa-check-circle"></i> Vazifa qilib belgilash
-        </button>
-      </div>
+    // Populate managers dropdown
+    const managerSelect = document.getElementById('dw-managerId');
+    managerSelect.innerHTML = '<option value="">— Menejersiz —</option>' +
+      _managers.map(u => `<option value="${u.id}" ${u.id===deal.managerId?'selected':''}>${_esc(u.fullName||u.email)}</option>`).join('');
 
-      <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--border)">
-        <h4 style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:12px; display:flex; align-items:center; gap:6px"><i class="fas fa-comments" style="color:var(--text-tertiary)"></i> Izohlar va Tarix</h4>
-        <div style="display:flex; gap:8px; margin-bottom:16px">
-          <input type="text" id="newCommentInput" class="form-control" placeholder="Izoh yozing..." style="flex:1; font-size:13px">
-          <button class="btn btn-primary btn-sm" onclick="addComment(${deal.id})"><i class="fas fa-paper-plane"></i></button>
-        </div>
-        <div style="display:flex; flex-direction:column; gap:8px; max-height:200px; overflow-y:auto; padding-right:4px">
-          ${deal.activities && deal.activities.length ? deal.activities.map(a => 
-            '<div style="background:var(--bg-secondary); border-radius:8px; padding:10px; font-size:12px">' +
-              '<div style="display:flex; justify-content:space-between; margin-bottom:4px">' +
-                '<span style="font-weight:600; color:' + (a.action==='Izoh qoldirildi'?'var(--accent)':'var(--text-primary)') + '">' + _esc(a.action) + '</span>' +
-                '<span style="color:var(--text-tertiary); font-size:10px">' + _date(a.createdAt) + ' ' + new Date(typeof a.createdAt==='string' ? a.createdAt.replace(' ', 'T') : a.createdAt).toLocaleTimeString('uz-UZ', {hour:'2-digit',minute:'2-digit'}) + '</span>' +
-              '</div>' +
-              '<div style="color:var(--text-secondary); line-height:1.4">' + _esc(a.details||'') + '</div>' +
-              '<div style="color:var(--text-tertiary); font-size:10px; margin-top:6px; text-align:right">' + (a.user ? _esc(a.user.fullName||a.user.email) : 'Tizim') + '</div>' +
-            '</div>'
-          ).join('') : '<div style="color:var(--text-tertiary); font-size:12px; text-align:center; padding:10px">Hali hech qanday o\'zgarish yo\'q</div>'}
-        </div>
+    // Amount
+    document.getElementById('dw-amount').value = deal.amount || 0;
+
+    // Contact client fields
+    document.getElementById('dw-contactName').value = deal.client ? deal.client.name || '' : '';
+    document.getElementById('dw-contactPhone').value = deal.client ? deal.client.phone || '' : '';
+    document.getElementById('dw-contactEmail').value = deal.client ? deal.client.email || '' : '';
+
+    // Company client fields
+    document.getElementById('dw-companyName').value = deal.client ? deal.client.company || '' : '';
+    document.getElementById('dw-companyPhone').value = deal.client ? deal.client.companyPhone || '' : '';
+    document.getElementById('dw-companyEmail').value = deal.client ? deal.client.companyEmail || '' : '';
+    document.getElementById('dw-companyWebsite').value = deal.client ? deal.client.companyWebsite || '' : '';
+    document.getElementById('dw-companyAddress').value = deal.client ? deal.client.companyAddress || '' : '';
+
+    // Statistics fields
+    document.getElementById('st-createdAt').textContent = _date(deal.createdAt) + ' ' + new Date(deal.createdAt).toLocaleTimeString('uz-UZ', {hour:'2-digit',minute:'2-digit'});
+    document.getElementById('st-updatedAt').textContent = _date(deal.updatedAt) + ' ' + new Date(deal.updatedAt).toLocaleTimeString('uz-UZ', {hour:'2-digit',minute:'2-digit'});
+    document.getElementById('st-duration').textContent = stageDurationText + ' в текущем этапе';
+    document.getElementById('st-source').textContent = deal.source ? deal.source.toUpperCase() : 'ODDIY';
+    document.getElementById('st-warehouse').textContent = deal.warehouse || 'Kiritilmagan';
+    document.getElementById('st-color').textContent = deal.productColor || 'Oddiy';
+
+    // Populate timeline and active tasks
+    renderTimelineAndTasks(deal);
+
+  } catch(e) {
+    console.error('Drawer population error:', e);
+    _toast('Drawer yuklanmadi: ' + e.message, 'error');
+  }
+}
+
+function renderTimelineAndTasks(deal) {
+  const timelineBody = document.getElementById('drawerTimelineBody');
+  timelineBody.innerHTML = '';
+  
+  const timelineData = [];
+  
+  // 1. Activities
+  if (deal.activities) {
+    deal.activities.forEach(a => {
+      timelineData.push({
+        type: 'activity',
+        date: new Date(a.createdAt),
+        author: a.user ? (a.user.fullName || a.user.email) : 'Tizim',
+        action: a.action,
+        details: a.details || '',
+        id: a.id
+      });
+    });
+  }
+
+  // 2. Tasks
+  if (deal.tasks) {
+    deal.tasks.forEach(t => {
+      timelineData.push({
+        type: 'task',
+        date: new Date(t.dueDate || t.createdAt),
+        completed: t.completed,
+        assignedTo: t.assignedTo ? (t.assignedTo.fullName || t.assignedTo.email) : 'Menejer',
+        actionType: t.actionType || 'Связаться',
+        title: t.title || 'Vazifa',
+        description: t.description || '',
+        result: t.result || '',
+        id: t.id
+      });
+    });
+  }
+
+  // Sort oldest at top, newest at bottom (to match amoCRM chronological list)
+  timelineData.sort((a, b) => a.date - b.date);
+
+  const groups = {};
+  timelineData.forEach(item => {
+    const dateStr = item.date.toLocaleDateString('ru-RU');
+    if (!groups[dateStr]) groups[dateStr] = [];
+    groups[dateStr].push(item);
+  });
+
+  const dateKeys = Object.keys(groups);
+  let html = '';
+  
+  dateKeys.forEach(dateStr => {
+    html += `
+      <div class="timeline-group-hdr">
+        <span class="timeline-group-title">${dateStr}</span>
       </div>
     `;
-  } catch(e) {
-    document.getElementById('detailBody').innerHTML = '<div class="kb-state"><i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i><p>' + _esc(e.message) + '</p></div>';
-  }
+    
+    groups[dateStr].forEach(item => {
+      if (item.type === 'activity') {
+        const isComment = item.action === "Izoh qoldirildi" || item.action === "Izoh yozildi" || item.action === "Yangi izoh";
+        if (isComment) {
+          html += `
+            <div class="timeline-entry note-entry" id="activity-${item.id}">
+              <div class="timeline-entry-meta">
+                <span class="timeline-entry-author">${_esc(item.author)}</span>
+                <span>Izoh</span>
+              </div>
+              <div style="white-space:pre-wrap;">${_esc(item.details)}</div>
+            </div>
+          `;
+        } else {
+          html += `
+            <div class="timeline-entry" id="activity-${item.id}">
+              <div class="timeline-entry-meta">
+                <span class="timeline-entry-author">${_esc(item.author)}</span>
+                <span>Tarix</span>
+              </div>
+              <div><strong>${_esc(item.action)}</strong>: ${_esc(item.details)}</div>
+            </div>
+          `;
+        }
+      } else if (item.type === 'task') {
+        if (item.completed) {
+          html += `
+            <div class="timeline-entry" style="border-left: 3px solid #10b981;" id="task-${item.id}">
+              <div class="timeline-entry-meta">
+                <span class="timeline-entry-author" style="color:#10b981;">${_esc(item.assignedTo)}</span>
+                <span>Vazifa bajarildi</span>
+              </div>
+              <div><strong>${_esc(item.actionType)}</strong>: ${_esc(item.title)}</div>
+              ${item.result ? `<div style="margin-top:6px; font-size:11px; padding:4px 8px; background:rgba(16,185,129,0.06); border-radius:4px; color:#10b981;"><b>Natija:</b> ${_esc(item.result)}</div>` : ''}
+            </div>
+          `;
+        } else {
+          // Calculate remaining/overdue days
+          const today = new Date().setHours(0,0,0,0);
+          const taskTime = new Date(item.date).setHours(0,0,0,0);
+          const diffDays = Math.round((taskTime - today) / (1000 * 60 * 60 * 24));
+          const dayText = diffDays === 0 ? 'Bugun' : diffDays === 1 ? 'Ertaga' : diffDays === -1 ? 'Kecha' : diffDays < 0 ? `${Math.abs(diffDays)} kun muddat o'tdi` : `${diffDays} kun qoldi`;
+          const isOverdue = diffDays < 0;
+          const colorClass = isOverdue ? 'color:#ef4444;' : 'color:#a78bfa;';
+
+          html += `
+            <div class="timeline-task-card" style="border-color:${isOverdue ? '#ef4444' : 'rgba(88,86,214,0.25)'}" id="task-${item.id}">
+              <div class="timeline-task-header">
+                <i class="far fa-clock" style="${colorClass}"></i>
+                <span style="${colorClass}"> Keyingi vazifa: ${dayText} </span>
+              </div>
+              <div class="timeline-task-title">${_esc(item.actionType)}: ${_esc(item.title)}</div>
+              ${item.description ? `<div style="font-size:12px; color:var(--text-secondary); margin-bottom:6px;">${_esc(item.description)}</div>` : ''}
+              <div class="timeline-task-result-box">
+                <input type="text" id="task-res-${item.id}" class="timeline-task-input" placeholder="Natijani yozing...">
+                <button class="btn btn-primary btn-sm" style="padding:2px 10px; font-size:12px; height:32px;" onclick="completeTimelineTask(${item.id})">Bajarildi</button>
+              </div>
+            </div>
+          `;
+        }
+      }
+    });
+  });
+
+  timelineBody.innerHTML = html || '<div style="text-align:center; padding:40px; color:var(--text-tertiary);">Tarix bo\'sh</div>';
+  
+  // Set participants count
+  const activeTasks = (deal.tasks || []).filter(t => !t.completed).length;
+  document.getElementById('dw-participants-count').textContent = `Vazifalar: ${activeTasks}`;
 }
 
 function closeDetail() {
   document.getElementById('detailModal').classList.add('hidden');
   _detailId = null;
+  window._currentDeal = null;
+}
+
+// ── Drawer Helper Functions ──
+function switchDrawerTab(tabName, tabEl) {
+  const tabs = document.querySelectorAll('.drawer-tab');
+  tabs.forEach(t => t.classList.remove('active'));
+  tabEl.classList.add('active');
+
+  const contents = document.querySelectorAll('.drawer-tab-content');
+  contents.forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + tabName).classList.add('active');
+}
+
+async function updateDrawerDealTitle(newTitle) {
+  if (!newTitle || !newTitle.trim()) return;
+  try {
+    await apiFetch('/api/deals/' + _detailId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productName: newTitle.trim() })
+    });
+    _toast("Sdelka nomi yangilandi", "success");
+    loadDeals();
+  } catch (e) {
+    _toast(e.message, "error");
+  }
+}
+
+async function saveDrawerField(field, value) {
+  try {
+    const body = {};
+    body[field] = field === 'amount' ? Number(value) : value;
+    await apiFetch('/api/deals/' + _detailId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    _toast("Sdelka yangilandi", "success");
+    loadDeals();
+  } catch (e) {
+    _toast(e.message, "error");
+  }
+}
+
+async function saveDrawerClientField(field, value) {
+  try {
+    const body = {};
+    body[field] = value;
+    await apiFetch('/api/deals/' + _detailId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    _toast("Mijoz yangilandi", "success");
+    loadDeals();
+  } catch (e) {
+    _toast(e.message, "error");
+  }
+}
+
+async function changeDrawerStage(stageId) {
+  try {
+    await apiFetch('/api/deals/' + _detailId + '/stage', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stageId })
+    });
+    _toast("Bosqich o'zgartirildi", "success");
+    openDetail(_detailId); // Refresh drawer
+    loadDeals(); // Refresh grid
+  } catch (e) {
+    _toast(e.message, "error");
+  }
+}
+
+async function removeDrawerTag(tagToRemove) {
+  const currentDeal = window._currentDeal;
+  if (!currentDeal) return;
+  const currentTags = (currentDeal.tags || '').split(/[,\s]+/).filter(t => t.trim() !== '' && t !== tagToRemove);
+  const newTagsStr = currentTags.join(',');
+  try {
+    await apiFetch('/api/deals/' + _detailId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tags: newTagsStr })
+    });
+    _toast("Tag o'chirildi", "success");
+    openDetail(_detailId);
+  } catch (e) {
+    _toast(e.message, "error");
+  }
+}
+
+async function addDrawerTagPrompt() {
+  const newTag = prompt("Yangi tag kiriting (masalan: premium):");
+  if (!newTag || !newTag.trim()) return;
+  const currentDeal = window._currentDeal;
+  if (!currentDeal) return;
+  const currentTags = (currentDeal.tags || '').split(/[,\s]+/).filter(t => t.trim() !== '');
+  currentTags.push(newTag.trim());
+  const newTagsStr = currentTags.join(',');
+  try {
+    await apiFetch('/api/deals/' + _detailId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tags: newTagsStr })
+    });
+    _toast("Tag qo'shildi", "success");
+    openDetail(_detailId);
+  } catch (e) {
+    _toast(e.message, "error");
+  }
+}
+
+async function completeTimelineTask(taskId) {
+  const resInput = document.getElementById('task-res-' + taskId);
+  const result = resInput ? resInput.value.trim() : '';
+  try {
+    await apiFetch('/api/tasks/' + taskId + '/complete', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ result })
+    });
+    _toast("Vazifa bajarildi", "success");
+    openDetail(_detailId); // Refresh timeline
+    loadDeals(); // Refresh kanban task status
+  } catch (e) {
+    _toast(e.message, "error");
+  }
+}
+
+async function submitDrawerComment() {
+  const textarea = document.getElementById('dw-newComment');
+  const comment = textarea.value.trim();
+  if (!comment) return;
+  try {
+    await apiFetch('/api/deals/' + _detailId + '/activity', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'Izoh qoldirildi', details: comment })
+    });
+    textarea.value = '';
+    _toast("Izoh qo'shildi", "success");
+    openDetail(_detailId); // Refresh timeline
+  } catch (e) {
+    _toast(e.message, "error");
+  }
+}
+
+function dialNumber(num) {
+  if (num) window.location.href = 'tel:' + num;
+}
+
+// ── Column Quick Add Helpers ──
+function toggleQuickAddForStage(stageId) {
+  const current = window._qaddOpenStageId;
+  if (current === stageId) {
+    window._qaddOpenStageId = null;
+  } else {
+    window._qaddOpenStageId = stageId;
+  }
+  renderKanban(); // Re-render to toggle panel visibility
+}
+
+async function submitQuickAddForStage(stageId) {
+  const contactName = document.getElementById('qa-contactName-' + stageId).value.trim();
+  const contactPhone = document.getElementById('qa-contactPhone-' + stageId).value.trim();
+  const name = document.getElementById('qa-name-' + stageId).value.trim();
+  const city = document.getElementById('qa-city-' + stageId).value.trim();
+  const notes = document.getElementById('qa-notes-' + stageId).value.trim();
+
+  if (!contactName || !contactPhone || !name) {
+    _toast("Mijoz ismi, telefon va mahsulot nomi kiritilishi majburiy!", "error");
+    return;
+  }
+
+  const body = {
+    contactName,
+    contactPhone,
+    productName: name,
+    city,
+    notes,
+    stageId,
+    pipelineId: _activePid
+  };
+
+  try {
+    await apiFetch('/api/deals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    _toast("Sdelka qo'shildi", "success");
+    window._qaddOpenStageId = null;
+    loadDeals();
+  } catch (e) {
+    _toast(e.message, "error");
+  }
 }
 
 async function createTaskForDeal(dealId, dealTitle) {

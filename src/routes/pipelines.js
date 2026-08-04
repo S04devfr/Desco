@@ -121,11 +121,11 @@ router.get('/:id/stages', async (req, res, next) => {
 router.post('/:id/stages', async (req, res, next) => {
   try {
     const pid = Number(req.params.id)
-    const { name, color } = req.body
+    const { name, color, statusType } = req.body
     if (!name || !name.trim()) return res.status(400).json({ message: 'Bosqich nomi majburiy' })
     const agg = await prisma.pipelineStage.aggregate({ _max: { order: true }, where: { pipelineId: pid } })
     const stage = await prisma.pipelineStage.create({
-      data: { name: name.trim(), color: color || '#007AFF', order: (agg._max.order || 0) + 1, isDefault: false, pipelineId: pid }
+      data: { name: name.trim(), color: color || '#007AFF', order: (agg._max.order || 0) + 1, isDefault: false, pipelineId: pid, statusType: statusType || 'new' }
     })
     res.status(201).json(stage)
   } catch (err) { next(err) }
@@ -134,11 +134,12 @@ router.post('/:id/stages', async (req, res, next) => {
 router.patch('/:pipelineId/stages/:stageId', async (req, res, next) => {
   try {
     const id = Number(req.params.stageId)
-    const { name, color, order } = req.body
+    const { name, color, order, statusType } = req.body
     const data = {}
     if (name  !== undefined) data.name  = name.trim()
     if (color !== undefined) data.color = color
     if (order !== undefined) data.order = Number(order)
+    if (statusType !== undefined) data.statusType = statusType
     if (!Object.keys(data).length) return res.status(400).json({ message: "Hech narsa o'zgartirilmadi" })
     const stage = await prisma.pipelineStage.update({ where: { id }, data })
     res.json(stage)

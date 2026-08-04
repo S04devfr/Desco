@@ -195,20 +195,24 @@
 </div>
 
 <!-- FILTER BAR -->
-<div class="filter-bar">
+<div class="filter-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
   <div style="display:flex;gap:4px;background:var(--bg-primary);padding:3px;border-radius:var(--radius-sm)">
-    <button class="btn btn-sm active" id="fAll" onclick="setFilter('all')" style="background:var(--bg-secondary);color:var(--text-primary);border:none">Barchasi</button>
-    <button class="btn btn-ghost btn-sm" id="fToday" onclick="setFilter('today')">Bugun</button>
-    <button class="btn btn-ghost btn-sm" id="fOverdue" onclick="setFilter('overdue')">Muddati o'tgan</button>
-    <button class="btn btn-ghost btn-sm" id="fDone" onclick="setFilter('done')">Bajarilgan</button>
+    <button class="btn btn-sm active" id="fAll" onclick="setDateFilter('all', this)" style="border:none; background:var(--bg-secondary); color:var(--text-primary)">Barchasi</button>
+    <button class="btn btn-ghost btn-sm" id="fDay" onclick="setDateFilter('day', this)">Kun</button>
+    <button class="btn btn-ghost btn-sm" id="fWeek" onclick="setDateFilter('week', this)">Hafta</button>
+    <button class="btn btn-ghost btn-sm" id="fMonth" onclick="setDateFilter('month', this)">Oy</button>
+    <button class="btn btn-ghost btn-sm" id="fOverdue" onclick="setDateFilter('overdue', this)">Muddati o'tgan</button>
+    <button class="btn btn-ghost btn-sm" id="fDone" onclick="setDateFilter('done', this)">Bajarilgan</button>
   </div>
-  <select id="filterPriority" class="form-control" style="width:140px">
-    <option value="">Barcha priority</option>
-    <option value="high">🔴 Yuqori</option>
-    <option value="medium">🟡 O'rta</option>
-    <option value="low">🟢 Past</option>
-  </select>
-  <input type="text" id="taskSearch" class="form-control" style="flex:1;max-width:220px" placeholder="Qidirish...">
+  <div style="display:flex; gap:10px; align-items:center;">
+    <select id="filterPriority" class="form-control" style="width:140px">
+      <option value="">Barcha priority</option>
+      <option value="high">🔴 Yuqori</option>
+      <option value="medium">🟡 O'rta</option>
+      <option value="low">🟢 Past</option>
+    </select>
+    <input type="text" id="taskSearch" class="form-control" style="width:220px" placeholder="Qidirish...">
+  </div>
 </div>
 
 <!-- LIST VIEW CONTAINER -->
@@ -413,6 +417,23 @@ function setFilter(f) {
   renderTasks();
 }
 
+window._dateFilterMode = 'all';
+function setDateFilter(mode, btn) {
+  window._dateFilterMode = mode;
+  const parent = btn.parentElement;
+  parent.querySelectorAll('button').forEach(b => {
+    b.classList.remove('active');
+    b.style.background = 'transparent';
+    b.style.color = 'var(--text-secondary)';
+  });
+  btn.classList.add('active');
+  btn.style.background = 'var(--bg-secondary)';
+  btn.style.color = 'var(--text-primary)';
+  
+  refreshView();
+}
+window.setDateFilter = setDateFilter;
+
 function getFilteredTasks() {
   const priority = document.getElementById('filterPriority').value;
   const q = document.getElementById('taskSearch').value.toLowerCase();
@@ -427,10 +448,29 @@ function getFilteredTasks() {
       (t.client && t.client.phone && t.client.phone.toLowerCase().includes(q)) ||
       (t.deal && t.deal.productName && t.deal.productName.toLowerCase().includes(q))
     )) return false;
+
     const due = t.dueDate ? new Date(t.dueDate) : null;
-    if (currentFilter === 'today') return due && due >= today && due < tomorrow && !t.completed;
-    if (currentFilter === 'overdue') return due && due < today && !t.completed;
-    if (currentFilter === 'done') return t.completed;
+    const filter = window._dateFilterMode || 'all';
+
+    if (filter === 'day') {
+      return due && due <= tomorrow && !t.completed;
+    }
+    if (filter === 'week') {
+      const endOfWeek = new Date(today);
+      endOfWeek.setDate(today.getDate() + 7);
+      return due && due <= endOfWeek && !t.completed;
+    }
+    if (filter === 'month') {
+      const endOfMonth = new Date(today);
+      endOfMonth.setDate(today.getDate() + 30);
+      return due && due <= endOfMonth && !t.completed;
+    }
+    if (filter === 'overdue') {
+      return due && due < today && !t.completed;
+    }
+    if (filter === 'done') {
+      return t.completed;
+    }
     return true;
   });
 }
@@ -529,61 +569,64 @@ function renderSingleTaskCardHtml(t) {
   const due = t.dueDate ? new Date(t.dueDate) : null;
   const isOverdue = due && due < today && !t.completed;
   const isToday = due && due >= today && due < tomorrow;
-  const dueClass = isOverdue ? 'overdue' : isToday ? 'today' : '';
+  const dueColor = isOverdue ? '#ef4444' : isToday ? '#10b981' : 'var(--text-tertiary)';
   const pLabel = { high: '🔴 Yuqori', medium: '🟡 O\'rta', low: '🟢 Past' };
 
-  let dueHtml = '<span class="task-due" style="color:var(--text-tertiary)"><i class="fas fa-clock"></i> Sana yo\'q</span>';
-  if (t.completed && t.updatedAt) {
-    const d = new Date(t.updatedAt);
-    if (!isNaN(d.getTime())) {
-      const dd = String(d.getDate()).padStart(2, '0');
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const yyyy = d.getFullYear();
-      const dateFormatted = `${dd}.${mm}.${yyyy}`;
-      dueHtml = `<span class="task-due" style="color:var(--success); font-weight:700;"><i class="fas fa-check-circle"></i> ${dateFormatted}</span>`;
-    }
-  } else if (t.dueDate) {
+  let dueHtml = 'Sana yo\'q';
+  if (t.dueDate) {
     const d = new Date(t.dueDate);
     if (!isNaN(d.getTime())) {
       const dd = String(d.getDate()).padStart(2, '0');
       const mm = String(d.getMonth() + 1).padStart(2, '0');
       const yyyy = d.getFullYear();
-      const dateFormatted = `${dd}.${mm}.${yyyy}`;
-      dueHtml = `<span class="task-due ${dueClass}"><i class="fas fa-clock"></i> ${dateFormatted} ${t.dueTime || '10:00'}</span>`;
+      dueHtml = `${dd}.${mm}.${yyyy} ${t.dueTime || '10:00'}`;
     }
   }
 
-  let detailsText = '';
-  if (t.client) {
-    detailsText += `<i class="fas fa-user" style="color: var(--accent); margin-right:4px;"></i> <span style="font-weight:600;">${_esc(t.client.name)}</span>`;
-  }
-  if (t.deal) {
-    if (detailsText) detailsText += ` &bull; `;
-    const stageName = (t.deal.stage && t.deal.stage.name) ? t.deal.stage.name : 'Bosqichsiz';
-    detailsText += `<i class="fas fa-shopping-bag" style="color: var(--text-tertiary); margin-right:4px;"></i> <span>${_esc(t.deal.productName)} (<span style="color:var(--accent); font-weight:600;">${_esc(stageName)}</span>)</span>`;
-  }
+  const clientName = t.client ? _esc(t.client.name) : '<span style="color:var(--text-tertiary)">—</span>';
+  const dealName = t.deal ? _esc(t.deal.productName) : '<span style="color:var(--text-tertiary)">—</span>';
+  const dealLink = t.dealId ? `<a href="/deals?openDealId=${t.dealId}" onclick="event.stopPropagation();" style="color:var(--accent); text-decoration:none; font-weight:600;">${dealName}</a>` : dealName;
+
+  const cardClickAction = t.dealId ? `onclick="window.location.href='/deals?openDealId=${t.dealId}'"` : '';
 
   return `
-    <div class="task-item" id="task-${t.id}" style="padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-secondary); display:flex; flex-direction:column; gap:6px;">
-      <div style="display:flex; align-items:flex-start; gap:8px;">
-        <div class="task-check ${t.completed ? 'done' : ''}" onclick="toggleTask(${t.id}, this)" title="${t.completed ? 'Bajarilmagan' : 'Bajarildi'}" style="margin-top:2px; flex-shrink: 0;">
-          ${t.completed ? '<i class="fas fa-check" style="font-size:9px"></i>' : ''}
+    <div class="task-item" id="task-${t.id}" ${cardClickAction} style="padding: 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-secondary); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; gap: 8px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='none'; this.style.boxShadow='none'">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; width:100%;">
+        <div style="display:flex; align-items:flex-start; gap:8px;">
+          <div class="task-check ${t.completed ? 'done' : ''}" onclick="event.stopPropagation(); toggleTask(${t.id}, this)" title="${t.completed ? 'Bajarilmagan' : 'Bajarildi'}" style="margin-top:2px; flex-shrink: 0; cursor:pointer;">
+            ${t.completed ? '<i class="fas fa-check" style="font-size:9px"></i>' : ''}
+          </div>
+          <div>
+            <div style="font-size:13.5px; color:var(--text-primary); line-height:1.4;">
+              <strong>${_esc(t.actionType || 'Связаться')}</strong>: ${_esc(t.title || 'Vazifa')}
+            </div>
+            ${t.description ? `<div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">${_esc(t.description)}</div>` : ''}
+          </div>
         </div>
-        <div style="flex-grow:1;">
-          <div class="task-title ${t.completed ? 'done' : ''}" style="font-weight:600; font-size:13px; line-height:1.3;">${_esc(t.title)}</div>
-        </div>
-      </div>
-      ${detailsText ? `<div style="font-size:11.5px; color:var(--text-secondary);">${detailsText}</div>` : ''}
-      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-light); padding-top:6px; margin-top:2px;">
-        <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
-          <span style="font-size:10px; font-weight:700; color:var(--text-secondary); background: var(--bg-primary); padding:1px 5px; border-radius:3px;">${pLabel[t.priority]||''}</span>
-          ${dueHtml}
-        </div>
-        <div style="display:flex; gap:4px;">
-          <button class="task-action-btn btn-view" onclick="viewTaskDetails(${t.id})" title="Ko'rish" style="width:24px; height:24px;"><i class="fas fa-eye" style="font-size:10px;"></i></button>
+        <div style="display:flex; gap:4px;" onclick="event.stopPropagation();">
           <button class="task-action-btn btn-edit" onclick="openTaskModal(${t.id})" title="Tahrirlash" style="width:24px; height:24px;"><i class="fas fa-edit" style="font-size:10px;"></i></button>
           <button class="task-action-btn btn-delete" onclick="deleteTask(${t.id})" title="O'chirish" style="width:24px; height:24px;"><i class="fas fa-trash" style="font-size:10px;"></i></button>
         </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:4px; border-top: 1px solid var(--border-light); padding-top:8px; font-size:12px;">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="color:var(--text-tertiary); width:70px; flex-shrink:0;">Mijoz:</span>
+          <span style="font-weight:600; color:var(--text-primary);">${clientName}</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="color:var(--text-tertiary); width:70px; flex-shrink:0;">Bitim:</span>
+          <span>${dealLink}</span>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; border-top: 1px solid var(--border-light); padding-top:8px; margin-top:2px;">
+        <span style="font-size:11px; color:${dueColor}; font-weight:700;">
+          <i class="far fa-calendar-alt"></i> ${dueHtml}
+        </span>
+        <span style="font-size:10px; font-weight:700; color:var(--text-secondary); background: var(--bg-primary); padding:1px 6px; border-radius:3px;">
+          ${pLabel[t.priority] || 'Medium'}
+        </span>
       </div>
     </div>
   `;
@@ -706,45 +749,30 @@ function renderTasksKanban() {
   const overdueTasks = [];
   const todayTasks = [];
   const tomorrowTasks = [];
-  const futureTasks = [];
-  const noDateTasks = [];
-  const doneTasks = [];
 
   tasks.forEach(t => {
-    if (t.completed) {
-      doneTasks.push(t);
-      return;
-    }
+    if (t.completed) return;
     const due = t.dueDate ? new Date(t.dueDate) : null;
-    if (!due) {
-      noDateTasks.push(t);
-    } else {
-      const d = new Date(due); d.setHours(0,0,0,0);
-      if (d < today) {
-        overdueTasks.push(t);
-      } else if (d.getTime() === today.getTime()) {
-        todayTasks.push(t);
-      } else if (d.getTime() === tomorrow.getTime()) {
-        tomorrowTasks.push(t);
-      } else {
-        futureTasks.push(t);
-      }
+    if (!due) return;
+    
+    const d = new Date(due); d.setHours(0,0,0,0);
+    if (d < today) {
+      overdueTasks.push(t);
+    } else if (d.getTime() === today.getTime()) {
+      todayTasks.push(t);
+    } else if (d.getTime() === tomorrow.getTime()) {
+      tomorrowTasks.push(t);
     }
   });
 
   const columnsData = [
-    { key: 'overdue', title: "Muddati o'tgan", color: "#FF3B30", tasks: overdueTasks },
-    { key: 'today', title: "Bugun", color: "#6366F1", tasks: todayTasks },
-    { key: 'tomorrow', title: "Ertaga", color: "#FF9500", tasks: tomorrowTasks },
-    { key: 'future', title: "Keyingi kunlar", color: "#5856D6", tasks: futureTasks },
-    { key: 'nodate', title: "Sana belgilanmagan", color: "#8E8E93", tasks: noDateTasks }
+    { key: 'overdue', title: "Muddati o'tgan (Просроченные)", color: "#FF3B30", tasks: overdueTasks },
+    { key: 'today', title: "Bugun (Сегодня)", color: "#6366F1", tasks: todayTasks },
+    { key: 'tomorrow', title: "Ertaga (Завтра)", color: "#FF9500", tasks: tomorrowTasks }
   ];
-  if (doneTasks.length > 0) {
-    columnsData.push({ key: 'done', title: "Bajarilgan", color: "#34C759", tasks: doneTasks });
-  }
 
   board.innerHTML = columnsData.map(col => `
-    <div class="kanban-col" style="flex: 0 0 290px; width: 290px; display: flex; flex-direction: column; background: var(--bg-primary); border-radius: 12px; border: 1px solid var(--border); max-height: 75vh; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+    <div class="kanban-col" style="flex: 1; display: flex; flex-direction: column; background: var(--bg-primary); border-radius: 12px; border: 1px solid var(--border); max-height: 75vh; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
       <div class="kanban-col-header" style="padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; background: var(--bg-secondary);">
         <span style="width: 8px; height: 8px; border-radius: 50%; background: ${col.color};"></span>
         <h4 style="margin: 0; font-size: 13.5px; font-weight: 700; color: var(--text-primary); flex-grow: 1;">${col.title}</h4>

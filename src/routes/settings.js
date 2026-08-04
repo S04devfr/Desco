@@ -24,7 +24,7 @@ router.get('/company', async (req, res, next) => {
 
 router.patch('/company', requireRole('admin'), async (req, res, next) => {
   try {
-    const { companyName, currency, logoUrl } = req.body
+    const { companyName, currency, logoUrl, mandatoryFields } = req.body
     const existing = await prisma.companySettings.findFirst()
 
     if (!existing) {
@@ -32,7 +32,8 @@ router.patch('/company', requireRole('admin'), async (req, res, next) => {
         data: {
           companyName: companyName || 'DESCO CRM',
           currency: currency || 'UZS',
-          logoUrl: logoUrl !== undefined ? logoUrl : null
+          logoUrl: logoUrl !== undefined ? logoUrl : null,
+          mandatoryFields: mandatoryFields || ''
         }
       })
     } else {
@@ -40,6 +41,7 @@ router.patch('/company', requireRole('admin'), async (req, res, next) => {
       if (companyName !== undefined) data.companyName = companyName
       if (currency !== undefined) data.currency = currency
       if (logoUrl !== undefined) data.logoUrl = logoUrl
+      if (mandatoryFields !== undefined) data.mandatoryFields = mandatoryFields
       await prisma.companySettings.update({
         where: { id: existing.id },
         data
