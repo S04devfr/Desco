@@ -28,8 +28,8 @@ function formatTaskClient(t) {
 // path that wasn't being handled consistently by every caller.
 router.get('/', async (req, res) => {
   try {
-    const { completed, priority, dealId } = req.query
-    const where = (req.user && req.user.role === 'admin') ? {} : { assignedToId: req.userId }
+    const { completed, priority, dealId, mine } = req.query
+    const where = (req.user && req.user.role === 'admin' && mine !== 'true') ? {} : { assignedToId: req.userId }
 
     if (completed !== undefined) where.completed = completed === 'true'
     if (priority) where.priority = priority

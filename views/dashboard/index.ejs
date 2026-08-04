@@ -1361,7 +1361,7 @@ async function loadDashboard() {
 
     // ── Render Tasks section ──
     try {
-      const myTasks = await dashFetch('/api/tasks?completed=false');
+      const myTasks = await dashFetch('/api/tasks?completed=false&mine=true');
       const tasksContainer = document.getElementById('myTasksContainer');
       const tasksCountEl = document.getElementById('myTasksCount');
       
@@ -1625,36 +1625,39 @@ async function loadDashboard() {
       const shp = safeKpis.shopir || { count: 0, amount: 0, deals: [] };
       shopirDealsList = shp.deals || [];
 
-      document.getElementById('nasiyaBreakdownContainer').innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--bg-secondary); border-radius:8px; border:1px solid var(--border)">
-          <span style="font-weight:600; font-size:13px"><i class="fas fa-handshake" style="color:#34C759; margin-right:6px"></i> Nasiya Desco (O'zimizniki)</span>
-          <div style="text-align:right">
-            <div style="font-weight:800; color:var(--text-primary); font-size:14px">${fmtMoney(des.amount)}</div>
-            <div style="font-size:10px; color:var(--text-tertiary)">Soni: ${des.count} ta buyurtma</div>
+      const nasiyaContainer = document.getElementById('nasiyaBreakdownContainer');
+      if (nasiyaContainer) {
+        nasiyaContainer.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--bg-secondary); border-radius:8px; border:1px solid var(--border)">
+            <span style="font-weight:600; font-size:13px"><i class="fas fa-handshake" style="color:#34C759; margin-right:6px"></i> Nasiya Desco (O'zimizniki)</span>
+            <div style="text-align:right">
+              <div style="font-weight:800; color:var(--text-primary); font-size:14px">${fmtMoney(des.amount)}</div>
+              <div style="font-size:10px; color:var(--text-tertiary)">Soni: ${des.count} ta buyurtma</div>
+            </div>
           </div>
-        </div>
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--bg-secondary); border-radius:8px; border:1px solid var(--border)">
-          <span style="font-weight:600; font-size:13px"><i class="fas fa-building" style="color:#FF9500; margin-right:6px"></i> Nasiya Ishonch</span>
-          <div style="text-align:right">
-            <div style="font-weight:800; color:var(--text-primary); font-size:14px">${fmtMoney(ish.amount)}</div>
-            <div style="font-size:10px; color:var(--text-tertiary)">Soni: ${ish.count} ta buyurtma</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--bg-secondary); border-radius:8px; border:1px solid var(--border)">
+            <span style="font-weight:600; font-size:13px"><i class="fas fa-building" style="color:#FF9500; margin-right:6px"></i> Nasiya Ishonch</span>
+            <div style="text-align:right">
+              <div style="font-weight:800; color:var(--text-primary); font-size:14px">${fmtMoney(ish.amount)}</div>
+              <div style="font-size:10px; color:var(--text-tertiary)">Soni: ${ish.count} ta buyurtma</div>
+            </div>
           </div>
-        </div>
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--bg-secondary); border-radius:8px; border:1px solid var(--border)">
-          <span style="font-weight:600; font-size:13px"><i class="fas fa-store" style="color:#FF3B30; margin-right:6px"></i> Nasiya Baraka</span>
-          <div style="text-align:right">
-            <div style="font-weight:800; color:var(--text-primary); font-size:14px">${fmtMoney(bar.amount)}</div>
-            <div style="font-size:10px; color:var(--text-tertiary)">Soni: ${bar.count} ta buyurtma</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--bg-secondary); border-radius:8px; border:1px solid var(--border)">
+            <span style="font-weight:600; font-size:13px"><i class="fas fa-store" style="color:#FF3B30; margin-right:6px"></i> Nasiya Baraka</span>
+            <div style="text-align:right">
+              <div style="font-weight:800; color:var(--text-primary); font-size:14px">${fmtMoney(bar.amount)}</div>
+              <div style="font-size:10px; color:var(--text-tertiary)">Soni: ${bar.count} ta buyurtma</div>
+            </div>
           </div>
-        </div>
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--bg-secondary); border-radius:8px; border:1px solid var(--border); cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='var(--bg-primary)'" onmouseout="this.style.background='var(--bg-secondary)'" onclick="openShopirDealsModal()">
-          <span style="font-weight:600; font-size:13px"><i class="fas fa-truck-moving" style="color:#6366F1; margin-right:6px"></i> Shopirdagi pullar <i class="fas fa-external-link-alt" style="font-size:10px; color:var(--text-tertiary); margin-left:4px"></i></span>
-          <div style="text-align:right">
-            <div style="font-weight:800; color:var(--text-primary); font-size:14px">${fmtMoney(shp.amount)}</div>
-            <div style="font-size:10px; color:var(--text-tertiary)">Soni: ${shp.count} ta buyurtma</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--bg-secondary); border-radius:8px; border:1px solid var(--border); cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='var(--bg-primary)'" onmouseout="this.style.background='var(--bg-secondary)'" onclick="openShopirDealsModal()">
+            <span style="font-weight:600; font-size:13px"><i class="fas fa-truck-moving" style="color:#6366F1; margin-right:6px"></i> Shopirdagi pullar <i class="fas fa-external-link-alt" style="font-size:10px; color:var(--text-tertiary); margin-left:4px"></i></span>
+            <div style="text-align:right">
+              <div style="font-weight:800; color:var(--text-primary); font-size:14px">${fmtMoney(shp.amount)}</div>
+              <div style="font-size:10px; color:var(--text-tertiary)">Soni: ${shp.count} ta buyurtma</div>
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      }
 
       // ── Render Charts ──
       const safeSalesData = Array.isArray(salesData) ? salesData : [];
