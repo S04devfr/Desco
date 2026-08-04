@@ -796,6 +796,8 @@
 
     <div class="chat-filters" style="display: flex; gap: 8px; padding: 10px 15px; border-bottom: 1px solid var(--border); background: var(--surface-card);">
       <button id="filterAllBtn" class="chat-filter-btn" onclick="setChatFilter('all')">Barchasi</button>
+      <button id="filterDirectBtn" class="chat-filter-btn" onclick="setChatFilter('direct')">Direct</button>
+      <button id="filterCommentBtn" class="chat-filter-btn" onclick="setChatFilter('comment')">Comment</button>
       <button id="filterUnansweredBtn" class="chat-filter-btn active" onclick="setChatFilter('unanswered')">
         Javob berilmaganlar <span id="unansweredFilterBadge" class="badge" style="background: var(--danger); color: white; padding: 1px 6px; font-size: 9px; border-radius: 10px; font-weight: 700; display: none;">0</span>
       </button>
@@ -887,17 +889,19 @@ function setChatFilter(filter) {
   activeChatFilter = filter;
   
   const allBtn = document.getElementById('filterAllBtn');
+  const directBtn = document.getElementById('filterDirectBtn');
+  const commentBtn = document.getElementById('filterCommentBtn');
   const unansweredBtn = document.getElementById('filterUnansweredBtn');
   
-  if (!allBtn || !unansweredBtn) return;
+  if (allBtn) allBtn.classList.remove('active');
+  if (directBtn) directBtn.classList.remove('active');
+  if (commentBtn) commentBtn.classList.remove('active');
+  if (unansweredBtn) unansweredBtn.classList.remove('active');
   
-  if (filter === 'all') {
-    allBtn.classList.add('active');
-    unansweredBtn.classList.remove('active');
-  } else {
-    unansweredBtn.classList.add('active');
-    allBtn.classList.remove('active');
-  }
+  if (filter === 'all' && allBtn) allBtn.classList.add('active');
+  else if (filter === 'direct' && directBtn) directBtn.classList.add('active');
+  else if (filter === 'comment' && commentBtn) commentBtn.classList.add('active');
+  else if (filter === 'unanswered' && unansweredBtn) unansweredBtn.classList.add('active');
   
   filterClients();
 }
@@ -1145,6 +1149,7 @@ async function loadClients() {
           isComment = true;
         }
       }
+      c.isComment = isComment;
 
       const div = document.createElement('div');
       div.className = `chat-client-item ${c.id === currentClientId ? 'active' : ''}`;
@@ -1205,7 +1210,11 @@ function filterClients() {
     const username = (client.instagramUsername || '').toLowerCase();
     const matchesSearch = name.includes(query) || username.includes(query);
     
-    const matchesFilter = activeChatFilter === 'all' || isUnanswered || (client.id === currentClientId);
+    let matchesFilter = false;
+    if (activeChatFilter === 'all') matchesFilter = true;
+    else if (activeChatFilter === 'unanswered') matchesFilter = isUnanswered || (client.id === currentClientId);
+    else if (activeChatFilter === 'direct') matchesFilter = !client.isComment || (client.id === currentClientId);
+    else if (activeChatFilter === 'comment') matchesFilter = client.isComment || (client.id === currentClientId);
     
     if (matchesSearch && matchesFilter) {
       item.style.display = 'flex';

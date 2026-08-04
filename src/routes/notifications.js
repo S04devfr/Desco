@@ -20,23 +20,31 @@ async function checkDeadlines(userId, role) {
   const notifications = []
 
   for (const task of tasks) {
-    const due = new Date(task.dueDate)
+    let due = new Date(task.dueDate);
+    if (task.dueTime) {
+      const parts = task.dueTime.split(':');
+      if (parts.length === 2) {
+        due.setHours(parseInt(parts[0], 10) || 0, parseInt(parts[1], 10) || 0, 0, 0);
+      }
+    }
+
     if (due < now) {
       notifications.push({
         id: `overdue-${task.id}`,
         type: 'overdue',
-        title: "Muddati o'tdi",
-        message: `"${task.title}" vazifasi muddati o'tib ketdi`,
+        title: "Vaqti keldi / Muddati o'tdi",
+        message: `"${task.title}" vazifasining vaqti keldi (${task.dueTime || '10:00'})`,
         taskId: task.id,
         dueDate: task.dueDate,
-        createdAt: task.dueDate
+        createdAt: due
       })
     } else if (due <= in24h) {
+      const timeStr = task.dueTime ? `soat ${task.dueTime} ` : '';
       notifications.push({
         id: `soon-${task.id}`,
         type: 'soon',
-        title: '24 soat qoldi',
-        message: `"${task.title}" vazifasi ${due.toLocaleDateString('uz-UZ')} da tugaydi`,
+        title: 'Yaqinlashmoqda',
+        message: `"${task.title}" vazifasi ${due.toLocaleDateString('uz-UZ')} ${timeStr}da tugaydi`,
         taskId: task.id,
         dueDate: task.dueDate,
         createdAt: new Date()

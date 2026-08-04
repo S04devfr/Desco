@@ -446,7 +446,16 @@ function renderSingleTaskRowHtml(t) {
   const pColors = { high: '#ef4444', medium: '#eab308', low: '#22c55e' };
 
   let dueHtml = '<span style="color:var(--text-tertiary); font-size:12.5px;"><i class="far fa-calendar-times"></i> Belgilanmagan</span>';
-  if (t.dueDate) {
+  if (t.completed && t.updatedAt) {
+    const d = new Date(t.updatedAt);
+    if (!isNaN(d.getTime())) {
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      const dateFormatted = `${dd}.${mm}.${yyyy}`;
+      dueHtml = `<span style="color:var(--success); font-size:12.5px; font-weight:600;"><i class="fas fa-check-circle"></i> Bajarildi: ${dateFormatted}</span>`;
+    }
+  } else if (t.dueDate) {
     const d = new Date(t.dueDate);
     if (!isNaN(d.getTime())) {
       const dd = String(d.getDate()).padStart(2, '0');
@@ -524,14 +533,23 @@ function renderSingleTaskCardHtml(t) {
   const pLabel = { high: '🔴 Yuqori', medium: '🟡 O\'rta', low: '🟢 Past' };
 
   let dueHtml = '<span class="task-due" style="color:var(--text-tertiary)"><i class="fas fa-clock"></i> Sana yo\'q</span>';
-  if (t.dueDate) {
+  if (t.completed && t.updatedAt) {
+    const d = new Date(t.updatedAt);
+    if (!isNaN(d.getTime())) {
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      const dateFormatted = `${dd}.${mm}.${yyyy}`;
+      dueHtml = `<span class="task-due" style="color:var(--success); font-weight:700;"><i class="fas fa-check-circle"></i> ${dateFormatted}</span>`;
+    }
+  } else if (t.dueDate) {
     const d = new Date(t.dueDate);
     if (!isNaN(d.getTime())) {
       const dd = String(d.getDate()).padStart(2, '0');
       const mm = String(d.getMonth() + 1).padStart(2, '0');
       const yyyy = d.getFullYear();
       const dateFormatted = `${dd}.${mm}.${yyyy}`;
-      dueHtml = `<span class="task-due ${dueClass}"><i class="fas fa-clock"></i> ${dateFormatted}</span>`;
+      dueHtml = `<span class="task-due ${dueClass}"><i class="fas fa-clock"></i> ${dateFormatted} ${t.dueTime || '10:00'}</span>`;
     }
   }
 
@@ -597,8 +615,13 @@ function renderTasks() {
   const tomorrowTasks = [];
   const futureTasks = [];
   const noDateTasks = [];
+  const doneTasks = [];
 
   tasks.forEach(t => {
+    if (t.completed) {
+      doneTasks.push(t);
+      return;
+    }
     const due = t.dueDate ? new Date(t.dueDate) : null;
     if (!due) {
       noDateTasks.push(t);
@@ -637,6 +660,7 @@ function renderTasks() {
   html += renderTaskGroup(tomorrowTasks, "Ertangi vazifalar", "#FF9500");
   html += renderTaskGroup(futureTasks, "Keyingi kunlardagi vazifalar", "#5856D6");
   html += renderTaskGroup(noDateTasks, "Sana belgilanmagan vazifalar", "#8E8E93");
+  html += renderTaskGroup(doneTasks, "Bajarilgan vazifalar", "#34C759");
 
   el.innerHTML = html;
 }
@@ -684,8 +708,13 @@ function renderTasksKanban() {
   const tomorrowTasks = [];
   const futureTasks = [];
   const noDateTasks = [];
+  const doneTasks = [];
 
   tasks.forEach(t => {
+    if (t.completed) {
+      doneTasks.push(t);
+      return;
+    }
     const due = t.dueDate ? new Date(t.dueDate) : null;
     if (!due) {
       noDateTasks.push(t);
@@ -710,6 +739,9 @@ function renderTasksKanban() {
     { key: 'future', title: "Keyingi kunlar", color: "#5856D6", tasks: futureTasks },
     { key: 'nodate', title: "Sana belgilanmagan", color: "#8E8E93", tasks: noDateTasks }
   ];
+  if (doneTasks.length > 0) {
+    columnsData.push({ key: 'done', title: "Bajarilgan", color: "#34C759", tasks: doneTasks });
+  }
 
   board.innerHTML = columnsData.map(col => `
     <div class="kanban-col" style="flex: 0 0 290px; width: 290px; display: flex; flex-direction: column; background: var(--bg-primary); border-radius: 12px; border: 1px solid var(--border); max-height: 75vh; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">

@@ -3217,7 +3217,7 @@ function renderClientDebtTable() {
           <td style="text-align:center; color:var(--text-secondary)">${item.date ? new Date(item.date).toLocaleDateString('uz-UZ') : '—'}</td>
           <td style="text-align:right;">
             <div style="display:flex; align-items:center; justify-content:flex-end; gap:6px;">
-              <span style="font-weight:800; color:var(--danger);">${fmtMoney(item.amount)}</span>
+              <span style="font-weight:800; color:#000;">${fmtMoney(item.amount)}</span>
               <span style="font-size:10.0px; padding:2px 5px; background:#FF950020; color:#FF9500; border-radius:4px; font-weight:700; white-space:nowrap;"><i class="fas fa-calendar-alt"></i> Nasiya</span>
             </div>
           </td>
@@ -3243,7 +3243,7 @@ function renderClientDebtTable() {
           <td style="text-align:center; font-family: monospace; font-size:12.5px;">${escHtml(item.phone || '—')}</td>
           <td style="text-align:center;">${escHtml(item.city || '—')}</td>
           <td style="text-align:center; color:var(--text-secondary)">${item.date ? new Date(item.date).toLocaleDateString('uz-UZ') : '—'}</td>
-          <td style="text-align:right; font-weight:800; color:var(--danger);">${fmtMoney(item.amount)}</td>
+          <td style="text-align:right; font-weight:800; color:#000;">${fmtMoney(item.amount)}</td>
           <td style="color:var(--text-secondary); max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escHtml(item.notes || '')}">${escHtml(item.notes || '—')}</td>
           <td style="font-weight:600; color:var(--text-primary); text-align:center;">${escHtml(item.managerName)}</td>
           <td style="text-align:center;">
