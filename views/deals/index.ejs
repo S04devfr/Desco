@@ -494,6 +494,128 @@
     background: #f8fafc;
   }
 
+  /* Inline borderless amoCRM fields styling */
+  .drawer-inline-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 4px;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+    min-height: 36px;
+  }
+  [data-theme="dark"] .drawer-inline-row {
+    border-bottom-color: rgba(255,255,255,0.04);
+  }
+  .drawer-inline-label {
+    font-size: 13px;
+    color: var(--text-500);
+    font-weight: 500;
+  }
+  .drawer-inline-value {
+    flex: 1;
+    text-align: right;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    min-width: 0;
+  }
+  .drawer-inline-select, .drawer-inline-input {
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-900);
+    text-align: right;
+    text-align-last: right;
+    outline: none;
+    padding: 4px 0;
+    width: 100%;
+    cursor: pointer;
+    transition: background 0.15s, border-radius 0.15s;
+    font-family: inherit;
+  }
+  .drawer-inline-select:hover, .drawer-inline-input:hover,
+  .drawer-inline-select:focus, .drawer-inline-input:focus {
+    background: var(--surface-input);
+    border-radius: 4px;
+    padding: 4px 6px;
+  }
+  
+  /* Entity box (Contact / Company cards) styling */
+  .drawer-entity-box {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+  .drawer-entity-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .drawer-entity-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--brand);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    box-shadow: 0 2px 6px var(--brand-glow);
+  }
+  .drawer-entity-avatar.company-avatar {
+    background: #a78bfa;
+    box-shadow: 0 2px 6px rgba(167, 139, 250, 0.25);
+  }
+  .drawer-entity-title-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-900);
+    outline: none;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: background 0.15s;
+    min-width: 0;
+  }
+  .drawer-entity-title-input:hover, .drawer-entity-title-input:focus {
+    background: var(--surface-input);
+  }
+  .drawer-entity-actions {
+    color: var(--text-tertiary);
+    cursor: pointer;
+    padding: 4px;
+    font-size: 13px;
+  }
+  .drawer-entity-actions:hover {
+    color: var(--accent);
+  }
+  
+  .drawer-inline-dial-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    border: none;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .drawer-inline-dial-btn:hover {
+    background: var(--accent);
+    color: #ffffff;
+  }
+
   /* Inline editable header */
   .drawer-header-inline {
     display: flex;
@@ -1143,91 +1265,133 @@
   <!-- ════════════ DETAIL SLIDING DRAWER ════════════ -->
   <div class="modal-overlay hidden" id="detailModal" onclick="if(event.target===this)closeDetail()">
     <div class="modal-box">
-      <!-- Left Details Panel -->
+      <!-- Left Details Panel (amoCRM style) -->
       <div class="drawer-left">
-        <div class="drawer-header-inline">
-          <button class="drawer-back-btn" onclick="closeDetail()" title="Yopish"><i class="fas fa-arrow-left"></i></button>
-          <div style="flex:1;">
-            <input type="text" id="drawerDealTitle" class="drawer-title-input" onchange="updateDrawerDealTitle(this.value)">
-            <div style="display:flex; gap:8px; align-items:center; margin-top:4px; padding-left:6px;">
-              <span id="drawerDealId" style="font-size:11px; font-weight:700; color:var(--text-secondary); background:var(--bg-tertiary); padding:2px 6px; border-radius:4px; border:1px solid var(--border)">#—</span>
-              <span id="drawerDealPipeline" style="font-size:11px; color:var(--text-tertiary)">Pipeline</span>
+        <div class="drawer-header-inline" style="display:flex; flex-direction:column; gap:10px; align-items:stretch; border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:16px;">
+          <!-- Title Row -->
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button class="drawer-back-btn" onclick="closeDetail()" title="Yopish" style="font-size: 15px; color:var(--text-tertiary);"><i class="fas fa-chevron-left"></i></button>
+            <div style="flex:1; min-width:0;">
+              <input type="text" id="drawerDealTitle" class="drawer-title-input" style="font-size: 15.5px; font-weight:700; color:var(--text-primary); border:none; background:transparent; padding:0; outline:none; width:100%;" onchange="updateDrawerDealTitle(this.value)">
+            </div>
+            <div style="display:flex; gap:4px; flex-shrink:0;">
+              <button class="btn btn-ghost btn-sm btn-icon" onclick="editCurrentDeal()" title="Tahrirlash" style="width:26px; height:26px;"><i class="fas fa-edit" style="font-size:12px;"></i></button>
+              <button class="btn btn-ghost btn-sm btn-icon text-danger" onclick="deleteCurrentDeal()" title="O'chirish" style="width:26px; height:26px;"><i class="fas fa-trash" style="font-size:12px;"></i></button>
             </div>
           </div>
-          <div style="display:flex; gap:4px;">
-            <button class="btn btn-ghost btn-sm btn-icon" onclick="editCurrentDeal()" title="Tahrirlash"><i class="fas fa-edit"></i></button>
-            <button class="btn btn-ghost btn-sm btn-icon text-danger" onclick="deleteCurrentDeal()" title="O'chirish"><i class="fas fa-trash"></i></button>
+          
+          <!-- Badges / Info Row -->
+          <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; padding-left:22px;">
+            <span id="drawerDealId" style="font-size:10px; font-weight:700; color:var(--text-secondary); background:var(--bg-tertiary); padding:2px 6px; border-radius:4px; border:1px solid var(--border)">#—</span>
+            <span id="drawerDealPipeline" style="font-size:10px; color:var(--text-tertiary); font-weight:600; background:rgba(99,102,241,0.08); padding:2px 6px; border-radius:4px; border:1px solid rgba(99,102,241,0.15)">Voronka</span>
+          </div>
+
+          <!-- Active Stage Row (amoCRM style) -->
+          <div style="font-size:12px; padding-left:22px; color:var(--text-secondary); margin-top:2px;">
+            <div style="color:var(--text-tertiary); font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:0.3px;">Воронка</div>
+            <div style="display:flex; align-items:center; gap:6px; margin-top:2px;">
+              <strong id="drawerActiveStage" style="font-weight:700; color:var(--text-primary); font-size:13px;">Bosqich</strong>
+              <span id="drawerStageDuration" style="font-size:11px; color:#ef4444; font-weight:600;">(—)</span>
+            </div>
+            <div id="drawerStageColorLine" style="height:3px; border-radius:2px; background:var(--accent); margin-top:6px; width:100px;"></div>
           </div>
         </div>
 
         <!-- Tags Area -->
-        <div style="margin-bottom:12px; padding-left:4px;" id="drawerTagsContainer"></div>
+        <div style="margin-bottom:12px; padding-left:22px;" id="drawerTagsContainer"></div>
 
         <!-- Progress/Stages indicator -->
-        <div class="drawer-progress-bar" id="drawerProgressBar"></div>
+        <div class="drawer-progress-bar" id="drawerProgressBar" style="margin-left: 22px;"></div>
 
         <!-- Tabs -->
-        <div class="drawer-tabs">
+        <div class="drawer-tabs" style="margin-left: 22px;">
           <div class="drawer-tab active" onclick="switchDrawerTab('main', this)">Основное</div>
           <div class="drawer-tab" onclick="switchDrawerTab('stats', this)">Статистика</div>
           <div class="drawer-tab" onclick="switchDrawerTab('files', this)">Файлы</div>
         </div>
 
         <!-- General Tab Content -->
-        <div class="drawer-tab-content active" id="tab-main">
-          <div class="form-group">
-            <label class="form-label">Отв-ный (Mas'ul)</label>
-            <select id="dw-managerId" class="form-control" onchange="saveDrawerField('managerId', this.value)">
-              <option value="">— Menejersiz —</option>
-            </select>
+        <div class="drawer-tab-content active" id="tab-main" style="padding-left: 22px;">
+          <div class="drawer-inline-row">
+            <span class="drawer-inline-label">Отв-ный</span>
+            <div class="drawer-inline-value">
+              <select id="dw-managerId" class="drawer-inline-select" onchange="saveDrawerField('managerId', this.value)">
+                <option value="">— Menejersiz —</option>
+              </select>
+            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label">Бюджет (UZS)</label>
-            <input type="number" id="dw-amount" class="form-control" onchange="saveDrawerField('amount', this.value)">
+          <div class="drawer-inline-row">
+            <span class="drawer-inline-label">Бюджет</span>
+            <div class="drawer-inline-value" style="display:flex; align-items:center; gap:4px; justify-content:flex-end;">
+              <input type="number" id="dw-amount" class="drawer-inline-input" onchange="saveDrawerField('amount', this.value)">
+              <span style="font-size:12px; color:var(--text-tertiary); font-weight:600;">so'm</span>
+            </div>
           </div>
 
-          <!-- Contact block -->
-          <div class="drawer-card-box">
-            <div class="drawer-card-title"><i class="fas fa-user text-brand"></i> Mijoz ma'lumotlari</div>
-            <div class="form-group">
-              <label class="form-label">Ismi</label>
-              <input type="text" id="dw-contactName" class="form-control" onchange="saveDrawerClientField('contactName', this.value)">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Ish telefoni</label>
-              <div style="display:flex; gap:6px;">
-                <input type="text" id="dw-contactPhone" class="form-control" onchange="saveDrawerClientField('contactPhone', this.value)">
-                <button class="btn btn-secondary btn-icon" onclick="dialNumber(document.getElementById('dw-contactPhone').value)" title="Qo'ng'iroq qilish"><i class="fas fa-phone"></i></button>
+          <!-- Contact block (amoCRM style) -->
+          <div class="drawer-entity-box" style="margin-top: 20px;">
+            <div class="drawer-entity-header">
+              <div class="drawer-entity-avatar" id="dw-contactAvatar">?</div>
+              <input type="text" id="dw-contactName" class="drawer-entity-title-input" placeholder="Mijoz ismi" onchange="saveDrawerClientField('contactName', this.value)">
+              <div class="drawer-entity-actions">
+                <i class="fas fa-ellipsis-h"></i>
               </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">Email</label>
-              <input type="email" id="dw-contactEmail" class="form-control" onchange="saveDrawerClientField('contactEmail', this.value)">
+            
+            <div class="drawer-inline-row">
+              <span class="drawer-inline-label">Компания</span>
+              <div class="drawer-inline-value">
+                <span id="dw-contactCompanyLabel" style="font-size:13px; font-weight:600; color:var(--text-secondary); cursor:pointer; text-decoration:underline;" onclick="document.getElementById('dw-companyName').focus();">o'zim_uchun</span>
+              </div>
+            </div>
+            <div class="drawer-inline-row">
+              <span class="drawer-inline-label">Раб. тел.</span>
+              <div class="drawer-inline-value" style="display:flex; align-items:center; gap:6px;">
+                <input type="text" id="dw-contactPhone" class="drawer-inline-input" onchange="saveDrawerClientField('contactPhone', this.value)">
+                <button class="drawer-inline-dial-btn" onclick="dialNumber(document.getElementById('dw-contactPhone').value)" title="Qo'ng'iroq"><i class="fas fa-phone-alt"></i></button>
+              </div>
+            </div>
+            <div class="drawer-inline-row">
+              <span class="drawer-inline-label">Email раб.</span>
+              <div class="drawer-inline-value">
+                <input type="email" id="dw-contactEmail" class="drawer-inline-input" placeholder="—" onchange="saveDrawerClientField('contactEmail', this.value)">
+              </div>
             </div>
           </div>
 
-          <!-- Company block -->
-          <div class="drawer-card-box">
-            <div class="drawer-card-title"><i class="fas fa-building text-purple"></i> Kompaniya ma'lumotlari</div>
-            <div class="form-group">
-              <label class="form-label">Kompaniya nomi</label>
-              <input type="text" id="dw-companyName" class="form-control" onchange="saveDrawerClientField('companyName', this.value)">
+          <!-- Company block (amoCRM style) -->
+          <div class="drawer-entity-box" style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 20px;">
+            <div class="drawer-entity-header">
+              <div class="drawer-entity-avatar company-avatar"><i class="far fa-building"></i></div>
+              <input type="text" id="dw-companyName" class="drawer-entity-title-input" placeholder="Kompaniya nomi" onchange="saveDrawerClientField('companyName', this.value)">
+              <div class="drawer-entity-actions">
+                <i class="fas fa-ellipsis-h"></i>
+              </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">Telefon</label>
-              <input type="text" id="dw-companyPhone" class="form-control" onchange="saveDrawerClientField('companyPhone', this.value)">
+            
+            <div class="drawer-inline-row">
+              <span class="drawer-inline-label">Раб. тел.</span>
+              <div class="drawer-inline-value">
+                <input type="text" id="dw-companyPhone" class="drawer-inline-input" placeholder="—" onchange="saveDrawerClientField('companyPhone', this.value)">
+              </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">Email</label>
-              <input type="email" id="dw-companyEmail" class="form-control" onchange="saveDrawerClientField('companyEmail', this.value)">
+            <div class="drawer-inline-row">
+              <span class="drawer-inline-label">Email раб.</span>
+              <div class="drawer-inline-value">
+                <input type="email" id="dw-companyEmail" class="drawer-inline-input" placeholder="—" onchange="saveDrawerClientField('companyEmail', this.value)">
+              </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">Veb-sayt</label>
-              <input type="text" id="dw-companyWebsite" class="form-control" onchange="saveDrawerClientField('companyWebsite', this.value)">
+            <div class="drawer-inline-row">
+              <span class="drawer-inline-label">Web</span>
+              <div class="drawer-inline-value">
+                <input type="text" id="dw-companyWebsite" class="drawer-inline-input" placeholder="—" onchange="saveDrawerClientField('companyWebsite', this.value)">
+              </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">Manzil</label>
-              <input type="text" id="dw-companyAddress" class="form-control" onchange="saveDrawerClientField('companyAddress', this.value)">
+            <div class="drawer-inline-row">
+              <span class="drawer-inline-label">Адрес</span>
+              <div class="drawer-inline-value">
+                <input type="text" id="dw-companyAddress" class="drawer-inline-input" placeholder="—" onchange="saveDrawerClientField('companyAddress', this.value)">
+              </div>
             </div>
           </div>
         </div>
@@ -2604,9 +2768,21 @@ async function openDetail(id) {
     const stageDate = deal.stageUpdatedAt ? new Date(deal.stageUpdatedAt) : new Date(deal.updatedAt || deal.createdAt);
     const diffTime = Math.abs(now - stageDate);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    const stageDurationText = `${diffDays} кун`;
+    const stageDurationText = `${diffDays} kun`;
     
-    document.getElementById('drawerDealPipeline').textContent = (pipelineObj ? pipelineObj.name : 'Voronka') + ` (${stageDurationText})`;
+    document.getElementById('drawerDealPipeline').textContent = (pipelineObj ? pipelineObj.name : 'Voronka');
+
+    // Populate active stage info (amoCRM style)
+    const currentStage = pipelineObj ? pipelineObj.stages.find(s => s.id === deal.stageId) : null;
+    const stageName = currentStage ? currentStage.name : 'Noma’lum';
+    const stageColor = currentStage ? currentStage.color : '#007AFF';
+    
+    document.getElementById('drawerActiveStage').textContent = stageName;
+    document.getElementById('drawerStageDuration').textContent = `(${stageDurationText})`;
+    const colorLine = document.getElementById('drawerStageColorLine');
+    if (colorLine) {
+      colorLine.style.backgroundColor = stageColor;
+    }
 
     // Populate tags
     const tagsContainer = document.getElementById('drawerTagsContainer');
@@ -2655,12 +2831,26 @@ async function openDetail(id) {
     document.getElementById('dw-amount').value = deal.amount || 0;
 
     // Contact client fields
-    document.getElementById('dw-contactName').value = deal.client ? deal.client.name || '' : '';
+    const contactName = deal.client ? deal.client.name || '' : '';
+    document.getElementById('dw-contactName').value = contactName;
     document.getElementById('dw-contactPhone').value = deal.client ? deal.client.phone || '' : '';
     document.getElementById('dw-contactEmail').value = deal.client ? deal.client.email || '' : '';
 
+    // Set contact avatar text
+    const avatarEl = document.getElementById('dw-contactAvatar');
+    if (avatarEl) {
+      avatarEl.textContent = contactName ? contactName.charAt(0).toUpperCase() : '?';
+    }
+
+    // Set contact company label
+    const companyName = deal.client ? deal.client.company || '' : '';
+    const companyLabelEl = document.getElementById('dw-contactCompanyLabel');
+    if (companyLabelEl) {
+      companyLabelEl.textContent = companyName ? companyName : 'o\'zim_uchun';
+    }
+
     // Company client fields
-    document.getElementById('dw-companyName').value = deal.client ? deal.client.company || '' : '';
+    document.getElementById('dw-companyName').value = companyName;
     document.getElementById('dw-companyPhone').value = deal.client ? deal.client.companyPhone || '' : '';
     document.getElementById('dw-companyEmail').value = deal.client ? deal.client.companyEmail || '' : '';
     document.getElementById('dw-companyWebsite').value = deal.client ? deal.client.companyWebsite || '' : '';
@@ -2869,6 +3059,20 @@ async function saveDrawerClientField(field, value) {
       body: JSON.stringify(body)
     });
     _toast("Mijoz yangilandi", "success");
+    
+    // Update local UI immediately
+    if (field === 'companyName') {
+      const companyLabelEl = document.getElementById('dw-contactCompanyLabel');
+      if (companyLabelEl) {
+        companyLabelEl.textContent = value ? value : 'o\'zim_uchun';
+      }
+    } else if (field === 'contactName') {
+      const avatarEl = document.getElementById('dw-contactAvatar');
+      if (avatarEl) {
+        avatarEl.textContent = value ? value.charAt(0).toUpperCase() : '?';
+      }
+    }
+    
     loadDeals();
   } catch (e) {
     _toast(e.message, "error");

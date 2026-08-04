@@ -220,7 +220,7 @@ h1, h2, h3, h4, h5, h6, .sidebar-logo-text, .breadcrumb {
   flex-direction: column;
   overflow: hidden;
   position: relative;
-  z-index: 100;
+  z-index: 1100;
   flex-shrink: 0;
   transition: width var(--dur-slow) var(--ease);
 }
