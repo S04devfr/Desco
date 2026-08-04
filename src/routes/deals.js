@@ -201,6 +201,8 @@ router.get('/:id', async (req, res, next) => {
 //     (contactName, contactPhone, contactEmail, companyName, companyAddress).
 //     When clientId is absent but any of those are provided, a new Client
 //     row is auto-created first and the deal is linked to it.
+router.post('/', async (req, res, next) => {
+  try {
     const valError = await validateMandatoryFields(req, req.body, false);
     if (valError) return res.status(400).json({ message: valError });
 
