@@ -800,20 +800,27 @@
 
     <!-- Top bar -->
     <div class="deals-topbar" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding-bottom: 12px;">
+      
+      <!-- Left side: pipeline selector, totals, live clock -->
       <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
         <div style="position:relative;">
           <button class="pipeline-name-btn" id="pipelineNameBtn" onclick="togglePipelineDropdown()">
             <span id="pipelineNameText">Yuklanmoqda…</span>
             <i class="fas fa-chevron-down"></i>
           </button>
-        </div>
-        <span id="dealsTotalsBadge" style="font-size:13.5px; font-weight:700; color:var(--text-secondary); margin-left: 8px;"></span>
+          
           <div class="pipeline-dropdown" id="pipelineDropdown">
             <div id="pdropList"></div>
             <div class="pdrop-divider"></div>
-            <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %><div class="pdrop-action" onclick="closePipelineDropdown();openPipelineMgr()"><i class="fas fa-cog"></i> Voronkalarni boshqarish</div><% } %>
+            <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
+              <div class="pdrop-action" onclick="closePipelineDropdown();openPipelineMgr()">
+                <i class="fas fa-cog"></i> Voronkalarni boshqarish
+              </div>
+            <% } %>
           </div>
         </div>
+        
+        <span id="dealsTotalsBadge" style="font-size:13.5px; font-weight:700; color:var(--text-secondary); margin-left: 8px;"></span>
 
         <!-- Live Clock & Date -->
         <div id="liveClock" style="display:flex; align-items:center; gap:10px; padding:6px 14px; background:var(--bg-secondary); border:1px solid var(--border); border-radius:30px; font-size:12.5px; font-weight:600; color:var(--text-primary); font-family: 'Outfit', monospace; box-shadow:0 2px 6px rgba(0,0,0,0.02); height: 32px;">
@@ -824,6 +831,7 @@
         </div>
       </div>
 
+      <!-- Right side: view toggle, actions -->
       <div class="deals-topbar-right">
         <div class="view-toggle">
           <button class="vtbtn active" id="btnKanban" onclick="setView('kanban')">
@@ -834,7 +842,9 @@
           </button>
         </div>
         <button class="btn btn-ghost btn-sm" id="btnSelectMode" onclick="toggleSelectionMode()" title="Ommaviy tanlash"><i class="fas fa-check-square"></i> Tanlash</button>
-        <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %><button class="btn btn-ghost btn-sm kb-settings-btn" id="btnEditMode" onclick="toggleEditMode()" title="Bosqichlarni tahrirlash"><i class="fas fa-cog"></i> Sozlash</button><% } %>
+        <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
+          <button class="btn btn-ghost btn-sm kb-settings-btn" id="btnEditMode" onclick="toggleEditMode()" title="Bosqichlarni tahrirlash"><i class="fas fa-cog"></i> Sozlash</button>
+        <% } %>
         <button class="btn btn-primary btn-sm" onclick="openDealModal()">
           <i class="fas fa-plus"></i> Yangi sdelka
         </button>
