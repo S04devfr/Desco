@@ -2220,6 +2220,12 @@ function dcardHtml(d) {
           <span style="font-weight:700; letter-spacing:0.2px;">${clientPhone}</span>
         </div>
         
+        <!-- Address (City) -->
+        <div style="font-size:12px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
+          <i class="fas fa-map-marker-alt" style="color:var(--text-tertiary); font-size:11px; width:12px; text-align:center;"></i>
+          <span>${clientCity}</span>
+        </div>
+        
         <!-- Tags chips list (hidden if empty) -->
         ${tagsHtml ? `
         <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">

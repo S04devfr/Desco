@@ -225,7 +225,7 @@ async function handleMetaWebhook(body, broadcast) {
             console.log(`[Meta Webhook] Sdelka yaratilmoqda. Pipeline=${pipelineId}, Stage=${stageId}, Client=${client.id}`);
             const deal = await prisma.deal.create({
               data: {
-                productName: String(rawProduct).trim().substring(0, 200),
+                productName: extractProductName(String(rawProduct).trim()).substring(0, 200),
                 amount: 0,
                 status: 'new',
                 clientId: client.id,
@@ -438,7 +438,7 @@ function parseLeadPayload(source, rawData) {
 
   const productNameFromPayload = findFuzzyValue(rawData, ['mahsulot', 'product', 'tovar', 'item', 'buyum', 'xizmat', 'kurs']);
   const defaultProductName = (pageName !== "Webhook" && pageName !== "Make.com" && pageName !== "Yuboraman.uz") ? pageName : formId;
-  const productName = productNameFromPayload || defaultProductName;
+  const productName = extractProductName(productNameFromPayload || defaultProductName);
 
   // Operatorga xalaqit beruvchi texnik maydonlarni izohdan (notes) o'chiramiz
   const additionalNotes = [];
