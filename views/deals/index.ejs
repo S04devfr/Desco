@@ -1284,7 +1284,7 @@
           <div style="display:flex; align-items:center; gap:8px;">
             <button class="drawer-back-btn" onclick="closeDetail()" title="Yopish" style="font-size: 15px; color:var(--text-tertiary);"><i class="fas fa-chevron-left"></i></button>
             <div style="flex:1; min-width:0;">
-              <input type="text" id="drawerDealTitle" class="drawer-title-input" style="font-size: 15.5px; font-weight:700; color:var(--text-primary); border:none; background:transparent; padding:0; outline:none; width:100%;" onchange="updateDrawerDealTitle(this.value)">
+              <input type="text" id="drawerDealTitle" class="drawer-title-input" style="font-size: 15.5px; font-weight:700; color:var(--text-primary); border:none; background:transparent; padding:0; outline:none; width:100%;">
             </div>
             <div style="display:flex; gap:4px; flex-shrink:0;">
               <button class="btn btn-ghost btn-sm btn-icon" onclick="editCurrentDeal()" title="Tahrirlash" style="width:26px; height:26px;"><i class="fas fa-edit" style="font-size:12px;"></i></button>
@@ -1320,7 +1320,12 @@
               <!-- Hidden select for compatibility -->
               <select id="drawerStageSelect" style="display: none;"></select>
               
-              <span id="drawerStageDuration" style="font-size:11px; color:#ef4444; font-weight:600;">(—)</span>
+              <span id="drawerStageDuration" style="font-size:11px; color:#ef4444; font-weight:600; margin-right: 8px;">(—)</span>
+              
+              <!-- Floating Save Button Next to Stage Select -->
+              <button type="button" class="btn btn-primary" onclick="saveAllDrawerFieldsAndClose(event)" style="background: var(--brand); border-color: var(--brand); font-size: 12.5px; font-weight: 700; height: 30px; padding: 0 14px; display: inline-flex; align-items: center; gap: 5px; border-radius: 6px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">
+                <i class="fas fa-save"></i> Saqlash
+              </button>
             </div>
             <div id="drawerStageColorLine" style="height:3px; border-radius:2px; background:var(--accent); margin-top:6px; width:100px;"></div>
           </div>
@@ -1354,7 +1359,7 @@
           <div class="drawer-inline-row">
             <span class="drawer-inline-label">Отв-ный</span>
             <div class="drawer-inline-value">
-              <select id="dw-managerId" class="drawer-inline-select" onchange="saveDrawerField('managerId', this.value)">
+              <select id="dw-managerId" class="drawer-inline-select">
                 <option value="">— Menejersiz —</option>
               </select>
             </div>
@@ -1362,7 +1367,7 @@
           <div class="drawer-inline-row">
             <span class="drawer-inline-label">Бюджет</span>
             <div class="drawer-inline-value" style="display:flex; align-items:center; gap:4px; justify-content:flex-end;">
-              <input type="number" id="dw-amount" class="drawer-inline-input" onchange="saveDrawerField('amount', this.value)">
+              <input type="number" id="dw-amount" class="drawer-inline-input">
               <span style="font-size:12px; color:var(--text-tertiary); font-weight:600;">so'm</span>
             </div>
           </div>
@@ -1374,21 +1379,21 @@
             <div class="drawer-inline-row">
               <span class="drawer-inline-label">Mahsulot nomi</span>
               <div class="drawer-inline-value">
-                <input type="text" id="dw-productName" class="drawer-inline-input" placeholder="Mahsulot nomi..." onchange="updateDrawerDealTitle(this.value)">
+                <input type="text" id="dw-productName" class="drawer-inline-input" placeholder="Mahsulot nomi...">
               </div>
             </div>
 
             <div class="drawer-inline-row">
               <span class="drawer-inline-label">Ismi</span>
               <div class="drawer-inline-value">
-                <input type="text" id="dw-contactName" class="drawer-inline-input" placeholder="Mijoz ismi..." onchange="saveDrawerClientField('contactName', this.value)">
+                <input type="text" id="dw-contactName" class="drawer-inline-input" placeholder="Mijoz ismi...">
               </div>
             </div>
 
             <div class="drawer-inline-row">
               <span class="drawer-inline-label">Raqami</span>
               <div class="drawer-inline-value" style="display:flex; align-items:center; gap:6px;">
-                <input type="text" id="dw-contactPhone" class="drawer-inline-input" placeholder="Telefon raqami..." onchange="saveDrawerClientField('contactPhone', this.value)">
+                <input type="text" id="dw-contactPhone" class="drawer-inline-input" placeholder="Telefon raqami...">
                 <button class="drawer-inline-dial-btn" onclick="dialNumber(document.getElementById('dw-contactPhone').value)" title="Qo'ng'iroq" style="background: none; border: none; color: var(--primary); cursor: pointer; padding: 4px;"><i class="fas fa-phone-alt"></i></button>
               </div>
             </div>
@@ -1396,14 +1401,14 @@
             <div class="drawer-inline-row">
               <span class="drawer-inline-label">Manzili</span>
               <div class="drawer-inline-value">
-                <input type="text" id="dw-contactCity" class="drawer-inline-input" placeholder="Shahar / manzil..." onchange="saveDrawerClientField('city', this.value)">
+                <input type="text" id="dw-contactCity" class="drawer-inline-input" placeholder="Shahar / manzil...">
               </div>
             </div>
 
             <!-- Izoh / Notes Field on Left Panel -->
             <div class="drawer-inline-row" style="align-items: flex-start; flex-direction: column; gap: 4px; border-bottom: none; height: auto; padding: 8px 4px;">
               <span class="drawer-inline-label" style="text-align: left; width: 100%;">Izoh / Eslatma</span>
-              <textarea id="dw-notes" class="drawer-inline-input" style="text-align: left; width: 100%; min-height: 80px; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-base); resize: vertical; font-family: inherit; font-size: 13px; font-weight: 500;" placeholder="Mijoz yoki bosqich haqida izoh yozing..." onchange="saveDrawerField('notes', this.value)"></textarea>
+              <textarea id="dw-notes" class="drawer-inline-input" style="text-align: left; width: 100%; min-height: 80px; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-base); resize: vertical; font-family: inherit; font-size: 13px; font-weight: 500;" placeholder="Mijoz yoki bosqich haqida izoh yozing..."></textarea>
             </div>
           </div>
 
@@ -1415,13 +1420,13 @@
                 <div class="drawer-inline-row">
                   <span class="drawer-inline-label">Kompaniya</span>
                   <div class="drawer-inline-value">
-                    <input type="text" id="dw-companyName" class="drawer-inline-input" placeholder="Kompaniya..." onchange="saveDrawerClientField('companyName', this.value)">
+                    <input type="text" id="dw-companyName" class="drawer-inline-input" placeholder="Kompaniya...">
                   </div>
                 </div>
                 <div class="drawer-inline-row">
                   <span class="drawer-inline-label">Email</span>
                   <div class="drawer-inline-value">
-                    <input type="email" id="dw-contactEmail" class="drawer-inline-input" placeholder="Email..." onchange="saveDrawerClientField('contactEmail', this.value)">
+                    <input type="email" id="dw-contactEmail" class="drawer-inline-input" placeholder="Email...">
                   </div>
                 </div>
                 <div class="drawer-inline-row" style="display: none;">
@@ -3319,10 +3324,15 @@ async function saveDrawerClientField(field, value) {
   }
 }
 
+async function saveAllDrawerFieldsAndClose(event) {
+  await saveAllDrawerFields(event);
+  closeDetail();
+}
+
 async function saveAllDrawerFields(event) {
   const managerId = document.getElementById('dw-managerId').value;
   const amount = Number(document.getElementById('dw-amount').value) || 0;
-  const productName = document.getElementById('dw-productName').value.trim();
+  const productName = (document.getElementById('dw-productName').value || document.getElementById('drawerDealTitle').value).trim();
   const contactName = document.getElementById('dw-contactName').value.trim();
   const contactPhone = document.getElementById('dw-contactPhone').value.trim();
   const city = document.getElementById('dw-contactCity').value.trim();
