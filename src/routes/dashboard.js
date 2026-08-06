@@ -318,6 +318,9 @@ router.get('/kpis', async (req, res, next) => {
 
     const countShopir = deals.filter(d => d.stage?.name.toLowerCase().includes('shopir')).length;
     const amountShopir = deals.filter(d => d.stage?.name.toLowerCase().includes('shopir')).reduce((sum, d) => sum + (d.amount || 0), 0);
+
+    const count100Zakaz = deals.filter(d => d.stage?.name.toLowerCase().includes('100%') || d.stage?.name.toLowerCase().includes('100')).length;
+    const amount100Zakaz = deals.filter(d => d.stage?.name.toLowerCase().includes('100%') || d.stage?.name.toLowerCase().includes('100')).reduce((sum, d) => sum + (d.amount || 0), 0);
     const shopirDeals = deals.filter(d => d.stage?.name.toLowerCase().includes('shopir')).map(d => ({
       id: d.id,
       productName: d.productName || 'Noma\'lum',
@@ -463,6 +466,7 @@ router.get('/kpis', async (req, res, next) => {
       nasiyaIshonch: { count: countNasiyaIshonch, amount: amountNasiyaIshonch },
       nasiyaBaraka: { count: countNasiyaBaraka, amount: amountNasiyaBaraka },
       shopir: { count: countShopir, amount: amountShopir, deals: shopirDeals },
+      zakaz100: { count: count100Zakaz, amount: amount100Zakaz },
       geographicSales,
       pipelineForecastValue,
       managersList,

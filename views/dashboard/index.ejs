@@ -906,12 +906,33 @@ async function loadDashboard() {
         </div>
       </div>
 
-      <div class="stat-card clickable" onclick="window.location.href='/deals'">
-        <div class="stat-icon green"><i class="fas fa-shopping-cart"></i></div>
-        <div class="stat-info">
+      <div class="stat-card clickable" onclick="window.location.href='/deals'" style="align-items: flex-start;">
+        <div class="stat-icon green" style="margin-top: 4px;"><i class="fas fa-shopping-cart"></i></div>
+        <div class="stat-info" style="flex: 1; min-width: 0;">
           <div class="stat-label">Zakazlar</div>
           <div class="stat-value">${safeKpis.won ?? 0}</div>
-          <div class="stat-sub">Yopilgan (Won): ${renderCardMoney(safeKpis.monthlyRevenue ?? 0)}</div>
+          <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; color: var(--text-secondary); border-top: 1px dashed var(--border); padding-top: 8px; margin-top: 8px;">
+            <div style="display: flex; justify-content: space-between; gap: 8px;">
+              <span>100% Zakaz:</span>
+              <strong style="color: var(--text-primary);">${renderCardMoney(safeKpis.zakaz100?.amount ?? 0)}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; gap: 8px;">
+              <span>Nasiya Baraka:</span>
+              <strong style="color: var(--text-primary);">${renderCardMoney(safeKpis.nasiyaBaraka?.amount ?? 0)}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; gap: 8px;">
+              <span>Nasiya Desco:</span>
+              <strong style="color: var(--text-primary);">${renderCardMoney(safeKpis.nasiyaDesco?.amount ?? 0)}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; gap: 8px;">
+              <span>Nasiya Ishonch:</span>
+              <strong style="color: var(--text-primary);">${renderCardMoney(safeKpis.nasiyaIshonch?.amount ?? 0)}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; gap: 8px;">
+              <span>Mahsulot shopirda:</span>
+              <strong style="color: var(--text-primary);">${renderCardMoney(safeKpis.shopir?.amount ?? 0)}</strong>
+            </div>
+          </div>
         </div>
       </div>
 
