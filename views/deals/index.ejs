@@ -1166,13 +1166,7 @@
               <input type="text" id="f-city" class="form-control" placeholder="Masalan: Toshkent">
             </div>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div class="form-group" style="margin-bottom:0">
-              <label class="form-label">Shofyor raqami <span style="font-size:10px;font-weight:normal;color:#999">(ixtiyoriy)</span></label>
-              <input type="text" id="f-driverPhone" class="form-control" placeholder="+998 90 123 45 67">
-            </div>
-            <div style="margin-bottom:0"></div>
-          </div>
+          <input type="hidden" id="f-driverPhone">
         </div>
 
         <div style="background:var(--bg-secondary); padding:16px; border-radius:10px; margin-bottom:16px; border:1px solid var(--border)">
@@ -1871,7 +1865,7 @@ async function loadDeals() {
   const totalAmount = _deals.reduce((sum, d) => sum + (d.amount || 0), 0);
   const totalsEl = document.getElementById('dealsTotalsBadge');
   if (totalsEl) {
-    totalsEl.textContent = `${totalCount} сделки: ${totalAmount.toLocaleString('uz-UZ')} so'm`;
+    totalsEl.textContent = `${totalCount} ta sdelka: ${totalAmount.toLocaleString('uz-UZ')} so'm`;
   }
 
   if (_view === 'kanban') renderKanban();
@@ -2159,7 +2153,7 @@ function dcardHtml(d) {
     taskHtml = `
       <div style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: #ef4444; font-weight: 700;">
         <span style="width: 6px; height: 6px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
-        Нет задач
+        Vazifa yo'q
       </div>
     `;
   } else {
@@ -2173,7 +2167,7 @@ function dcardHtml(d) {
     taskHtml = `
       <div style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: ${color}; font-weight: 700;" title="${_esc(nextTask.title || '')}">
         <span style="width: 6px; height: 6px; border-radius: 50%; background: ${color}; display: inline-block;"></span>
-        ${_esc(nextTask.actionType || 'Связаться')}: ${taskDateFormatted}
+        ${_esc(nextTask.actionType || 'Bog\'lanish')}: ${taskDateFormatted}
       </div>
     `;
   }
