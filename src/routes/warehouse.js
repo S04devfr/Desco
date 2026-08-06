@@ -324,4 +324,25 @@ router.post('/rename-color', requireRole('admin', 'manager'), async (req, res) =
   }
 });
 
+// ── POST /api/warehouse/delete-color — Rangni (variantni) butunlay o'chirish ──
+router.post('/delete-color', requireRole('admin', 'manager'), async (req, res) => {
+  try {
+    const { productName, color } = req.body;
+    if (!productName || !color) {
+      return res.status(400).json({ message: "Mahsulot nomi va rang kiritilishi shart" });
+    }
+    const cleanColor = color.trim();
+
+    // WarehouseStock yozuvlarini o'chiramiz
+    await prisma.warehouseStock.deleteMany({
+      where: { productName, color: cleanColor }
+    });
+
+    res.json({ success: true, message: "Rang (variant) muvaffaqiyatli o'chirildi" });
+  } catch (err) {
+    console.error('[Warehouse DELETE COLOR]', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;

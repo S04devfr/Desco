@@ -441,6 +441,25 @@
     }
   }
 
+  async function deleteColorVariant(event, productName, color) {
+    if (event) event.stopPropagation();
+    if (!confirm('Haqiqatan ham "' + productName + '" mahsulotining "' + color + '" variantini o\'chirmoqchisiz? \n\nDiqqat: Ushbu rangdagi barcha ombor zaxiralari o\'chib ketadi!')) {
+      return;
+    }
+    
+    try {
+      await apiFetch('/api/warehouse/delete-color', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productName, color })
+      });
+      _toast("Variant muvaffaqiyatli o'chirildi", 'success');
+      await loadData();
+    } catch(e) {
+      _toast(e.message, 'error');
+    }
+  }
+
   function actionBadge(action) {
     const labels = { fill: "To'ldirish", ship: 'Chiqarish', transfer: "Ko'chirish", return: 'Qaytarish' };
     const cls = 'action-' + action;
@@ -639,6 +658,7 @@
                         _esc(v.color) + 
                         '<i class="fas fa-pencil-alt edit-color-icon"></i>' +
                       '</span>' +
+                      '<i class="fas fa-trash-alt" title="O\'chirish" onclick="deleteColorVariant(event, \'' + _esc(item.productName).replace(/'/g, "\\'") + '\', \'' + _esc(v.color).replace(/'/g, "\\'") + '\')" style="cursor:pointer; font-size:10px; margin-left:6px; color:var(--text-tertiary); transition:color 0.2s;" onmouseover="this.style.color=\'var(--danger)\'" onmouseout="this.style.color=\'var(--text-tertiary)\'"></i>' +
                     '</div>' +
                   '</td>' +
                   vWCells +
