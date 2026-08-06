@@ -754,6 +754,7 @@ router.patch('/:id', async (req, res, next) => {
         });
         resolvedClientId = newClient.id;
       }
+    } else {
       // Update existing client
       const clientUpdateData = {};
       if (contactName !== undefined && contactName !== null) clientUpdateData.name = contactName.trim();
