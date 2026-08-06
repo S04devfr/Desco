@@ -979,6 +979,7 @@ async function loadDashboard() {
     const shopirAmount = safeKpis.shopir?.amount || 0;
     const totalNasiyaAmount = ndAmount + niAmount + nbAmount;
     const totalNasiyaCount = ndCount + niCount + nbCount;
+    const totalWonAmount = (safeKpis.zakaz100?.amount || 0) + nbAmount + ndAmount + niAmount + shopirAmount;
 
     let row1Html = `
       <div class="stat-card clickable" onclick="toggleLeadBreakdown(event)" style="display: flex; align-items: flex-start; gap: 16px; height: 100%; position: relative; overflow: visible !important;">
@@ -1026,9 +1027,10 @@ async function loadDashboard() {
               <i class="fas fa-external-link-alt"></i> Ko'rish
             </a>
           </div>
-          <div class="stat-value" style="display: flex; align-items: center; gap: 8px;">
+          <div class="stat-value" style="display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap;">
             <span>${safeKpis.won ?? 0}</span>
-            <span style="font-size: 11px; font-weight: normal; color: var(--brand); background: rgba(14, 165, 233, 0.1); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 4px;">
+            <span style="font-size: 13.5px; color: var(--text-secondary); font-weight: normal; margin-left: 2px;">/ ${renderCardMoney(totalWonAmount)}</span>
+            <span style="font-size: 11px; font-weight: normal; color: var(--brand); background: rgba(14, 165, 233, 0.1); padding: 2px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; margin-left: auto;">
               Tafsilotlar <i class="fas fa-chevron-down" id="zakazChevron"></i>
             </span>
           </div>
