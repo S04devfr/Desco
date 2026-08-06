@@ -124,7 +124,7 @@
     <div class="mgr-chart-panel">
       <div style="display: flex; gap: 20px; width: 100%; flex-wrap: wrap;">
         <!-- Chart container -->
-        <div style="flex: 2; min-width: 300px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div style="flex: 1; min-width: 300px; display: flex; flex-direction: column; justify-content: space-between;">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 10px;">
             <div style="display: flex; gap: 10px; align-items: center;">
               <div style="width: 36px; height: 36px; border-radius: 8px; background: var(--brand-soft); display: flex; align-items: center; justify-content: center; color: var(--brand);">
@@ -154,16 +154,7 @@
             </span>
           </div>
         </div>
-        <!-- Debtors Sidebar -->
-        <div style="flex: 1; min-width: 240px; border-left: 1px solid var(--border); padding-left: 20px;" id="topDebtorsPanel">
-          <div class="mgr-panel-label" style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; width: 100%;">
-            <span><i class="fas fa-hand-holding-usd text-danger"></i> Eng Katta Qarzdorlar</span>
-            <span class="badge badge-danger" id="debtorsCountBadge" style="font-size: 9px;">0 ta</span>
-          </div>
-          <div id="topDebtorsList" style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; padding-right: 4px;">
-            <div class="text-muted" style="font-size: 11.5px; text-align: center; padding: 20px;">Yuklanmoqda...</div>
-          </div>
-        </div>
+        
       </div>
     </div>
 
@@ -1014,7 +1005,13 @@ async function loadDashboard() {
 
     window.pipelineStats = pipelineStats;
     const safeKpis = kpis || {};
-    if (safeKpis.error) {    // ══════════════════════════════════════════
+    if (safeKpis.error) {
+      throw new Error(safeKpis.error);
+    }
+    const cplVal = mktSummary?.cpl || safeKpis.cpl || 0;
+    const roiVal = mktSummary?.roi || safeKpis.marketingRoi || 0;
+
+    // ══════════════════════════════════════════
     // QATOR 1: Jami mijozlar | Jami kompaniyalar | Ochiq sdelkalar | Bu oygi daromad | Bajarilmagan tasklar
     // ══════════════════════════════════════════
     let row1Html = `
@@ -1781,7 +1778,6 @@ async function loadDashboard() {
         }
       }
       loadFinancialData();
-    }
   } catch(e) {
     console.error('Dashboard yuk xatosi:', e);
     const row1 = document.getElementById('kpiRow1');

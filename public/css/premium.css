@@ -1169,10 +1169,16 @@ a.quick-nav-card .card:hover {
    MENEJERLAR: Split layout — chap grafik, o'ng jadval
 ───────────────────────────────────────────────────── */
 .mgr-split-layout {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  min-height: auto;
+  display: grid;
+  grid-template-columns: 1fr 1px 1.6fr;
+  gap: 0;
+  align-items: stretch;
+}
+
+@media (max-width: 900px) {
+  .mgr-split-layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 .mgr-chart-panel {

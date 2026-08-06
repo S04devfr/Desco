@@ -1899,7 +1899,7 @@ a.quick-nav-card .card:hover {
 ───────────────────────────────────────────────────── */
 .mgr-split-layout {
   display: grid;
-  grid-template-columns: 320px 1px 1fr;
+  grid-template-columns: 1fr 1px 1.6fr;
   gap: 0;
   align-items: stretch;
 }
