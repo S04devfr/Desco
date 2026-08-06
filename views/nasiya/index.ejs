@@ -8,7 +8,10 @@
     <h1 id="nasiyaTitle">Nasiya</h1>
     <p id="nasiyaSubtitle">Sdelka voronkasidan kelgan nasiya to'lovlari ro'yxati</p>
   </div>
-  <div class="page-header-actions">
+  <div class="page-header-actions" style="display:flex; gap:8px;">
+    <button class="btn btn-primary btn-sm" onclick="openNewNasiyaDealModal()">
+      <i class="fas fa-plus"></i> Yangi Qo'shish
+    </button>
     <button class="btn btn-secondary btn-sm" onclick="loadNasiyaDeals()">
       <i class="fas fa-sync-alt"></i> Yangilash
     </button>
@@ -80,6 +83,80 @@
             <i class="fas fa-save"></i> Planni Saqlash
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Yangi Nasiya Sdelka Modal ── -->
+<div id="newNasiyaDealModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeNewNasiyaDealModal()">
+  <div class="modal-dialog" style="max-width:580px;">
+    <div class="modal-header">
+      <h3 class="modal-title"><i class="fas fa-plus-circle text-brand"></i> Yangi Nasiya Sdelka Yaratish</h3>
+      <button class="modal-close" onclick="closeNewNasiyaDealModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" style="padding:20px; display:flex; flex-direction:column; gap:14px; max-height: 80vh; overflow-y: auto;">
+      
+      <!-- Client info -->
+      <div style="background:var(--bg-secondary); padding:14px; border-radius:10px; border:1px solid var(--border)">
+        <div style="font-size:12px; font-weight:600; color:var(--text-tertiary); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px">Mijoz Ma'lumotlari</div>
+        <div class="form-group" style="margin-bottom:10px;">
+          <label class="form-label" style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Mijoz ismi <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="newNasiyaClientName" class="form-control" placeholder="Mijozning ism-familiyasi" style="height:32px; font-size:12px;">
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label" style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Telefon raqami <span style="color:var(--danger)">*</span></label>
+            <input type="text" id="newNasiyaClientPhone" class="form-control" placeholder="+998 90 123 45 67" style="height:32px; font-size:12px;">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label" style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Shahri / Viloyat</label>
+            <input type="text" id="newNasiyaClientCity" class="form-control" placeholder="Masalan: Toshkent" style="height:32px; font-size:12px;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Deal details -->
+      <div style="background:var(--bg-secondary); padding:14px; border-radius:10px; border:1px solid var(--border)">
+        <div style="font-size:12px; font-weight:600; color:var(--text-tertiary); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px">Sdelka Tafsilotlari</div>
+        <div class="form-group" style="margin-bottom:10px;">
+          <label class="form-label" style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Mahsulot nomi <span style="color:var(--danger)">*</span></label>
+          <select id="newNasiyaProductName" class="form-control" style="height:32px; font-size:12px;" onchange="onNewNasiyaProductSelect(this)">
+            <option value="">— Mahsulot tanlang —</option>
+          </select>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label" style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Jami Summa (UZS) <span style="color:var(--danger)">*</span></label>
+            <input type="number" id="newNasiyaAmount" class="form-control" placeholder="0" min="0" style="height:32px; font-size:12px; font-weight:700;">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label" style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Boshlang'ich To'lov (UZS)</label>
+            <input type="number" id="newNasiyaPaidAmount" class="form-control" value="0" min="0" style="height:32px; font-size:12px;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Installment generation -->
+      <div style="background:var(--bg-secondary); padding:14px; border-radius:10px; border:1px solid var(--border)">
+        <div style="font-size:12px; font-weight:600; color:var(--text-tertiary); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px">Muddatli to'lov rejasi</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <span style="font-size:11.5px; color:var(--text-secondary); font-weight:500;">Avto-Bo'lib to'lash plani:</span>
+          <div style="display:flex; gap:6px;">
+            <button type="button" class="btn btn-sm btn-ghost" onclick="newNasiyaAutoGenerateInstallments(3)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border)">3 oy</button>
+            <button type="button" class="btn btn-sm btn-ghost" onclick="newNasiyaAutoGenerateInstallments(6)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border)">6 oy</button>
+            <button type="button" class="btn btn-sm btn-ghost" onclick="newNasiyaAutoGenerateInstallments(12)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border)">12 oy</button>
+          </div>
+        </div>
+        <div id="newNasiyaInstRowsContainer" style="display:flex; flex-direction:column; gap:6px; max-height:180px; overflow-y:auto; padding-right:4px;"></div>
+        <div style="margin-top:10px;">
+          <button type="button" class="btn btn-sm btn-ghost" onclick="newNasiyaAddInstallmentRow()" style="border:1px dashed var(--border); font-size:11px; width:100%"><i class="fas fa-plus"></i> Yana oy qo'shish</button>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px; border-top:1px solid var(--border); padding-top:12px;">
+        <button class="btn btn-sm btn-secondary" onclick="closeNewNasiyaDealModal()">Bekor qilish</button>
+        <button class="btn btn-sm btn-primary" onclick="saveNewNasiyaDeal()" id="newNasiyaSaveBtn"><i class="fas fa-check"></i> Saqlash</button>
       </div>
     </div>
   </div>
@@ -432,6 +509,232 @@ async function deleteDescoInstallmentPlan() {
     loadNasiyaDeals();
   } catch(e) {
     if (typeof showToast === 'function') showToast('O\'chirishda xatolik', 'error');
+  }
+}
+
+// ── Yangi Nasiya Qo'shish funksiyalari ──
+let productsList = [];
+async function loadProductsCatalog() {
+  try {
+    const r = await fetch('/api/product-catalog');
+    productsList = await r.json();
+    const select = document.getElementById('newNasiyaProductName');
+    if (select) {
+      select.innerHTML = '<option value="">— Mahsulot tanlang —</option>' + 
+        productsList.map(p => `<option value="${escHtml(p.name)}" data-price="${p.price}">${escHtml(p.name)} (${fmtMoney(p.price)})</option>`).join('');
+    }
+  } catch(e) {
+    console.error('Katalog yuklashda xatolik:', e);
+  }
+}
+
+function onNewNasiyaProductSelect(el) {
+  const selectedOpt = el.options[el.selectedIndex];
+  const price = selectedOpt.getAttribute('data-price');
+  if (price) {
+    document.getElementById('newNasiyaAmount').value = price;
+  }
+}
+
+function openNewNasiyaDealModal() {
+  document.getElementById('newNasiyaClientName').value = '';
+  document.getElementById('newNasiyaClientPhone').value = '';
+  document.getElementById('newNasiyaClientCity').value = '';
+  document.getElementById('newNasiyaProductName').value = '';
+  document.getElementById('newNasiyaAmount').value = '';
+  document.getElementById('newNasiyaPaidAmount').value = '0';
+  document.getElementById('newNasiyaInstRowsContainer').innerHTML = '';
+  loadProductsCatalog();
+  document.getElementById('newNasiyaDealModal').style.display = 'flex';
+}
+
+function closeNewNasiyaDealModal() {
+  document.getElementById('newNasiyaDealModal').style.display = 'none';
+}
+
+function newNasiyaAutoGenerateInstallments(months) {
+  const container = document.getElementById('newNasiyaInstRowsContainer');
+  const amountInput = document.getElementById('newNasiyaAmount');
+  let totalAmount = Number(amountInput.value) || 0;
+  
+  if (totalAmount === 0) {
+    if (typeof showToast === 'function') showToast('Iltimos, avval umumiy summani kiriting', 'error');
+  }
+  
+  const paidInput = document.getElementById('newNasiyaPaidAmount');
+  const paidAmount = Number(paidInput.value) || 0;
+  let remainingDebt = totalAmount - paidAmount;
+  if (remainingDebt < 0) remainingDebt = 0;
+  
+  container.innerHTML = '';
+  
+  if (months > 0) {
+    const monthlyAmount = Math.round(remainingDebt / months);
+    let dateObj = new Date();
+    
+    for (let i = 0; i < months; i++) {
+      dateObj.setMonth(dateObj.getMonth() + 1);
+      const dateStr = dateObj.toISOString().slice(0, 10);
+      const amount = (i === months - 1) ? (remainingDebt - (monthlyAmount * i)) : monthlyAmount;
+      const pName = document.getElementById('newNasiyaProductName').value || 'Nasiya';
+      
+      const div = document.createElement('div');
+      div.innerHTML = getNewNasiyaInstallmentRowHtml(i, dateStr, amount, false, pName, `${i+1}-oy`, '');
+      container.appendChild(div.firstElementChild);
+    }
+  }
+}
+
+function newNasiyaAddInstallmentRow() {
+  const container = document.getElementById('newNasiyaInstRowsContainer');
+  const index = container.querySelectorAll('.installment-row').length;
+  const pName = document.getElementById('newNasiyaProductName').value || 'Nasiya';
+  
+  let dateStr = new Date().toISOString().slice(0, 10);
+  if (index > 0) {
+    const lastRow = container.lastElementChild;
+    const lastDate = lastRow.querySelector('.inst-date').value;
+    if (lastDate) {
+      const d = new Date(lastDate);
+      d.setMonth(d.getMonth() + 1);
+      dateStr = d.toISOString().slice(0, 10);
+    }
+  }
+  
+  const div = document.createElement('div');
+  div.innerHTML = getNewNasiyaInstallmentRowHtml(index, dateStr, 0, false, pName, `${index+1}-oy`, '');
+  container.appendChild(div.firstElementChild);
+}
+
+function getNewNasiyaInstallmentRowHtml(index, dateVal, amountVal, paidVal, productVal, monthVal, notesVal) {
+  return `
+    <div class="installment-row" style="display:grid; grid-template-columns:100px 1fr auto; gap:6px; background:var(--bg-primary); padding:6px; border-radius:6px; border:1px solid var(--border); align-items:center;">
+      <input type="date" class="form-control inst-date" style="font-size:11px; padding:4px; height:26px;" value="${dateVal}">
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <div style="display:flex; gap:4px;">
+          <input type="text" class="form-control inst-month" style="font-size:11px; padding:4px; height:24px; width:50px; text-align:center" value="${monthVal}" placeholder="Oy">
+          <input type="number" class="form-control inst-amount" style="font-size:11px; padding:4px; height:24px; font-weight:600; color:var(--brand)" value="${amountVal}" placeholder="Summa">
+        </div>
+        <div style="display:flex; gap:4px;">
+          <input type="text" class="form-control inst-product" style="font-size:10px; padding:4px; height:22px; flex:1;" value="${escHtml(productVal)}" placeholder="Mahsulot nomi">
+          <input type="text" class="form-control inst-notes" style="font-size:10px; padding:4px; height:22px; flex:1;" value="${escHtml(notesVal)}" placeholder="Izoh">
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px; padding:0 4px;">
+        <label style="display:flex; align-items:center; gap:4px; font-size:10px; cursor:pointer;">
+          <input type="checkbox" class="inst-paid" ${paidVal ? 'checked' : ''} style="width:14px; height:14px;"> To'langan
+        </label>
+        <button type="button" class="btn btn-sm btn-ghost text-danger" onclick="this.closest('.installment-row').remove()" style="padding:2px 6px;"><i class="fas fa-trash-alt"></i></button>
+      </div>
+    </div>
+  `;
+}
+
+async function getTargetStageAndPipeline() {
+  const r = await fetch('/api/pipelines');
+  const pipelines = await r.json();
+  const searchStr = activeStageKey === 'desco' ? 'desco' : (activeStageKey === 'ishonch' ? 'ishonch' : 'baraka');
+  
+  for (const p of pipelines) {
+    for (const s of p.stages) {
+      if (s.name.toLowerCase().includes('nasiya') && s.name.toLowerCase().includes(searchStr)) {
+        return { pipelineId: p.id, stageId: s.id };
+      }
+    }
+  }
+  for (const p of pipelines) {
+    for (const s of p.stages) {
+      if (s.name.toLowerCase().includes(searchStr)) {
+        return { pipelineId: p.id, stageId: s.id };
+      }
+    }
+  }
+  return null;
+}
+
+async function saveNewNasiyaDeal() {
+  const clientName = document.getElementById('newNasiyaClientName').value.trim();
+  const clientPhone = document.getElementById('newNasiyaClientPhone').value.trim();
+  const city = document.getElementById('newNasiyaClientCity').value.trim();
+  const productName = document.getElementById('newNasiyaProductName').value;
+  const amount = Number(document.getElementById('newNasiyaAmount').value) || 0;
+  const paidAmount = Number(document.getElementById('newNasiyaPaidAmount').value) || 0;
+
+  if (!clientName || !clientPhone || !productName || !amount) {
+    if (typeof showToast === 'function') showToast('Iltimos, yulduzcha (*) qo\'yilgan maydonlarni to\'ldiring', 'error');
+    else alert('Iltimos, yulduzcha (*) qo\'yilgan maydonlarni to\'ldiring');
+    return;
+  }
+
+  const btn = document.getElementById('newNasiyaSaveBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saqlanmoqda...';
+
+  try {
+    const target = await getTargetStageAndPipeline();
+    if (!target) {
+      throw new Error("Ushbu bosqich topilmadi. Pipeline sozlamalarini tekshiring.");
+    }
+
+    const body = {
+      productName,
+      contactName: clientName,
+      contactPhone: clientPhone,
+      city: city || null,
+      amount,
+      paidAmount,
+      pipelineId: target.pipelineId,
+      stageId: target.stageId,
+      status: 'new'
+    };
+
+    const r = await fetch('/api/deals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    if (!r.ok) {
+      const err = await r.json();
+      throw new Error(err.message || 'Sdelka yaratishda xato');
+    }
+
+    const newDeal = await r.json();
+
+    const container = document.getElementById('newNasiyaInstRowsContainer');
+    const rows = container.querySelectorAll('.installment-row');
+    if (rows.length > 0 && newDeal.id) {
+      const installments = [];
+      for (const row of rows) {
+        const dueDate = row.querySelector('.inst-date').value;
+        const amt = Number(row.querySelector('.inst-amount').value) || 0;
+        const paid = row.querySelector('.inst-paid').checked;
+        const pName = row.querySelector('.inst-product').value;
+        const month = row.querySelector('.inst-month').value;
+        const rNotes = row.querySelector('.inst-notes').value;
+        if (dueDate) {
+          installments.push({ dueDate, amount: amt, paid, productName: pName, month, notes: rNotes });
+        }
+      }
+      if (installments.length > 0) {
+        const instR = await fetch('/api/deals/' + newDeal.id + '/installments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ installments })
+        });
+        if (!instR.ok) throw new Error("To'lov rejasini saqlashda xatolik yuz berdi");
+      }
+    }
+
+    if (typeof showToast === 'function') showToast("Sdelka va nasiya rejasi muvaffaqiyatli saqlandi", 'success');
+    closeNewNasiyaDealModal();
+    loadNasiyaDeals();
+  } catch(e) {
+    if (typeof showToast === 'function') showToast(e.message, 'error');
+    else alert(e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-check"></i> Saqlash';
   }
 }
 
