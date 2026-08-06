@@ -1034,8 +1034,6 @@
             <% } %>
           </div>
         </div>
-        
-        <span id="dealsTotalsBadge" style="font-size:13.5px; font-weight:700; color:var(--text-secondary); margin-left: 8px;"></span>
 
         <!-- Live Clock & Date -->
         <div id="liveClock" style="display:flex; align-items:center; gap:10px; padding:6px 14px; background:var(--bg-secondary); border:1px solid var(--border); border-radius:30px; font-size:12.5px; font-weight:600; color:var(--text-primary); font-family: 'Outfit', monospace; box-shadow:0 2px 6px rgba(0,0,0,0.02); height: 32px;">
@@ -1048,6 +1046,7 @@
 
       <!-- Right side: view toggle, actions -->
       <div class="deals-topbar-right">
+        <span id="dealsTotalsBadge" style="font-size:13.5px; font-weight:700; color:var(--text-secondary); margin-right: 8px;"></span>
         <div class="view-toggle">
           <button class="vtbtn active" id="btnKanban" onclick="setView('kanban')">
             <i class="fas fa-columns"></i> Kanban
@@ -2001,7 +2000,6 @@ function renderKanban() {
       <div class="kb-col${editable ? ' editing' : ''}" style="--_sc:${s.color||'#007AFF'}">
         <div class="kb-col-hdr"
           ${editable ? `draggable="true" ondragstart="onColDragStart(event,${s.id})" ondragend="onColDragEnd(event)" ondragover="onColDragOver(event)" ondragleave="onColDragLeave(event)" ondrop="onColDrop(event,${s.id})"` : ''}>${hdrHtml}</div>
-        ${quickAddHtml}
         <div class="kb-cards" id="col-${s.id}"
           ondragover="onDragOver(event)" ondragleave="onDragLeave(event)"
           ondrop="onDrop(event,${s.id})">
@@ -2232,16 +2230,6 @@ function dcardHtml(d) {
           ${tagsHtml}
         </div>
         ` : ''}
-      </div>
-      
-      <!-- Footer details: Budget & Next Task status -->
-      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border); padding-top:8px; margin-top:2px;">
-        <div style="font-weight:800; font-size:13px; color:var(--text-primary);">
-          ${_fmt(d.amount)}
-        </div>
-        <div style="display:flex; align-items:center;">
-          ${taskHtml}
-        </div>
       </div>
     </div>
   `;
