@@ -304,7 +304,18 @@ router.post('/', async (req, res, next) => {
             where: { phone: { contains: cleanPhone } }
           });
         }
-        if (!client) {
+        if (client) {
+          const updateData = {};
+          if (cName && cName !== "Noma'lum Mijoz" && cName !== client.name) updateData.name = cName;
+          if (city && city !== client.city) updateData.city = city;
+          if (contactEmail && contactEmail !== client.email) updateData.email = contactEmail;
+          if (Object.keys(updateData).length > 0) {
+            client = await prisma.client.update({
+              where: { id: client.id },
+              data: updateData
+            });
+          }
+        } else {
           client = await prisma.client.create({
             data: {
               name: cName,
@@ -325,7 +336,24 @@ router.post('/', async (req, res, next) => {
             where: { phone: { contains: cleanPhone } }
           });
         }
-        if (!contact) {
+        if (contact) {
+          const updateData = {};
+          if (cName && cName !== "Noma'lum Mijoz") {
+            const nameParts = cName.split(/\s+/);
+            const firstName = nameParts[0] || "Nomsiz";
+            const lastName = nameParts.slice(1).join(' ') || null;
+            if (firstName !== contact.firstName) updateData.firstName = firstName;
+            if (lastName !== contact.lastName) updateData.lastName = lastName;
+          }
+          if (city && city !== contact.city) updateData.city = city;
+          if (contactEmail && contactEmail !== contact.email) updateData.email = contactEmail;
+          if (Object.keys(updateData).length > 0) {
+            contact = await prisma.contact.update({
+              where: { id: contact.id },
+              data: updateData
+            });
+          }
+        } else {
           const nameParts = cName.split(/\s+/);
           const firstName = nameParts[0] || "Nomsiz";
           const lastName = nameParts.slice(1).join(' ') || null;
