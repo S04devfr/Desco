@@ -294,25 +294,82 @@ router.post('/', async (req, res, next) => {
           resolvedCompanyId = newCompany.id;
         }
 
-        // Split contact name
         const cName = contactName ? contactName.trim() : "Noma'lum Mijoz";
-        const nameParts = cName.split(/\s+/);
-        const firstName = nameParts[0];
-        const lastName = nameParts.slice(1).join(' ') || null;
+        const cleanPhone = contactPhone ? contactPhone.replace(/[\s-]/g, '') : null;
 
-        const newContact = await prisma.contact.create({
-          data: {
-            firstName,
-            lastName,
-            phone: contactPhone || null,
-            email: contactEmail || null,
-            city: city || null,
-            companyId: resolvedCompanyId,
-            ownerId: req.userId
-          }
-        });
-        resolvedContactId = newContact.id;
-        resolvedClientId = newContact.id; // compat
+        // 1. Find or create Client
+        let client = null;
+        if (cleanPhone) {
+          client = await prisma.client.findFirst({
+            where: { phone: { contains: cleanPhone } }
+          });
+        }
+        if (!client) {
+          client = await prisma.client.create({
+            data: {
+              name: cName,
+              phone: cleanPhone || null,
+              email: contactEmail || null,
+              city: city || null,
+              notes: "Qo'lda kiritilgan / Sdelka modal",
+              ownerId: req.userId
+            }
+          });
+        }
+        resolvedClientId = client.id;
+
+        // 2. Find or create Contact
+        let contact = null;
+        if (cleanPhone) {
+          contact = await prisma.contact.findFirst({
+            where: { phone: { contains: cleanPhone } }
+          });
+        }
+        if (!contact) {
+          const nameParts = cName.split(/\s+/);
+          const firstName = nameParts[0] || "Nomsiz";
+          const lastName = nameParts.slice(1).join(' ') || null;
+
+          contact = await prisma.contact.create({
+            data: {
+              firstName,
+              lastName,
+              phone: cleanPhone || null,
+              email: contactEmail || null,
+              city: city || null,
+              companyId: resolvedCompanyId,
+              ownerId: req.userId
+            }
+          });
+        }
+        resolvedContactId = contact.id;
+      }
+    } else {
+      // If contactId is provided, ensure resolvedClientId matches that contact's client or find/create a Client with same phone
+      const contactObj = await prisma.contact.findUnique({
+        where: { id: resolvedContactId }
+      });
+      if (contactObj) {
+        let client = null;
+        if (contactObj.phone) {
+          client = await prisma.client.findFirst({
+            where: { phone: { contains: contactObj.phone } }
+          });
+        }
+        if (!client) {
+          const fullName = [contactObj.firstName, contactObj.lastName].filter(Boolean).join(' ') || "Noma'lum Mijoz";
+          client = await prisma.client.create({
+            data: {
+              name: fullName,
+              phone: contactObj.phone || null,
+              email: contactObj.email || null,
+              city: contactObj.city || null,
+              notes: "Avtomatik bog'langan kontakt",
+              ownerId: req.userId
+            }
+          });
+        }
+        resolvedClientId = client.id;
       }
     }
 
@@ -697,7 +754,6 @@ router.patch('/:id', async (req, res, next) => {
         });
         resolvedClientId = newClient.id;
       }
-    } else {
       // Update existing client
       const clientUpdateData = {};
       if (contactName !== undefined && contactName !== null) clientUpdateData.name = contactName.trim();
@@ -715,6 +771,25 @@ router.patch('/:id', async (req, res, next) => {
           where: { id: resolvedClientId },
           data: clientUpdateData
         });
+      }
+
+      // Sync with Contact table if contactId exists
+      if (existing.contactId) {
+        const contactUpdateData = {};
+        if (contactName !== undefined && contactName !== null) {
+          const nameParts = contactName.trim().split(/\s+/);
+          contactUpdateData.firstName = nameParts[0] || "Nomsiz";
+          contactUpdateData.lastName = nameParts.slice(1).join(' ') || null;
+        }
+        if (contactPhone !== undefined && contactPhone !== null) contactUpdateData.phone = contactPhone.trim();
+        if (city !== undefined && city !== null) contactUpdateData.city = city.trim();
+
+        if (Object.keys(contactUpdateData).length > 0) {
+          await prisma.contact.update({
+            where: { id: existing.contactId },
+            data: contactUpdateData
+          });
+        }
       }
     }
 
