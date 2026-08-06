@@ -1286,13 +1286,20 @@
               <!-- Keep hidden element for backward compatibility with textContent updates -->
               <span id="drawerActiveStage" style="display:none;"></span>
               
-              <!-- Beautiful drop-down select button -->
-              <div class="stage-dropdown-wrapper" style="position: relative; display: inline-flex; align-items: center; border-radius: 4px; padding: 2px 20px 2px 6px; background: var(--bg-tertiary); border: 1px solid var(--border);">
-                <select id="drawerStageSelect" class="drawer-inline-select" style="font-weight:700; color:var(--text-primary); font-size:12.5px; border:none; background:transparent; padding:0; outline:none; cursor:pointer; -webkit-appearance:none; -moz-appearance:none; appearance:none;" onchange="changeDrawerStage(this.value)">
-                  <!-- Options are loaded dynamically -->
-                </select>
-                <i class="fas fa-caret-down" style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); font-size: 10px; color: var(--text-tertiary); pointer-events: none;"></i>
+              <!-- Beautiful drop-down select button (custom amoCRM dropdown) -->
+              <div class="stage-custom-dropdown" id="drawerStageCustomDropdown" style="position: relative; display: inline-flex;">
+                <button class="stage-dropdown-btn" onclick="toggleStageDropdown(event)" style="display: flex; align-items: center; gap: 8px; padding: 6px 28px 6px 12px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 6px; font-size: 13px; font-weight: 700; color: var(--text-primary); cursor: pointer; transition: all 0.2s; position: relative;">
+                  <span class="stage-btn-dot" id="drawerStageBtnDot" style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block;"></span>
+                  <span id="drawerStageBtnText">Yuklanmoqda...</span>
+                  <i class="fas fa-chevron-down" style="font-size: 9px; color: var(--text-tertiary); position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none;"></i>
+                </button>
+                <div class="stage-dropdown-menu hidden" id="drawerStageDropdownMenu" style="position: absolute; top: calc(100% + 6px); left: 0; z-index: 9999; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); min-width: 200px; max-height: 300px; overflow-y: auto; padding: 6px; display: none; flex-direction: column; gap: 4px;">
+                  <!-- Dropdown items will be loaded dynamically -->
+                </div>
               </div>
+              
+              <!-- Hidden select for compatibility -->
+              <select id="drawerStageSelect" style="display: none;"></select>
               
               <span id="drawerStageDuration" style="font-size:11px; color:#ef4444; font-weight:600;">(—)</span>
             </div>
@@ -1432,14 +1439,14 @@
           <h3 style="margin:0; font-size:14px; font-weight:700; color:#fff;">Tarix va Izohlar</h3>
           <span style="font-size:11px; color:#94a3b8;" id="dw-participants-count">Участники: 1</span>
         </div>
-        <div class="timeline-body" id="drawerTimelineBody">
-          <!-- Timeline entries will be populated here -->
-        </div>
-        <div class="timeline-footer">
+        <div class="timeline-footer" style="border-top:none; border-bottom:1px solid var(--border); padding: 12px 24px; background: rgba(15, 23, 42, 0.3);">
           <div style="display:flex; gap:8px;">
-            <textarea id="dw-newComment" class="timeline-task-input" style="flex:1; height:60px; resize:none; padding:8px 10px;" placeholder="Примечание: введите текст..."></textarea>
-            <button class="btn btn-primary btn-sm" onclick="submitDrawerComment()" style="align-self:flex-end; height:34px;"><i class="fas fa-paper-plane"></i></button>
+            <textarea id="dw-newComment" class="timeline-task-input" style="flex:1; height:46px; resize:none; padding:6px 10px; font-size:13px;" placeholder="Izoh yoki eslatma yozing..."></textarea>
+            <button class="btn btn-primary btn-sm" onclick="submitDrawerComment()" style="align-self:center; height:34px; background:var(--brand); border-color:var(--brand);"><i class="fas fa-paper-plane"></i></button>
           </div>
+        </div>
+        <div class="timeline-body" id="drawerTimelineBody" style="padding-top:16px;">
+          <!-- Timeline entries will be populated here -->
         </div>
       </div>
     </div>
@@ -2790,6 +2797,9 @@ async function openDetail(id) {
     const stageSelect = document.getElementById('drawerStageSelect');
     if (stageSelect) stageSelect.innerHTML = '';
     
+    const customMenu = document.getElementById('drawerStageDropdownMenu');
+    if (customMenu) customMenu.innerHTML = '';
+    
     if (pipelineObj && pipelineObj.stages) {
       const sortedStages = [...pipelineObj.stages].sort((a, b) => a.order - b.order);
       let passed = true;
@@ -2800,6 +2810,28 @@ async function openDetail(id) {
             ${_esc(st.name)}
           </option>
         `).join('');
+      }
+      
+      if (customMenu) {
+        customMenu.innerHTML = sortedStages.map(st => {
+          const isActive = st.id === deal.stageId;
+          const activeClass = isActive ? ' active' : '';
+          const color = st.color || '#007AFF';
+          return `
+            <div class="stage-dropdown-item${activeClass}" onclick="changeDrawerStage(${st.id}); closeStageDropdown();" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.15s; text-align: left; background: ${isActive ? 'var(--accent-soft)' : 'transparent'}; color: ${isActive ? 'var(--accent)' : 'var(--text-primary)'};" onmouseover="if(!${isActive}) this.style.background='var(--bg-secondary)'" onmouseout="if(!${isActive}) this.style.background='transparent'">
+              <span class="stage-item-dot" style="width: 8px; height: 8px; border-radius: 50%; background: ${color}; flex-shrink: 0;"></span>
+              <span style="flex:1;">${_esc(st.name)}</span>
+            </div>
+          `;
+        }).join('');
+      }
+      
+      const activeStage = sortedStages.find(s => s.id === deal.stageId);
+      if (activeStage) {
+        const btnText = document.getElementById('drawerStageBtnText');
+        const btnDot = document.getElementById('drawerStageBtnDot');
+        if (btnText) btnText.textContent = activeStage.name;
+        if (btnDot) btnDot.style.backgroundColor = activeStage.color || '#007AFF';
       }
       
       sortedStages.forEach(st => {
@@ -3149,11 +3181,23 @@ function cancelStageChange() {
     container.classList.add('hidden');
   }
   window._pendingStageId = null;
+  
   // Revert dropdown selection to current deal stage
   const currentDeal = window._currentDeal;
-  if (currentDeal) {
+  if (currentDeal && _pipelines) {
     const stageSelect = document.getElementById('drawerStageSelect');
     if (stageSelect) stageSelect.value = currentDeal.stageId;
+    
+    const pipelineObj = _pipelines.find(p => p.id === currentDeal.pipelineId);
+    if (pipelineObj && pipelineObj.stages) {
+      const activeStage = pipelineObj.stages.find(s => s.id === currentDeal.stageId);
+      if (activeStage) {
+        const btnText = document.getElementById('drawerStageBtnText');
+        const btnDot = document.getElementById('drawerStageBtnDot');
+        if (btnText) btnText.textContent = activeStage.name;
+        if (btnDot) btnDot.style.backgroundColor = activeStage.color || '#007AFF';
+      }
+    }
   }
 }
 
@@ -4071,6 +4115,42 @@ async function submitWonLostReason() {
     closeWonLostModal();
   }
 }
+
+// ── Custom Stage Dropdown (amoCRM style) ──
+function toggleStageDropdown(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('drawerStageDropdownMenu');
+  if (!menu) return;
+  const isHidden = menu.classList.contains('hidden') || menu.style.display === 'none';
+  
+  document.querySelectorAll('.stage-dropdown-menu').forEach(m => {
+    m.classList.add('hidden');
+    m.style.display = 'none';
+  });
+  
+  if (isHidden) {
+    menu.classList.remove('hidden');
+    menu.style.display = 'flex';
+  } else {
+    menu.classList.add('hidden');
+    menu.style.display = 'none';
+  }
+}
+
+function closeStageDropdown() {
+  const menu = document.getElementById('drawerStageDropdownMenu');
+  if (menu) {
+    menu.classList.add('hidden');
+    menu.style.display = 'none';
+  }
+}
+
+document.addEventListener('click', (e) => {
+  const dropdown = document.getElementById('drawerStageCustomDropdown');
+  if (dropdown && !dropdown.contains(e.target)) {
+    closeStageDropdown();
+  }
+});
 </script>
 
 <!-- Nasiya Desco Modal -->
