@@ -96,9 +96,13 @@ router.get('/kpis', async (req, res, next) => {
     startOfMonth.setDate(1);
     startOfMonth.setHours(0,0,0,0);
 
+    const dateRangeWhere = where.OR ? {
+      createdAt: { gte: where.OR[0].createdAt.gte, lte: where.OR[0].createdAt.lte }
+    } : {};
+
     const [totalContacts, totalCompanies, openDealsCount, wonDealsThisMonth, pendingTasksCount] = await Promise.all([
-      prisma.contact.count(),
-      prisma.company.count(),
+      prisma.contact.count({ where: dateRangeWhere }),
+      prisma.company.count({ where: dateRangeWhere }),
       prisma.deal.count({ where: { status: { in: ['open', 'new'] } } }),
       prisma.deal.findMany({
         where: {
@@ -593,12 +597,35 @@ router.get('/product-popularity', async (req, res, next) => {
     if (!isAdmin) where.managerId = req.userId;
     const deals = await prisma.deal.findMany({ where, select: { productName: true, amount: true } })
 
+    const normalizeToCatalog = (name) => {
+      const lower = name.toLowerCase();
+      if (lower.includes('3-funksiyalik') || lower.includes('3 funksiyalik') || lower.includes('3-funksiya')) {
+        return '3-funksiyalik massajor';
+      }
+      if (lower.includes('6-funksiyalik') || lower.includes('6 funksiyalik') || lower.includes('6-funksiya')) {
+        return '6-funksiyalik massajor';
+      }
+      if (lower.includes('hadiya') || lower.includes('hadya') || lower.includes('хадия') || lower.includes('хадя')) {
+        return 'hadiya';
+      }
+      if (lower.includes('boyin') || lower.includes("bo'yin") || lower.includes('bo`yin')) {
+        return "bo'yin massajor";
+      }
+      if (lower.includes('shashlik')) {
+        return 'shashlik nabor';
+      }
+      return null;
+    };
+
     const map = {}
     for (const d of deals) {
       const { name, qty } = parseProduct(d.productName);
-      if (!map[name]) map[name] = { count: 0, totalAmount: 0 }
-      map[name].count += qty
-      map[name].totalAmount += d.amount || 0
+      const catalogName = normalizeToCatalog(name);
+      if (!catalogName) continue;
+
+      if (!map[catalogName]) map[catalogName] = { count: 0, totalAmount: 0 }
+      map[catalogName].count += qty
+      map[catalogName].totalAmount += d.amount || 0
     }
 
     const totalQty = Object.values(map).reduce((s, v) => s + v.count, 0)

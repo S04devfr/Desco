@@ -295,7 +295,7 @@
 
 <% if (isAdmin) { %>
 <!-- CHARTS: Mahsulot ulushi (Full Width) -->
-<div class="card mb-6" id="productShareSection">
+<div class="card mb-6" id="productShareSection" style="max-width: 650px;">
   <div class="card-header">
     <h3 class="section-title"><i class="fas fa-chart-pie text-brand"></i>Mahsulotlar ulushi</h3>
     <span id="productTotalBadge" class="badge badge-info" style="font-size:11px;"></span>
@@ -367,7 +367,7 @@
     <span class="badge" style="background: rgba(225, 48, 108, 0.1); color: #E1306C; font-weight: 700;">Direct Tahlili</span>
   </div>
   <div class="card-body" style="padding: 16px;">
-    <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 16px; align-items: stretch;">
+    <div style="display: grid; grid-template-columns: 1fr; gap: 16px; align-items: stretch; max-width: 600px;">
       
       <!-- Column 1: Suhbatlar oqimi -->
       <div style="display: flex; flex-direction: column; gap: 8px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 12px; box-shadow: var(--shadow-xs); height: 100%;">
@@ -398,143 +398,10 @@
         </div>
       </div>
 
-      <!-- Column 2: To'lov & Niyat (Progress bars) -->
-      <div style="display: flex; flex-direction: column; gap: 10px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 12px; box-shadow: var(--shadow-xs); height: 100%;">
-        <h4 style="font-size: 11px; font-weight: 700; color: var(--text-primary); margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">
-          <i class="fas fa-wallet" style="color: #34C759; margin-right: 4px;"></i> To'lov & Niyat
-        </h4>
-        <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 2px;">
-          <!-- Nasiya -->
-          <div>
-            <div style="display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text-secondary); margin-bottom: 2px;">
-              <span>Nasiya</span>
-              <strong id="igNasiyaText" style="color: #FF9500;">0 (0%)</strong>
-            </div>
-            <div style="height: 5px; background: var(--border); border-radius: 3px; overflow: hidden;">
-              <div id="igNasiyaBar" style="height: 100%; background: #FF9500; width: 0%; transition: width 0.5s;"></div>
-            </div>
-          </div>
-          <!-- Naqd -->
-          <div>
-            <div style="display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text-secondary); margin-bottom: 2px;">
-              <span>Naqd / Karta</span>
-              <strong id="igNaqdText" style="color: #34C759;">0 (0%)</strong>
-            </div>
-            <div style="height: 5px; background: var(--border); border-radius: 3px; overflow: hidden;">
-              <div id="igNaqdBar" style="height: 100%; background: #34C759; width: 0%; transition: width 0.5s;"></div>
-            </div>
-          </div>
-          <!-- Purchase intent -->
-          <div style="margin-top: 4px; border-top: 1px dashed var(--border); padding-top: 4px;">
-            <div style="display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text-secondary); margin-bottom: 2px;">
-              <span>Niyati yuqori</span>
-              <strong id="igPurchaseText" style="color: var(--brand);">0 (0%)</strong>
-            </div>
-            <div style="height: 5px; background: var(--border); border-radius: 3px; overflow: hidden;">
-              <div id="igPurchaseBar" style="height: 100%; background: var(--brand); width: 0%; transition: width 0.5s;"></div>
-            </div>
-          </div>
-          <!-- Inquiries -->
-          <div>
-            <div style="display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text-secondary); margin-bottom: 2px;">
-              <span>Faqat narx so'raganlar</span>
-              <strong id="igInquiryText" style="color: #5856D6;">0 (0%)</strong>
-            </div>
-            <div style="height: 5px; background: var(--border); border-radius: 3px; overflow: hidden;">
-              <div id="igInquiryBar" style="height: 100%; background: #5856D6; width: 0%; transition: width 0.5s;"></div>
-            </div>
-          </div>
-        </div>
-      </div>
+      
 
-      <!-- Column 3: Rad sabablari & Fikrlar -->
-      <div style="display: flex; flex-direction: column; gap: 8px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 12px; box-shadow: var(--shadow-xs); height: 100%;">
-        <h4 style="font-size: 11px; font-weight: 700; color: var(--text-primary); margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">
-          <i class="fas fa-exclamation-circle text-danger" style="margin-right: 4px;"></i> Rad etish & Fikrlar
-        </h4>
-        
-        <div style="display: flex; flex-direction: column; gap: 4px; font-size: 10.5px; border-bottom: 1px dashed var(--border); padding-bottom: 6px;">
-          <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--text-secondary);">Narx qimmat:</span>
-            <strong id="lostReasonPrice">0 ta</strong>
-          </div>
-          <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--text-secondary);">Dostavka muammo:</span>
-            <strong id="lostReasonDelivery">0 ta</strong>
-          </div>
-          <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--text-secondary);">O'ylashga vaqt:</span>
-            <strong id="lostReasonThinking">0 ta</strong>
-          </div>
-          <div style="display: flex; justify-content: space-between;">
-            <span style="color: var(--text-secondary);">Javob kechikdi:</span>
-            <strong id="lostReasonLateResponse">0 ta</strong>
-          </div>
-        </div>
-        
-        <!-- Quick scroll opinions inside the box -->
-        <div id="igOpinionsContainer" style="display: flex; flex-direction: column; gap: 4px; overflow-y: auto; max-height: 48px; padding-right: 2px; flex: 1;">
-          <div style="color: var(--text-tertiary); font-size: 10px; font-style: italic; text-align: center; padding-top: 4px;">Yozishmalar fikri yo'q</div>
-        </div>
-      </div>
 
-    </div>
-  </div>
-</div>
 
-<!-- ══════════════════════════════════════════════════════ -->
-<!-- BO'LIM 2: UMUMIY STATISTIKALAR -->
-<!-- ══════════════════════════════════════════════════════ -->
-<div class="section-header mt">
-  <div class="section-bar green"></div>
-  <h2 class="section-title"><i class="fas fa-chart-pie" style="color:#34C759;"></i>Umumiy Statistikalar</h2>
-  <div class="section-line"></div>
-</div>
-
-<div class="stats-grid mb-6">
-
-  <!-- Menejerlar statistikasi -->
-  <div class="stat-card clickable" onclick="document.getElementById('managerKpiSection')?.scrollIntoView({behavior:'smooth'})">
-    <div class="stat-icon blue"><i class="fas fa-users-cog"></i></div>
-    <div class="stat-info">
-      <div class="stat-label">Menejerlar statistikasi</div>
-      <div id="statMgrTotal" class="stat-value">—</div>
-      <div id="statMgrSub" class="stat-sub">Menejerlar soni</div>
-    </div>
-  </div>
-
-  <!-- Mijozlar qiziqishi -->
-  <div class="stat-card">
-    <div class="stat-icon green"><i class="fas fa-smile"></i></div>
-    <div class="stat-info">
-      <div class="stat-label">Mijozlar qiziqishi</div>
-      <div id="statSatisfaction" class="stat-value" style="color:#34C759;">—%</div>
-      <div id="statComplaintSub" class="stat-sub">Mamnuniyat darajasi</div>
-    </div>
-  </div>
-
-  <!-- Otkaz va chiqimlar -->
-  <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')">
-    <div class="stat-icon red"><i class="fas fa-times-circle"></i></div>
-    <div class="stat-info">
-      <div class="stat-label">Otkaz va chiqimlar</div>
-      <div id="statCanceled" class="stat-value" style="color:#FF3B30;">—</div>
-      <div id="statCanceledSub" class="stat-sub">Rad etilgan sdelkalar</div>
-    </div>
-  </div>
-
-  <!-- To'liq hisobot Excel -->
-  <div class="stat-card clickable" id="exportCard" onclick="exportCSV()" style="background:linear-gradient(135deg, rgba(52,199,89,0.06), transparent);">
-    <div class="stat-icon green"><i class="fas fa-file-excel" style="color:#34C759;"></i></div>
-    <div class="stat-info">
-      <div class="stat-label">To'liq hisobot</div>
-      <div class="stat-value" style="font-size:16px; color:#34C759;">Excel yuklab olish</div>
-      <div class="stat-sub">Barcha sdelkalar CSV formatda</div>
-    </div>
-  </div>
-
-</div>
-<% } %>
 
 <!-- ══════════════════════════════════════════════════════ -->
 <!-- BO'LIM 3: CRM — Tizimga tezkor kirish -->
@@ -1031,28 +898,12 @@ async function loadDashboard() {
           <div class="stat-sub">Kompaniyalar bazasi</div>
         </div>
       </div>
-      <div class="stat-card clickable" onclick="window.location.href='/deals'">
-        <div class="stat-icon orange"><i class="fas fa-handshake"></i></div>
-        <div class="stat-info">
-          <div class="stat-label">Ochiq sdelkalar</div>
-          <div class="stat-value">${safeKpis.openDealsCount ?? 0}</div>
-          <div class="stat-sub">Jarayondagi bitimlar</div>
-        </div>
-      </div>
       <div class="stat-card clickable" onclick="openFinancialModal('installments')">
         <div class="stat-icon green"><i class="fas fa-wallet"></i></div>
         <div class="stat-info">
           <div class="stat-label">Bu oygi daromad</div>
           <div class="stat-value">${renderCardMoney(safeKpis.monthlyRevenue ?? 0)}</div>
           <div class="stat-sub">Muvaffaqiyatli savdo</div>
-        </div>
-      </div>
-      <div class="stat-card clickable" onclick="window.location.href='/tasks'">
-        <div class="stat-icon red"><i class="fas fa-check-circle"></i></div>
-        <div class="stat-info">
-          <div class="stat-label">Bajarilmagan tasklar</div>
-          <div class="stat-value">${safeKpis.pendingTasksCount ?? 0}</div>
-          <div class="stat-sub">Faol vazifalar soni</div>
         </div>
       </div>
     `;
