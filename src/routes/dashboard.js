@@ -101,7 +101,12 @@ router.get('/kpis', async (req, res, next) => {
     } : {};
 
     const [totalContacts, totalCompanies, openDealsCount, wonDealsThisMonth, pendingTasksCount] = await Promise.all([
-      prisma.contact.count({ where: dateRangeWhere }),
+      prisma.contact.count({
+        where: {
+          ...dateRangeWhere,
+          deals: { some: {} }
+        }
+      }),
       prisma.company.count({ where: dateRangeWhere }),
       prisma.deal.count({ where: { status: { in: ['open', 'new'] } } }),
       prisma.deal.findMany({
