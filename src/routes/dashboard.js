@@ -111,8 +111,24 @@ router.get('/kpis', async (req, res, next) => {
       prisma.deal.count({ where: { status: { in: ['open', 'new'] } } }),
       prisma.deal.findMany({
         where: {
-          status: 'won',
-          updatedAt: { gte: startOfMonth }
+          updatedAt: { gte: startOfMonth },
+          OR: [
+            { status: 'won' },
+            {
+              stage: {
+                OR: [
+                  { name: { contains: '100%', mode: 'insensitive' } },
+                  { name: { contains: 'yutil', mode: 'insensitive' } },
+                  { name: { contains: 'won', mode: 'insensitive' } },
+                  { name: { contains: 'olindi', mode: 'insensitive' } },
+                  { name: { contains: 'shopir', mode: 'insensitive' } },
+                  { name: { contains: 'desco', mode: 'insensitive' } },
+                  { name: { contains: 'ishonch', mode: 'insensitive' } },
+                  { name: { contains: 'baraka', mode: 'insensitive' } }
+                ]
+              }
+            }
+          ]
         },
         select: { amount: true }
       }),
@@ -125,23 +141,21 @@ router.get('/kpis', async (req, res, next) => {
     const expenseWhere = where.OR ? { createdAt: { gte: where.OR[0].createdAt.gte, lte: where.OR[0].createdAt.lte } } : {};
     const expenses = await prisma.expense.findMany({ where: expenseWhere });
 
-    const getEffectivePaid = (d) => {
-      const stageName = (d.stage?.name || '').toLowerCase();
-      const isWon = d.status === 'won' || 
-                    stageName.includes('100%') || 
-                    stageName.includes('yutil') || 
-                    stageName.includes('won') ||
-                    stageName.includes('olindi');
-      return isWon ? (d.paidAmount || 0) : 0;
-    };
-
     const isWonDeal = (d) => {
       const stageName = (d.stage?.name || '').toLowerCase();
       return d.status === 'won' || 
              stageName.includes('100%') || 
              stageName.includes('yutil') || 
-             stageName.includes('won') ||
-             stageName.includes('olindi');
+             stageName.includes('won') || 
+             stageName.includes('olindi') || 
+             stageName.includes('shopir') || 
+             stageName.includes('desco') || 
+             stageName.includes('ishonch') || 
+             stageName.includes('baraka');
+    };
+
+    const getEffectivePaid = (d) => {
+      return isWonDeal(d) ? (d.amount || 0) : 0;
     };
 
     const isDealCanceled = (d) => {
@@ -341,7 +355,7 @@ router.get('/kpis', async (req, res, next) => {
       else if (stageName.includes('100%') || stageName.includes('yutil') || d.status === 'won') probability = 1.0;
       else if (isDealCanceled(d)) probability = 0.0;
 
-      const remainingToCollect = Math.max((d.amount || 0) - getEffectivePaid(d), 0);
+      const remainingToCollect = Math.max((d.amount || 0) - (d.paidAmount || 0), 0);
       pipelineForecastValue += (remainingToCollect * probability);
     });
 

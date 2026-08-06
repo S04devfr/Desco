@@ -630,7 +630,17 @@ async function handleUniversalLead(source, rawData, broadcast) {
     }
   }
 
-  // 2. Validatsiya & Fallback (Buzilmas va Lead yo'qotmaslik uchun fail-safe rejim)
+  // 2. Validatsiya & Spam-Leadlarni butunlay to'sish (Senior solution)
+  const isNameUnknown = !parsed.name || parsed.name.trim() === "" || parsed.name.trim() === "Noma'lum" || parsed.name.trim() === "Noma'lum Mijoz";
+  const isPhoneEmpty = !parsed.phone || parsed.phone.trim() === "" || parsed.phone.trim().toLowerCase() === "noma'lum" || parsed.phone.trim().toLowerCase() === "undefined";
+  
+  if (isNameUnknown && isPhoneEmpty) {
+    console.warn(`[Universal Lead Blocked] Spam/bo'sh lead rad etildi (ism va telefon bo'sh). RawData:`, JSON.stringify(rawData));
+    const err = new Error("Spam/bo'sh so'rov. Telefon va ism bo'sh bo'lganligi sababli rad etildi.");
+    err.statusCode = 400;
+    throw err;
+  }
+
   if (!parsed.name || parsed.name.trim() === "Noma'lum") {
     parsed.name = "Noma'lum Mijoz";
   }
@@ -668,31 +678,55 @@ async function handleUniversalLead(source, rawData, broadcast) {
     }
   }
 
-  // 3b. Vaqt oynasi bo'yicha dublikat tekshiruvi (Oxirgi 5 daqiqa ichida bir xil telefon va forma)
-  let clientForCheck = null;
+  // 3b. Vaqt oynasi bo'yicha dublikat tekshiruvi (Oxirgi 5 daqiqa ichida bir xil telefon, ism yoki mahsulot)
+  let duplicateRecentDeal = null;
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+
   if (cleanPhone) {
-    clientForCheck = await prisma.client.findFirst({
+    // 1. Qidiruv telefon bo'yicha
+    const matchingClient = await prisma.client.findFirst({
       where: { phone: cleanPhone }
     });
-  }
-
-  if (clientForCheck) {
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-    const duplicateRecentDeal = await prisma.deal.findFirst({
+    if (matchingClient) {
+      duplicateRecentDeal = await prisma.deal.findFirst({
+        where: {
+          clientId: matchingClient.id,
+          createdAt: { gte: fiveMinutesAgo }
+        }
+      });
+    }
+  } else if (parsed.phone && parsed.phone.trim() !== '') {
+    // 2. Qidiruv raw phone bo'yicha
+    duplicateRecentDeal = await prisma.deal.findFirst({
       where: {
-        clientId: clientForCheck.id,
-        productName: parsed.formId,
+        notes: { contains: parsed.phone.trim() },
         createdAt: { gte: fiveMinutesAgo }
       }
     });
+  }
 
-    if (duplicateRecentDeal) {
-      console.warn(`[Universal Lead Duplicate] Oxirgi 5 daqiqa ichida shu mijozdan bir xil forma bo'yicha murojaat kelgan.`);
-      const err = new Error('Dublikat so\'rov: Oxirgi 5 daqiqa ichida ayni shu telefondan xuddi shu forma bo\'yicha murojaat yuborilgan.');
-      err.statusCode = 409;
-      err.duplicateDealId = duplicateRecentDeal.id;
-      throw err;
-    }
+  // 3. Fallback: ism va mahsulot nomi bo'yicha (agar telefon bo'lmasa yoki telefon topilmasa, lekin ismi valid bo'lsa)
+  if (!duplicateRecentDeal && parsed.name && parsed.name !== "Noma'lum Mijoz") {
+    duplicateRecentDeal = await prisma.deal.findFirst({
+      where: {
+        client: {
+          name: parsed.name
+        },
+        OR: [
+          { productName: parsed.productName },
+          { productName: parsed.formId }
+        ],
+        createdAt: { gte: fiveMinutesAgo }
+      }
+    });
+  }
+
+  if (duplicateRecentDeal) {
+    console.warn(`[Universal Lead Duplicate] Oxirgi 5 daqiqa ichida ayni shu mijoz/murojaatdan lead kelgan.`);
+    const err = new Error('Dublikat so\'rov: Oxirgi 5 daqiqa ichida ayni shu mijozdan murojaat kelgan.');
+    err.statusCode = 409;
+    err.duplicateDealId = duplicateRecentDeal.id;
+    throw err;
   }
 
   // 4. Tranzaksiya: Client va Deal yozuvlarini yaratish/topish (latency yuqori bo'lsa timeout bo'lmasligi uchun 15s)

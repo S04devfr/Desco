@@ -1434,6 +1434,13 @@
               </div>
             </details>
           </div>
+
+          <!-- Save Button -->
+          <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px;">
+            <button type="button" class="btn btn-primary" onclick="saveAllDrawerFields(event)" style="background: var(--brand); border-color: var(--brand); font-size: 13.5px; font-weight: 700; padding: 8px 18px; display: inline-flex; align-items: center; gap: 6px; border-radius: 6px; cursor: pointer;">
+              <i class="fas fa-save"></i> Saqlash
+            </button>
+          </div>
         </div>
 
         <!-- Statistics Tab Content -->
@@ -2407,9 +2414,18 @@ async function onDrop(e, stageId) {
     return;
   }
 
-  // Set pending stage variable and open the drawer so manager can write comment on the left panel
-  window._pendingStageChangeAfterOpen = newStageId;
-  openDetail(dealId);
+  // Just update the stage via API directly and reload!
+  try {
+    await apiFetch('/api/deals/' + dealId + '/stage', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stageId: Number(newStageId), reason: null })
+    });
+    _toast("Bosqich o'zgartirildi", "success");
+    await loadDeals();
+  } catch (err) {
+    _toast(err.message, "error");
+  }
 }
 
 // ── Won / Lost bottom drop zones ────────────────────────────────
@@ -3300,30 +3316,96 @@ async function saveDrawerClientField(field, value) {
   }
 }
 
+async function saveAllDrawerFields(event) {
+  const managerId = document.getElementById('dw-managerId').value;
+  const amount = Number(document.getElementById('dw-amount').value) || 0;
+  const productName = document.getElementById('dw-productName').value.trim();
+  const contactName = document.getElementById('dw-contactName').value.trim();
+  const contactPhone = document.getElementById('dw-contactPhone').value.trim();
+  const city = document.getElementById('dw-contactCity').value.trim();
+  const notes = document.getElementById('dw-notes').value.trim();
+
+  // Collapsible fields
+  const companyName = document.getElementById('dw-companyName').value.trim();
+  const contactEmail = document.getElementById('dw-contactEmail').value.trim();
+
+  const body = {
+    managerId: managerId ? Number(managerId) : null,
+    amount,
+    productName,
+    contactName,
+    contactPhone,
+    city,
+    notes,
+    companyName,
+    contactEmail
+  };
+
+  const btn = event ? event.currentTarget : null;
+  try {
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saqlanmoqda...';
+    }
+
+    await apiFetch('/api/deals/' + _detailId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    _toast("Barcha ma'lumotlar saqlandi", "success");
+    
+    // Update local UI immediately
+    const avatarEl = document.getElementById('dw-contactAvatar');
+    if (avatarEl) {
+      avatarEl.textContent = contactName ? contactName.charAt(0).toUpperCase() : '?';
+    }
+    const companyLabelEl = document.getElementById('dw-contactCompanyLabel');
+    if (companyLabelEl) {
+      companyLabelEl.textContent = companyName ? companyName : 'o\'zim_uchun';
+    }
+    const titleInput = document.getElementById('drawerDealTitle');
+    if (titleInput) {
+      titleInput.value = productName;
+    }
+
+    // Reload the deal from the backend to get the fully updated object
+    const updatedDeal = await apiFetch('/api/deals/' + _detailId);
+    window._currentDeal = updatedDeal;
+
+    loadDeals();
+  } catch (e) {
+    _toast(e.message, "error");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-save"></i> Saqlash';
+    }
+  }
+}
+
 window._pendingStageId = null;
 
 async function changeDrawerStage(stageId) {
-  let newStageName = '';
-  const currentDeal = window._currentDeal;
-  if (currentDeal && _pipelines) {
-    const pipelineObj = _pipelines.find(p => p.id === currentDeal.pipelineId);
-    if (pipelineObj && pipelineObj.stages) {
-      const targetStage = pipelineObj.stages.find(st => st.id === Number(stageId));
-      if (targetStage) newStageName = targetStage.name;
-    }
-  }
+  try {
+    await apiFetch('/api/deals/' + _detailId + '/stage', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stageId: Number(stageId), reason: null })
+    });
+    
+    _toast("Bosqich yangilandi", "success");
+    
+    // Reload the deal from the backend to get the fully updated object
+    const updatedDeal = await apiFetch('/api/deals/' + _detailId);
+    window._currentDeal = updatedDeal;
 
-  // Set pending variables and show the inline prompt on the left pane
-  window._pendingStageId = stageId;
-  const container = document.getElementById('stageReasonPromptContainer');
-  const title = document.getElementById('stagePromptTitle');
-  const input = document.getElementById('stageReasonInput');
-  
-  if (container && title && input) {
-    title.textContent = `Mijoz holati bo'yicha izoh [${newStageName || ''}]`;
-    input.value = '';
-    container.classList.remove('hidden');
-    input.focus();
+    // Reload the details layout
+    openDetail(_detailId);
+    loadDeals();
+  } catch (e) {
+    _toast(e.message, "error");
   }
 }
 

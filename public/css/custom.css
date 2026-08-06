@@ -1587,7 +1587,7 @@ select.form-control   { cursor: pointer; }
 .funnel-container {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   padding: 4px 0;
 }
 
@@ -1600,7 +1600,7 @@ select.form-control   { cursor: pointer; }
 /* Track (full width grey background) */
 .funnel-track {
   flex: 1;
-  height: 40px;
+  height: 28px;
   background: var(--surface-input);
   border-radius: var(--r-sm);
   overflow: hidden;
@@ -1622,7 +1622,7 @@ select.form-control   { cursor: pointer; }
 }
 
 .funnel-fill-label {
-  font-size: 12.5px;
+  font-size: 11px;
   font-weight: 600;
   color: rgba(255,255,255,0.92);
   white-space: nowrap;
@@ -1631,7 +1631,7 @@ select.form-control   { cursor: pointer; }
 }
 
 .funnel-fill-count {
-  font-size: 11.5px;
+  font-size: 10.5px;
   color: rgba(255,255,255,0.7);
   white-space: nowrap;
   flex-shrink: 0;
@@ -1642,7 +1642,7 @@ select.form-control   { cursor: pointer; }
 .funnel-pct {
   width: 46px;
   text-align: right;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-500);
   flex-shrink: 0;
