@@ -237,6 +237,7 @@ router.get('/kpis', async (req, res, next) => {
     const totalDebt = deals.reduce((sum, d) => sum + Math.max((d.amount || 0) - (d.paidAmount || 0), 0), 0);
     
     let totalExpenses = 0, totalCostPrice = 0, netProfit = 0, totalClientDebt = 0;
+    let manualDebt = 0, dealDebt = 0;
     let totalMarketingExpenses = 0;
     let expenseByCategory = {};
     
@@ -453,6 +454,8 @@ router.get('/kpis', async (req, res, next) => {
       totalCostPrice,
       netProfit,
       totalClientDebt,
+      manualDebt,
+      dealDebt,
       won,
       lost,
       totalMarketingExpenses,
