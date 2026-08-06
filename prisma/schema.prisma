@@ -13,8 +13,10 @@ model User {
   email     String   @unique
   password  String
   fullName  String?
+  name      String?
   role      String   @default("manager")
   isActive  Boolean  @default(true)
+  avatar    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -26,6 +28,13 @@ model User {
   managerSalary  ManagerSalary?
   managerFines   ManagerFine[]
   plans          Plan[]
+
+  companiesCompanyOwner Company[] @relation("CompanyOwner")
+  contactsContactOwner  Contact[] @relation("ContactOwner")
+  tasksCreated          Task[]    @relation("TaskCreatedBy")
+  stageHistories        DealStageHistory[]
+  newActivities         Activity[]
+  dealOwners            Deal[]    @relation("DealOwner")
 }
 
 model Client {
@@ -66,6 +75,65 @@ model Client {
   @@index([createdAt])
 }
 
+model Company {
+  id        Int      @id @default(autoincrement())
+  name      String
+  industry  String?
+  website   String?
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+
+  ownerId Int?
+  owner   User?  @relation("CompanyOwner", fields: [ownerId], references: [id])
+
+  contacts Contact[]
+  deals    Deal[]
+  tasks    Task[]
+
+  @@index([ownerId])
+  @@index([createdAt])
+  @@map("companies")
+}
+
+model Contact {
+  id        Int      @id @default(autoincrement())
+  firstName String
+  lastName  String?
+  email     String?
+  phone     String?
+  position  String?
+  city      String?
+  source    String?
+  tags      String[] @default([])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  companyId Int?
+  company   Company? @relation(fields: [companyId], references: [id])
+
+  ownerId Int?
+  owner   User?    @relation("ContactOwner", fields: [ownerId], references: [id])
+
+  deals Deal[]
+  tasks Task[]
+
+  instagramId          String?            @unique
+  instagramUsername    String?
+  instagramUnreadCount Int                @default(0)
+  messages             InstagramMessage[]
+
+  telegramId          String?           @unique
+  telegramUsername    String?
+  telegramUnreadCount Int               @default(0)
+  telegramMessages    TelegramMessage[]
+
+  @@index([companyId])
+  @@index([ownerId])
+  @@index([createdAt])
+  @@map("contacts")
+}
+
 // ── VORONKA (PIPELINE) ──
 model Pipeline {
   id          Int      @id @default(autoincrement())
@@ -88,6 +156,8 @@ model PipelineStage {
   order     Int      @default(0)
   isDefault Boolean  @default(false)
   statusType String   @default("new")
+  isWon     Boolean  @default(false)
+  isLost    Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -95,14 +165,18 @@ model PipelineStage {
   pipeline   Pipeline? @relation(fields: [pipelineId], references: [id])
 
   deals Deal[]
+  fromHistory DealStageHistory[] @relation("HistoryFromStage")
+  toHistory   DealStageHistory[] @relation("HistoryToStage")
 }
 
 model Deal {
   id          Int       @id @default(autoincrement())
   productName String
+  title       String?
   amount      Float     @default(0)
   paidAmount  Float     @default(0)
   costPrice   Float     @default(0)
+  currency    String    @default("UZS")
   status      String    @default("new")
   notes       String?
   deadline    DateTime?
@@ -112,14 +186,27 @@ model Deal {
   clientId Int?
   client   Client? @relation(fields: [clientId], references: [id])
 
+  contactId Int?
+  contact   Contact? @relation(fields: [contactId], references: [id])
+
+  companyId Int?
+  company   Company? @relation(fields: [companyId], references: [id])
+
   managerId Int?
   manager   User? @relation(fields: [managerId], references: [id])
+
+  ownerId Int?
+  owner   User? @relation("DealOwner", fields: [ownerId], references: [id])
 
   stageId Int?
   stage   PipelineStage? @relation(fields: [stageId], references: [id])
 
   pipelineId Int?
   pipeline   Pipeline? @relation(fields: [pipelineId], references: [id])
+
+  probability Float? @default(0)
+  expectedCloseDate DateTime?
+  closedAt    DateTime?
 
   tasks        Task[]
   activities   ActivityLog[]
@@ -134,10 +221,14 @@ model Deal {
   productColor     String    @default("oddiy")
 
   driverPhone      String?
+  stageHistory DealStageHistory[]
 
   @@index([stageId])
   @@index([managerId])
   @@index([clientId])
+  @@index([contactId])
+  @@index([companyId])
+  @@index([ownerId])
   @@index([pipelineId])
   @@index([createdAt])
 }
@@ -201,6 +292,7 @@ model Task {
   dueDate     DateTime?
   dueTime     String?
   completed   Boolean   @default(false)
+  status      String    @default("todo")
   priority    String    @default("medium")
   actionType  String    @default("Связаться")
   result      String?
@@ -210,14 +302,26 @@ model Task {
   assignedToId Int?
   assignedTo   User? @relation(fields: [assignedToId], references: [id])
 
+  createdById Int?
+  createdBy   User? @relation("TaskCreatedBy", fields: [createdById], references: [id])
+
   dealId Int?
   deal   Deal? @relation(fields: [dealId], references: [id])
 
   clientId Int?
   client   Client? @relation(fields: [clientId], references: [id])
 
+  contactId Int?
+  contact   Contact? @relation(fields: [contactId], references: [id])
+
+  companyId Int?
+  company   Company? @relation(fields: [companyId], references: [id])
+
   @@index([assignedToId])
+  @@index([createdById])
   @@index([completed])
+  @@index([contactId])
+  @@index([companyId])
   @@index([createdAt])
 }
 
@@ -259,6 +363,9 @@ model InstagramMessage {
 
   clientId  Int?
   client    Client?  @relation(fields: [clientId], references: [id])
+
+  contactId Int?
+  contact   Contact? @relation(fields: [contactId], references: [id])
 
   attachmentType String?
   attachmentUrl  String?
@@ -398,7 +505,40 @@ model TelegramMessage {
   clientId       Int?
   client         Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
+  contactId      Int?
+  contact        Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
   attachmentType String?
   attachmentUrl  String?
+}
+
+model DealStageHistory {
+  id          Int      @id @default(autoincrement())
+  dealId      Int
+  deal        Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  fromStageId Int?
+  fromStage   PipelineStage? @relation("HistoryFromStage", fields: [fromStageId], references: [id])
+  toStageId   Int
+  toStage     PipelineStage @relation("HistoryToStage", fields: [toStageId], references: [id])
+  changedById Int?
+  changedBy   User?    @relation(fields: [changedById], references: [id])
+  changedAt   DateTime @default(now())
+
+  @@map("deal_stage_history")
+}
+
+model Activity {
+  id            Int       @id @default(autoincrement())
+  type          String    // call | email | meeting | note | task
+  relatedToType String    // deal | contact | company
+  relatedToId   Int
+  description   String
+  dueDate       DateTime?
+  completedAt   DateTime?
+  ownerId       Int?
+  owner         User?     @relation(fields: [ownerId], references: [id])
+  createdAt     DateTime  @default(now())
+
+  @@map("activities")
 }
 

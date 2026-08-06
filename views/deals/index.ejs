@@ -400,7 +400,7 @@
     display: flex;
     justify-content: flex-end;
     align-items: stretch;
-    z-index: 1060;
+    z-index: 9990;
     transition: opacity 0.25s ease;
     padding: 0 !important;
   }
@@ -408,8 +408,8 @@
     display: none !important;
   }
   #detailModal .modal-box {
-    width: 1200px;
-    max-width: 95vw;
+    width: 100vw;
+    max-width: 100vw;
     margin: 0;
     height: 100vh;
     max-height: 100vh;
@@ -420,8 +420,8 @@
     background: var(--bg-surface);
     transform: translateX(100%);
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: -10px 0 40px rgba(0,0,0,0.25);
-    border-left: 1px solid var(--border);
+    box-shadow: none;
+    border-left: none;
   }
   #detailModal:not(.hidden) .modal-box {
     transform: translateX(0);
@@ -1338,71 +1338,74 @@
             </div>
           </div>
 
-          <!-- Contact block (amoCRM style) -->
-          <div class="drawer-entity-box" style="margin-top: 20px;">
-            <div class="drawer-entity-header">
-              <div class="drawer-entity-avatar" id="dw-contactAvatar">?</div>
-              <input type="text" id="dw-contactName" class="drawer-entity-title-input" placeholder="Mijoz ismi" onchange="saveDrawerClientField('contactName', this.value)">
-              <div class="drawer-entity-actions">
-                <i class="fas fa-ellipsis-h"></i>
-              </div>
-            </div>
+          <!-- Main Fields Section (amoCRM style simplified client info) -->
+          <div style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 20px;">
+            <div style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-tertiary); margin-bottom: 12px;">Mijoz Ma'lumotlari</div>
             
             <div class="drawer-inline-row">
-              <span class="drawer-inline-label">Компания</span>
+              <span class="drawer-inline-label">Mahsulot nomi</span>
               <div class="drawer-inline-value">
-                <span id="dw-contactCompanyLabel" style="font-size:13px; font-weight:600; color:var(--text-secondary); cursor:pointer; text-decoration:underline;" onclick="document.getElementById('dw-companyName').focus();">o'zim_uchun</span>
+                <input type="text" id="dw-productName" class="drawer-inline-input" placeholder="Mahsulot nomi..." onchange="updateDrawerDealTitle(this.value)">
               </div>
             </div>
+
             <div class="drawer-inline-row">
-              <span class="drawer-inline-label">Раб. тел.</span>
+              <span class="drawer-inline-label">Ismi</span>
+              <div class="drawer-inline-value">
+                <input type="text" id="dw-contactName" class="drawer-inline-input" placeholder="Mijoz ismi..." onchange="saveDrawerClientField('contactName', this.value)">
+              </div>
+            </div>
+
+            <div class="drawer-inline-row">
+              <span class="drawer-inline-label">Raqami</span>
               <div class="drawer-inline-value" style="display:flex; align-items:center; gap:6px;">
-                <input type="text" id="dw-contactPhone" class="drawer-inline-input" onchange="saveDrawerClientField('contactPhone', this.value)">
-                <button class="drawer-inline-dial-btn" onclick="dialNumber(document.getElementById('dw-contactPhone').value)" title="Qo'ng'iroq"><i class="fas fa-phone-alt"></i></button>
+                <input type="text" id="dw-contactPhone" class="drawer-inline-input" placeholder="Telefon raqami..." onchange="saveDrawerClientField('contactPhone', this.value)">
+                <button class="drawer-inline-dial-btn" onclick="dialNumber(document.getElementById('dw-contactPhone').value)" title="Qo'ng'iroq" style="background: none; border: none; color: var(--primary); cursor: pointer; padding: 4px;"><i class="fas fa-phone-alt"></i></button>
               </div>
             </div>
+
             <div class="drawer-inline-row">
-              <span class="drawer-inline-label">Email раб.</span>
+              <span class="drawer-inline-label">Manzili</span>
               <div class="drawer-inline-value">
-                <input type="email" id="dw-contactEmail" class="drawer-inline-input" placeholder="—" onchange="saveDrawerClientField('contactEmail', this.value)">
+                <input type="text" id="dw-contactCity" class="drawer-inline-input" placeholder="Shahar / manzil..." onchange="saveDrawerClientField('city', this.value)">
               </div>
+            </div>
+
+            <!-- Izoh / Notes Field on Left Panel -->
+            <div class="drawer-inline-row" style="align-items: flex-start; flex-direction: column; gap: 4px; border-bottom: none; height: auto; padding: 8px 4px;">
+              <span class="drawer-inline-label" style="text-align: left; width: 100%;">Izoh / Eslatma</span>
+              <textarea id="dw-notes" class="drawer-inline-input" style="text-align: left; width: 100%; min-height: 80px; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-base); resize: vertical; font-family: inherit; font-size: 13px; font-weight: 500;" placeholder="Mijoz yoki bosqich haqida izoh yozing..." onchange="saveDrawerField('notes', this.value)"></textarea>
             </div>
           </div>
 
-          <!-- Company block (amoCRM style) -->
-          <div class="drawer-entity-box" style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 20px;">
-            <div class="drawer-entity-header">
-              <div class="drawer-entity-avatar company-avatar"><i class="far fa-building"></i></div>
-              <input type="text" id="dw-companyName" class="drawer-entity-title-input" placeholder="Kompaniya nomi" onchange="saveDrawerClientField('companyName', this.value)">
-              <div class="drawer-entity-actions">
-                <i class="fas fa-ellipsis-h"></i>
+          <!-- Collapsible secondary details for compatibility -->
+          <div style="margin-top: 20px; border-top: 1px dashed var(--border); padding-top: 12px;">
+            <details style="cursor: pointer;">
+              <summary style="font-size: 11px; font-weight: 600; color: var(--text-tertiary); outline: none; user-select: none;">Qo'shimcha maydonlar (Kompaniya/Email)</summary>
+              <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 4px;">
+                <div class="drawer-inline-row">
+                  <span class="drawer-inline-label">Kompaniya</span>
+                  <div class="drawer-inline-value">
+                    <input type="text" id="dw-companyName" class="drawer-inline-input" placeholder="Kompaniya..." onchange="saveDrawerClientField('companyName', this.value)">
+                  </div>
+                </div>
+                <div class="drawer-inline-row">
+                  <span class="drawer-inline-label">Email</span>
+                  <div class="drawer-inline-value">
+                    <input type="email" id="dw-contactEmail" class="drawer-inline-input" placeholder="Email..." onchange="saveDrawerClientField('contactEmail', this.value)">
+                  </div>
+                </div>
+                <div class="drawer-inline-row" style="display: none;">
+                  <!-- Unused but referenced hidden fields for safety against JS references -->
+                  <input type="text" id="dw-companyPhone">
+                  <input type="text" id="dw-companyEmail">
+                  <input type="text" id="dw-companyWebsite">
+                  <input type="text" id="dw-companyAddress">
+                  <span id="dw-contactCompanyLabel"></span>
+                  <span id="dw-contactAvatar"></span>
+                </div>
               </div>
-            </div>
-            
-            <div class="drawer-inline-row">
-              <span class="drawer-inline-label">Раб. тел.</span>
-              <div class="drawer-inline-value">
-                <input type="text" id="dw-companyPhone" class="drawer-inline-input" placeholder="—" onchange="saveDrawerClientField('companyPhone', this.value)">
-              </div>
-            </div>
-            <div class="drawer-inline-row">
-              <span class="drawer-inline-label">Email раб.</span>
-              <div class="drawer-inline-value">
-                <input type="email" id="dw-companyEmail" class="drawer-inline-input" placeholder="—" onchange="saveDrawerClientField('companyEmail', this.value)">
-              </div>
-            </div>
-            <div class="drawer-inline-row">
-              <span class="drawer-inline-label">Web</span>
-              <div class="drawer-inline-value">
-                <input type="text" id="dw-companyWebsite" class="drawer-inline-input" placeholder="—" onchange="saveDrawerClientField('companyWebsite', this.value)">
-              </div>
-            </div>
-            <div class="drawer-inline-row">
-              <span class="drawer-inline-label">Адрес</span>
-              <div class="drawer-inline-value">
-                <input type="text" id="dw-companyAddress" class="drawer-inline-input" placeholder="—" onchange="saveDrawerClientField('companyAddress', this.value)">
-              </div>
-            </div>
+            </details>
           </div>
         </div>
 
@@ -1445,6 +1448,29 @@
             <button class="btn btn-primary btn-sm" onclick="submitDrawerComment()" style="align-self:flex-end; height:34px;"><i class="fas fa-paper-plane"></i></button>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WON/LOST REASON MODAL -->
+  <div class="modal-overlay hidden" id="wonLostReasonModal" style="z-index:1150">
+    <div class="modal-box" style="max-width:400px;">
+      <div class="modal-header">
+        <h2 id="wonLostReasonTitle">Yopilish sababi</h2>
+        <button class="modal-close" onclick="closeWonLostModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="wl-dealId">
+        <input type="hidden" id="wl-stageId">
+        <input type="hidden" id="wl-previousStageId">
+        <div class="form-group">
+          <label class="form-label" id="wonLostReasonLabel">Sabab / izoh yozing *</label>
+          <textarea id="wl-reason" class="form-control" rows="3" placeholder="Masalan: Qimmat deyishdi / Sotib oldi..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeWonLostModal()">Bekor qilish</button>
+        <button class="btn btn-primary" onclick="submitWonLostReason()">Tasdiqlash</button>
       </div>
     </div>
   </div>
@@ -2347,65 +2373,21 @@ async function onDrop(e, stageId) {
     return;
   }
 
-  // ── Optimistic UI update ──────────────────────────────────────
-  // Move the card and recalc column counts/totals INSTANTLY, before
-  // the network call even starts. Persist to the DB in the background;
-  // if it fails, move the card back and show a toast — no full board
-  // re-fetch needed in either path.
   const previousStageId = deal.stageId;
-  deal.stageId = newStageId;
-  renderKanban();
+  const targetStage = _stages.find(s => s.id === newStageId);
+  const isWon = targetStage && (targetStage.isWon || targetStage.name.toLowerCase().includes('won') || targetStage.name.toLowerCase().includes('yopildi') || targetStage.name.toLowerCase().includes('yetib'));
+  const isLost = targetStage && (targetStage.isLost || targetStage.name.toLowerCase().includes('rad') || targetStage.name.toLowerCase().includes('otkaz') || targetStage.name.toLowerCase().includes('lost') || targetStage.name.toLowerCase().includes('arxiv'));
 
-  try {
-    const updated = await apiFetch('/api/deals/' + dealId + '/stage', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ stageId: newStageId })
-    });
-    // Merge server-confirmed fields (stage relation, updatedAt, etc.)
-    // into the local deal object without re-fetching the whole board.
-    Object.assign(deal, updated);
-    _toast('Bosqich o\'zgartirildi', 'success');
-
-    // Avtomatizatsiya: Bosqich bo'yicha maxsus amallar
-    const targetStage = _stages.find(s => s.id === newStageId);
-
-    // Nasiya Desco: muddatli to'lov modal
-    if (targetStage && /nasiya.?desco/i.test(targetStage.name)) {
-      openNasiyaDescoModal(deal);
-    }
-
-    if (targetStage && targetStage.name && targetStage.name.toLowerCase() === 'vazifalar') {
-      const clientInfo = deal.client ? (deal.client.name + ' ' + (deal.client.phone || '')).trim() : "Mijoz noma'lum";
-      const desc = 'Mahsulot: ' + (deal.productName || deal.name || 'Noma\'lum') + '\\nMijoz: ' + clientInfo;
-      const today = new Date();
-      const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().slice(0, 10);
-      
-      apiFetch('/api/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: 'Qayta aloqa',
-          description: desc,
-          dueDate: localDate,
-          dueTime: '10:00',
-          dealId: deal.id,
-          clientId: deal.clientId || null
-        })
-      }).then(() => {
-        _toast('Vazifa avtomatik yaratildi: Qayta aloqa', 'success');
-        if (typeof window.updateSidebarTaskBadge === 'function') window.updateSidebarTaskBadge();
-      }).catch(err => {
-        console.error('Vazifa avtomatizatsiya xatosi:', err);
-      });
-    }
-
-  } catch (err) {
-    // Roll back to the previous stage and re-render.
-    deal.stageId = previousStageId;
+  if (targetStage && (isWon || isLost)) {
+    deal.stageId = newStageId;
     renderKanban();
-    _toast(err.message, 'error');
+    openWonLostModal(deal, targetStage, previousStageId);
+    return;
   }
+
+  // Set pending stage variable and open the drawer so manager can write comment on the left panel
+  window._pendingStageChangeAfterOpen = newStageId;
+  openDetail(dealId);
 }
 
 // ── Won / Lost bottom drop zones ────────────────────────────────
@@ -2852,6 +2834,11 @@ async function openDetail(id) {
     // Amount
     document.getElementById('dw-amount').value = deal.amount || 0;
 
+    // Core fields
+    document.getElementById('dw-productName').value = deal.productName || deal.title || '';
+    document.getElementById('dw-contactCity').value = deal.client ? deal.client.city || '' : '';
+    document.getElementById('dw-notes').value = deal.notes || '';
+
     // Contact client fields
     const contactName = deal.client ? deal.client.name || '' : '';
     document.getElementById('dw-contactName').value = contactName;
@@ -2888,6 +2875,17 @@ async function openDetail(id) {
 
     // Populate timeline and active tasks
     renderTimelineAndTasks(deal);
+
+    // Trigger pending stage change from Drag & Drop if any
+    if (window._pendingStageChangeAfterOpen) {
+      const pendingStageId = window._pendingStageChangeAfterOpen;
+      window._pendingStageChangeAfterOpen = null;
+      changeDrawerStage(pendingStageId);
+    } else {
+      // Hide the prompt by default
+      const container = document.getElementById('stageReasonPromptContainer');
+      if (container) container.classList.add('hidden');
+    }
 
   } catch(e) {
     console.error('Drawer population error:', e);
@@ -2932,6 +2930,20 @@ function renderTimelineAndTasks(deal) {
     });
   }
 
+  // 3. Stage History
+  if (deal.stageHistory) {
+    deal.stageHistory.forEach(h => {
+      timelineData.push({
+        type: 'stageHistory',
+        date: new Date(h.changedAt),
+        author: h.changedBy ? (h.changedBy.fullName || h.changedBy.email) : 'Tizim',
+        fromStage: h.fromStage ? h.fromStage.name : 'Boshlang\'ich',
+        toStage: h.toStage ? h.toStage.name : 'Noma\'lum bosqich',
+        id: h.id
+      });
+    });
+  }
+
   // Sort oldest at top, newest at bottom (to match amoCRM chronological list)
   timelineData.sort((a, b) => a.date - b.date);
 
@@ -2953,7 +2965,22 @@ function renderTimelineAndTasks(deal) {
     `;
     
     groups[dateStr].forEach(item => {
-      if (item.type === 'activity') {
+      if (item.type === 'stageHistory') {
+        html += `
+          <div class="timeline-entry note-entry" id="history-${item.id}">
+            <div class="timeline-icon green" style="background:#34C759; color:#fff; display:flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%;"><i class="fas fa-route" style="font-size:10px;"></i></div>
+            <div class="timeline-content">
+              <div class="timeline-meta">
+                <span class="timeline-author">${_esc(item.author)}</span>
+                <span class="timeline-time">${item.date.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}</span>
+              </div>
+              <div class="timeline-text" style="font-weight: 500; font-size:12.5px;">
+                Bosqich o'zgardi: <span style="text-decoration: line-through; color: var(--text-tertiary);">${_esc(item.fromStage)}</span> &rarr; <span style="color: #34C759; font-weight: bold;">${_esc(item.toStage)}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (item.type === 'activity') {
         const isComment = item.action === "Izoh qoldirildi" || item.action === "Izoh yozildi" || item.action === "Yangi izoh";
         if (isComment) {
           html += `
@@ -3101,18 +3128,73 @@ async function saveDrawerClientField(field, value) {
   }
 }
 
+window._pendingStageId = null;
+
 async function changeDrawerStage(stageId) {
+  let newStageName = '';
+  const currentDeal = window._currentDeal;
+  if (currentDeal && _pipelines) {
+    const pipelineObj = _pipelines.find(p => p.id === currentDeal.pipelineId);
+    if (pipelineObj && pipelineObj.stages) {
+      const targetStage = pipelineObj.stages.find(st => st.id === Number(stageId));
+      if (targetStage) newStageName = targetStage.name;
+    }
+  }
+
+  // Set pending variables and show the inline prompt on the left pane
+  window._pendingStageId = stageId;
+  const container = document.getElementById('stageReasonPromptContainer');
+  const title = document.getElementById('stagePromptTitle');
+  const input = document.getElementById('stageReasonInput');
+  
+  if (container && title && input) {
+    title.textContent = `Mijoz holati bo'yicha izoh [${newStageName || ''}]`;
+    input.value = '';
+    container.classList.remove('hidden');
+    input.focus();
+  }
+}
+
+function cancelStageChange() {
+  const container = document.getElementById('stageReasonPromptContainer');
+  if (container) {
+    container.classList.add('hidden');
+  }
+  window._pendingStageId = null;
+  // Revert dropdown selection to current deal stage
+  const currentDeal = window._currentDeal;
+  if (currentDeal) {
+    const stageSelect = document.getElementById('drawerStageSelect');
+    if (stageSelect) stageSelect.value = currentDeal.stageId;
+  }
+}
+
+async function confirmStageChange() {
+  const stageId = window._pendingStageId;
+  if (!stageId) return;
+
+  const container = document.getElementById('stageReasonPromptContainer');
+  const input = document.getElementById('stageReasonInput');
+  const reason = input ? input.value.trim() : '';
+
   try {
-    await apiFetch('/api/deals/' + _detailId + '/stage', {
+    const updated = await apiFetch('/api/deals/' + _detailId + '/stage', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ stageId })
+      body: JSON.stringify({ stageId: Number(stageId), reason: reason || null })
     });
+    
+    if (container) {
+      container.classList.add('hidden');
+    }
+    window._pendingStageId = null;
+    
     _toast("Bosqich o'zgartirildi", "success");
     openDetail(_detailId); // Refresh drawer
     loadDeals(); // Refresh grid
   } catch (e) {
     _toast(e.message, "error");
+    cancelStageChange();
   }
 }
 
@@ -3924,6 +4006,81 @@ function toggleSelectionMode() {
   if (btn) btn.classList.toggle('active', _selectionMode);
   if (!_selectionMode) {
     clearBulkSelection();
+  }
+}
+
+// ── Won/Lost Reason Modal handlers ──
+let _activeWlDeal = null;
+let _activeWlStage = null;
+let _activeWlPreviousStageId = null;
+
+function openWonLostModal(deal, stage, previousStageId) {
+  _activeWlDeal = deal;
+  _activeWlStage = stage;
+  _activeWlPreviousStageId = previousStageId;
+
+  document.getElementById('wl-dealId').value = deal.id;
+  document.getElementById('wl-stageId').value = stage.id;
+  document.getElementById('wl-previousStageId').value = previousStageId;
+  document.getElementById('wl-reason').value = '';
+
+  const isWon = stage.isWon || stage.name.toLowerCase().includes('won') || stage.name.toLowerCase().includes('yopildi') || stage.name.toLowerCase().includes('yetib') || stage.name.toLowerCase().includes('yetkazildi');
+
+  document.getElementById('wonLostReasonTitle').textContent = isWon ? "Muvaffaqiyatli yakunlash" : "Bitimni bekor qilish";
+  document.getElementById('wonLostReasonLabel').textContent = isWon ? "Izoh yozing (ixtiyoriy):" : "Bekor qilinish sababi * (majburiy):";
+
+  document.getElementById('wonLostReasonModal').classList.remove('hidden');
+}
+
+function closeWonLostModal() {
+  document.getElementById('wonLostReasonModal').classList.add('hidden');
+  if (_activeWlDeal) {
+    _activeWlDeal.stageId = _activeWlPreviousStageId;
+    renderKanban();
+  }
+  _activeWlDeal = null;
+  _activeWlStage = null;
+  _activeWlPreviousStageId = null;
+}
+
+async function submitWonLostReason() {
+  const dealId = document.getElementById('wl-dealId').value;
+  const stageId = document.getElementById('wl-stageId').value;
+  const reason = document.getElementById('wl-reason').value.trim();
+  const isWon = _activeWlStage && (_activeWlStage.isWon || _activeWlStage.name.toLowerCase().includes('won') || _activeWlStage.name.toLowerCase().includes('yopildi') || _activeWlStage.name.toLowerCase().includes('yetib') || _activeWlStage.name.toLowerCase().includes('yetkazildi'));
+
+  if (!isWon && !reason) {
+    _toast('Bekor qilinish sababi kiritilishi shart!', 'error');
+    return;
+  }
+
+  document.getElementById('wonLostReasonModal').classList.add('hidden');
+
+  try {
+    const updated = await apiFetch('/api/deals/' + dealId + '/stage', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        stageId: Number(stageId),
+        status: isWon ? 'won' : 'lost',
+        reason: reason || null
+      })
+    });
+
+    Object.assign(_activeWlDeal, updated);
+    _toast('Bosqich va holat muvaffaqiyatli yangilandi', 'success');
+
+    if (_activeWlStage && /nasiya.?desco/i.test(_activeWlStage.name)) {
+      openNasiyaDescoModal(_activeWlDeal);
+    }
+
+    _activeWlDeal = null;
+    _activeWlStage = null;
+    _activeWlPreviousStageId = null;
+    renderKanban();
+  } catch(e) {
+    _toast(e.message || 'Xato', 'error');
+    closeWonLostModal();
   }
 }
 </script>

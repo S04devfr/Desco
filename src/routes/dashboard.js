@@ -63,7 +63,55 @@ router.get('/kpis', async (req, res, next) => {
       where.managerId = req.userId;
     }
     
-    const deals = await prisma.deal.findMany({ where, include: { stage: true, client: true, manager: { select: { id: true, fullName: true, email: true, role: true, isActive: true } } } });
+    const deals = await prisma.deal.findMany({
+      where,
+      include: {
+        stage: true,
+        client: true,
+        contact: { include: { company: true } },
+        company: true,
+        manager: { select: { id: true, fullName: true, email: true, role: true, isActive: true } }
+      }
+    });
+
+    // Map contact to client for backwards compatibility
+    for (const d of deals) {
+      if (!d.client && d.contact) {
+        d.client = {
+          id: d.contact.id,
+          name: `${d.contact.firstName} ${d.contact.lastName || ''}`.trim(),
+          phone: d.contact.phone,
+          city: d.contact.city,
+          email: d.contact.email,
+          company: d.contact.company ? d.contact.company.name : null,
+          companyAddress: d.contact.company ? d.contact.company.address : null,
+          companyPhone: d.contact.company ? d.contact.company.phone : null,
+          companyWebsite: d.contact.company ? d.contact.company.website : null
+        };
+      }
+    }
+
+    // Calculate real-time counts from DB
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0,0,0,0);
+
+    const [totalContacts, totalCompanies, openDealsCount, wonDealsThisMonth, pendingTasksCount] = await Promise.all([
+      prisma.contact.count(),
+      prisma.company.count(),
+      prisma.deal.count({ where: { status: { in: ['open', 'new'] } } }),
+      prisma.deal.findMany({
+        where: {
+          status: 'won',
+          updatedAt: { gte: startOfMonth }
+        },
+        select: { amount: true }
+      }),
+      prisma.task.count({ where: { completed: false } })
+    ]);
+
+    const monthlyRevenue = wonDealsThisMonth.reduce((sum, d) => sum + (d.amount || 0), 0);
+
     // Expenses only use createdAt
     const expenseWhere = where.OR ? { createdAt: { gte: where.OR[0].createdAt.gte, lte: where.OR[0].createdAt.lte } } : {};
     const expenses = await prisma.expense.findMany({ where: expenseWhere });
@@ -366,6 +414,11 @@ router.get('/kpis', async (req, res, next) => {
     };
 
     res.json({
+      totalContacts,
+      totalCompanies,
+      openDealsCount,
+      monthlyRevenue,
+      pendingTasksCount,
       totalLeads,
       totalOrders,
       totalRevenue,
@@ -638,14 +691,14 @@ router.get('/instagram-stats', async (req, res) => {
     const [totalMessages, incomingMessages, linkedClients, mktLogs, messages, clientsWithDeals, newClients] = await Promise.all([
       prisma.instagramMessage.count({ where: msgWhere }),
       prisma.instagramMessage.count({ where: { ...msgWhere, isOutgoing: false } }),
-      prisma.client.count({ where: { instagramId: { not: null } } }),
+      prisma.contact.count({ where: { instagramId: { not: null } } }),
       prisma.marketingLog.findMany({ where: mktWhere, select: { spent: true, leads: true } }),
       prisma.instagramMessage.findMany({
         where: msgWhere,
         orderBy: { timestamp: 'asc' },
-        select: { text: true, senderId: true, recipientId: true, timestamp: true, clientId: true, isOutgoing: true }
+        select: { text: true, senderId: true, recipientId: true, timestamp: true, contactId: true, isOutgoing: true }
       }),
-      prisma.client.findMany({
+      prisma.contact.findMany({
         where: { instagramId: { not: null } },
         select: {
           id: true,
@@ -1050,13 +1103,13 @@ router.get('/export-csv', async (req, res) => {
 router.get('/unread-chats', protect, async (req, res) => {
   try {
     const [instagram, telegram] = await Promise.all([
-      prisma.client.count({
+      prisma.contact.count({
         where: { 
           instagramUnreadCount: { gt: 0 },
           instagramId: { not: null }
         }
       }),
-      prisma.client.count({
+      prisma.contact.count({
         where: { 
           telegramUnreadCount: { gt: 0 },
           telegramId: { not: null }

@@ -52,6 +52,17 @@ router.use(protect)
 const managerSelect = { select: { id: true, fullName: true, email: true, role: true } }
 const stageSelect = { select: { id: true, name: true, color: true, order: true, statusType: true } }
 
+function isCallbackStage(stageName) {
+  if (!stageName) return false;
+  const name = stageName.toLowerCase();
+  return name.includes('qayta aloqa') || 
+         name.includes('vazifa') || 
+         name.includes('ko\'tarmadi') || 
+         name.includes('kotarmadi') || 
+         name.includes('javob') || 
+         name.includes('qayta');
+}
+
 async function logActivity(dealId, userId, action, details) {
   try {
     await prisma.activityLog.create({ data: { action, details, dealId, userId } })
@@ -151,7 +162,10 @@ router.get('/', async (req, res, next) => {
       where,
       include: {
         client: { select: { id: true, name: true, company: true, phone: true, city: true, companyPhone: true, companyEmail: true, companyWebsite: true, companyAddress: true, email: true } },
+        contact: { include: { company: true } },
+        company: true,
         manager: managerSelect,
+        owner: managerSelect,
         stage: stageSelect,
         installments: { select: { id: true } },
         tasks: {
@@ -162,7 +176,25 @@ router.get('/', async (req, res, next) => {
       orderBy: { createdAt: 'desc' }
     });
 
-    res.json(deals);
+    // Map contact to client for backwards compatibility
+    const mappedDeals = deals.map(d => {
+      if (!d.client && d.contact) {
+        d.client = {
+          id: d.contact.id,
+          name: `${d.contact.firstName} ${d.contact.lastName || ''}`.trim(),
+          phone: d.contact.phone,
+          city: d.contact.city,
+          email: d.contact.email,
+          company: d.contact.company ? d.contact.company.name : null,
+          companyAddress: d.contact.company ? d.contact.company.address : null,
+          companyPhone: d.contact.company ? d.contact.company.phone : null,
+          companyWebsite: d.contact.company ? d.contact.company.website : null
+        };
+      }
+      return d;
+    });
+
+    res.json(mappedDeals);
   } catch (error) { next(error) }
 })
 
@@ -173,9 +205,20 @@ router.get('/:id', async (req, res, next) => {
       where: { id: Number(req.params.id) },
       include: {
         client: { select: { id: true, name: true, company: true, phone: true, city: true, companyPhone: true, companyEmail: true, companyWebsite: true, companyAddress: true, email: true } },
+        contact: { include: { company: true } },
+        company: true,
         manager: managerSelect,
+        owner: managerSelect,
         stage: stageSelect,
         tasks: true,
+        stageHistory: {
+          include: {
+            fromStage: { select: { id: true, name: true } },
+            toStage: { select: { id: true, name: true } },
+            changedBy: { select: { id: true, fullName: true, email: true } }
+          },
+          orderBy: { changedAt: 'desc' }
+        },
         activities: {
           include: { user: managerSelect },
           orderBy: { createdAt: 'desc' },
@@ -187,6 +230,21 @@ router.get('/:id', async (req, res, next) => {
 
     if (req.user?.role !== 'admin' && deal.managerId !== null && deal.managerId !== req.userId) {
       return res.status(403).json({ message: "Bu sdelkani ko'rish huquqiga ega emassiz" })
+    }
+
+    // Map contact to client for compatibility
+    if (!deal.client && deal.contact) {
+      deal.client = {
+        id: deal.contact.id,
+        name: `${deal.contact.firstName} ${deal.contact.lastName || ''}`.trim(),
+        phone: deal.contact.phone,
+        city: deal.contact.city,
+        email: deal.contact.email,
+        company: deal.contact.company ? deal.contact.company.name : null,
+        companyAddress: deal.contact.company ? deal.contact.company.address : null,
+        companyPhone: deal.contact.company ? deal.contact.company.phone : null,
+        companyWebsite: deal.contact.company ? deal.contact.company.website : null
+      };
     }
 
     if (!deal.activities) deal.activities = []
@@ -207,34 +265,54 @@ router.post('/', async (req, res, next) => {
     if (valError) return res.status(400).json({ message: valError });
 
     const {
-      productName, amount, paidAmount, status, notes, clientId, deadline, stageId, pipelineId,
+      productName, amount, paidAmount, status, notes, clientId, contactId, companyId, deadline, stageId, pipelineId,
       contactName, contactPhone, contactEmail, companyName, companyAddress, city, costPrice, createdAt, warehouse,
-      productColor, driverPhone, tags
+      productColor, driverPhone, tags, ownerId, currency, probability, expectedCloseDate
     } = req.body
     if (!productName) return res.status(400).json({ message: 'Mahsulot nomi majburiy' })
 
     let resolvedClientId = clientId ? Number(clientId) : null
+    let resolvedContactId = contactId ? Number(contactId) : (clientId ? Number(clientId) : null)
+    let resolvedCompanyId = companyId ? Number(companyId) : null
 
-    if (!resolvedClientId) {
+    if (!resolvedContactId) {
       const hasQuickAddFields = [contactName, contactPhone, contactEmail, companyName, companyAddress, city, req.body.companyPhone, req.body.companyEmail, req.body.companyWebsite]
         .some(v => v !== undefined && v !== null && String(v).trim() !== '')
 
       if (hasQuickAddFields) {
-        const newClient = await prisma.client.create({
+        // Create inline company if companyName is passed
+        if (companyName && companyName.trim()) {
+          const newCompany = await prisma.company.create({
+            data: {
+              name: companyName.trim(),
+              address: companyAddress || null,
+              phone: req.body.companyPhone || null,
+              website: req.body.companyWebsite || null,
+              ownerId: req.userId
+            }
+          });
+          resolvedCompanyId = newCompany.id;
+        }
+
+        // Split contact name
+        const cName = contactName ? contactName.trim() : "Noma'lum Mijoz";
+        const nameParts = cName.split(/\s+/);
+        const firstName = nameParts[0];
+        const lastName = nameParts.slice(1).join(' ') || null;
+
+        const newContact = await prisma.contact.create({
           data: {
-            name: (contactName && contactName.trim()) || (companyName && companyName.trim()) || "Noma'lum mijoz",
+            firstName,
+            lastName,
             phone: contactPhone || null,
-            city: city || null,
             email: contactEmail || null,
-            company: companyName || null,
-            companyAddress: companyAddress || null,
-            companyPhone: req.body.companyPhone || null,
-            companyEmail: req.body.companyEmail || null,
-            companyWebsite: req.body.companyWebsite || null,
+            city: city || null,
+            companyId: resolvedCompanyId,
             ownerId: req.userId
           }
-        })
-        resolvedClientId = newClient.id
+        });
+        resolvedContactId = newContact.id;
+        resolvedClientId = newContact.id; // compat
       }
     }
 
@@ -280,15 +358,20 @@ router.post('/', async (req, res, next) => {
     const deal = await prisma.deal.create({
       data: {
         productName,
+        title: productName,
         amount: amount ? Number(amount) : 0,
         paidAmount: paidAmount ? Number(paidAmount) : 0,
         costPrice: costPrice ? Number(costPrice) : 0,
+        currency: currency || 'UZS',
         status: status || 'new',
         notes: notes || null,
         deadline: (deadline && !isNaN(new Date(deadline))) ? new Date(deadline) : null,
         createdAt: (createdAt && !isNaN(new Date(createdAt))) ? new Date(createdAt) : new Date(),
         clientId: resolvedClientId,
+        contactId: resolvedContactId,
+        companyId: resolvedCompanyId,
         managerId: req.userId,
+        ownerId: ownerId ? Number(ownerId) : req.userId,
         stageId: resolvedStageId,
         pipelineId: resolvedPipelineId,
         warehouse: warehouse || null,
@@ -296,14 +379,45 @@ router.post('/', async (req, res, next) => {
         productColor: productColor || 'oddiy',
         driverPhone: driverPhone || null,
         tags: tags || '',
+        probability: probability ? Number(probability) : 0,
+        expectedCloseDate: expectedCloseDate ? new Date(expectedCloseDate) : null,
         stageUpdatedAt: new Date()
       },
       include: {
         client: { select: { id: true, name: true, company: true, phone: true, city: true, companyPhone: true, companyEmail: true, companyWebsite: true, companyAddress: true, email: true } },
+        contact: { include: { company: true } },
+        company: true,
         manager: managerSelect,
+        owner: managerSelect,
         stage: stageSelect
       }
     })
+
+    // Map contact to client for compat
+    if (!deal.client && deal.contact) {
+      deal.client = {
+        id: deal.contact.id,
+        name: `${deal.contact.firstName} ${deal.contact.lastName || ''}`.trim(),
+        phone: deal.contact.phone,
+        city: deal.contact.city,
+        email: deal.contact.email,
+        company: deal.contact.company ? deal.contact.company.name : null,
+        companyAddress: deal.contact.company ? deal.contact.company.address : null,
+        companyPhone: deal.contact.company ? deal.contact.company.phone : null,
+        companyWebsite: deal.contact.company ? deal.contact.company.website : null
+      };
+    }
+
+    // Write initial deal stage history log
+    await prisma.dealStageHistory.create({
+      data: {
+        dealId: deal.id,
+        fromStageId: null,
+        toStageId: resolvedStageId,
+        changedById: req.userId,
+        changedAt: new Date()
+      }
+    });
 
     await logActivity(deal.id, req.userId, 'Sdelka yaratildi', `"${deal.productName}" sdelkasi yaratildi`)
     
@@ -664,13 +778,16 @@ router.patch('/:id', async (req, res, next) => {
     })
 
     // Automation: Qayta aloqa yoki Vazifa
-    if (deal.stage && (deal.stage.name.toLowerCase().includes('qayta aloqa') || deal.stage.name.toLowerCase().includes('vazifa'))) {
+    if (deal.stage && isCallbackStage(deal.stage.name)) {
       // Dublikat yaratmaslik: shu deal uchun bajarilmagan vazifa bormi tekshirish
       const existingTask = await prisma.task.findFirst({
         where: { dealId: deal.id, completed: false }
       });
       const targetDate = deal.deadline ? new Date(deal.deadline) : new Date();
-      const taskDescription = deal.notes || "Avtomatik yaratilgan vazifa: Mijoz bilan kelishilgan ishlarni bajarish";
+      let taskDescription = deal.notes || "Avtomatik yaratilgan vazifa: Mijoz bilan kelishilgan ishlarni bajarish";
+      if (deal.stage.name.toLowerCase().includes('ko\'tarmadi') || deal.stage.name.toLowerCase().includes('kotarmadi') || deal.stage.name.toLowerCase().includes('javob')) {
+        taskDescription = deal.notes ? `${deal.notes}\n[Tizim] Telefon ko'tarmadi. Qayta aloqaga chiqish.` : "Telefon ko'tarmadi. Qayta aloqaga chiqish.";
+      }
       if (!existingTask) {
         await prisma.task.create({
           data: {
@@ -769,7 +886,7 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
       return res.status(400).json({ message: "Noto'g'ri sdelka ID" })
     }
 
-    const { stageId } = req.body
+    const { stageId, reason } = req.body
     let newStageId = null
     if (stageId !== null && stageId !== undefined && stageId !== '') {
       newStageId = Number(stageId)
@@ -852,12 +969,45 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
           }
         }
 
+      // Log deal stage history
+      await tx.dealStageHistory.create({
+        data: {
+          dealId: id,
+          fromStageId: existing.stageId,
+          toStageId: finalStageId,
+          changedById: req.userId,
+          changedAt: new Date()
+        }
+      });
+
+      const isClosedStage = finalStatus === 'won' || finalStatus === 'lost';
+      const closedAt = isClosedStage ? new Date() : null;
+
+      let notesUpdate = txDeal.notes;
+      if (reason) {
+        notesUpdate = notesUpdate
+          ? `${notesUpdate}\n[Tizim] Bosqich yopilish sababi: ${reason}`
+          : `[Tizim] Bosqich yopilish sababi: ${reason}`;
+      }
+
       const updated = await tx.deal.update({
         where: { id },
-        data: { stageId: finalStageId, pipelineId: finalPipelineId, managerId: finalManagerId, status: finalStatus, stageUpdatedAt: new Date() },
+        data: {
+          stageId: finalStageId,
+          pipelineId: finalPipelineId,
+          managerId: finalManagerId,
+          ownerId: finalManagerId,
+          status: finalStatus,
+          closedAt,
+          notes: notesUpdate,
+          stageUpdatedAt: new Date()
+        },
         include: {
           client: { select: { id: true, name: true, company: true, phone: true, city: true, companyPhone: true, companyEmail: true, companyWebsite: true, companyAddress: true, email: true } },
+          contact: { include: { company: true } },
+          company: true,
           manager: managerSelect,
+          owner: managerSelect,
           stage: stageSelect
         }
       })
@@ -865,26 +1015,44 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
       // Automatically complete all active tasks associated with this deal
       await tx.task.updateMany({
         where: { dealId: id, completed: false },
-        data: { completed: true }
+        data: { completed: true, status: 'completed' }
       })
+
+      // Map contact to client for backwards compatibility
+      if (!updated.client && updated.contact) {
+        updated.client = {
+          id: updated.contact.id,
+          name: `${updated.contact.firstName} ${updated.contact.lastName || ''}`.trim(),
+          phone: updated.contact.phone,
+          city: updated.contact.city,
+          email: updated.contact.email,
+          company: updated.contact.company ? updated.contact.company.name : null,
+          companyAddress: updated.contact.company ? updated.contact.company.address : null,
+          companyPhone: updated.contact.company ? updated.contact.company.phone : null,
+          companyWebsite: updated.contact.company ? updated.contact.company.website : null
+        };
+      }
 
       await tx.activityLog.create({
         data: {
           action: "Bosqich o'zgartirildi",
-          details: `${existing.stage?.name || 'Bosqichsiz'} → ${updated.stage?.name || 'Bosqichsiz'}`,
+          details: `${existing.stage?.name || 'Bosqichsiz'} → ${updated.stage?.name || 'Bosqichsiz'}${reason ? ' (Sabab: ' + reason + ')' : ''}`,
           dealId: id,
           userId: req.userId
         }
       })
 
       // Automation: Qayta aloqa yoki Vazifa
-      if (updated.stage && (updated.stage.name.toLowerCase().includes('qayta aloqa') || updated.stage.name.toLowerCase().includes('vazifa'))) {
+      if (updated.stage && isCallbackStage(updated.stage.name)) {
         // Dublikat yaratmaslik: shu deal uchun bajarilmagan vazifa bormi tekshirish
         const existingTask = await tx.task.findFirst({
           where: { dealId: id, completed: false }
         });
         const targetDate = updated.deadline ? new Date(updated.deadline) : new Date();
-        const taskDescription = updated.notes || "Avtomatik yaratilgan vazifa: Mijoz bilan kelishilgan ishlarni bajarish";
+        let taskDescription = updated.notes || "Avtomatik yaratilgan vazifa: Mijoz bilan kelishilgan ishlarni bajarish";
+        if (updated.stage.name.toLowerCase().includes('ko\'tarmadi') || updated.stage.name.toLowerCase().includes('kotarmadi') || updated.stage.name.toLowerCase().includes('javob')) {
+          taskDescription = updated.notes ? `${updated.notes}\n[Tizim] Telefon ko'tarmadi. Qayta aloqaga chiqish.` : "Telefon ko'tarmadi. Qayta aloqaga chiqish.";
+        }
         if (!existingTask) {
           await tx.task.create({
             data: {

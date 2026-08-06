@@ -9,19 +9,19 @@
   --bg-surface-hover: #F1F5F9;
   --bg-sidebar: #FFFFFF;
   --bg-sidebar-hover: #F1F5F9;
-  --bg-sidebar-active: rgba(79, 70, 229, 0.08);
+  --bg-sidebar-active: rgba(14, 165, 233, 0.08);
 
   /* Asosiy brend rang */
-  --primary: #4F46E5;             /* indigo-600 */
-  --primary-hover: #4338CA;
-  --primary-light: rgba(79, 70, 229, 0.08);
+  --primary: #0EA5E9;             /* sky-500 */
+  --primary-hover: #0284C7;
+  --primary-light: rgba(14, 165, 233, 0.08);
 
   /* Matn */
   --text-primary: #0F172A;
   --text-secondary: #334155;
   --text-inverse: #FFFFFF;
   --text-muted-sidebar: #334155;
-  --sidebar-text-active: #4F46E5;
+  --sidebar-text-active: #0EA5E9;
 
   /* Chegaralar - Clean borders */
   --border-subtle: rgba(0, 0, 0, 0.08);
@@ -307,22 +307,25 @@ body::after {
 }
 
 .sidebar-nav a.active {
-  background: linear-gradient(135deg, var(--primary), var(--primary-hover)) !important;
-  color: #FFFFFF !important;
+  background: var(--bg-sidebar-active) !important;
+  color: var(--primary) !important;
   font-weight: 700;
-  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25) !important;
+  box-shadow: none !important;
   position: relative;
+  border-left: 3px solid var(--primary);
+  border-radius: 0 12px 12px 0;
+  margin-left: 0 !important;
 }
 
 [data-theme="dark"] .sidebar-nav a.active {
-  box-shadow: 0 8px 20px rgba(129, 140, 248, 0.2) !important;
+  box-shadow: none !important;
 }
 
 .sidebar-nav a.active::before {
   display: none;
 }
 
-.sidebar-nav a.active .nav-icon { opacity: 1; color: #FFFFFF !important; }
+.sidebar-nav a.active .nav-icon { opacity: 1; color: var(--primary) !important; }
 .nav-icon { opacity: 0.70; font-size: 15px; }
 
 /* Submenu */

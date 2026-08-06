@@ -5,22 +5,56 @@
 
 <div class="page-header">
   <div>
-    <h1>Mijozlar</h1>
-    <p>Mijozlar bazasi</p>
+    <h1>Mijozlar & Kompaniyalar</h1>
+    <p>Mijozlar, hamkorlar va kompaniyalar ro'yxati</p>
   </div>
   <div class="page-header-actions">
-    <button class="btn btn-primary" onclick="openClientModal()">
-      <i class="fas fa-plus"></i> Yangi mijoz
+    <button class="btn btn-primary" onclick="openAddModal()">
+      <i class="fas fa-plus"></i> Yangi qo'shish
     </button>
   </div>
 </div>
 
 <style>
-#clientsTable {
+.tabs-container {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+.tab-btn {
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tab-btn:hover {
+  color: var(--text-primary);
+}
+.tab-btn.active {
+  color: var(--brand);
+  border-bottom-color: var(--brand);
+}
+.tab-content {
+  display: none;
+}
+.tab-content.active {
+  display: block;
+}
+
+#clientsTable, #companiesTable {
   border-collapse: collapse !important;
   width: 100%;
 }
-#clientsTable th {
+#clientsTable th, #companiesTable th {
   border: 1px solid var(--border-strong) !important;
   padding: 10px 12px !important;
   font-size: 11.5px !important;
@@ -29,14 +63,14 @@
   background: var(--bg-tertiary) !important;
   color: var(--text-primary) !important;
 }
-#clientsTable td {
+#clientsTable td, #companiesTable td {
   border: 1px solid var(--border) !important;
   padding: 8px 12px !important;
   font-size: 13.5px !important;
   color: var(--text-800) !important;
   vertical-align: middle;
 }
-#clientsTable tbody tr:hover {
+#clientsTable tbody tr:hover, #companiesTable tbody tr:hover {
   background: var(--brand-soft) !important;
 }
 
@@ -46,47 +80,145 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.filter-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 16px;
+  background: var(--surface);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.filter-row input, .filter-row select {
+  height: 38px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: 0 12px;
+}
+.inline-company-form {
+  background: var(--bg-secondary);
+  border: 1px dashed var(--border);
+  padding: 14px;
+  border-radius: 8px;
+  margin-top: 10px;
+}
 </style>
 
-<!-- FILTER BAR -->
-<div class="filter-bar">
-  <i class="fas fa-search" style="color:var(--text-tertiary);font-size:13px"></i>
-  <input type="text" id="clientSearch" class="form-control" style="flex:1;max-width:300px" placeholder="Ism, kompaniya, telefon...">
-  <button class="btn btn-ghost btn-sm" onclick="clearSearch()"><i class="fas fa-times"></i></button>
+<!-- TABS HEADER -->
+<div class="tabs-container">
+  <button class="tab-btn active" id="tabContactsBtn" onclick="switchTab('contacts')">
+    <i class="fas fa-user-circle"></i> Kontaktlar
+  </button>
+  <button class="tab-btn" id="tabCompaniesBtn" onclick="switchTab('companies')">
+    <i class="fas fa-building"></i> Kompaniyalar
+  </button>
 </div>
 
 <!-- STATS ROW -->
-<div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px" id="clientStats">
-  <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-users"></i></div><div class="stat-info"><div class="stat-label">Jami mijozlar</div><div class="stat-value" id="statTotal">—</div></div></div>
-  <div class="stat-card"><div class="stat-icon green"><i class="fas fa-handshake"></i></div><div class="stat-info"><div class="stat-label">Aktiv sdelkalar</div><div class="stat-value" id="statDeals">—</div></div></div>
-  <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-building"></i></div><div class="stat-info"><div class="stat-label">Kompaniyalar</div><div class="stat-value" id="statCompanies">—</div></div></div>
+<div class="stats-grid mb-4" id="clientStats" style="grid-template-columns:repeat(3,1fr);">
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+    <div class="stat-info">
+      <div class="stat-label">Jami kontaktlar</div>
+      <div class="stat-value" id="statTotalContacts">—</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon purple"><i class="fas fa-building"></i></div>
+    <div class="stat-info">
+      <div class="stat-label">Kompaniyalar</div>
+      <div class="stat-value" id="statTotalCompanies">—</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="fas fa-history"></i></div>
+    <div class="stat-info">
+      <div class="stat-label">Jami sdelkalar</div>
+      <div class="stat-value" id="statTotalDeals">—</div>
+    </div>
+  </div>
 </div>
 
-<!-- CLIENT TABLE -->
-<div class="table-responsive" style="overflow-x:auto;">
-  <table class="table" id="clientsTable" style="width:100%;">
-    <thead>
-      <tr>
-        <th style="width: 4%; text-align: center;">#</th>
-        <th style="width: 25%;">Mijoz ismi</th>
-        <th style="width: 15%;">Telefon</th>
-        <th style="width: 20%;">Shahar</th>
-        <th style="width: 20%;">Mahsulot</th>
-        <th style="width: 10%;">Menejer</th>
-        <th style="width: 6%; text-align: center;">Amallar</th>
-      </tr>
-    </thead>
-    <tbody id="clientGrid">
-      <tr><td colspan="7" style="text-align:center;padding:40px"><div class="spinner"></div></td></tr>
-    </tbody>
-  </table>
+<!-- ==================== TAB 1: CONTACTS ==================== -->
+<div id="contactsTabContent" class="tab-content active">
+  <div class="filter-row">
+    <div style="position:relative; flex: 1; min-width: 200px;">
+      <input type="text" id="clientSearch" style="width:100%;" placeholder="Ism, telefon, email..." oninput="debouncedLoadContacts()">
+    </div>
+    <select id="clientOwnerFilter" onchange="loadContacts()">
+      <option value="">Barcha mas'ullar</option>
+    </select>
+    <select id="clientSourceFilter" onchange="loadContacts()">
+      <option value="">Barcha manbalar</option>
+      <option value="target">Target Reklama</option>
+      <option value="instagram">Instagram</option>
+      <option value="telegram">Telegram</option>
+      <option value="oddiy">Qo'lda kiritilgan</option>
+    </select>
+    <button class="btn btn-ghost btn-sm" onclick="clearContactsFilters()">
+      <i class="fas fa-times"></i> Tozalash
+    </button>
+  </div>
+
+  <div class="table-responsive" style="overflow-x:auto;">
+    <table class="table" id="clientsTable">
+      <thead>
+        <tr>
+          <th style="width: 4%; text-align: center;">#</th>
+          <th style="width: 25%;">Kontakt ismi</th>
+          <th style="width: 15%;">Telefon</th>
+          <th style="width: 15%;">Email</th>
+          <th style="width: 15%;">Kompaniya</th>
+          <th style="width: 15%;">Mas'ul</th>
+          <th style="width: 11%; text-align: center;">Amallar</th>
+        </tr>
+      </thead>
+      <tbody id="clientGrid">
+        <tr><td colspan="7" style="text-align:center;padding:40px"><div class="spinner"></div></td></tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
-<!-- CREATE/EDIT MODAL -->
+<!-- ==================== TAB 2: COMPANIES ==================== -->
+<div id="companiesTabContent" class="tab-content">
+  <div class="filter-row">
+    <div style="position:relative; flex: 1; min-width: 200px;">
+      <input type="text" id="companySearch" style="width:100%;" placeholder="Kompaniya nomi..." oninput="debouncedLoadCompanies()">
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="clearCompaniesFilters()">
+      <i class="fas fa-times"></i> Tozalash
+    </button>
+  </div>
+
+  <div class="table-responsive" style="overflow-x:auto;">
+    <table class="table" id="companiesTable">
+      <thead>
+        <tr>
+          <th style="width: 4%; text-align: center;">#</th>
+          <th style="width: 25%;">Kompaniya nomi</th>
+          <th style="width: 20%;">Manzil</th>
+          <th style="width: 15%;">Telefon</th>
+          <th style="width: 20%;">Sayt</th>
+          <th style="width: 16%; text-align: center;">Amallar</th>
+        </tr>
+      </thead>
+      <tbody id="companyGrid">
+        <tr><td colspan="6" style="text-align:center;padding:40px"><div class="spinner"></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- CONTACT MODAL -->
 <div class="modal-overlay hidden" id="clientModal">
   <div class="modal-box">
     <div class="modal-header">
-      <h2 id="clientModalTitle">Yangi mijoz</h2>
+      <h2 id="clientModalTitle">Yangi kontakt</h2>
       <button class="modal-close" onclick="closeClientModal()">&times;</button>
     </div>
     <div class="modal-body">
@@ -94,7 +226,7 @@
       <div class="form-grid form-grid-2">
         <div class="form-group" style="grid-column:1/-1">
           <label class="form-label">Ism-familiya *</label>
-          <input type="text" id="c-name" class="form-control" placeholder="To'liq ism">
+          <input type="text" id="c-name" class="form-control" placeholder="Ism va familiya">
         </div>
         <div class="form-group">
           <label class="form-label">Telefon</label>
@@ -102,7 +234,7 @@
         </div>
         <div class="form-group">
           <label class="form-label">Shahar / Hudud</label>
-          <input type="text" id="c-city" class="form-control" placeholder="Qaysi shahardan">
+          <input type="text" id="c-city" class="form-control" placeholder="Shahar nomi">
         </div>
         <div class="form-group">
           <label class="form-label">Email</label>
@@ -110,8 +242,37 @@
         </div>
         <div class="form-group">
           <label class="form-label">Kompaniya</label>
-          <input type="text" id="c-company" class="form-control" placeholder="Kompaniya nomi">
+          <select id="c-companyId" class="form-control" onchange="onCompanySelectChange()">
+            <option value="">Kompaniyasiz</option>
+            <option value="create_new">+ Yangi kompaniya qo'shish...</option>
+          </select>
         </div>
+
+        <!-- Inline Company Creation Block -->
+        <div id="inlineCompanyBlock" class="form-group hidden" style="grid-column:1/-1">
+          <div class="inline-company-form">
+            <h4 style="margin:0 0 10px 0; font-size:13px; font-weight:700;"><i class="fas fa-building"></i> Yangi kompaniya ma'lumotlari</h4>
+            <div class="form-grid form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Kompaniya nomi *</label>
+                <input type="text" id="c-new-companyName" class="form-control" placeholder="Masalan: Golden Group">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Kompaniya telefoni</label>
+                <input type="text" id="c-new-companyPhone" class="form-control" placeholder="+998 71 200 00 00">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Kompaniya sayti</label>
+                <input type="text" id="c-new-companyWebsite" class="form-control" placeholder="goldengroup.uz">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Kompaniya manzili</label>
+                <input type="text" id="c-new-companyAddress" class="form-control" placeholder="Toshkent sh., Chilonzor">
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="form-group" style="grid-column:1/-1">
           <label class="form-label">Izoh</label>
           <textarea id="c-notes" class="form-control" rows="2" placeholder="Qo'shimcha ma'lumot..."></textarea>
@@ -120,7 +281,44 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeClientModal()">Bekor qilish</button>
-      <button class="btn btn-primary" id="clientSaveBtn" onclick="saveClient()">
+      <button class="btn btn-primary" id="clientSaveBtn" onclick="saveContact()">
+        <i class="fas fa-save"></i> Saqlash
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- COMPANY MODAL -->
+<div class="modal-overlay hidden" id="companyModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="companyModalTitle">Yangi kompaniya</h2>
+      <button class="modal-close" onclick="closeCompanyModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="companyId">
+      <div class="form-grid form-grid-2">
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Kompaniya nomi *</label>
+          <input type="text" id="co-name" class="form-control" placeholder="Golden Group">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Telefon</label>
+          <input type="text" id="co-phone" class="form-control" placeholder="+998 71 200 00 00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Veb-sayt</label>
+          <input type="text" id="co-website" class="form-control" placeholder="goldengroup.uz">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">Manzil</label>
+          <input type="text" id="co-address" class="form-control" placeholder="Toshkent sh., Yunusobod">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeCompanyModal()">Bekor qilish</button>
+      <button class="btn btn-primary" id="companySaveBtn" onclick="saveCompany()">
         <i class="fas fa-save"></i> Saqlash
       </button>
     </div>
@@ -128,41 +326,71 @@
 </div>
 
 <script>
-let allClients = [];
+let currentTab = 'contacts';
+let allContacts = [];
+let allCompanies = [];
+let allManagers = [];
 
-async function loadClients() {
-  const q = document.getElementById('clientSearch').value;
-  const params = q ? '?q=' + encodeURIComponent(q) : '';
-  try {
-    const fetchFn = (typeof fetchWithTimeout === 'function') ? fetchWithTimeout : fetch;
-    const r = await fetchFn('/api/clients' + params);
-    const data = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(data.message || 'Server xatosi: ' + r.status);
-    allClients = Array.isArray(data) ? data : [];
-    renderClients();
-    updateStats();
-  } catch(e) {
-    allClients = [];
-    _safeToast("Ma'lumotlarni yuklashda xatolik" + (e && e.message && !e.isTimeout ? ': ' + e.message : ''), 'error');
-    document.getElementById('clientGrid').innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon"><i class="fas fa-exclamation-triangle"></i></div><h3>Yuklashda xato</h3><p>Sahifani yangilang yoki qayta urinib ko'ring</p><button class="btn btn-primary" style="margin-top:14px" onclick="loadClients()"><i class="fas fa-redo"></i> Qayta yuklash</button></div>`;
-    updateStats();
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+  if (tab === 'contacts') {
+    document.getElementById('tabContactsBtn').classList.add('active');
+    document.getElementById('contactsTabContent').classList.add('active');
+    loadContacts();
+  } else {
+    document.getElementById('tabCompaniesBtn').classList.add('active');
+    document.getElementById('companiesTabContent').classList.add('active');
+    loadCompanies();
   }
 }
 
-// Toast that doesn't depend on main.js having loaded yet (defense in
-// depth — init() below is already DOMContentLoaded-gated so main.js
-// will be ready, but this keeps loadClients() safe even if called earlier).
-function _safeToast(msg, type) {
-  if (typeof showToast === 'function') showToast(msg, type);
-  else console.warn('[Clients]', msg);
+function openAddModal() {
+  if (currentTab === 'contacts') {
+    openContactModal();
+  } else {
+    openCompanyModal();
+  }
 }
 
-function updateStats() {
-  document.getElementById('statTotal').textContent = allClients.length;
-  const totalDeals = allClients.reduce((s, c) => s + (c.deals?.length || 0), 0);
-  document.getElementById('statDeals').textContent = totalDeals;
-  const companies = new Set(allClients.filter(c => c.company).map(c => c.company)).size;
-  document.getElementById('statCompanies').textContent = companies;
+// ── CONTACTS LOGIC ───────────────────────────────────────────
+async function loadContacts() {
+  const q = document.getElementById('clientSearch').value;
+  const owner = document.getElementById('clientOwnerFilter').value;
+  const source = document.getElementById('clientSourceFilter').value;
+
+  let query = [];
+  if (q) query.push(`q=${encodeURIComponent(q)}`);
+  if (owner) query.push(`ownerId=${owner}`);
+  if (source) query.push(`source=${source}`);
+  const params = query.length ? '?' + query.join('&') : '';
+
+  try {
+    const r = await fetch('/api/clients' + params);
+    allContacts = await r.json();
+    renderContacts();
+    updateStats();
+  } catch(e) {
+    console.error(e);
+    showToast("Kontaktlarni yuklashda xatolik", 'error');
+  }
+}
+
+const debouncedLoadContacts = (function() {
+  let timer;
+  return function() {
+    clearTimeout(timer);
+    timer = setTimeout(loadContacts, 450);
+  };
+})();
+
+function clearContactsFilters() {
+  document.getElementById('clientSearch').value = '';
+  document.getElementById('clientOwnerFilter').value = '';
+  document.getElementById('clientSourceFilter').value = '';
+  loadContacts();
 }
 
 function avatarColors(name) {
@@ -172,52 +400,42 @@ function avatarColors(name) {
   return colors[Math.abs(hash) % colors.length];
 }
 
-function renderClients() {
+function renderContacts() {
   const grid = document.getElementById('clientGrid');
-  if (!allClients.length) {
-    grid.innerHTML = `<tr><td colspan="7" class="empty-state" style="border:none;">
+  if (!allContacts.length) {
+    grid.innerHTML = `<tr><td colspan="7" class="empty-state" style="border:none; text-align:center; padding:40px;">
       <div class="empty-state-icon"><i class="fas fa-users"></i></div>
-      <h3>Mijozlar yo'q</h3>
-      <p>Birinchi mijozni qo'shing</p>
-      <button class="btn btn-primary" style="margin-top:14px" onclick="openClientModal()"><i class="fas fa-plus"></i> Qo'shish</button>
+      <h3>Kontaktlar topilmadi</h3>
+      <p>Yangi kontakt qo'shing</p>
     </td></tr>`;
     return;
   }
-  grid.innerHTML = allClients.map((c, idx) => {
-    const initials = c.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-    const color = avatarColors(c.name);
-    const deals = c.deals || [];
-    const products = deals.map(d => d.productName).filter(Boolean);
-    const uniqueProducts = [...new Set(products)].join(', ') || '—';
+  grid.innerHTML = allContacts.map((c, idx) => {
+    const fullName = c.name || `${c.firstName || ''} ${c.lastName || ''}`.trim() || "Noma'lum";
+    const initials = fullName.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+    const color = avatarColors(fullName);
+    const companyName = c.company || (c.companyObj ? c.companyObj.name : '—');
     const manager = c.owner ? (c.owner.fullName || c.owner.email) : '—';
     return `
-      <tr class="client-row">
+      <tr>
         <td style="text-align: center;">${idx + 1}</td>
         <td>
           <div style="display:flex; align-items:center; gap:8px;">
             <div style="width:26px; height:26px; font-size:11px; background:linear-gradient(135deg,${color},${color}99); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:bold; flex-shrink:0;">${initials}</div>
-            <div class="truncate-cell" style="max-width: 220px;" title="${escHtml(c.name)}">
-              <div style="font-weight:600; font-size:13.5px; color:var(--text-primary);">${escHtml(c.name)}</div>
-              <div style="font-size:11px; color:var(--text-tertiary);">${c.company ? escHtml(c.company) : '—'}</div>
+            <div class="truncate-cell" style="max-width: 220px;" title="${escHtml(fullName)}">
+              <div style="font-weight:600; font-size:13.5px; color:var(--text-primary);">${escHtml(fullName)}</div>
+              <div style="font-size:11px; color:var(--text-tertiary);">${escHtml(c.city || '—')}</div>
             </div>
           </div>
         </td>
         <td>${c.phone ? escHtml(c.phone) : '—'}</td>
-        <td>
-          <div class="truncate-cell" style="max-width: 250px;" title="${escHtml(c.city || '')}">
-            ${c.city ? escHtml(c.city) : '—'}
-          </div>
-        </td>
-        <td>
-          <div class="truncate-cell" style="max-width: 220px;" title="${escHtml(uniqueProducts)}">
-            ${escHtml(uniqueProducts)}
-          </div>
-        </td>
+        <td>${c.email ? escHtml(c.email) : '—'}</td>
+        <td>${escHtml(companyName)}</td>
         <td><span class="badge badge-gray" style="font-size: 11.5px; padding: 2px 6px;">${escHtml(manager)}</span></td>
         <td style="text-align:center;">
           <div style="display:flex; justify-content:center; gap:4px;">
-            <button class="btn btn-ghost btn-sm btn-icon" onclick="openClientModal(false, ${c.id})" title="Ko'rish / Tahrirlash" style="padding: 4px 6px; font-size: 12px;"><i class="fas fa-eye"></i></button>
-            <button class="btn btn-ghost btn-sm btn-icon text-danger" onclick="deleteClient(${c.id})" title="O'chirish" style="padding: 4px 6px; font-size: 12px;"><i class="fas fa-trash"></i></button>
+            <button class="btn btn-ghost btn-sm btn-icon" onclick="openContactModal(${c.id})" title="Tahrirlash"><i class="fas fa-edit"></i></button>
+            <button class="btn btn-ghost btn-sm btn-icon text-danger" onclick="deleteContact(${c.id})" title="O'chirish"><i class="fas fa-trash"></i></button>
           </div>
         </td>
       </tr>
@@ -225,26 +443,33 @@ function renderClients() {
   }).join('');
 }
 
-async function openClientModal(viewOnly, id) {
+async function openContactModal(id) {
   document.getElementById('clientId').value = id || '';
   document.getElementById('c-name').value = '';
   document.getElementById('c-phone').value = '';
   document.getElementById('c-city').value = '';
   document.getElementById('c-email').value = '';
-  document.getElementById('c-company').value = '';
+  document.getElementById('c-companyId').value = '';
   document.getElementById('c-notes').value = '';
-  document.getElementById('clientModalTitle').textContent = id ? 'Mijozni tahrirlash' : 'Yangi mijoz';
+  document.getElementById('inlineCompanyBlock').classList.add('hidden');
+  document.getElementById('clientModalTitle').textContent = id ? 'Kontaktni tahrirlash' : 'Yangi kontakt';
+
+  // Load companies for the dropdown
+  await loadCompaniesDropdown();
 
   if (id) {
     try {
       const c = await fetch('/api/clients/' + id).then(r => r.json());
-      document.getElementById('c-name').value = c.name || '';
+      const fullName = c.name || `${c.firstName || ''} ${c.lastName || ''}`.trim();
+      document.getElementById('c-name').value = fullName;
       document.getElementById('c-phone').value = c.phone || '';
       document.getElementById('c-city').value = c.city || '';
       document.getElementById('c-email').value = c.email || '';
-      document.getElementById('c-company').value = c.company || '';
+      document.getElementById('c-companyId').value = c.companyId || '';
       document.getElementById('c-notes').value = c.notes || '';
-    } catch(e) {}
+    } catch(e) {
+      console.error(e);
+    }
   }
   document.getElementById('clientModal').classList.remove('hidden');
 }
@@ -253,68 +478,290 @@ function closeClientModal() {
   document.getElementById('clientModal').classList.add('hidden');
 }
 
-async function saveClient() {
+function onCompanySelectChange() {
+  const select = document.getElementById('c-companyId');
+  const inlineBlock = document.getElementById('inlineCompanyBlock');
+  if (select.value === 'create_new') {
+    inlineBlock.classList.remove('hidden');
+  } else {
+    inlineBlock.classList.add('hidden');
+  }
+}
+
+async function loadCompaniesDropdown() {
+  try {
+    const r = await fetch('/api/companies');
+    const list = await r.json();
+    const select = document.getElementById('c-companyId');
+    select.innerHTML = '<option value="">Kompaniyasiz</option>';
+    list.forEach(co => {
+      select.innerHTML += `<option value="${co.id}">${escHtml(co.name)}</option>`;
+    });
+    select.innerHTML += '<option value="create_new">+ Yangi kompaniya qo\'shish...</option>';
+  } catch(e) {
+    console.error(co);
+  }
+}
+
+async function saveContact() {
   const id = document.getElementById('clientId').value;
   const name = document.getElementById('c-name').value.trim();
   if (!name) { showToast('Ism majburiy', 'error'); return; }
 
-  const btn = document.getElementById('clientSaveBtn');
-  btn.disabled = true;
-
-  const body = {
-    name,
-    phone: document.getElementById('c-phone').value || null,
-    city: document.getElementById('c-city').value || null,
-    email: document.getElementById('c-email').value || null,
-    company: document.getElementById('c-company').value || null,
-    notes: document.getElementById('c-notes').value || null
-  };
+  const saveBtn = document.getElementById('clientSaveBtn');
+  saveBtn.disabled = true;
 
   try {
+    let companyId = document.getElementById('c-companyId').value;
+
+    // Handle Inline Company Creation
+    if (companyId === 'create_new') {
+      const newCoName = document.getElementById('c-new-companyName').value.trim();
+      if (!newCoName) {
+        showToast('Kompaniya nomi kiritilishi shart', 'error');
+        saveBtn.disabled = false;
+        return;
+      }
+
+      const coBody = {
+        name: newCoName,
+        phone: document.getElementById('c-new-companyPhone').value || null,
+        website: document.getElementById('c-new-companyWebsite').value || null,
+        address: document.getElementById('c-new-companyAddress').value || null
+      };
+
+      const coRes = await fetch('/api/companies', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(coBody)
+      });
+
+      if (!coRes.ok) {
+        const coErr = await coRes.json();
+        throw new Error("Kompaniya yaratishda xato: " + coErr.message);
+      }
+
+      const newCompanyObj = await coRes.json();
+      companyId = newCompanyObj.id;
+    }
+
+    const body = {
+      name,
+      phone: document.getElementById('c-phone').value || null,
+      city: document.getElementById('c-city').value || null,
+      email: document.getElementById('c-email').value || null,
+      companyId: companyId ? Number(companyId) : null,
+      notes: document.getElementById('c-notes').value || null
+    };
+
     const url = id ? '/api/clients/' + id : '/api/clients';
-    const r = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    if (!r.ok) throw new Error((await r.json()).message);
+    const r = await fetch(url, {
+      method: id ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    if (!r.ok) {
+      const err = await r.json();
+      throw new Error(err.message || 'Saqlashda xato');
+    }
+
     showToast(id ? 'Mijoz yangilandi' : 'Mijoz qo\'shildi', 'success');
     closeClientModal();
-    await loadClients();
+    await loadContacts();
   } catch(e) {
     showToast(e.message || 'Xato', 'error');
-  } finally { btn.disabled = false; }
+  } finally {
+    saveBtn.disabled = false;
+  }
 }
 
-async function deleteClient(id) {
-  if (!confirm('Mijozni o\'chirishni tasdiqlaysizmi?')) return;
+async function deleteContact(id) {
+  if (!confirm("Kontaktni o'chirishni tasdiqlaysizmi?")) return;
   try {
     const r = await fetch('/api/clients/' + id, { method: 'DELETE' });
     if (!r.ok) throw new Error((await r.json()).message);
-    showToast('Mijoz o\'chirildi', 'success');
-    await loadClients();
-  } catch(e) { showToast(e.message || 'O\'chirishda xato', 'error'); }
+    showToast("Kontakt o'chirildi", 'success');
+    await loadContacts();
+  } catch(e) {
+    showToast(e.message || 'Xato', 'error');
+  }
 }
 
-function clearSearch() {
-  document.getElementById('clientSearch').value = '';
-  loadClients();
+// ── COMPANIES LOGIC ──────────────────────────────────────────
+async function loadCompanies() {
+  const q = document.getElementById('companySearch').value;
+  const params = q ? '?q=' + encodeURIComponent(q) : '';
+  try {
+    const r = await fetch('/api/companies' + params);
+    allCompanies = await r.json();
+    renderCompanies();
+    updateStats();
+  } catch(e) {
+    console.error(e);
+    showToast("Kompaniyalarni yuklashda xatolik", 'error');
+  }
 }
 
-// ── INIT ──────────────────────────────────────────────────────
-// IMPORTANT: do NOT call loadClients()/debounce() at the top level of this
-// script. This inline <script> runs while the browser is still parsing the
-// page body, which is BEFORE the later <script src="/js/main.js"> tag (in
-// the shared layout) has loaded — so main.js functions like debounce() are
-// not defined yet. Calling debounce() directly here threw "ReferenceError:
-// debounce is not defined", which aborted the rest of this script before
-// loadClients() ever ran — leaving the static loading spinner in
-// #clientGrid frozen forever. Deferring to DOMContentLoaded guarantees
-// main.js has already executed by the time this code runs.
-function init() {
-  const searchEl = document.getElementById('clientSearch');
-  const debounceFn = (typeof debounce === 'function') ? debounce : (fn, delay) => {
-    let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn.apply(null, args), delay); };
+const debouncedLoadCompanies = (function() {
+  let timer;
+  return function() {
+    clearTimeout(timer);
+    timer = setTimeout(loadCompanies, 450);
   };
-  searchEl.addEventListener('input', debounceFn(loadClients, 400));
-  loadClients();
+})();
+
+function clearCompaniesFilters() {
+  document.getElementById('companySearch').value = '';
+  loadCompanies();
 }
+
+function renderCompanies() {
+  const grid = document.getElementById('companyGrid');
+  if (!allCompanies.length) {
+    grid.innerHTML = `<tr><td colspan="6" class="empty-state" style="border:none; text-align:center; padding:40px;">
+      <div class="empty-state-icon"><i class="fas fa-building"></i></div>
+      <h3>Kompaniyalar topilmadi</h3>
+      <p>Yangi kompaniya qo'shing</p>
+    </td></tr>`;
+    return;
+  }
+  grid.innerHTML = allCompanies.map((co, idx) => {
+    return `
+      <tr>
+        <td style="text-align: center;">${idx + 1}</td>
+        <td style="font-weight: 600; color: var(--text-primary);">${escHtml(co.name)}</td>
+        <td>${co.address ? escHtml(co.address) : '—'}</td>
+        <td>${co.phone ? escHtml(co.phone) : '—'}</td>
+        <td>${co.website ? `<a href="http://${co.website}" target="_blank" style="color:var(--brand);">${escHtml(co.website)}</a>` : '—'}</td>
+        <td style="text-align:center;">
+          <div style="display:flex; justify-content:center; gap:4px;">
+            <button class="btn btn-ghost btn-sm btn-icon" onclick="openCompanyModal(${co.id})" title="Tahrirlash"><i class="fas fa-edit"></i></button>
+            <button class="btn btn-ghost btn-sm btn-icon text-danger" onclick="deleteCompany(${co.id})" title="O'chirish"><i class="fas fa-trash"></i></button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function openCompanyModal(id) {
+  document.getElementById('companyId').value = id || '';
+  document.getElementById('co-name').value = '';
+  document.getElementById('co-phone').value = '';
+  document.getElementById('co-website').value = '';
+  document.getElementById('co-address').value = '';
+  document.getElementById('companyModalTitle').textContent = id ? 'Kompaniyani tahrirlash' : 'Yangi kompaniya';
+
+  if (id) {
+    const co = allCompanies.find(x => x.id === id);
+    if (co) {
+      document.getElementById('co-name').value = co.name || '';
+      document.getElementById('co-phone').value = co.phone || '';
+      document.getElementById('co-website').value = co.website || '';
+      document.getElementById('co-address').value = co.address || '';
+    }
+  }
+  document.getElementById('companyModal').classList.remove('hidden');
+}
+
+function closeCompanyModal() {
+  document.getElementById('companyModal').classList.add('hidden');
+}
+
+async function saveCompany() {
+  const id = document.getElementById('companyId').value;
+  const name = document.getElementById('co-name').value.trim();
+  if (!name) { showToast('Kompaniya nomi majburiy', 'error'); return; }
+
+  const saveBtn = document.getElementById('companySaveBtn');
+  saveBtn.disabled = true;
+
+  const body = {
+    name,
+    phone: document.getElementById('co-phone').value || null,
+    website: document.getElementById('co-website').value || null,
+    address: document.getElementById('co-address').value || null
+  };
+
+  try {
+    const url = id ? '/api/companies/' + id : '/api/companies';
+    const r = await fetch(url, {
+      method: id ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    if (!r.ok) {
+      const err = await r.json();
+      throw new Error(err.message || 'Saqlashda xato');
+    }
+
+    showToast(id ? 'Kompaniya yangilandi' : 'Kompaniya qo\'shildi', 'success');
+    closeCompanyModal();
+    await loadCompanies();
+  } catch(e) {
+    showToast(e.message || 'Xato', 'error');
+  } finally {
+    saveBtn.disabled = false;
+  }
+}
+
+async function deleteCompany(id) {
+  if (!confirm("Kompaniyani o'chirishni tasdiqlaysizmi? (Kompaniyaga bog'langan kontaktlar o'chirilmaydi)")) return;
+  try {
+    const r = await fetch('/api/companies/' + id, { method: 'DELETE' });
+    if (!r.ok) throw new Error((await r.json()).message);
+    showToast("Kompaniya o'chirildi", 'success');
+    await loadCompanies();
+  } catch(e) {
+    showToast(e.message || 'Xato', 'error');
+  }
+}
+
+// ── UTILITIES & STATS ────────────────────────────────────────
+async function updateStats() {
+  try {
+    const kpis = await fetch('/api/dashboard/kpis?filter=all').then(r => r.json());
+    document.getElementById('statTotalContacts').textContent = kpis.totalContacts ?? 0;
+    document.getElementById('statTotalCompanies').textContent = kpis.totalCompanies ?? 0;
+    document.getElementById('statTotalDeals').textContent = kpis.won ?? 0;
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+async function loadManagers() {
+  try {
+    const r = await fetch('/api/settings/users');
+    allManagers = await r.json();
+    const select = document.getElementById('clientOwnerFilter');
+    select.innerHTML = '<option value="">Barcha mas\'ullar</option>';
+    allManagers.forEach(m => {
+      select.innerHTML += `<option value="${m.id}">${escHtml(m.fullName || m.email)}</option>`;
+    });
+  } catch(e) {
+    console.error("Menejerlarni yuklashda xato:", e);
+  }
+}
+
+// Escaping helper
+function escHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// Initialization
+async function init() {
+  await loadManagers();
+  switchTab('contacts');
+}
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {

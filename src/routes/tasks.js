@@ -7,9 +7,33 @@ router.use(protect)
 
 const userSelect = { select: { id: true, fullName: true, email: true, role: true } }
 
-// Format task client mapping (combining explicit task client and parent deal client)
+// Format task client mapping (combining explicit task client/contact and parent deal client/contact)
 function formatTaskClient(t) {
   if (!t) return null;
+
+  // Backwards compatibility: map contact to client
+  if (!t.client && t.contact) {
+    t.client = {
+      id: t.contact.id,
+      name: `${t.contact.firstName} ${t.contact.lastName || ''}`.trim(),
+      phone: t.contact.phone,
+      city: t.contact.city,
+      email: t.contact.email,
+      company: t.contact.company ? t.contact.company.name : null
+    };
+  }
+
+  if (t.deal && !t.deal.client && t.deal.contact) {
+    t.deal.client = {
+      id: t.deal.contact.id,
+      name: `${t.deal.contact.firstName} ${t.deal.contact.lastName || ''}`.trim(),
+      phone: t.deal.contact.phone,
+      city: t.deal.contact.city,
+      email: t.deal.contact.email,
+      company: t.deal.contact.company ? t.deal.contact.company.name : null
+    };
+  }
+
   const finalClient = t.client || t.deal?.client || null;
   return {
     ...t,
@@ -19,13 +43,6 @@ function formatTaskClient(t) {
 }
 
 // List tasks
-// Zero Freeze Policy: this endpoint must never hang and must never make the
-// frontend's "Yuklanmoqda..." spinner stick forever. If the DB query fails
-// for any reason (stale/out-of-sync Prisma client, connection issue, etc.)
-// we log it server-side and respond with [] (200) instead of bubbling to
-// the generic error handler — an empty list is always a safe, renderable
-// state for the Tasks page, whereas a 500 here previously fed an error
-// path that wasn't being handled consistently by every caller.
 router.get('/', async (req, res) => {
   try {
     const { completed, priority, dealId, mine } = req.query
@@ -42,6 +59,9 @@ router.get('/', async (req, res) => {
         client: {
           select: { id: true, name: true, company: true, phone: true, city: true }
         },
+        contact: {
+          include: { company: true }
+        },
         deal: {
           select: {
             id: true,
@@ -55,6 +75,9 @@ router.get('/', async (req, res) => {
             stage: { select: { id: true, name: true } },
             client: {
               select: { id: true, name: true, company: true, phone: true, city: true }
+            },
+            contact: {
+              include: { company: true }
             }
           }
         }
@@ -65,7 +88,7 @@ router.get('/', async (req, res) => {
     if (!Array.isArray(tasks)) return res.json([])
     res.json(tasks.map(formatTaskClient))
   } catch (error) {
-    console.error('[Tasks] GET / xato — bo\'sh ro\'yxat qaytarilmoqda:', error.message)
+    console.error('[Tasks] GET / xato:', error.message)
     res.json([])
   }
 })
@@ -80,11 +103,17 @@ router.get('/:id', async (req, res, next) => {
         client: {
           select: { id: true, name: true, company: true, phone: true, city: true }
         },
+        contact: {
+          include: { company: true }
+        },
         deal: {
           include: {
             stage: { select: { id: true, name: true } },
             client: {
               select: { id: true, name: true, company: true, phone: true, city: true }
+            },
+            contact: {
+              include: { company: true }
             }
           }
         }
@@ -101,6 +130,8 @@ router.post('/', async (req, res, next) => {
     const { title, description, dueDate, dueTime, dealId, assignedToId, priority, clientId, stageId, actionType, result } = req.body
     if (!title) return res.status(400).json({ message: 'Sarlavha majburiy' })
 
+    const resolvedContactId = clientId ? Number(clientId) : null;
+
     const task = await prisma.task.create({
       data: {
         title,
@@ -112,6 +143,7 @@ router.post('/', async (req, res, next) => {
         result: result || null,
         dealId: dealId ? Number(dealId) : null,
         clientId: clientId ? Number(clientId) : null,
+        contactId: resolvedContactId,
         assignedToId: assignedToId ? Number(assignedToId) : (typeof req.userId === 'number' ? req.userId : null)
       },
       include: {
@@ -119,12 +151,18 @@ router.post('/', async (req, res, next) => {
         client: {
           select: { id: true, name: true, company: true, phone: true, city: true }
         },
+        contact: {
+          include: { company: true }
+        },
         deal: {
           select: {
             id: true,
             productName: true,
             client: {
               select: { id: true, name: true, company: true, phone: true, city: true }
+            },
+            contact: {
+              include: { company: true }
             }
           }
         }
@@ -157,12 +195,17 @@ router.patch('/:id', async (req, res, next) => {
     if (result !== undefined) data.result = result
     if (completed !== undefined) {
       data.completed = completed
+      data.status = completed ? 'completed' : 'todo'
     } else if (stageId !== undefined && stageId !== null && stageId !== '') {
       data.completed = true
+      data.status = 'completed'
     }
     if (dealId !== undefined) data.dealId = dealId ? Number(dealId) : null
     if (assignedToId !== undefined) data.assignedToId = assignedToId ? Number(assignedToId) : null
-    if (clientId !== undefined) data.clientId = clientId ? Number(clientId) : null
+    if (clientId !== undefined) {
+      data.clientId = clientId ? Number(clientId) : null
+      data.contactId = clientId ? Number(clientId) : null
+    }
 
     const task = await prisma.task.update({
       where: { id: Number(req.params.id) },
@@ -172,12 +215,18 @@ router.patch('/:id', async (req, res, next) => {
         client: {
           select: { id: true, name: true, company: true, phone: true, city: true }
         },
+        contact: {
+          include: { company: true }
+        },
         deal: {
           select: {
             id: true,
             productName: true,
             client: {
               select: { id: true, name: true, company: true, phone: true, city: true }
+            },
+            contact: {
+              include: { company: true }
             }
           }
         }
@@ -204,7 +253,7 @@ router.patch('/:id/complete', async (req, res, next) => {
     const { result } = req.body
     const task = await prisma.task.update({
       where: { id: Number(req.params.id) },
-      data: { completed: true, result: result || null }
+      data: { completed: true, status: 'completed', result: result || null }
     })
     res.json(task)
   } catch (error) {

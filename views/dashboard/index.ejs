@@ -1014,110 +1014,48 @@ async function loadDashboard() {
 
     window.pipelineStats = pipelineStats;
     const safeKpis = kpis || {};
-    if (safeKpis.error) {
-      document.getElementById('debugErrorContainer').style.display = 'block';
-      document.getElementById('debugErrorMessage').innerText = safeKpis.error;
-    } else {
-      document.getElementById('debugErrorContainer').style.display = 'none';
-    }
-    const netProfitVal = safeKpis.netProfit ?? 0;
-    const profitClass = netProfitVal >= 0 ? 'text-success' : 'text-danger';
-    const cplVal = safeKpis.cpl ?? 0;
-    const roiVal = safeKpis.marketingRoi ?? 0;
-
-    const nasiya = (safeKpis.nasiyaDesco?.amount || 0) + (safeKpis.nasiyaIshonch?.amount || 0) + (safeKpis.nasiyaBaraka?.amount || 0);
-    const nasiyaCount = (safeKpis.nasiyaDesco?.count || 0) + (safeKpis.nasiyaIshonch?.count || 0) + (safeKpis.nasiyaBaraka?.count || 0);
-
-    let leadSubText = "Jami kirgan buyurtmalar";
-    if (filter === 'today') leadSubText = "Bugun (24 soat ichida) kirgan";
-    else if (filter === 'yesterday') leadSubText = "Kecha kirgan buyurtmalar";
-    else if (filter === 'day-before-yesterday') leadSubText = "Kuni kecha kirgan buyurtmalar";
-    else if (filter === 'month') leadSubText = "Shu oyda kirgan buyurtmalar";
-    else if (filter === 'range') leadSubText = "Tanlangan oraliqda kirgan";
-
-    // ══════════════════════════════════════════
-    // QATOR 1: Leadlar | Zakazlar | Nasiya/Savdo/Qarzdorlar | Klientlardagi Qarz (admin) | Zakazlar holati
+    if (safeKpis.error) {    // ══════════════════════════════════════════
+    // QATOR 1: Jami mijozlar | Jami kompaniyalar | Ochiq sdelkalar | Bu oygi daromad | Bajarilmagan tasklar
     // ══════════════════════════════════════════
     let row1Html = `
+      <div class="stat-card clickable" onclick="window.location.href='/clients'">
+        <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Jami mijozlar</div>
+          <div class="stat-value">${safeKpis.totalContacts ?? 0}</div>
+          <div class="stat-sub">Kontaktlar bazasi</div>
+        </div>
+      </div>
+      <div class="stat-card clickable" onclick="window.location.href='/clients'">
+        <div class="stat-icon purple"><i class="fas fa-building"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Kompaniyalar</div>
+          <div class="stat-value">${safeKpis.totalCompanies ?? 0}</div>
+          <div class="stat-sub">Kompaniyalar bazasi</div>
+        </div>
+      </div>
       <div class="stat-card clickable" onclick="window.location.href='/deals'">
-        <div class="stat-icon blue"><i class="fas fa-bullseye"></i></div>
-        <div class="stat-info" style="width: 100%;">
-          <div class="stat-label">Leadlar</div>
-          <div class="stat-value">${safeKpis.totalLeads ?? 0}</div>
-          <div class="stat-sub" style="margin-bottom: 4px;">${leadSubText}</div>
-          <div style="margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; border-top: 1px dashed var(--border); padding-top: 6px; width: 100%;">
-            <span style="font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 4px; background: rgba(0, 122, 255, 0.1); color: #007AFF;" title="Target reklamalari">Target: ${safeKpis.sourcesCount?.target ?? 0}</span>
-            <span style="font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 4px; background: rgba(225, 48, 108, 0.1); color: #E1306C;" title="Instagram Direct">Insta: ${safeKpis.sourcesCount?.instagram ?? 0}</span>
-            <span style="font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 4px; background: rgba(52, 199, 89, 0.1); color: #34C759;" title="Telegram murojaatlari">TG: ${safeKpis.sourcesCount?.telegram ?? 0}</span>
-            <span style="font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 4px; background: rgba(142, 142, 147, 0.1); color: #8E8E93;" title="Qo'lda kiritilgan / Boshqa">Oddiy: ${safeKpis.sourcesCount?.oddiy ?? 0}</span>
-          </div>
+        <div class="stat-icon orange"><i class="fas fa-handshake"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Ochiq sdelkalar</div>
+          <div class="stat-value">${safeKpis.openDealsCount ?? 0}</div>
+          <div class="stat-sub">Jarayondagi bitimlar</div>
         </div>
       </div>
       <div class="stat-card clickable" onclick="openFinancialModal('installments')">
-        <div class="stat-icon green"><i class="fas fa-shopping-cart"></i></div>
+        <div class="stat-icon green"><i class="fas fa-wallet"></i></div>
         <div class="stat-info">
-          <div class="stat-label">Zakazlar</div>
-          <div class="stat-value">${safeKpis.won ?? 0}</div>
-          <div class="stat-sub">Yopilgan (Won): ${renderCardMoney(safeKpis.totalRevenue ?? 0)}</div>
+          <div class="stat-label">Bu oygi daromad</div>
+          <div class="stat-value">${renderCardMoney(safeKpis.monthlyRevenue ?? 0)}</div>
+          <div class="stat-sub">Muvaffaqiyatli savdo</div>
         </div>
       </div>
-      <div class="stat-card clickable" onclick="window.location.href='/nasiya/list?stage=nasiya'">
-        <div class="stat-icon green"><i class="fas fa-coins"></i></div>
+      <div class="stat-card clickable" onclick="window.location.href='/tasks'">
+        <div class="stat-icon red"><i class="fas fa-check-circle"></i></div>
         <div class="stat-info">
-          <div class="stat-label">Nasiya / Savdo / Qarzdorlar</div>
-          <div class="stat-value">${renderCardMoney(nasiya)}</div>
-          <div class="stat-sub">Soni: ${nasiyaCount} ta nasiya · Shopir: ${fmtMoney(safeKpis.shopir?.amount ?? 0)}</div>
-        </div>
-      </div>
-    `;
-
-    if (USER_ROLE === 'admin') {
-      row1Html += `
-        <div class="stat-card clickable" onclick="openFinancialModal('client-debts')">
-          <div class="stat-icon red"><i class="fas fa-hand-holding-usd"></i></div>
-          <div class="stat-info">
-            <div class="stat-label">Klientlardagi Qarz</div>
-            <div class="stat-value">${renderCardMoney(safeKpis.totalClientDebt ?? 0)}</div>
-            <div class="stat-sub">To'lanmagan qoldiq</div>
-          </div>
-        </div>
-      `;
-    }
-
-    var dlvStatObj = Array.isArray(pipelineStats) ? pipelineStats.find(function(st){
-      var n = (st.name || '').toLowerCase();
-      return n.includes('taksi') || n.includes('yolda') || n.includes('yetib') || n.includes('kutilyapti');
-    }) : null;
-    var dlvPipelineId = dlvStatObj ? dlvStatObj.pipelineId : '';
-    var redirectUrl = dlvPipelineId ? ('/deals?pipelineId=' + dlvPipelineId) : '/deals';
-
-    row1Html += `
-      <div class="stat-card clickable" onclick="window.location.href='${redirectUrl}'" style="padding:14px 16px;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-          <div class="stat-icon blue" style="margin:0;flex-shrink:0;"><i class="fas fa-layer-group"></i></div>
-          <div>
-            <div class="stat-label" style="margin:0;">Zakazlar holati</div>
-            <div style="font-size:13px;font-weight:700;color:var(--text-primary);">${(safeKpis.totalOrders ?? 0)} ta jami</div>
-          </div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:5px;">
-          ${(function() {
-            var stgs = Array.isArray(pipelineStats) ? pipelineStats : [];
-            if (!stgs.length) return '<div style="font-size:11px;color:var(--text-muted);">Bosqich yo\'q</div>';
-            var total = stgs.reduce(function(s,st){return s+st.count;},0) || 1;
-            return stgs.map(function(st,i) {
-              var pct = Math.round((st.count/total)*100);
-              var c = st.color || '#888';
-              return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">'
-                + '<div style="width:7px;height:7px;border-radius:50%;background:' + c + ';flex-shrink:0;"></div>'
-                + '<div style="flex:1;font-size:10.5px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escHtml(st.name) + '</div>'
-                + '<div style="font-size:10.5px;font-weight:700;color:var(--text-primary);min-width:16px;text-align:right;">' + st.count + '</div>'
-                + '<div style="width:36px;height:4px;background:var(--surface-elevated);border-radius:2px;flex-shrink:0;margin-left:4px;">'
-                +   '<div style="width:' + pct + '%;height:100%;background:' + c + ';border-radius:2px;"></div>'
-                + '</div>'
-              + '</div>';
-            }).join('');
-          })()}
+          <div class="stat-label">Bajarilmagan tasklar</div>
+          <div class="stat-value">${safeKpis.pendingTasksCount ?? 0}</div>
+          <div class="stat-sub">Faol vazifalar soni</div>
         </div>
       </div>
     `;

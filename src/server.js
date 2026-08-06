@@ -59,15 +59,20 @@ let sessionConfig = {
   }
 };
 
-const isPostgres = process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith('postgres://') || process.env.DATABASE_URL.startsWith('postgresql://'));
+const isPostgres = process.env.DATABASE_URL && 
+                   (process.env.DATABASE_URL.startsWith('postgres://') || process.env.DATABASE_URL.startsWith('postgresql://')) &&
+                   process.env.SESSION_STORE !== 'memory';
 
 if (isPostgres) {
   try {
     const pgSession = require('connect-pg-simple')(session);
     const { Pool } = require('pg');
     const sessionPool = new Pool({
-      connectionString: process.env.DIRECT_URL || process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false }
+      connectionString: process.env.DATABASE_URL || process.env.DIRECT_URL,
+      ssl: { rejectUnauthorized: false },
+      max: 2, // Limit concurrent connections to avoid exhausting database pool
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000
     });
     sessionPool.on('error', (err) => {
       console.error('[Session Pool] Kutilmagan xato:', err.message);
@@ -113,6 +118,7 @@ app.use('/api/deals',           require('./routes/deals'));
 app.use('/api/nasiya',          require('./routes/nasiya'));
 app.use('/api/extra',           require('./routes/extra'));
 app.use('/api/clients',         require('./routes/clients'));
+app.use('/api/companies',       require('./routes/companies'));
 app.use('/api/expenses',        require('./routes/expenses'));
 app.use('/api/tasks',           require('./routes/tasks'));
 app.use('/api/notifications',   require('./routes/notifications'));
@@ -152,7 +158,10 @@ app.get('/expenses', requireAuth, requireRole('admin', 'manager'), (req, res) =>
 app.get('/extra/drivers',  requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('extra/index',  { user: req.session.user, activePage: 'extra-drivers', subPage: 'drivers' }));
 app.get('/extra/branches', requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('extra/index',  { user: req.session.user, activePage: 'extra-branches', subPage: 'branches' }));
 app.get('/tasks',    requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('tasks/index',    { user: req.session.user, activePage: 'tasks' }));
-app.get('/instagram', requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('instagram/index', { user: req.session.user, activePage: 'instagram' }));
+app.get('/instagram', requireAuth, requireRole('admin', 'manager'), (req, res) => {
+  const filter = req.query.filter || 'direct';
+  res.render('instagram/index', { user: req.session.user, activePage: 'instagram-' + filter });
+});
 app.get('/telegram',  requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('telegram/index',  { user: req.session.user, activePage: 'telegram' }));
 app.get('/ai',        requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('ai/index',        { user: req.session.user, activePage: 'ai' }));
 app.get('/warehouse', requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('warehouse/index', { user: req.session.user, activePage: 'warehouse' }));

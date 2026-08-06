@@ -1,18 +1,17 @@
-const express = require('express')
-const prisma = require('../config/database')
-const { protect, requireRole } = require('../middleware/auth')
+const express = require('express');
+const prisma = require('../config/database');
+const { protect, requireRole } = require('../middleware/auth');
 
-const router = express.Router()
-router.use(protect)
+const router = express.Router();
+router.use(protect);
 
-const ownerSelect = { select: { id: true, fullName: true, email: true, role: true } }
+const ownerSelect = { select: { id: true, fullName: true, email: true, role: true } };
 
-// List clients (with optional search)
+// List contacts
 router.get('/', async (req, res, next) => {
   try {
-    const { q } = req.query
-    
-    // Exclude clients who are just chat contacts (have chat ID, no phone, and no deals)
+    const { q, ownerId, source, tag } = req.query;
+
     const baseWhere = {
       NOT: {
         AND: [
@@ -35,174 +34,255 @@ router.get('/', async (req, res, next) => {
       }
     };
 
-    const where = q
-      ? {
-          AND: [
-            baseWhere,
-            { OR: [{ name: { contains: q } }, { company: { contains: q } }, { phone: { contains: q } }] }
-          ]
-        }
-      : baseWhere;
+    const where = {
+      AND: [baseWhere]
+    };
 
-    const clients = await prisma.client.findMany({
+    if (q) {
+      where.AND.push({
+        OR: [
+          { firstName: { contains: q, mode: 'insensitive' } },
+          { lastName: { contains: q, mode: 'insensitive' } },
+          { phone: { contains: q } },
+          { email: { contains: q, mode: 'insensitive' } },
+          { company: { name: { contains: q, mode: 'insensitive' } } }
+        ]
+      });
+    }
+
+    if (ownerId) {
+      where.AND.push({ ownerId: Number(ownerId) });
+    }
+
+    if (source) {
+      where.AND.push({ source: { equals: source, mode: 'insensitive' } });
+    }
+
+    if (tag) {
+      where.AND.push({ tags: { has: tag } });
+    }
+
+    const contacts = await prisma.contact.findMany({
       where,
       include: {
         owner: ownerSelect,
-        deals: { select: { id: true, productName: true, amount: true, status: true } }
+        company: true,
+        deals: { select: { id: true, title: true, amount: true, status: true, productName: true } }
       },
       orderBy: { createdAt: 'desc' }
-    })
-    res.json(clients)
-  } catch (error) {
-    next(error)
-  }
-})
+    });
 
-// Get client details
+    // Map Contact object to align with Client structure on frontend if necessary
+    const mappedContacts = contacts.map(c => ({
+      ...c,
+      name: `${c.firstName} ${c.lastName || ''}`.trim(),
+      companyName: c.company ? c.company.name : null,
+      company: c.company ? c.company.name : null
+    }));
+
+    res.json(mappedContacts);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get contact details
 router.get('/:id', async (req, res, next) => {
   try {
-    let client = await prisma.client.findUnique({
+    let contact = await prisma.contact.findUnique({
       where: { id: Number(req.params.id) },
       include: {
         owner: ownerSelect,
-        deals: { include: { manager: ownerSelect } }
+        company: true,
+        deals: { include: { manager: ownerSelect, stage: true } }
       }
-    })
-    if (!client) return res.status(404).json({ message: 'Mijoz topilmadi' })
+    });
+    if (!contact) return res.status(404).json({ message: 'Kontakt topilmadi' });
 
-    // Dynamically resolve missing Instagram/Telegram profile info from Wazzup
-    if ((client.instagramId && (!client.instagramUsername || client.name.startsWith('Instagram Lead'))) ||
-        (client.telegramId && !client.telegramUsername)) {
-      const settings = await prisma.companySettings.findFirst();
-      const WAZZUP_API_KEY = process.env.WAZZUP_API_KEY || (settings?.instagramAccessToken && settings.instagramAccessToken.length === 32 ? settings.instagramAccessToken : null);
-      if (WAZZUP_API_KEY) {
-        try {
-          const contactId = client.instagramId || client.telegramId;
-          const contactRes = await fetch(`https://api.wazzup24.com/v3/contacts/${contactId}`, {
-            headers: { 'Authorization': `Bearer ${WAZZUP_API_KEY}` }
-          });
-          if (contactRes.ok) {
-            const contactData = await contactRes.json();
-            const updateData = {};
-            
-            // Extract username from contactData array
-            if (contactData.contactData && Array.isArray(contactData.contactData)) {
-              if (client.instagramId) {
-                const igData = contactData.contactData.find(c => c.chatType === 'instagram' || c.chatType === 'instagramComment');
-                if (igData && igData.username) {
-                  updateData.instagramUsername = igData.username;
-                }
-              } else if (client.telegramId) {
-                const tgData = contactData.contactData.find(c => c.chatType === 'telegram');
-                if (tgData && tgData.username) {
-                  updateData.telegramUsername = tgData.username;
-                }
-              }
-            }
+    // Map to client format for frontend compatibility
+    const mappedContact = {
+      ...contact,
+      name: `${contact.firstName} ${contact.lastName || ''}`.trim(),
+      companyName: contact.company ? contact.company.name : null,
+      company: contact.company ? contact.company.name : null
+    };
 
-            // Extract contact name if it is not generic and is set
-            if (contactData.name && contactData.name !== contactId && !contactData.name.startsWith('Instagram Lead') && !contactData.name.startsWith('Telegram Lead')) {
-              updateData.name = contactData.name;
-            }
+    res.json(mappedContact);
+  } catch (error) {
+    next(error);
+  }
+});
 
-            if (Object.keys(updateData).length > 0) {
-              client = await prisma.client.update({
-                where: { id: client.id },
-                data: updateData,
-                include: {
-                  owner: ownerSelect,
-                  deals: { include: { manager: ownerSelect } }
-                }
-              });
-              console.log(`[Wazzup Profile Sync] Successfully resolved and updated contact:`, updateData);
-            }
-          }
-        } catch (err) {
-          console.error('[Wazzup Profile Sync] Failed to fetch contact from Wazzup:', err);
-        }
+// Create contact (with duplicate check & inline company creation)
+router.post('/', requireRole('admin', 'manager'), async (req, res, next) => {
+  try {
+    const { name, phone, email, companyId, companyName, notes, city, source, tags, position } = req.body;
+    if (!name) return res.status(400).json({ message: 'Ism majburiy' });
+
+    // 1. Duplicate check by phone or email
+    if (phone) {
+      const existingPhone = await prisma.contact.findFirst({
+        where: { phone: phone.trim() }
+      });
+      if (existingPhone) {
+        return res.status(400).json({ message: 'Ushbu telefon raqamiga ega kontakt tizimda allaqachon mavjud!' });
       }
     }
 
-    res.json(client)
-  } catch (error) {
-    next(error)
-  }
-})
+    if (email) {
+      const existingEmail = await prisma.contact.findFirst({
+        where: { email: email.trim().toLowerCase() }
+      });
+      if (existingEmail) {
+        return res.status(400).json({ message: 'Ushbu emailga ega kontakt tizimda allaqachon mavjud!' });
+      }
+    }
 
-// Create client
-router.post('/', requireRole('admin', 'manager'), async (req, res, next) => {
-  try {
-    const { name, phone, email, company, notes, city, debt, debtDate, debtNotes } = req.body
-    if (!name) return res.status(400).json({ message: 'Ism majburiy' })
+    // 2. Resolve or create inline Company
+    let resolvedCompanyId = companyId ? Number(companyId) : null;
+    if (!resolvedCompanyId && companyName && companyName.trim()) {
+      const newCompany = await prisma.company.create({
+        data: {
+          name: companyName.trim(),
+          ownerId: req.userId
+        }
+      });
+      resolvedCompanyId = newCompany.id;
+    }
 
-    const client = await prisma.client.create({
+    // 3. Name split (firstName, lastName)
+    const nameParts = name.trim().split(/\s+/);
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(' ') || null;
+
+    // Create Contact
+    const contact = await prisma.contact.create({
       data: {
-        name,
+        firstName,
+        lastName,
         phone: phone || null,
         email: email || null,
-        company: company || null,
         notes: notes || null,
-        city: city || null,
-        debt: debt ? Number(debt) : 0,
-        debtDate: (debtDate && !isNaN(new Date(debtDate))) ? new Date(debtDate) : (debt ? new Date() : null),
-        debtNotes: debtNotes || null,
+        source: source || 'oddiy',
+        tags: Array.isArray(tags) ? tags : (tags ? String(tags).split(',').map(t => t.trim()).filter(Boolean) : []),
+        position: position || null,
+        companyId: resolvedCompanyId,
         ownerId: req.userId
       },
-      include: { owner: ownerSelect }
-    })
-    res.status(201).json(client)
-  } catch (error) {
-    next(error)
-  }
-})
+      include: {
+        owner: ownerSelect,
+        company: true
+      }
+    });
 
-// Update client
+    const mapped = {
+      ...contact,
+      name: `${contact.firstName} ${contact.lastName || ''}`.trim(),
+      companyName: contact.company ? contact.company.name : null,
+      company: contact.company ? contact.company.name : null
+    };
+
+    res.status(201).json(mapped);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Update contact
 router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
-    const { name, phone, email, company, notes, debt, city, debtDate, debtNotes } = req.body
+    const { name, phone, email, companyId, companyName, notes, source, tags, position } = req.body;
+    const contactId = Number(req.params.id);
 
-    const data = {}
-    if (name !== undefined) data.name = name
-    if (phone !== undefined) data.phone = phone
-    if (email !== undefined) data.email = email
-    if (company !== undefined) data.company = company
-    if (notes !== undefined) data.notes = notes
-    if (debt !== undefined) data.debt = Number(debt) || 0
-    if (city !== undefined) data.city = city
-    if (debtDate !== undefined) data.debtDate = (debtDate && !isNaN(new Date(debtDate))) ? new Date(debtDate) : null
-    if (debtNotes !== undefined) data.debtNotes = debtNotes
+    // Duplicate check if phone or email changes
+    if (phone) {
+      const existingPhone = await prisma.contact.findFirst({
+        where: {
+          phone: phone.trim(),
+          id: { not: contactId }
+        }
+      });
+      if (existingPhone) {
+        return res.status(400).json({ message: 'Ush2 telefon raqami boshqa kontaktga tegishli!' });
+      }
+    }
 
-    const client = await prisma.client.update({
-      where: { id: Number(req.params.id) },
+    if (email) {
+      const existingEmail = await prisma.contact.findFirst({
+        where: {
+          email: email.trim().toLowerCase(),
+          id: { not: contactId }
+        }
+      });
+      if (existingEmail) {
+        return res.status(400).json({ message: 'Ushbu email boshqa kontaktga tegishli!' });
+      }
+    }
+
+    // Resolve or create inline Company
+    let resolvedCompanyId = companyId !== undefined ? (companyId ? Number(companyId) : null) : undefined;
+    if (resolvedCompanyId === null && companyName && companyName.trim()) {
+      const newCompany = await prisma.company.create({
+        data: {
+          name: companyName.trim(),
+          ownerId: req.userId
+        }
+      });
+      resolvedCompanyId = newCompany.id;
+    }
+
+    const data = {};
+    if (name !== undefined) {
+      const nameParts = name.trim().split(/\s+/);
+      data.firstName = nameParts[0];
+      data.lastName = nameParts.slice(1).join(' ') || null;
+    }
+    if (phone !== undefined) data.phone = phone || null;
+    if (email !== undefined) data.email = email || null;
+    if (notes !== undefined) data.notes = notes || null;
+    if (source !== undefined) data.source = source || 'oddiy';
+    if (tags !== undefined) data.tags = Array.isArray(tags) ? tags : (tags ? String(tags).split(',').map(t => t.trim()).filter(Boolean) : []);
+    if (position !== undefined) data.position = position || null;
+    if (resolvedCompanyId !== undefined) data.companyId = resolvedCompanyId;
+
+    const contact = await prisma.contact.update({
+      where: { id: contactId },
       data,
-      include: { owner: ownerSelect }
-    })
-    res.json(client)
-  } catch (error) {
-    if (error.code === 'P2025') return res.status(404).json({ message: 'Mijoz topilmadi' })
-    next(error)
-  }
-})
+      include: { owner: ownerSelect, company: true }
+    });
 
-// Delete client
+    const mapped = {
+      ...contact,
+      name: `${contact.firstName} ${contact.lastName || ''}`.trim(),
+      companyName: contact.company ? contact.company.name : null,
+      company: contact.company ? contact.company.name : null
+    };
+
+    res.json(mapped);
+  } catch (error) {
+    if (error.code === 'P2025') return res.status(404).json({ message: 'Kontakt topilmadi' });
+    next(error);
+  }
+});
+
+// Delete contact
 router.delete('/:id', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
-    const clientId = Number(req.params.id);
+    const contactId = Number(req.params.id);
 
-    // Avval tegishli sdelkalar borligini tekshirish
-    const dealCount = await prisma.deal.count({ where: { clientId } });
+    const dealCount = await prisma.deal.count({ where: { contactId } });
     if (dealCount > 0) {
       return res.status(400).json({
         message: `Bu mijozga ${dealCount} ta sdelka biriktirilgan. Avval sdelkalarni o'chiring yoki boshqa mijozga o'tkazing.`
       });
     }
 
-    await prisma.client.delete({ where: { id: clientId } })
-    res.json({ message: 'Mijoz o\'chirildi' })
+    await prisma.contact.delete({ where: { id: contactId } });
+    res.json({ message: 'Mijoz o\'chirildi' });
   } catch (error) {
-    if (error.code === 'P2025') return res.status(404).json({ message: 'Mijoz topilmadi' })
-    next(error)
+    if (error.code === 'P2025') return res.status(404).json({ message: 'Kontakt topilmadi' });
+    next(error);
   }
-})
+});
 
-module.exports = router
+module.exports = router;

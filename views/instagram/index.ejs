@@ -883,7 +883,7 @@ let currentClientName = '';
 let allPipelines = [];
 let unreadMessageCounts = {}; // Track client unread counts locally
 let clientsCache = []; // Cache of currently loaded clients
-let activeChatFilter = 'unanswered'; // Default to unanswered
+let activeChatFilter = new URLSearchParams(window.location.search).get('filter') || 'unanswered';
 
 function setChatFilter(filter) {
   activeChatFilter = filter;

@@ -39,7 +39,28 @@ async function upsertClientByPhone(name, phone, email, source) {
       });
     }
 
-    return client;
+    // ALSO upsert Contact
+    let contact = await tx.contact.findFirst({
+      where: { phone: { contains: cleanPhone } }
+    });
+
+    if (!contact) {
+      const cName = String(name).trim();
+      const nameParts = cName.split(/\s+/);
+      const firstName = nameParts[0] || "Nomsiz";
+      const lastName = nameParts.slice(1).join(' ') || null;
+
+      contact = await tx.contact.create({
+        data: {
+          firstName,
+          lastName,
+          phone: cleanPhone,
+          email: email || null
+        }
+      });
+    }
+
+    return { client, contact };
   }, { timeout: 15000 });
 }
 
@@ -189,8 +210,8 @@ async function handleMetaWebhook(body, broadcast) {
 
           // 3. Mijozni bazada tranzaksiya yordamida upsert qilish (dublikatsiz)
           console.log(`[Meta Webhook] Mijoz upsert qilinmoqda: Ism=${rawName}, Tel=${rawPhone}, Email=${rawEmail}`);
-          const client = await upsertClientByPhone(rawName, rawPhone, rawEmail, 'Instagram Webhook');
-          console.log(`[Meta Webhook] ✓ Mijoz tayyor. Client ID: ${client.id}, Ism: ${client.name}`);
+          const { client, contact } = await upsertClientByPhone(rawName, rawPhone, rawEmail, 'Instagram Webhook');
+          console.log(`[Meta Webhook] ✓ Mijoz va Kontakt tayyor. Client ID: ${client.id}, Contact ID: ${contact.id}`);
 
           // 4. Voronka va Bosqichni topish
           const { pipelineId, stageId } = await getDefaultPipelineAndStage();
@@ -208,6 +229,7 @@ async function handleMetaWebhook(body, broadcast) {
                 amount: 0,
                 status: 'new',
                 clientId: client.id,
+                contactId: contact.id,
                 pipelineId,
                 stageId,
                 notes: `Meta LeadGen ID: ${leadgenId}\nForm ID: ${formId}\nAd ID: ${adId}`,
@@ -706,6 +728,39 @@ async function handleUniversalLead(source, rawData, broadcast) {
         console.log(`[Universal Lead Transaction] Mavjud mijoz topildi. ID: ${client.id}`);
       }
 
+      // ALSO upsert Contact
+      let contact = null;
+      if (cleanPhone) {
+        contact = await tx.contact.findFirst({
+          where: { phone: { contains: cleanPhone } }
+        });
+      }
+
+      if (!contact) {
+        const cName = parsed.name.trim();
+        const nameParts = cName.split(/\s+/);
+        const firstName = nameParts[0] || "Nomsiz";
+        const lastName = nameParts.slice(1).join(' ') || null;
+
+        contact = await tx.contact.create({
+          data: {
+            firstName,
+            lastName,
+            phone: cleanPhone,
+            city: parsed.city || null
+          }
+        });
+        console.log(`[Universal Lead Transaction] Yangi kontakt yaratildi. ID: ${contact.id}`);
+      } else {
+        if (parsed.city && !contact.city) {
+          contact = await tx.contact.update({
+            where: { id: contact.id },
+            data: { city: parsed.city }
+          });
+        }
+        console.log(`[Universal Lead Transaction] Mavjud kontakt topildi. ID: ${contact.id}`);
+      }
+
       // Voronka va Bosqichni topamiz
       const pipeline = await tx.pipeline.findFirst({
         where: { isDefault: true },
@@ -737,6 +792,7 @@ async function handleUniversalLead(source, rawData, broadcast) {
           amount: 0,
           status: 'new',
           clientId: client.id,
+          contactId: contact.id,
           pipelineId: targetPipelineId,
           stageId: targetStageId,
           notes: dealNotes,
