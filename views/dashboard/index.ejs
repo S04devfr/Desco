@@ -850,6 +850,27 @@ function updateExportUrl() {
   if (btn) btn.href = url;
 }
 
+// Toggle Lead breakdown list
+window.toggleLeadBreakdown = function(event) {
+  const list = document.getElementById('leadBreakdownList');
+  const chevron = document.getElementById('leadChevron');
+  if (list) {
+    if (list.style.display === 'none') {
+      list.style.display = 'flex';
+      if (chevron) {
+        chevron.classList.remove('fa-chevron-down');
+        chevron.classList.add('fa-chevron-up');
+      }
+    } else {
+      list.style.display = 'none';
+      if (chevron) {
+        chevron.classList.remove('fa-chevron-up');
+        chevron.classList.add('fa-chevron-down');
+      }
+    }
+  }
+};
+
 // Toggle Zakaz breakdown list
 window.toggleZakazBreakdown = function(event) {
   const list = document.getElementById('zakazBreakdownList');
@@ -914,12 +935,22 @@ async function loadDashboard() {
     const totalNasiyaCount = ndCount + niCount + nbCount;
 
     let row1Html = `
-      <div class="stat-card clickable" onclick="window.location.href='/clients'" style="display: flex; align-items: flex-start; gap: 16px; height: 100%;">
+      <div class="stat-card clickable" onclick="toggleLeadBreakdown(event)" style="display: flex; align-items: flex-start; gap: 16px; height: 100%; position: relative;">
         <div class="stat-icon blue" style="margin-top: 4px; flex-shrink: 0;"><i class="fas fa-crosshairs"></i></div>
         <div class="stat-info" style="flex: 1; min-width: 0;">
-          <div class="stat-label">Leadlar</div>
-          <div class="stat-value">${safeKpis.totalContacts ?? 0}</div>
-          <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; color: var(--text-secondary); border-top: 1px dashed var(--border); padding-top: 8px; margin-top: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="stat-label">Leadlar</div>
+            <a href="/clients" class="btn btn-ghost btn-sm text-brand" style="padding: 2px 6px; font-size: 11px;" onclick="event.stopPropagation();" title="Mijozlar bo'limiga o'tish">
+              <i class="fas fa-external-link-alt"></i> Ko'rish
+            </a>
+          </div>
+          <div class="stat-value" style="display: flex; align-items: center; gap: 8px;">
+            <span>${safeKpis.totalContacts ?? 0}</span>
+            <span style="font-size: 11px; font-weight: normal; color: var(--brand); background: rgba(14, 165, 233, 0.1); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 4px;">
+              Tafsilotlar <i class="fas fa-chevron-down" id="leadChevron"></i>
+            </span>
+          </div>
+          <div id="leadBreakdownList" style="display: none; flex-direction: column; gap: 4px; font-size: 11.5px; color: var(--text-secondary); border-top: 1px dashed var(--border); padding-top: 8px; margin-top: 8px;">
             <div style="display: flex; justify-content: space-between; gap: 8px;">
               <span>Instagram:</span>
               <strong style="color: var(--text-primary);">${safeKpis.sourcesCount?.instagram ?? 0} ta</strong>
