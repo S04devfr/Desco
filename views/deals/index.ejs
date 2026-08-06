@@ -2664,7 +2664,7 @@ function dealModalAutoGenerateInstallments(months) {
       const pName = document.getElementById('f-name').options[document.getElementById('f-name').selectedIndex]?.text || 'Nasiya';
       
       const div = document.createElement('div');
-      div.innerHTML = getDealModalInstallmentRowHtml(i, dateStr, amount, false, pName, \`\${i+1}-oy\`, '');
+      div.innerHTML = getDealModalInstallmentRowHtml(i, dateStr, amount, false, pName, `${i+1}-oy`, '');
       container.appendChild(div.firstElementChild);
     }
   }
@@ -2687,32 +2687,32 @@ function dealModalAddInstallmentRow() {
   }
   
   const div = document.createElement('div');
-  div.innerHTML = getDealModalInstallmentRowHtml(index, dateStr, 0, false, pName, \`\${index+1}-oy\`, '');
+  div.innerHTML = getDealModalInstallmentRowHtml(index, dateStr, 0, false, pName, `${index+1}-oy`, '');
   container.appendChild(div.firstElementChild);
 }
 
 function getDealModalInstallmentRowHtml(index, dateVal, amountVal, paidVal, productVal, monthVal, notesVal) {
-  return \`
+  return `
     <div class="installment-row" style="display:grid; grid-template-columns:100px 1fr auto; gap:6px; background:var(--bg-primary); padding:6px; border-radius:6px; border:1px solid var(--border); align-items:center;">
-      <input type="date" class="form-control inst-date" style="font-size:11px; padding:4px; height:26px;" value="\${dateVal}">
+      <input type="date" class="form-control inst-date" style="font-size:11px; padding:4px; height:26px;" value="${dateVal}">
       <div style="display:flex; flex-direction:column; gap:4px;">
         <div style="display:flex; gap:4px;">
-          <input type="text" class="form-control inst-month" style="font-size:11px; padding:4px; height:24px; width:50px; text-align:center" value="\${monthVal}" placeholder="Oy">
-          <input type="number" class="form-control inst-amount" style="font-size:11px; padding:4px; height:24px; font-weight:600; color:var(--brand)" value="\${amountVal}" placeholder="Summa">
+          <input type="text" class="form-control inst-month" style="font-size:11px; padding:4px; height:24px; width:50px; text-align:center" value="${monthVal}" placeholder="Oy">
+          <input type="number" class="form-control inst-amount" style="font-size:11px; padding:4px; height:24px; font-weight:600; color:var(--brand)" value="${amountVal}" placeholder="Summa">
         </div>
         <div style="display:flex; gap:4px;">
-          <input type="text" class="form-control inst-product" style="font-size:10px; padding:4px; height:22px; flex:1;" value="\${productVal}" placeholder="Mahsulot nomi">
-          <input type="text" class="form-control inst-notes" style="font-size:10px; padding:4px; height:22px; flex:1;" value="\${notesVal}" placeholder="Izoh">
+          <input type="text" class="form-control inst-product" style="font-size:10px; padding:4px; height:22px; flex:1;" value="${productVal}" placeholder="Mahsulot nomi">
+          <input type="text" class="form-control inst-notes" style="font-size:10px; padding:4px; height:22px; flex:1;" value="${notesVal}" placeholder="Izoh">
         </div>
       </div>
       <div style="display:flex; align-items:center; gap:6px; padding:0 4px;">
         <label style="display:flex; align-items:center; gap:4px; font-size:10px; cursor:pointer;">
-          <input type="checkbox" class="inst-paid" \${paidVal ? 'checked' : ''} style="width:14px; height:14px;"> To'langan
+          <input type="checkbox" class="inst-paid" ${paidVal ? 'checked' : ''} style="width:14px; height:14px;"> To'langan
         </label>
         <button type="button" class="btn btn-sm btn-ghost text-danger" onclick="this.closest('.installment-row').remove()" style="padding:2px 6px;"><i class="fas fa-trash-alt"></i></button>
       </div>
     </div>
-  \`;
+  `;
 }
 
 // ── Deal modal ─────────────────────────────────────────────────
