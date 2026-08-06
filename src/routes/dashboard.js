@@ -600,7 +600,24 @@ router.get('/product-popularity', async (req, res, next) => {
     const isAdmin = req.user && req.user.role === 'admin';
     const where = buildWhere(req.query.filter, req);
     if (!isAdmin) where.managerId = req.userId;
-    const deals = await prisma.deal.findMany({ where, select: { productName: true, amount: true } })
+    const deals = await prisma.deal.findMany({
+      where: {
+        ...where,
+        stage: {
+          name: {
+            in: [
+              'Nasiya Desco',
+              'Nasiya Ishonch',
+              'Nasiya Baraka',
+              'mahsulot shopirda',
+              '100% Zakaz'
+            ],
+            mode: 'insensitive'
+          }
+        }
+      },
+      select: { productName: true, amount: true }
+    });
 
     const normalizeToCatalog = (name) => {
       const lower = name.toLowerCase();
