@@ -734,7 +734,7 @@ router.patch('/:id', async (req, res, next) => {
     if (tags !== undefined) data.tags = tags;
     if (managerId !== undefined) {
       data.managerId = managerId ? Number(managerId) : null
-    } else if (existing.managerId === null) {
+    } else if (existing.managerId === null && req.user?.role !== 'admin') {
       // Boshqa tahrirlash jarayonida ham bo'sh sdelka o'zlashtiriladi
       data.managerId = req.userId
     }
@@ -947,7 +947,7 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
         }
 
         let finalManagerId = txDeal.managerId;
-        if (!finalManagerId) {
+        if (!finalManagerId && req.user?.role !== 'admin') {
           finalManagerId = req.userId;
         }
 
