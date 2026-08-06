@@ -1206,7 +1206,7 @@
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
           <div class="form-group">
             <label class="form-label">Bosqich</label>
-            <select id="f-stageId" class="form-control">
+            <select id="f-stageId" class="form-control" onchange="dealModalStageChanged()">
               <option value="">— Bosqich —</option>
             </select>
           </div>
@@ -1214,6 +1214,23 @@
             <label class="form-label">Mijoz oladigan vaqt <span
                 style="font-size:10px;font-weight:normal;color:#999">(Sana va vaqt)</span></label>
             <input type="datetime-local" id="f-deadline" class="form-control">
+          </div>
+        </div>
+
+        <!-- Nasiya Rejasi section (Hidden by default) -->
+        <div id="dealModalNasiyaBlock" class="hidden" style="background:var(--bg-secondary); padding:16px; border-radius:10px; margin-bottom:16px; border:1px solid var(--border)">
+          <div style="font-size:12px; font-weight:600; color:var(--text-tertiary); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px">Nasiya Rejasi (Bo'lib to'lash)</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span style="font-size:11px; color:var(--text-secondary)">Qancha muddatga:</span>
+            <div style="display:flex; gap:6px;">
+              <button type="button" class="btn btn-sm btn-ghost" onclick="dealModalAutoGenerateInstallments(3)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border)">3 oy</button>
+              <button type="button" class="btn btn-sm btn-ghost" onclick="dealModalAutoGenerateInstallments(6)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border)">6 oy</button>
+              <button type="button" class="btn btn-sm btn-ghost" onclick="dealModalAutoGenerateInstallments(12)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border)">12 oy</button>
+            </div>
+          </div>
+          <div id="dealModalInstRowsContainer" style="display:flex; flex-direction:column; gap:6px; max-height:200px; overflow-y:auto; padding-right:4px;"></div>
+          <div style="margin-top:10px;">
+            <button type="button" class="btn btn-sm btn-ghost" onclick="dealModalAddInstallmentRow()" style="border:1px dashed var(--border); font-size:11px; width:100%"><i class="fas fa-plus"></i> Yana oy qo'shish</button>
           </div>
         </div>
 
@@ -2608,6 +2625,96 @@ function callbackRedirect(dealId, dealTitle, clientId) {
   window.location.href = '/tasks?' + params.toString();
 }
 
+function dealModalStageChanged() {
+  const stageEl = document.getElementById('f-stageId');
+  const stageName = stageEl.options[stageEl.selectedIndex]?.text || '';
+  const block = document.getElementById('dealModalNasiyaBlock');
+  if (!block) return;
+  if (stageName.toLowerCase().includes('nasiya')) {
+    block.classList.remove('hidden');
+  } else {
+    block.classList.add('hidden');
+  }
+}
+
+function dealModalAutoGenerateInstallments(months) {
+  const container = document.getElementById('dealModalInstRowsContainer');
+  const amountInput = document.getElementById('f-amount');
+  let totalAmount = Number(amountInput.value) || 0;
+  
+  if (totalAmount === 0) {
+    if (typeof _toast === 'function') _toast('Iltimos, avval umumiy summani kiriting', 'error');
+  }
+  
+  const paidInput = document.getElementById('f-paidAmount');
+  const paidAmount = Number(paidInput.value) || 0;
+  let remainingDebt = totalAmount - paidAmount;
+  if (remainingDebt < 0) remainingDebt = 0;
+  
+  container.innerHTML = '';
+  
+  if (months > 0) {
+    const monthlyAmount = Math.round(remainingDebt / months);
+    let dateObj = new Date();
+    
+    for (let i = 0; i < months; i++) {
+      dateObj.setMonth(dateObj.getMonth() + 1);
+      const dateStr = dateObj.toISOString().slice(0, 10);
+      const amount = (i === months - 1) ? (remainingDebt - (monthlyAmount * i)) : monthlyAmount;
+      const pName = document.getElementById('f-name').options[document.getElementById('f-name').selectedIndex]?.text || 'Nasiya';
+      
+      const div = document.createElement('div');
+      div.innerHTML = getDealModalInstallmentRowHtml(i, dateStr, amount, false, pName, \`\${i+1}-oy\`, '');
+      container.appendChild(div.firstElementChild);
+    }
+  }
+}
+
+function dealModalAddInstallmentRow() {
+  const container = document.getElementById('dealModalInstRowsContainer');
+  const index = container.querySelectorAll('.installment-row').length;
+  const pName = document.getElementById('f-name').options[document.getElementById('f-name').selectedIndex]?.text || 'Nasiya';
+  
+  let dateStr = new Date().toISOString().slice(0, 10);
+  if (index > 0) {
+    const lastRow = container.lastElementChild;
+    const lastDate = lastRow.querySelector('.inst-date').value;
+    if (lastDate) {
+      const d = new Date(lastDate);
+      d.setMonth(d.getMonth() + 1);
+      dateStr = d.toISOString().slice(0, 10);
+    }
+  }
+  
+  const div = document.createElement('div');
+  div.innerHTML = getDealModalInstallmentRowHtml(index, dateStr, 0, false, pName, \`\${index+1}-oy\`, '');
+  container.appendChild(div.firstElementChild);
+}
+
+function getDealModalInstallmentRowHtml(index, dateVal, amountVal, paidVal, productVal, monthVal, notesVal) {
+  return \`
+    <div class="installment-row" style="display:grid; grid-template-columns:100px 1fr auto; gap:6px; background:var(--bg-primary); padding:6px; border-radius:6px; border:1px solid var(--border); align-items:center;">
+      <input type="date" class="form-control inst-date" style="font-size:11px; padding:4px; height:26px;" value="\${dateVal}">
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <div style="display:flex; gap:4px;">
+          <input type="text" class="form-control inst-month" style="font-size:11px; padding:4px; height:24px; width:50px; text-align:center" value="\${monthVal}" placeholder="Oy">
+          <input type="number" class="form-control inst-amount" style="font-size:11px; padding:4px; height:24px; font-weight:600; color:var(--brand)" value="\${amountVal}" placeholder="Summa">
+        </div>
+        <div style="display:flex; gap:4px;">
+          <input type="text" class="form-control inst-product" style="font-size:10px; padding:4px; height:22px; flex:1;" value="\${productVal}" placeholder="Mahsulot nomi">
+          <input type="text" class="form-control inst-notes" style="font-size:10px; padding:4px; height:22px; flex:1;" value="\${notesVal}" placeholder="Izoh">
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px; padding:0 4px;">
+        <label style="display:flex; align-items:center; gap:4px; font-size:10px; cursor:pointer;">
+          <input type="checkbox" class="inst-paid" \${paidVal ? 'checked' : ''} style="width:14px; height:14px;"> To'langan
+        </label>
+        <button type="button" class="btn btn-sm btn-ghost text-danger" onclick="this.closest('.installment-row').remove()" style="padding:2px 6px;"><i class="fas fa-trash-alt"></i></button>
+      </div>
+    </div>
+  \`;
+}
+
 // ── Deal modal ─────────────────────────────────────────────────
 function openDealModal(defaultStageId, editId) {
   const modal = document.getElementById('dealModal');
@@ -2685,6 +2792,10 @@ function openDealModal(defaultStageId, editId) {
     }
   }
 
+  const container = document.getElementById('dealModalInstRowsContainer');
+  if (container) container.innerHTML = '';
+  dealModalStageChanged();
+
   if (modal) modal.classList.remove('hidden');
   setTimeout(() => { const el = document.getElementById('f-name'); if (el) el.focus(); }, 100);
 }
@@ -2724,13 +2835,44 @@ async function saveDeal() {
   const btn = document.getElementById('dealSaveBtn');
   btn.disabled = true;
   try {
+    let savedDealId = id;
     if (id) {
       await apiFetch('/api/deals/' + id, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
       _toast('Yangilandi', 'success');
     } else {
-      await apiFetch('/api/deals', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      const newDeal = await apiFetch('/api/deals', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      savedDealId = newDeal.id;
       _toast("Qo'shildi", 'success');
     }
+    
+    const block = document.getElementById('dealModalNasiyaBlock');
+    if (block && !block.classList.contains('hidden') && savedDealId) {
+      const container = document.getElementById('dealModalInstRowsContainer');
+      const rows = container.querySelectorAll('.installment-row');
+      if (rows.length > 0) {
+        const installments = [];
+        for (const row of rows) {
+          const dueDate = row.querySelector('.inst-date').value;
+          const amt = Number(row.querySelector('.inst-amount').value) || 0;
+          const paid = row.querySelector('.inst-paid').checked;
+          const pName = row.querySelector('.inst-product').value;
+          const month = row.querySelector('.inst-month').value;
+          const rNotes = row.querySelector('.inst-notes').value;
+          if (dueDate) {
+            installments.push({ dueDate, amount: amt, paid, productName: pName, month, notes: rNotes });
+          }
+        }
+        if (installments.length > 0) {
+          await apiFetch('/api/deals/' + savedDealId + '/installments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ installments })
+          });
+          _toast("Nasiya rejasi ham saqlandi", 'success');
+        }
+      }
+    }
+    
     closeDealModal();
     await loadDeals();
   } catch(e) { _toast(e.message, 'error'); }
