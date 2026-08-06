@@ -1910,7 +1910,16 @@ async function loadDeals() {
 
   // Update Topbar Totals
   const totalCount = _deals.length;
-  const totalAmount = _deals.reduce((sum, d) => sum + (d.amount || 0), 0);
+  const totalAmount = _deals.reduce((sum, d) => {
+    const sName = (d.stage?.name || '').toLowerCase();
+    const isTargetStage = sName.includes('100%') || 
+                          sName.includes('100') ||
+                          sName.includes('baraka') || 
+                          sName.includes('desco') || 
+                          sName.includes('ishonch') || 
+                          sName.includes('shopir');
+    return sum + (isTargetStage ? (d.amount || 0) : 0);
+  }, 0);
   const totalsEl = document.getElementById('dealsTotalsBadge');
   if (totalsEl) {
     totalsEl.textContent = `${totalCount} ta sdelka: ${totalAmount.toLocaleString('uz-UZ')} so'm`;
