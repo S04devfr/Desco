@@ -852,8 +852,20 @@ function updateExportUrl() {
 
 // Toggle Lead breakdown list
 window.toggleLeadBreakdown = function(event) {
+  event.stopPropagation();
   const list = document.getElementById('leadBreakdownList');
   const chevron = document.getElementById('leadChevron');
+  // Close other dropdowns
+  const zakazList = document.getElementById('zakazBreakdownList');
+  const zakazChevron = document.getElementById('zakazChevron');
+  if (zakazList) {
+    zakazList.style.display = 'none';
+    if (zakazChevron) {
+      zakazChevron.classList.remove('fa-chevron-up');
+      zakazChevron.classList.add('fa-chevron-down');
+    }
+  }
+
   if (list) {
     if (list.style.display === 'none') {
       list.style.display = 'flex';
@@ -873,8 +885,20 @@ window.toggleLeadBreakdown = function(event) {
 
 // Toggle Zakaz breakdown list
 window.toggleZakazBreakdown = function(event) {
+  event.stopPropagation();
   const list = document.getElementById('zakazBreakdownList');
   const chevron = document.getElementById('zakazChevron');
+  // Close other dropdowns
+  const leadList = document.getElementById('leadBreakdownList');
+  const leadChevron = document.getElementById('leadChevron');
+  if (leadList) {
+    leadList.style.display = 'none';
+    if (leadChevron) {
+      leadChevron.classList.remove('fa-chevron-up');
+      leadChevron.classList.add('fa-chevron-down');
+    }
+  }
+
   if (list) {
     if (list.style.display === 'none') {
       list.style.display = 'flex';
@@ -891,6 +915,28 @@ window.toggleZakazBreakdown = function(event) {
     }
   }
 };
+
+// Close all dropdowns when clicking outside
+document.addEventListener('click', function() {
+  const leadList = document.getElementById('leadBreakdownList');
+  const leadChevron = document.getElementById('leadChevron');
+  if (leadList) {
+    leadList.style.display = 'none';
+    if (leadChevron) {
+      leadChevron.classList.remove('fa-chevron-up');
+      leadChevron.classList.add('fa-chevron-down');
+    }
+  }
+  const zakazList = document.getElementById('zakazBreakdownList');
+  const zakazChevron = document.getElementById('zakazChevron');
+  if (zakazList) {
+    zakazList.style.display = 'none';
+    if (zakazChevron) {
+      zakazChevron.classList.remove('fa-chevron-up');
+      zakazChevron.classList.add('fa-chevron-down');
+    }
+  }
+});
 
 // Main loader
 async function loadDashboard() {
@@ -935,7 +981,7 @@ async function loadDashboard() {
     const totalNasiyaCount = ndCount + niCount + nbCount;
 
     let row1Html = `
-      <div class="stat-card clickable" onclick="toggleLeadBreakdown(event)" style="display: flex; align-items: flex-start; gap: 16px; height: 100%; position: relative;">
+      <div class="stat-card clickable" onclick="toggleLeadBreakdown(event)" style="display: flex; align-items: flex-start; gap: 16px; height: 100%; position: relative; overflow: visible !important;">
         <div class="stat-icon blue" style="margin-top: 4px; flex-shrink: 0;"><i class="fas fa-crosshairs"></i></div>
         <div class="stat-info" style="flex: 1; min-width: 0;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -950,7 +996,7 @@ async function loadDashboard() {
               Tafsilotlar <i class="fas fa-chevron-down" id="leadChevron"></i>
             </span>
           </div>
-          <div id="leadBreakdownList" style="display: none; flex-direction: column; gap: 4px; font-size: 11.5px; color: var(--text-secondary); border-top: 1px dashed var(--border); padding-top: 8px; margin-top: 8px;">
+          <div id="leadBreakdownList" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); padding: 12px 16px; z-index: 999; flex-direction: column; gap: 6px; font-size: 11.5px; color: var(--text-secondary);">
             <div style="display: flex; justify-content: space-between; gap: 8px;">
               <span>Instagram:</span>
               <strong style="color: var(--text-primary);">${safeKpis.sourcesCount?.instagram ?? 0} ta</strong>
@@ -971,7 +1017,7 @@ async function loadDashboard() {
         </div>
       </div>
 
-      <div class="stat-card clickable" onclick="toggleZakazBreakdown(event)" style="display: flex; align-items: flex-start; gap: 16px; height: 100%; position: relative;">
+      <div class="stat-card clickable" onclick="toggleZakazBreakdown(event)" style="display: flex; align-items: flex-start; gap: 16px; height: 100%; position: relative; overflow: visible !important;">
         <div class="stat-icon green" style="margin-top: 4px; flex-shrink: 0;"><i class="fas fa-shopping-cart"></i></div>
         <div class="stat-info" style="flex: 1; min-width: 0;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -986,7 +1032,7 @@ async function loadDashboard() {
               Tafsilotlar <i class="fas fa-chevron-down" id="zakazChevron"></i>
             </span>
           </div>
-          <div id="zakazBreakdownList" style="display: none; flex-direction: column; gap: 4px; font-size: 11.5px; color: var(--text-secondary); border-top: 1px dashed var(--border); padding-top: 8px; margin-top: 8px;">
+          <div id="zakazBreakdownList" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); padding: 12px 16px; z-index: 999; flex-direction: column; gap: 6px; font-size: 11.5px; color: var(--text-secondary);">
             <div style="display: flex; justify-content: space-between; gap: 8px;">
               <span>100% Zakaz:</span>
               <strong style="color: var(--text-primary);">${renderCardMoney(safeKpis.zakaz100?.amount ?? 0)}</strong>
@@ -1011,7 +1057,7 @@ async function loadDashboard() {
         </div>
       </div>
 
-      <div class="stat-card clickable" onclick="openFinancialModal('client-debts')" style="display: flex; align-items: flex-start; gap: 16px; height: 100%;">
+      <div class="stat-card clickable" onclick="openFinancialModal('client-debts')" style="display: flex; align-items: flex-start; gap: 16px; height: 100%; overflow: visible !important;">
         <div class="stat-icon red" style="margin-top: 4px; flex-shrink: 0;"><i class="fas fa-hand-holding-usd"></i></div>
         <div class="stat-info" style="flex: 1; min-width: 0;">
           <div class="stat-label">Klientlardagi Qarz</div>
