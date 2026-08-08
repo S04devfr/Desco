@@ -315,81 +315,6 @@
     </div>
   </div>
 </div>
-
-<!-- Logistics / Delivery Tracker Panel -->
-<div class="card" style="margin-top: 20px;" id="logisticsTrackerPanel">
-  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-    <h3 class="section-title"><i class="fas fa-shipping-fast text-brand"></i>Dostavka & Logistika Nazorati (Shopirlar faoliyati)</h3>
-    <span class="badge badge-purple" id="logisticsActiveCount" style="font-size: 11px;">0 ta faol dostavka</span>
-  </div>
-  <div class="card-body" style="padding: 0;">
-    <div class="table-wrap" style="max-height: 380px; overflow-y: auto;">
-      <table class="deals-tbl" style="width: 100%;">
-        <thead>
-          <tr style="background: var(--bg-tertiary);">
-            <th style="padding: 10px 12.5px; font-size: 11px; font-weight: 700; width: 60px;">ID</th>
-            <th style="padding: 10px 12.5px; font-size: 11px; font-weight: 700;">Mijoz Ismi / Viloyat</th>
-            <th style="padding: 10px 12.5px; font-size: 11px; font-weight: 700;">Mahsulot</th>
-            <th style="padding: 10px 12.5px; font-size: 11px; font-weight: 700; width: 140px;">Yuborilgan vaqt</th>
-            <th style="padding: 10px 12.5px; font-size: 11px; font-weight: 700; width: 140px;">Menejer</th>
-            <th style="padding: 10px 12.5px; font-size: 11px; font-weight: 700; width: 150px;">Logistika Holati</th>
-            <th style="padding: 10px 12.5px; font-size: 11px; font-weight: 700; text-align: right; width: 120px;">Qarz summasi</th>
-          </tr>
-        </thead>
-        <tbody id="logisticsDealsTableBody">
-          <tr>
-            <td colspan="7" style="text-align: center; padding: 30px; color: var(--text-tertiary);">
-              Yuklanmoqda...
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════════════ -->
-<!-- BO'LIM: INSTAGRAM DIRECT TAHLILI -->
-<!-- ══════════════════════════════════════════════════════ -->
-<div class="section-header mt" style="margin-top: 30px;">
-  <div class="section-bar" style="background: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);"></div>
-  <h2 class="section-title"><i class="fab fa-instagram" style="color:#E1306C;"></i> Instagram Direct Tahlili</h2>
-  <div class="section-line"></div>
-</div>
-
-<div class="card" style="margin-bottom: 25px;">
-  <div class="card-header flex justify-between items-center" style="background: linear-gradient(135deg, rgba(240, 148, 51, 0.05) 0%, rgba(225, 48, 108, 0.05) 100%); border-bottom: 1px solid var(--border);">
-    <h3 class="section-title" style="margin: 0;"><i class="fab fa-instagram" style="color:#E1306C; margin-right: 8px;"></i> Instagram Direct Tahlili</h3>
-    <span class="badge" style="background: rgba(225, 48, 108, 0.1); color: #E1306C; font-weight: 700;">Direct Tahlili</span>
-  </div>
-  <div class="card-body" style="padding: 16px;">
-    <div style="display: grid; grid-template-columns: 1fr; gap: 16px; align-items: stretch; max-width: 600px;">
-      
-      <!-- Column 1: Suhbatlar oqimi -->
-      <div style="display: flex; flex-direction: column; gap: 8px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 12px; box-shadow: var(--shadow-xs); height: 100%;">
-        <h4 style="font-size: 11px; font-weight: 700; color: var(--text-primary); margin: 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: space-between;">
-          <span><i class="fas fa-comments text-brand" style="margin-right: 4px;"></i> Suhbatlar oqimi</span>
-          <span style="font-size: 9px; color: var(--text-tertiary); text-transform: none; font-weight: 500;">Yagona yozganlar</span>
-        </h4>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; border-bottom: 1px dashed var(--border); padding-bottom: 8px;">
-          <div>
-            <div style="font-size: 10px; color: var(--text-secondary); font-weight: 600;">Jami suhbatlar:</div>
-            <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 1px;">
-              <span id="igTotalChats" style="font-size: 16px; font-weight: 800; color: var(--text-primary);">0 kishi</span>
-              <span id="igActiveDayText" style="font-size: 10px; font-weight: 700; color: var(--brand);">Bugun: 0</span>
-            </div>
-            <div id="igIncomingSub" style="font-size: 9px; color: var(--text-tertiary); margin-top: 2px;">Jami xabarlar: 0 ta</div>
-          </div>
-          <div>
-            <div style="font-size: 10px; color: var(--text-secondary); font-weight: 600;">Kunlik o'rtacha:</div>
-            <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 1px;">
-              <span id="igTodayWriters" style="font-size: 16px; font-weight: 800; color: var(--text-primary);">0 kishi</span>
-              <span id="igAvgWriters" style="font-size: 10px; font-weight: 700; color: var(--brand);">O'rtacha: 0</span>
-            </div>
-          </div>
-        </div>
-        <!-- Daily volume visualization (Single Bar Chart) -->
-        <div id="igChatsVolumeContainer" style="display: flex; gap: 10px; align-items: flex-end; height: 60px; margin-top: 6px;">
           <div style="color: var(--text-tertiary); font-size: 10px; text-align: center; width: 100%; padding-bottom: 10px;">Yuklanmoqda...</div>
         </div>
       </div>
@@ -404,57 +329,7 @@
 </div>
 <% } %>
 
-<!-- ══════════════════════════════════════════════════════ -->
-<!-- BO'LIM 3: CRM — Tizimga tezkor kirish -->
-<!-- ══════════════════════════════════════════════════════ -->
-<div class="section-header mt">
-  <div class="section-bar purple"></div>
-  <h2 class="section-title"><i class="fas fa-th-large" style="color:#5856D6;"></i>CRM — Tezkor Kirish</h2>
-  <div class="section-line"></div>
-</div>
 
-<div class="quick-nav-grid">
-
-  <a href="/deals" class="quick-nav-card">
-    <div class="card">
-      <div class="card-body" style="padding:20px; text-align:center;">
-        <div class="quick-nav-icon" style="background:rgba(79,70,229,0.1);">
-          <i class="fas fa-handshake" style="color:var(--brand);"></i>
-        </div>
-        <div class="quick-nav-title">Sdelkalar</div>
-        <div class="quick-nav-sub">Buyurtmalar va voronka</div>
-        <div id="crmDealCount" class="quick-nav-count" style="color:var(--brand);">—</div>
-      </div>
-    </div>
-  </a>
-
-  <a href="/clients" class="quick-nav-card">
-    <div class="card">
-      <div class="card-body" style="padding:20px; text-align:center;">
-        <div class="quick-nav-icon" style="background:rgba(52,199,89,0.1);">
-          <i class="fas fa-users" style="color:#34C759;"></i>
-        </div>
-        <div class="quick-nav-title">Mijozlar</div>
-        <div class="quick-nav-sub">Mijozlar va qarzlar</div>
-        <div id="crmClientCount" class="quick-nav-count" style="color:#34C759;">—</div>
-      </div>
-    </div>
-  </a>
-
-  <a href="/warehouse" class="quick-nav-card">
-    <div class="card">
-      <div class="card-body" style="padding:20px; text-align:center;">
-        <div class="quick-nav-icon" style="background:rgba(88,86,214,0.1);">
-          <i class="fas fa-warehouse" style="color:#5856D6;"></i>
-        </div>
-        <div class="quick-nav-title">Ombor</div>
-        <div class="quick-nav-sub">Mahsulotlar va zaxira</div>
-        <div id="crmWarehouseCount" class="quick-nav-count" style="color:#5856D6;">—</div>
-      </div>
-    </div>
-  </a>
-
-</div>
 
 <!-- ════════════ FINANCIAL METRICS MODAL ════════════ -->
 <style>
