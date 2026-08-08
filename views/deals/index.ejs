@@ -3156,7 +3156,7 @@ function renderTimelineAndTasks(deal) {
   const comments = [];
   const otherItems = [];
   
-  // 1. Group manual comments
+  // 1. Group manual comments (store ID for deletion)
   if (deal.activities) {
     deal.activities.forEach(a => {
       const isComment = a.action === "Izoh qoldirildi" || 
@@ -3167,14 +3167,6 @@ function renderTimelineAndTasks(deal) {
         comments.push({
           date: new Date(a.createdAt),
           author: a.user ? (a.user.fullName || a.user.email) : 'Tizim',
-          details: a.details || ''
-        });
-      } else {
-        otherItems.push({
-          type: 'activity',
-          date: new Date(a.createdAt),
-          author: a.user ? (a.user.fullName || a.user.email) : 'Tizim',
-          action: a.action,
           details: a.details || '',
           id: a.id
         });
@@ -3198,10 +3190,10 @@ function renderTimelineAndTasks(deal) {
     });
   }
   
-  // Sort comments oldest first (chronological Word document style)
+  // Sort comments oldest first (Word document style)
   comments.sort((a, b) => a.date - b.date);
   
-  // Sort other timeline items newest first
+  // Sort tasks newest first
   otherItems.sort((a, b) => b.date - a.date);
   
   let html = '';
@@ -3223,7 +3215,10 @@ function renderTimelineAndTasks(deal) {
         <div style="${borderStyle}">
           <div style="display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; margin-bottom: 4px;">
             <span style="font-weight: 700; color: #6366f1;">✍️ ${c.author}</span>
-            <span>${c.date.toLocaleString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span>${c.date.toLocaleString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+              <button onclick="deleteDealComment(${c.id})" style="background:none; border:none; color:#cbd5e1; cursor:pointer; font-size:11px; padding:0; display:inline-flex; align-items:center; transition:color 0.15s;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='#cbd5e1'" title="Izohni o'chirish"><i class="fas fa-trash-alt"></i></button>
+            </div>
           </div>
           <div style="white-space: pre-wrap; font-size: 13px; color: #334155; line-height: 1.5; font-family: inherit;">${_esc(c.details)}</div>
         </div>
@@ -3246,7 +3241,7 @@ function renderTimelineAndTasks(deal) {
   if (otherItems.length > 0) {
     html += `
       <div style="font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
-        Vazifalar va Tizim Tarixi
+        Vazifalar
       </div>
     `;
     
@@ -3266,17 +3261,7 @@ function renderTimelineAndTasks(deal) {
       `;
       
       groups[dateStr].forEach(item => {
-        if (item.type === 'activity') {
-          html += `
-            <div class="timeline-entry" id="activity-${item.id}">
-              <div class="timeline-entry-meta">
-                <span class="timeline-entry-author">${_esc(item.author)}</span>
-                <span>Tarix · ${item.date.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}</span>
-              </div>
-              <div style="font-size:12.5px; color:var(--text-secondary);"><strong>${_esc(item.action)}</strong>: ${_esc(item.details)}</div>
-            </div>
-          `;
-        } else if (item.type === 'task') {
+        if (item.type === 'task') {
           if (item.completed) {
             html += `
               <div class="timeline-entry" style="border-left: 3px solid #10b981;" id="task-${item.id}">
@@ -3721,6 +3706,22 @@ async function completeTimelineTask(taskId) {
     _toast("Vazifa bajarildi", "success");
     openDetail(_detailId); // Refresh timeline
     loadDeals(); // Refresh kanban task status
+  } catch (e) {
+    _toast(e.message, "error");
+  }
+}
+
+async function deleteDealComment(activityId) {
+  if (!confirm("Ushbu izohni o'chirishni tasdiqlaysizmi?")) return;
+  try {
+    await apiFetch('/api/deals/' + _detailId + '/activity/' + activityId, {
+      method: 'DELETE'
+    });
+    _toast("Izoh muvaffaqiyatli o'chirildi", "success");
+    
+    const updatedDeal = await apiFetch('/api/deals/' + _detailId);
+    window._currentDeal = updatedDeal;
+    renderTimelineAndTasks(updatedDeal);
   } catch (e) {
     _toast(e.message, "error");
   }

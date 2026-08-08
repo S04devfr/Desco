@@ -1304,6 +1304,16 @@ router.post('/:id/activity', requireRole('admin', 'manager'), async (req, res, n
   } catch (error) { next(error) }
 })
 
+router.delete('/:id/activity/:activityId', requireRole('admin', 'manager'), async (req, res, next) => {
+  try {
+    const { activityId } = req.params;
+    await prisma.activityLog.delete({
+      where: { id: Number(activityId) }
+    });
+    res.json({ message: "Izoh o'chirildi" });
+  } catch (error) { next(error) }
+})
+
 // Get installments
 router.get('/:id/installments', async (req, res, next) => {
   try {
