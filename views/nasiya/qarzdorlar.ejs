@@ -183,7 +183,7 @@
 </div>
 
 <!-- Overlays: Manual client debt creation (Reuse form/modal code from dashboard but standalone) -->
-<div id="clientDebtModal" class="modal-overlay" style="display:none; z-index:1100;" onclick="if(event.target===this)closeClientDebtModal()">
+<div id="clientDebtModal" class="modal-overlay" style="display:none; z-index:1100; overflow-y:auto; align-items:flex-start; padding: 40px 20px;" onclick="if(event.target===this)closeClientDebtModal()">
   <div class="modal-dialog" style="max-width:500px; background: var(--surface-card); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-lg);">
     <div class="modal-header" style="border-bottom: 1px solid var(--border); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
       <h3 id="clientDebtModalTitle" style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text-primary);">
