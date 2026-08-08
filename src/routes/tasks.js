@@ -130,8 +130,6 @@ router.post('/', async (req, res, next) => {
     const { title, description, dueDate, dueTime, dealId, assignedToId, priority, clientId, stageId, actionType, result } = req.body
     if (!title) return res.status(400).json({ message: 'Sarlavha majburiy' })
 
-    const resolvedContactId = clientId ? Number(clientId) : null;
-
     const task = await prisma.task.create({
       data: {
         title,
@@ -143,7 +141,7 @@ router.post('/', async (req, res, next) => {
         result: result || null,
         dealId: dealId ? Number(dealId) : null,
         clientId: clientId ? Number(clientId) : null,
-        contactId: resolvedContactId,
+        contactId: req.body.contactId ? Number(req.body.contactId) : null,
         assignedToId: assignedToId ? Number(assignedToId) : (typeof req.userId === 'number' ? req.userId : null)
       },
       include: {
@@ -204,7 +202,9 @@ router.patch('/:id', async (req, res, next) => {
     if (assignedToId !== undefined) data.assignedToId = assignedToId ? Number(assignedToId) : null
     if (clientId !== undefined) {
       data.clientId = clientId ? Number(clientId) : null
-      data.contactId = clientId ? Number(clientId) : null
+    }
+    if (req.body.contactId !== undefined) {
+      data.contactId = req.body.contactId ? Number(req.body.contactId) : null
     }
 
     const task = await prisma.task.update({
