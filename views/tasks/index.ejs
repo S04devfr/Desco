@@ -197,8 +197,8 @@
 <!-- FILTER BAR -->
 <div class="filter-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
   <div style="display:flex;gap:4px;background:var(--bg-primary);padding:3px;border-radius:var(--radius-sm)">
-    <button class="btn btn-sm active" id="fAll" onclick="setDateFilter('all', this)" style="border:none; background:var(--bg-secondary); color:var(--text-primary)">Barchasi</button>
-    <button class="btn btn-ghost btn-sm" id="fDay" onclick="setDateFilter('day', this)">Kun</button>
+    <button class="btn btn-ghost btn-sm" id="fAll" onclick="setDateFilter('all', this)">Barchasi</button>
+    <button class="btn btn-sm active" id="fDay" onclick="setDateFilter('day', this)" style="border:none; background:var(--bg-secondary); color:var(--text-primary)">Kun</button>
     <button class="btn btn-ghost btn-sm" id="fWeek" onclick="setDateFilter('week', this)">Hafta</button>
     <button class="btn btn-ghost btn-sm" id="fMonth" onclick="setDateFilter('month', this)">Oy</button>
     <button class="btn btn-ghost btn-sm" id="fOverdue" onclick="setDateFilter('overdue', this)">Muddati o'tgan</button>
@@ -261,6 +261,15 @@
       <div class="form-group">
         <label class="form-label">Sarlavha *</label>
         <input type="text" id="t-title" class="form-control" placeholder="Vazifa sarlavhasi">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Vazifa turi</label>
+        <select id="t-actionType" class="form-control">
+          <option value="Aloqaga chiqish" selected>📞 Aloqaga chiqish (Bog'lanish)</option>
+          <option value="Bron qilish">📅 Bron qilish (Buyurtma)</option>
+          <option value="Uchrashuv">🤝 Uchrashuv</option>
+          <option value="To'lov kutish">💳 To'lov kutish</option>
+        </select>
       </div>
       <div class="form-group">
         <label class="form-label">Tavsif</label>
@@ -417,7 +426,7 @@ function setFilter(f) {
   renderTasks();
 }
 
-window._dateFilterMode = 'all';
+window._dateFilterMode = 'day';
 function setDateFilter(mode, btn) {
   window._dateFilterMode = mode;
   const parent = btn.parentElement;
@@ -482,8 +491,23 @@ function renderSingleTaskRowHtml(t) {
   const isOverdue = due && due < today && !t.completed;
   const isToday = due && due >= today && due < tomorrow;
   const dueClass = isOverdue ? 'overdue' : isToday ? 'today' : '';
-  const pLabel = { high: '🔴 Yuqori', medium: '🟡 O\'rta', low: '🟢 Past' };
+  const pLabel = { high: '🔴 Yuqori', medium: '🟡 O'ta', low: '🟢 Past' };
   const pColors = { high: '#ef4444', medium: '#eab308', low: '#22c55e' };
+
+  let actionTypeHtml = '';
+  const isBron = t.actionType === 'Bron qilish';
+  const isMeeting = t.actionType === 'Uchrashuv';
+  const isPayment = t.actionType === 'To\'lov kutish' || t.actionType === 'To_lov kutish';
+  
+  if (isBron) {
+    actionTypeHtml = `<span style="background: rgba(16, 185, 129, 0.12); color: #10b981; font-weight: 700; font-size: 10.5px; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.25); display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;"><i class="fas fa-ticket-alt"></i> BRON</span>`;
+  } else if (isMeeting) {
+    actionTypeHtml = `<span style="background: rgba(99, 102, 241, 0.12); color: #6366f1; font-weight: 700; font-size: 10.5px; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(99, 102, 241, 0.25); display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;"><i class="fas fa-handshake"></i> UCHRASHUV</span>`;
+  } else if (isPayment) {
+    actionTypeHtml = `<span style="background: rgba(245, 158, 11, 0.12); color: #f59e0b; font-weight: 700; font-size: 10.5px; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.25); display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;"><i class="fas fa-credit-card"></i> TO'LOV</span>`;
+  } else {
+    actionTypeHtml = `<span style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9; font-weight: 700; font-size: 10.5px; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(14, 165, 233, 0.2); display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;"><i class="fas fa-phone-alt"></i> ALOQA</span>`;
+  }
 
   let dueHtml = '<span style="color:var(--text-tertiary); font-size:12.5px;"><i class="far fa-calendar-times"></i> Belgilanmagan</span>';
   if (t.completed && t.updatedAt) {
@@ -537,13 +561,23 @@ function renderSingleTaskRowHtml(t) {
   return `
     <tr class="task-row ${t.completed ? 'completed-task' : ''}" id="task-${t.id}">
       <td style="text-align: center;">
-        <div class="task-check ${t.completed ? 'done' : ''}" onclick="toggleTask(${t.id}, this)" title="${t.completed ? 'Bajarilmagan' : 'Bajarildi'}" style="margin: 0 auto;">
+        <div class="task-check ${t.completed ? 'done' : ''}" onclick="onCheckboxClick(${t.id}, ${t.completed})" title="${t.completed ? 'Bajarilmagan' : 'Bajarildi'}" style="margin: 0 auto;">
           ${t.completed ? '<i class="fas fa-check" style="font-size:9px"></i>' : ''}
         </div>
       </td>
       <td>
-        <div style="${titleStyle} font-size:13.5px; line-height:1.4;">${_esc(t.title)}</div>
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;">
+          ${actionTypeHtml}
+          <div style="${titleStyle} font-size:13.5px; line-height:1.4;">${_esc(t.title)}</div>
+        </div>
         ${t.description ? `<div style="font-size:11.5px; color:var(--text-tertiary); margin-top:2px; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${_esc(t.description)}">${_esc(t.description)}</div>` : ''}
+        
+        <!-- Inline quick completion box (hidden by default) -->
+        <div id="quick-complete-${t.id}" style="display:none; margin-top:8px; padding:8px; background:var(--bg-secondary); border-radius:6px; border:1px solid var(--border); gap:6px; align-items:center; max-width: 320px;" onclick="event.stopPropagation();">
+          <input type="text" id="quick-res-${t.id}" class="form-control" style="font-size:11.5px; height:26px; padding:2px 8px; flex:1; background:var(--bg-primary); color:var(--text-primary); border-color:var(--border);" placeholder="Natijani yozing...">
+          <button class="btn btn-primary btn-sm" style="font-size:11px; padding:2px 10px; height:26px; background:var(--brand); border-color:var(--brand);" onclick="submitQuickComplete(${t.id})">Saqlash</button>
+          <button class="btn btn-ghost btn-sm" style="font-size:11px; padding:2px 6px; height:26px; color:var(--text-secondary);" onclick="cancelQuickComplete(${t.id})">Bekor</button>
+        </div>
       </td>
       <td>${clientHtml}</td>
       <td>${dealHtml}</td>
@@ -593,7 +627,7 @@ function renderSingleTaskCardHtml(t) {
     <div class="task-item" id="task-${t.id}" ${cardClickAction} style="padding: 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-secondary); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; gap: 8px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='none'; this.style.boxShadow='none'">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; width:100%;">
         <div style="display:flex; align-items:flex-start; gap:8px;">
-          <div class="task-check ${t.completed ? 'done' : ''}" onclick="event.stopPropagation(); toggleTask(${t.id}, this)" title="${t.completed ? 'Bajarilmagan' : 'Bajarildi'}" style="margin-top:2px; flex-shrink: 0; cursor:pointer;">
+          <div class="task-check ${t.completed ? 'done' : ''}" onclick="event.stopPropagation(); onCheckboxClick(${t.id}, ${t.completed})" title="${t.completed ? 'Bajarilmagan' : 'Bajarildi'}" style="margin-top:2px; flex-shrink: 0; cursor:pointer;">
             ${t.completed ? '<i class="fas fa-check" style="font-size:9px"></i>' : ''}
           </div>
           <div>
@@ -616,6 +650,13 @@ function renderSingleTaskCardHtml(t) {
               }
               return `<div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">${_esc(desc)}</div>`;
             })()}
+            
+            <!-- Inline quick completion box (hidden by default) -->
+            <div id="quick-complete-${t.id}" style="display:none; margin-top:8px; padding:8px; background:var(--bg-secondary); border-radius:6px; border:1px solid var(--border); gap:6px; align-items:center; width: 100%;" onclick="event.stopPropagation();">
+              <input type="text" id="quick-res-${t.id}" class="form-control" style="font-size:11.5px; height:26px; padding:2px 8px; flex:1; background:var(--bg-primary); color:var(--text-primary); border-color:var(--border);" placeholder="Natijani yozing...">
+              <button class="btn btn-primary btn-sm" style="font-size:11px; padding:2px 10px; height:26px; background:var(--brand); border-color:var(--brand);" onclick="submitQuickComplete(${t.id})">Saqlash</button>
+              <button class="btn btn-ghost btn-sm" style="font-size:11px; padding:2px 6px; height:26px; color:var(--text-secondary);" onclick="cancelQuickComplete(${t.id})">Bekor</button>
+            </div>
           </div>
         </div>
         <div style="display:flex; gap:4px;" onclick="event.stopPropagation();">
@@ -817,6 +858,64 @@ async function toggleTask(id, el) {
   } catch(e) { showToast('Xato', 'error'); }
 }
 
+async function onCheckboxClick(taskId, isCompleted) {
+  if (isCompleted) {
+    try {
+      await fetch('/api/tasks/' + taskId, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed: false })
+      });
+      showToast("Vazifa qayta tiklandi!", "success");
+      await loadTasks();
+      if (typeof window.updateSidebarTaskBadge === 'function') window.updateSidebarTaskBadge();
+      if (typeof loadNotifications === 'function') loadNotifications();
+    } catch (e) {
+      showToast('Xato', 'error');
+    }
+  } else {
+    const box = document.getElementById('quick-complete-' + taskId);
+    if (box) {
+      const isHidden = box.style.display === 'none';
+      document.querySelectorAll('[id^="quick-complete-"]').forEach(el => el.style.display = 'none');
+      if (isHidden) {
+        box.style.display = 'flex';
+        setTimeout(() => {
+          document.getElementById('quick-res-' + taskId)?.focus();
+        }, 50);
+      }
+    }
+  }
+}
+
+async function submitQuickComplete(taskId) {
+  const input = document.getElementById('quick-res-' + taskId);
+  const result = input ? input.value.trim() : '';
+  if (!result) {
+    showToast("Natijani yozish majburiy!", "error");
+    return;
+  }
+  try {
+    const res = await fetch('/api/tasks/' + taskId + '/complete', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ result })
+    });
+    if (!res.ok) throw new Error("Vazifani yakunlashda xatolik");
+    showToast("Vazifa bajarildi!", "success");
+    await loadTasks();
+    if (typeof window.updateSidebarTaskBadge === 'function') window.updateSidebarTaskBadge();
+    if (typeof loadNotifications === 'function') loadNotifications();
+  } catch (err) {
+    showToast(err.message, "error");
+  }
+}
+
+function cancelQuickComplete(taskId) {
+  const box = document.getElementById('quick-complete-' + taskId);
+  if (box) box.style.display = 'none';
+}
+
 async function openTaskModal(id, dealId, clientId, dealTitle) {
   await loadUsers();
   document.getElementById('taskId').value = id || '';
@@ -827,6 +926,7 @@ async function openTaskModal(id, dealId, clientId, dealTitle) {
   document.getElementById('t-dueDate').value = '';
   document.getElementById('t-dueTime').value = '';
   document.getElementById('t-priority').value = 'medium';
+  document.getElementById('t-actionType').value = 'Aloqaga chiqish';
   document.getElementById('t-assignedTo').value = '';
   document.getElementById('taskModalTitle').textContent = id ? 'Vazifani tahrirlash' : 'Yangi vazifa';
 
@@ -850,6 +950,7 @@ async function openTaskModal(id, dealId, clientId, dealTitle) {
       document.getElementById('t-dueDate').value = t.dueDate ? t.dueDate.slice(0,10) : '';
       document.getElementById('t-dueTime').value = t.dueTime || '';
       document.getElementById('t-priority').value = t.priority || 'medium';
+      document.getElementById('t-actionType').value = t.actionType || 'Aloqaga chiqish';
       document.getElementById('t-assignedTo').value = t.assignedToId || '';
       document.getElementById('t-dealId').value = t.dealId || '';
       document.getElementById('t-clientId').value = t.clientId || '';
@@ -922,6 +1023,7 @@ async function saveTask() {
     dueDate: document.getElementById('t-dueDate').value || null,
     dueTime: document.getElementById('t-dueTime').value || null,
     priority: document.getElementById('t-priority').value,
+    actionType: document.getElementById('t-actionType').value || 'Aloqaga chiqish',
     assignedToId: document.getElementById('t-assignedTo').value || null,
     dealId: document.getElementById('t-dealId').value ? Number(document.getElementById('t-dealId').value) : null,
     clientId: document.getElementById('t-clientId').value ? Number(document.getElementById('t-clientId').value) : null,
