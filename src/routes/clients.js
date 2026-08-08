@@ -7,45 +7,20 @@ router.use(protect);
 
 const ownerSelect = { select: { id: true, fullName: true, email: true, role: true } };
 
-// List contacts
+// List clients
 router.get('/', async (req, res, next) => {
   try {
-    const { q, ownerId, source, tag } = req.query;
+    const { q, ownerId } = req.query;
 
-    const baseWhere = {
-      NOT: {
-        AND: [
-          {
-            OR: [
-              { instagramId: { not: null } },
-              { telegramId: { not: null } }
-            ]
-          },
-          {
-            OR: [
-              { phone: null },
-              { phone: "" }
-            ]
-          },
-          {
-            deals: { none: {} }
-          }
-        ]
-      }
-    };
-
-    const where = {
-      AND: [baseWhere]
-    };
+    const where = { AND: [] };
 
     if (q) {
       where.AND.push({
         OR: [
-          { firstName: { contains: q, mode: 'insensitive' } },
-          { lastName: { contains: q, mode: 'insensitive' } },
+          { name: { contains: q, mode: 'insensitive' } },
           { phone: { contains: q } },
           { email: { contains: q, mode: 'insensitive' } },
-          { company: { name: { contains: q, mode: 'insensitive' } } }
+          { city: { contains: q, mode: 'insensitive' } }
         ]
       });
     }
@@ -54,233 +29,135 @@ router.get('/', async (req, res, next) => {
       where.AND.push({ ownerId: Number(ownerId) });
     }
 
-    if (source) {
-      where.AND.push({ source: { equals: source, mode: 'insensitive' } });
-    }
-
-    if (tag) {
-      where.AND.push({ tags: { has: tag } });
-    }
-
-    const contacts = await prisma.contact.findMany({
-      where,
+    const clients = await prisma.client.findMany({
+      where: where.AND.length > 0 ? where : {},
       include: {
         owner: ownerSelect,
-        company: true,
-        deals: { select: { id: true, title: true, amount: true, status: true, productName: true } }
+        deals: { select: { id: true, productName: true, amount: true, paidAmount: true, status: true } }
       },
       orderBy: { createdAt: 'desc' }
     });
 
-    // Map Contact object to align with Client structure on frontend if necessary
-    const mappedContacts = contacts.map(c => ({
-      ...c,
-      name: `${c.firstName} ${c.lastName || ''}`.trim(),
-      companyName: c.company ? c.company.name : null,
-      company: c.company ? c.company.name : null
-    }));
-
-    res.json(mappedContacts);
+    res.json(clients);
   } catch (error) {
     next(error);
   }
 });
 
-// Get contact details
+// Get client details
 router.get('/:id', async (req, res, next) => {
   try {
-    let contact = await prisma.contact.findUnique({
+    const client = await prisma.client.findUnique({
       where: { id: Number(req.params.id) },
       include: {
         owner: ownerSelect,
-        company: true,
         deals: { include: { manager: ownerSelect, stage: true } }
       }
     });
-    if (!contact) return res.status(404).json({ message: 'Kontakt topilmadi' });
-
-    // Map to client format for frontend compatibility
-    const mappedContact = {
-      ...contact,
-      name: `${contact.firstName} ${contact.lastName || ''}`.trim(),
-      companyName: contact.company ? contact.company.name : null,
-      company: contact.company ? contact.company.name : null
-    };
-
-    res.json(mappedContact);
+    if (!client) return res.status(404).json({ message: 'Mijoz topilmadi' });
+    res.json(client);
   } catch (error) {
     next(error);
   }
 });
 
-// Create contact (with duplicate check & inline company creation)
+// Create client
 router.post('/', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
-    const { name, phone, email, companyId, companyName, notes, city, source, tags, position } = req.body;
-    if (!name) return res.status(400).json({ message: 'Ism majburiy' });
+    const { name, phone, email, notes, city, debt, debtDate, debtNotes } = req.body;
+    if (!name) return res.status(400).json({ message: 'Mijoz ismi majburiy' });
 
-    // 1. Duplicate check by phone or email
+    // Duplicate check by phone
     if (phone) {
-      const existingPhone = await prisma.contact.findFirst({
+      const existing = await prisma.client.findFirst({
         where: { phone: phone.trim() }
       });
-      if (existingPhone) {
-        return res.status(400).json({ message: 'Ushbu telefon raqamiga ega kontakt tizimda allaqachon mavjud!' });
+      if (existing) {
+        return res.status(400).json({ message: 'Ushbu telefon raqamiga ega mijoz allaqachon mavjud!' });
       }
     }
 
-    if (email) {
-      const existingEmail = await prisma.contact.findFirst({
-        where: { email: email.trim().toLowerCase() }
-      });
-      if (existingEmail) {
-        return res.status(400).json({ message: 'Ushbu emailga ega kontakt tizimda allaqachon mavjud!' });
-      }
-    }
-
-    // 2. Resolve or create inline Company
-    let resolvedCompanyId = companyId ? Number(companyId) : null;
-    if (!resolvedCompanyId && companyName && companyName.trim()) {
-      const newCompany = await prisma.company.create({
-        data: {
-          name: companyName.trim(),
-          ownerId: req.userId
-        }
-      });
-      resolvedCompanyId = newCompany.id;
-    }
-
-    // 3. Name split (firstName, lastName)
-    const nameParts = name.trim().split(/\s+/);
-    const firstName = nameParts[0];
-    const lastName = nameParts.slice(1).join(' ') || null;
-
-    // Create Contact
-    const contact = await prisma.contact.create({
+    const client = await prisma.client.create({
       data: {
-        firstName,
-        lastName,
-        phone: phone || null,
-        email: email || null,
+        name: name.trim(),
+        phone: phone ? phone.trim() : null,
+        email: email ? email.trim().toLowerCase() : null,
         notes: notes || null,
-        source: source || 'oddiy',
-        tags: Array.isArray(tags) ? tags : (tags ? String(tags).split(',').map(t => t.trim()).filter(Boolean) : []),
-        position: position || null,
-        companyId: resolvedCompanyId,
+        city: city || null,
+        debt: Number(debt) || 0,
+        debtDate: debtDate ? new Date(debtDate) : null,
+        debtNotes: debtNotes || null,
         ownerId: req.userId
       },
       include: {
-        owner: ownerSelect,
-        company: true
+        owner: ownerSelect
       }
     });
 
-    const mapped = {
-      ...contact,
-      name: `${contact.firstName} ${contact.lastName || ''}`.trim(),
-      companyName: contact.company ? contact.company.name : null,
-      company: contact.company ? contact.company.name : null
-    };
-
-    res.status(201).json(mapped);
+    res.status(201).json(client);
   } catch (error) {
     next(error);
   }
 });
 
-// Update contact
+// Update client
 router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
-    const { name, phone, email, companyId, companyName, notes, source, tags, position } = req.body;
-    const contactId = Number(req.params.id);
+    const { name, phone, email, notes, city, debt, debtDate, debtNotes } = req.body;
+    const clientId = Number(req.params.id);
 
-    // Duplicate check if phone or email changes
+    // Duplicate check if phone changes
     if (phone) {
-      const existingPhone = await prisma.contact.findFirst({
+      const existing = await prisma.client.findFirst({
         where: {
           phone: phone.trim(),
-          id: { not: contactId }
+          id: { not: clientId }
         }
       });
-      if (existingPhone) {
-        return res.status(400).json({ message: 'Ush2 telefon raqami boshqa kontaktga tegishli!' });
+      if (existing) {
+        return res.status(400).json({ message: 'Ushbu telefon raqami boshqa mijozga tegishli!' });
       }
-    }
-
-    if (email) {
-      const existingEmail = await prisma.contact.findFirst({
-        where: {
-          email: email.trim().toLowerCase(),
-          id: { not: contactId }
-        }
-      });
-      if (existingEmail) {
-        return res.status(400).json({ message: 'Ushbu email boshqa kontaktga tegishli!' });
-      }
-    }
-
-    // Resolve or create inline Company
-    let resolvedCompanyId = companyId !== undefined ? (companyId ? Number(companyId) : null) : undefined;
-    if (resolvedCompanyId === null && companyName && companyName.trim()) {
-      const newCompany = await prisma.company.create({
-        data: {
-          name: companyName.trim(),
-          ownerId: req.userId
-        }
-      });
-      resolvedCompanyId = newCompany.id;
     }
 
     const data = {};
-    if (name !== undefined) {
-      const nameParts = name.trim().split(/\s+/);
-      data.firstName = nameParts[0];
-      data.lastName = nameParts.slice(1).join(' ') || null;
-    }
-    if (phone !== undefined) data.phone = phone || null;
-    if (email !== undefined) data.email = email || null;
+    if (name !== undefined) data.name = name.trim();
+    if (phone !== undefined) data.phone = phone ? phone.trim() : null;
+    if (email !== undefined) data.email = email ? email.trim().toLowerCase() : null;
     if (notes !== undefined) data.notes = notes || null;
-    if (source !== undefined) data.source = source || 'oddiy';
-    if (tags !== undefined) data.tags = Array.isArray(tags) ? tags : (tags ? String(tags).split(',').map(t => t.trim()).filter(Boolean) : []);
-    if (position !== undefined) data.position = position || null;
-    if (resolvedCompanyId !== undefined) data.companyId = resolvedCompanyId;
+    if (city !== undefined) data.city = city || null;
+    if (debt !== undefined) data.debt = Number(debt) || 0;
+    if (debtDate !== undefined) data.debtDate = debtDate ? new Date(debtDate) : null;
+    if (debtNotes !== undefined) data.debtNotes = debtNotes || null;
 
-    const contact = await prisma.contact.update({
-      where: { id: contactId },
+    const client = await prisma.client.update({
+      where: { id: clientId },
       data,
-      include: { owner: ownerSelect, company: true }
+      include: { owner: ownerSelect }
     });
 
-    const mapped = {
-      ...contact,
-      name: `${contact.firstName} ${contact.lastName || ''}`.trim(),
-      companyName: contact.company ? contact.company.name : null,
-      company: contact.company ? contact.company.name : null
-    };
-
-    res.json(mapped);
+    res.json(client);
   } catch (error) {
-    if (error.code === 'P2025') return res.status(404).json({ message: 'Kontakt topilmadi' });
+    if (error.code === 'P2025') return res.status(404).json({ message: 'Mijoz topilmadi' });
     next(error);
   }
 });
 
-// Delete contact
+// Delete client
 router.delete('/:id', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
-    const contactId = Number(req.params.id);
+    const clientId = Number(req.params.id);
 
-    const dealCount = await prisma.deal.count({ where: { contactId } });
+    const dealCount = await prisma.deal.count({ where: { clientId } });
     if (dealCount > 0) {
       return res.status(400).json({
         message: `Bu mijozga ${dealCount} ta sdelka biriktirilgan. Avval sdelkalarni o'chiring yoki boshqa mijozga o'tkazing.`
       });
     }
 
-    await prisma.contact.delete({ where: { id: contactId } });
+    await prisma.client.delete({ where: { id: clientId } });
     res.json({ message: 'Mijoz o\'chirildi' });
   } catch (error) {
-    if (error.code === 'P2025') return res.status(404).json({ message: 'Kontakt topilmadi' });
+    if (error.code === 'P2025') return res.status(404).json({ message: 'Mijoz topilmadi' });
     next(error);
   }
 });
