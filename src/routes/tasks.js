@@ -137,7 +137,7 @@ router.post('/', async (req, res, next) => {
         dueDate: (dueDate && !isNaN(new Date(dueDate))) ? new Date(dueDate) : null,
         dueTime: dueTime || null,
         priority: priority || 'medium',
-        actionType: actionType || 'Связаться',
+        actionType: actionType || 'Aloqaga chiqish',
         result: result || null,
         dealId: dealId ? Number(dealId) : null,
         clientId: clientId ? Number(clientId) : null,

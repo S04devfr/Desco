@@ -3181,7 +3181,7 @@ function renderTimelineAndTasks(deal) {
         date: new Date(t.dueDate || t.createdAt),
         completed: t.completed,
         assignedTo: t.assignedTo ? (t.assignedTo.fullName || t.assignedTo.email) : 'Menejer',
-        actionType: t.actionType || 'Связаться',
+        actionType: (t.actionType === 'Связаться' || !t.actionType) ? 'Aloqaga chiqish' : t.actionType,
         title: t.title || 'Vazifa',
         description: t.description || '',
         result: t.result || '',
@@ -3282,13 +3282,35 @@ function renderTimelineAndTasks(deal) {
             const isOverdue = diffDays < 0;
             const colorClass = isOverdue ? 'color:#ef4444;' : 'color:#a78bfa;';
 
+            const isoDate = item.date.getFullYear() + '-' + String(item.date.getMonth() + 1).padStart(2, '0') + '-' + String(item.date.getDate()).padStart(2, '0');
+            const isoTime = String(item.date.getHours()).padStart(2, '0') + ':' + String(item.date.getMinutes()).padStart(2, '0');
+
             html += `
               <div class="timeline-task-card" style="border-color:${isOverdue ? '#ef4444' : 'rgba(88,86,214,0.25)'}" id="task-${item.id}">
-                <div class="timeline-task-header">
-                  <i class="far fa-clock" style="${colorClass}"></i>
-                  <span style="${colorClass}"> Keyingi vazifa: ${dayText} </span>
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 6px;">
+                  <div class="timeline-task-header" style="margin-bottom:0">
+                    <i class="far fa-clock" style="${colorClass}"></i>
+                    <span style="${colorClass}"> Keyingi vazifa: ${dayText} (${isoTime})</span>
+                  </div>
+                  <button class="btn btn-ghost btn-sm" onclick="toggleRescheduleForm(${item.id})" style="font-size:11px; padding:2px 6px; height:22px; color:var(--text-secondary); cursor:pointer; display:inline-flex; align-items:center; gap:3px;">
+                    <i class="fas fa-calendar-alt"></i> O'zgartirish
+                  </button>
                 </div>
-                <div class="timeline-task-title">${_esc(item.actionType)}: ${_esc(item.title)}</div>
+                
+                <!-- Inline reschedule form -->
+                <div id="reschedule-form-${item.id}" class="hidden" style="display:none; margin: 8px 0; padding: 10px; background: var(--bg-tertiary); border-radius: 6px; border: 1px solid var(--border); flex-direction: column; gap: 8px;">
+                  <div style="font-size: 11px; font-weight: 700; color: var(--text-secondary);">Vazifa vaqtini tahrirlash:</div>
+                  <div style="display: flex; gap: 6px;">
+                    <input type="date" id="reschedule-date-${item.id}" class="form-control" style="font-size:12px; padding:4px 8px; height:28px; flex:1; background:var(--bg-primary); color:var(--text-primary); border-color:var(--border);" value="${isoDate}">
+                    <input type="time" id="reschedule-time-${item.id}" class="form-control" style="font-size:12px; padding:4px 8px; height:28px; width:75px; background:var(--bg-primary); color:var(--text-primary); border-color:var(--border);" value="${isoTime}">
+                  </div>
+                  <div style="display: flex; justify-content: flex-end; gap: 6px;">
+                    <button class="btn btn-ghost btn-sm" style="font-size:11px; padding:2px 8px; height:24px; color:var(--text-secondary);" onclick="toggleRescheduleForm(${item.id})">Bekor qilish</button>
+                    <button class="btn btn-primary btn-sm" style="font-size:11px; padding:2px 10px; height:24px; background:var(--brand); border-color:var(--brand);" onclick="saveRescheduledTask(${item.id})">Saqlash</button>
+                  </div>
+                </div>
+
+                <div class="timeline-task-title" style="margin-top:4px;">${_esc(item.actionType)}: ${_esc(item.title)}</div>
                 ${(() => {
                   const desc = item.description || '';
                   if (!desc) return '';
@@ -3722,6 +3744,50 @@ async function deleteDealComment(activityId) {
     const updatedDeal = await apiFetch('/api/deals/' + _detailId);
     window._currentDeal = updatedDeal;
     renderTimelineAndTasks(updatedDeal);
+  } catch (e) {
+    _toast(e.message, "error");
+  }
+}
+
+function toggleRescheduleForm(taskId) {
+  const form = document.getElementById('reschedule-form-' + taskId);
+  if (form) {
+    if (form.style.display === 'none') {
+      form.style.display = 'flex';
+      form.classList.remove('hidden');
+    } else {
+      form.style.display = 'none';
+      form.classList.add('hidden');
+    }
+  }
+}
+
+async function saveRescheduledTask(taskId) {
+  const dateVal = document.getElementById('reschedule-date-' + taskId).value;
+  const timeVal = document.getElementById('reschedule-time-' + taskId).value || '10:00';
+  
+  if (!dateVal) {
+    _toast("Sana tanlanishi shart!", "error");
+    return;
+  }
+  
+  try {
+    await apiFetch('/api/tasks/' + taskId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        dueDate: new Date(dateVal + 'T' + timeVal + ':00'),
+        dueTime: timeVal
+      })
+    });
+    
+    _toast("Vazifa sanasi o'zgartirildi", "success");
+    
+    // Reload deal details to refresh the timeline
+    const updatedDeal = await apiFetch('/api/deals/' + _detailId);
+    window._currentDeal = updatedDeal;
+    renderTimelineAndTasks(updatedDeal);
+    loadDeals(); // Refresh Kanban task warning circles
   } catch (e) {
     _toast(e.message, "error");
   }

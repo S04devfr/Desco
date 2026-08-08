@@ -598,7 +598,7 @@ function renderSingleTaskCardHtml(t) {
           </div>
           <div>
             <div style="font-size:13.5px; color:var(--text-primary); line-height:1.4;">
-              <strong>${_esc(t.actionType || 'Связаться')}</strong>: ${_esc(t.title || 'Vazifa')}
+              <strong>${_esc(t.actionType === 'Связаться' || !t.actionType ? 'Aloqaga chiqish' : t.actionType)}</strong>: ${_esc(t.title || 'Vazifa')}
             </div>
             ${(() => {
               const desc = t.description || '';
