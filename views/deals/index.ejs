@@ -387,11 +387,15 @@
     display: inline-flex !important;
   }
   .dcard-checkbox {
+    display: none !important;
     width: 14px;
     height: 14px;
     cursor: pointer;
     accent-color: var(--accent);
     flex-shrink: 0;
+  }
+  .selection-mode-active .dcard-checkbox {
+    display: inline-block !important;
   }
 
   body.detail-modal-open .sidebar {
