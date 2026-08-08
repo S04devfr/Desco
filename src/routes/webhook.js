@@ -128,7 +128,7 @@ router.post('/lead/:token?', verifyMakeToken, async (req, res, next) => {
     try {
       logAudit(
         'LEAD_RECEIVED_MAKE',
-        `Client ID: ${result.client.id}, Deal ID: ${result.deal.id}, Form: ${result.deal.productName}`,
+        `Client ID: ${result.client.id}, Deal ID: ${result.deal ? result.deal.id : 'N/A'}, Form: ${result.deal ? result.deal.productName : 'N/A'}`,
         null, null,
         req.ip || ''
       );
@@ -137,8 +137,8 @@ router.post('/lead/:token?', verifyMakeToken, async (req, res, next) => {
     }
 
     return res.status(201).json({
-      message: 'Lead muvaffaqiyatli qabul qilindi va sdelkaga aylantirildi',
-      dealId: result.deal.id,
+      message: result.deal ? 'Lead muvaffaqiyatli qabul qilindi va sdelkaga aylantirildi' : 'Lead (raqamsiz) faqat mijoz sifatida yaratildi',
+      dealId: result.deal ? result.deal.id : null,
       clientId: result.client.id
     });
 
@@ -182,7 +182,7 @@ router.post('/yuboraman/:token?', verifyYuboramanToken, async (req, res) => {
     try {
       logAudit(
         'LEAD_RECEIVED_YUBORAMAN',
-        `Client ID: ${result.client.id}, Deal ID: ${result.deal.id}, Form: ${result.deal.productName}`,
+        `Client ID: ${result.client.id}, Deal ID: ${result.deal ? result.deal.id : 'N/A'}, Form: ${result.deal ? result.deal.productName : 'N/A'}`,
         null, null,
         req.ip || ''
       );
@@ -191,12 +191,12 @@ router.post('/yuboraman/:token?', verifyYuboramanToken, async (req, res) => {
     }
 
     const duration = Date.now() - startTime;
-    console.log(`[Yuboraman Webhook POST Success] Muvaffaqiyatli yakunlandi. Deal ID: ${result.deal.id}. Duration: ${duration}ms`);
+    console.log(`[Yuboraman Webhook POST Success] Muvaffaqiyatli yakunlandi. Deal ID: ${result.deal ? result.deal.id : 'N/A'}. Duration: ${duration}ms`);
 
     return res.status(200).json({
       success: true,
-      message: 'Lead muvaffaqiyatli qabul qilindi',
-      dealId: result.deal.id,
+      message: result.deal ? 'Lead muvaffaqiyatli qabul qilindi' : 'Lead (raqamsiz) faqat mijoz sifatida yaratildi',
+      dealId: result.deal ? result.deal.id : null,
       clientId: result.client.id
     });
 

@@ -203,85 +203,117 @@ async function handleMetaWebhook(body, broadcast) {
 
           console.log(`[Meta Webhook] Ajratilgan ma'lumotlar — Ism: ${rawName}, Tel: ${rawPhone}, Email: ${rawEmail}, Mahsulot: ${rawProduct}`);
 
-          if (!rawPhone) {
-            console.warn(`[Meta Webhook Warn] ⚠ Lead ${leadgenId} uchun telefon raqami topilmadi. Bu lead o'tkazib yuboriladi.`);
-            continue;
+          let client = null;
+          let contact = null;
+          let cleanPhone = null;
+
+          if (rawPhone && rawPhone.trim() !== '') {
+            try {
+              const upsertRes = await upsertClientByPhone(rawName, rawPhone, rawEmail, 'Instagram Webhook');
+              client = upsertRes.client;
+              contact = upsertRes.contact;
+              cleanPhone = rawPhone.replace(/[\s-]/g, '');
+            } catch (phoneErr) {
+              console.warn(`[Meta Webhook] upsertClientByPhone failed: ${phoneErr.message}`);
+              cleanPhone = null;
+            }
           }
 
-          // 3. Mijozni bazada tranzaksiya yordamida upsert qilish (dublikatsiz)
-          console.log(`[Meta Webhook] Mijoz upsert qilinmoqda: Ism=${rawName}, Tel=${rawPhone}, Email=${rawEmail}`);
-          const { client, contact } = await upsertClientByPhone(rawName, rawPhone, rawEmail, 'Instagram Webhook');
-          console.log(`[Meta Webhook] ✓ Mijoz va Kontakt tayyor. Client ID: ${client.id}, Contact ID: ${contact.id}`);
-
-          // 4. Voronka va Bosqichni topish
-          const { pipelineId, stageId } = await getDefaultPipelineAndStage();
-          console.log(`[Meta Webhook] Pipeline: ${pipelineId}, Stage: ${stageId}`);
-
-          const formId = change.value.form_id || '';
-          const adId = change.value.ad_id || '';
-
-          if (pipelineId && stageId) {
-            // 5. Sdelkani (Deal) yaratish
-            console.log(`[Meta Webhook] Sdelka yaratilmoqda. Pipeline=${pipelineId}, Stage=${stageId}, Client=${client.id}`);
-            const deal = await prisma.deal.create({
+          if (!client) {
+            // Create client without phone
+            client = await prisma.client.create({
               data: {
-                productName: extractProductName(String(rawProduct).trim()).substring(0, 200),
-                amount: 0,
-                status: 'new',
-                clientId: client.id,
-                contactId: contact.id,
-                pipelineId,
-                stageId,
-                notes: `Meta LeadGen ID: ${leadgenId}\nForm ID: ${formId}\nAd ID: ${adId}`,
-                source: 'target'
+                name: rawName || "Noma'lum Mijoz",
+                phone: null,
+                email: rawEmail || null,
+                notes: `Meta LeadGen ID: ${leadgenId}\nManba: Instagram Webhook`
               }
             });
-            console.log(`[Meta Webhook] \u2713 Sdelka muvaffaqiyatli saqlandi! Deal ID: ${deal.id}`);
+            
+            contact = await prisma.contact.create({
+              data: {
+                firstName: rawName ? rawName.split(/\s+/)[0] : "Nomsiz",
+                lastName: rawName ? rawName.split(/\s+/).slice(1).join(' ') : null,
+                phone: null,
+                email: rawEmail || null
+              }
+            });
+            console.log(`[Meta Webhook] Raqamsiz mijoz/kontakt yaratildi. Client ID: ${client.id}`);
+          }
 
-            // 5.5. Telegram botga xabar yuborish (alohida try/catch — CRM ga ta'sir qilmaydi)
-            try {
-              await sendTelegramNotificationWithRetry({
-                name: rawName,
-                phone: rawPhone,
-                formId: formId,
-                pageName: `Meta (Ad ID: ${adId})`,
-                leadId: leadgenId
-              }, deal.id);
-            } catch (tgErr) {
-              console.warn(`[Telegram] Xabar yuborishda xato (muhim emas): ${tgErr.message}`);
-            }
+          if (cleanPhone) {
+            // 4. Voronka va Bosqichni topish
+            const { pipelineId, stageId } = await getDefaultPipelineAndStage();
+            console.log(`[Meta Webhook] Pipeline: ${pipelineId}, Stage: ${stageId}`);
 
-            // Activity Log ga yozish
-            try {
-              await prisma.activityLog.create({
+            const formId = change.value.form_id || '';
+            const adId = change.value.ad_id || '';
+
+            if (pipelineId && stageId) {
+              // 5. Sdelkani (Deal) yaratish
+              console.log(`[Meta Webhook] Sdelka yaratilmoqda. Pipeline=${pipelineId}, Stage=${stageId}, Client=${client.id}`);
+              const deal = await prisma.deal.create({
                 data: {
-                  action: 'Sdelka yaratildi',
-                  details: `Meta Webhook orqali "${deal.productName}" sdelkasi yaratildi (LeadGen ID: ${leadgenId})`,
-                  dealId: deal.id
+                  productName: extractProductName(String(rawProduct).trim()).substring(0, 200),
+                  amount: 0,
+                  status: 'new',
+                  clientId: client.id,
+                  contactId: contact.id,
+                  pipelineId,
+                  stageId,
+                  notes: `Meta LeadGen ID: ${leadgenId}\nForm ID: ${formId}\nAd ID: ${adId}`,
+                  source: 'target'
                 }
               });
-            } catch (e) {
-              console.warn(`[Meta Webhook Warn] Activity log yozishda xato (muhim emas): ${e.message}`);
-            }
+              console.log(`[Meta Webhook] \u2713 Sdelka muvaffaqiyatli saqlandi! Deal ID: ${deal.id}`);
 
-            // 6. UI ni real-vaqtda yangilash (Socket)
-            if (broadcast) {
-              const fullDeal = await prisma.deal.findUnique({
-                where: { id: deal.id },
-                include: {
-                  client: { select: { id: true, name: true, company: true, phone: true, city: true } },
-                  manager: { select: { id: true, fullName: true, email: true, role: true } },
-                  stage: { select: { id: true, name: true, color: true, order: true } },
-                  installments: { select: { id: true } }
-                }
-              });
-              broadcast({ type: 'deal_created', dealId: deal.id, deal: fullDeal });
-              console.log(`[Meta Webhook] ✓ WebSocket broadcast yuborildi. deal_created: ${deal.id}`);
-            }
+              // 5.5. Telegram botga xabar yuborish (alohida try/catch — CRM ga ta'sir qilmaydi)
+              try {
+                await sendTelegramNotificationWithRetry({
+                  name: rawName,
+                  phone: rawPhone,
+                  formId: formId,
+                  pageName: `Meta (Ad ID: ${adId})`,
+                  leadId: leadgenId
+                }, deal.id);
+              } catch (tgErr) {
+                console.warn(`[Telegram] Xabar yuborishda xato (muhim emas): ${tgErr.message}`);
+              }
 
-            console.log(`[Meta Webhook] ====== Lead muvaffaqiyatli qayta ishlandi: ${rawName} / ${rawPhone} ======`);
+              // Activity Log ga yozish
+              try {
+                await prisma.activityLog.create({
+                  data: {
+                    action: 'Sdelka yaratildi',
+                    details: `Meta Webhook orqali "${deal.productName}" sdelkasi yaratildi (LeadGen ID: ${leadgenId})`,
+                    dealId: deal.id
+                  }
+                });
+              } catch (e) {
+                console.warn(`[Meta Webhook Warn] Activity log yozishda xato (muhim emas): ${e.message}`);
+              }
+
+              // 6. UI ni real-vaqtda yangilash (Socket)
+              if (broadcast) {
+                const fullDeal = await prisma.deal.findUnique({
+                  where: { id: deal.id },
+                  include: {
+                    client: { select: { id: true, name: true, company: true, phone: true, city: true } },
+                    manager: { select: { id: true, fullName: true, email: true, role: true } },
+                    stage: { select: { id: true, name: true, color: true, order: true } },
+                    installments: { select: { id: true } }
+                  }
+                });
+                broadcast({ type: 'deal_created', dealId: deal.id, deal: fullDeal });
+                console.log(`[Meta Webhook] ✓ WebSocket broadcast yuborildi. deal_created: ${deal.id}`);
+              }
+
+              console.log(`[Meta Webhook] ====== Lead muvaffaqiyatli qayta ishlandi: ${rawName} / ${rawPhone} ======`);
+            } else {
+              console.error(`[Meta Webhook Error] ✗ Pipeline yoki Stage topilmadi! Pipeline: ${pipelineId}, Stage: ${stageId}. Deals jadvaliga yozib bo'lmadi.`);
+            }
           } else {
-            console.error(`[Meta Webhook Error] ✗ Pipeline yoki Stage topilmadi! Pipeline: ${pipelineId}, Stage: ${stageId}. Deals jadvaliga yozib bo'lmadi.`);
+            console.log(`[Meta Webhook] ====== Raqamsiz lead qayta ishlandi (sdelkasiz): ${rawName} ======`);
           }
 
         } catch (error) {
@@ -818,44 +850,49 @@ async function handleUniversalLead(source, rawData, broadcast) {
       }
 
       // Sdelkani (Deal) yaratamiz
-      const dealNotes = `Lead ID: ${parsed.leadId || 'N/A'}\nManba: ${parsed.pageName}\nQabul qilingan vaqt: ${new Date().toISOString()}\n\nTafsilotlar:\n${parsed.notes}`;
-      
-      const deal = await tx.deal.create({
-        data: {
-          productName: parsed.productName || parsed.formId || 'Universal Lead',
-          amount: 0,
-          status: 'new',
-          clientId: client.id,
-          contactId: contact.id,
-          pipelineId: targetPipelineId,
-          stageId: targetStageId,
-          notes: dealNotes,
-          source: (function() {
-            let resolvedSource = 'target';
-            const rawSourceField = String(rawData.source || rawData.Source || rawData.source_type || rawData.manba || parsed.pageName || '').toLowerCase();
-            if (rawSourceField.includes('instagram') || rawSourceField.includes('insta') || rawSourceField.includes('ig')) {
-              resolvedSource = 'instagram';
-            } else if (rawSourceField.includes('telegram') || rawSourceField.includes('tg')) {
-              resolvedSource = 'telegram';
-            } else if (rawSourceField.includes('target') || rawSourceField.includes('fb') || rawSourceField.includes('facebook') || rawSourceField.includes('ads')) {
-              resolvedSource = 'target';
-            } else if (rawSourceField.includes('oddiy') || rawSourceField.includes('manual')) {
-              resolvedSource = 'oddiy';
-            }
-            return resolvedSource;
-          })()
-        }
-      });
-      console.log(`[Universal Lead Transaction] Sdelka yaratildi. ID: ${deal.id}`);
+      let deal = null;
+      if (cleanPhone) {
+        const dealNotes = `Lead ID: ${parsed.leadId || 'N/A'}\nManba: ${parsed.pageName}\nQabul qilingan vaqt: ${new Date().toISOString()}\n\nTafsilotlar:\n${parsed.notes}`;
+        
+        deal = await tx.deal.create({
+          data: {
+            productName: parsed.productName || parsed.formId || 'Universal Lead',
+            amount: 0,
+            status: 'new',
+            clientId: client.id,
+            contactId: contact.id,
+            pipelineId: targetPipelineId,
+            stageId: targetStageId,
+            notes: dealNotes,
+            source: (function() {
+              let resolvedSource = 'target';
+              const rawSourceField = String(rawData.source || rawData.Source || rawData.source_type || rawData.manba || parsed.pageName || '').toLowerCase();
+              if (rawSourceField.includes('instagram') || rawSourceField.includes('insta') || rawSourceField.includes('ig')) {
+                resolvedSource = 'instagram';
+              } else if (rawSourceField.includes('telegram') || rawSourceField.includes('tg')) {
+                resolvedSource = 'telegram';
+              } else if (rawSourceField.includes('target') || rawSourceField.includes('fb') || rawSourceField.includes('facebook') || rawSourceField.includes('ads')) {
+                resolvedSource = 'target';
+              } else if (rawSourceField.includes('oddiy') || rawSourceField.includes('manual')) {
+                resolvedSource = 'oddiy';
+              }
+              return resolvedSource;
+            })()
+          }
+        });
+        console.log(`[Universal Lead Transaction] Sdelka yaratildi. ID: ${deal.id}`);
 
-      // ActivityLog
-      await tx.activityLog.create({
-        data: {
-          action: 'Sdelka yaratildi',
-          details: `Universal Webhook (${source}) orqali sdelka yaratildi (Lead ID: ${parsed.leadId || 'N/A'})`,
-          dealId: deal.id
-        }
-      });
+        // ActivityLog
+        await tx.activityLog.create({
+          data: {
+            action: 'Sdelka yaratildi',
+            details: `Universal Webhook (${source}) orqali sdelka yaratildi (Lead ID: ${parsed.leadId || 'N/A'})`,
+            dealId: deal.id
+          }
+        });
+      } else {
+        console.log(`[Universal Lead Transaction] Telefon raqamsiz lead. Sdelka yaratilishi chetlab o'tildi.`);
+      }
 
       return { client, deal };
     }, { timeout: 15000 });
@@ -866,34 +903,37 @@ async function handleUniversalLead(source, rawData, broadcast) {
     throw err;
   }
 
-  // 5. Asinxron Telegram xabarini yuborish (Tranzaksiyadan so'ng va DB xavfsiz holatda bo'lganida)
-  // Bu asinxron bajariladi, shuning uchun lead qabul qilinganligi to'g'risidagi HTTP javobini kechiktirmaydi.
-  sendTelegramNotificationWithRetry({
-    name: parsed.name,
-    phone: cleanPhone,
-    formId: parsed.formId,
-    pageName: parsed.pageName,
-    leadId: parsed.leadId
-  }, result.deal.id).catch(tgErr => {
-    console.error('[Universal Lead Telegram Outer Error] Telegram zanjiridan kutilmagan xato:', tgErr.message);
-  });
+  // 5. Asinxron Telegram xabarini yuborish (Faqat sdelka yaratilgan bo'lsa)
+  if (result.deal) {
+    sendTelegramNotificationWithRetry({
+      name: parsed.name,
+      phone: cleanPhone,
+      formId: parsed.formId,
+      pageName: parsed.pageName,
+      leadId: parsed.leadId
+    }, result.deal.id).catch(tgErr => {
+      console.error('[Universal Lead Telegram Outer Error] Telegram zanjiridan kutilmagan xato:', tgErr.message);
+    });
 
-  // 6. Real-time UI yangilanish (WebSocket)
-  if (broadcast) {
-    try {
-      const fullDeal = await prisma.deal.findUnique({
-        where: { id: result.deal.id },
-        include: {
-          client: { select: { id: true, name: true, company: true, phone: true, city: true } },
-          manager: { select: { id: true, fullName: true, email: true, role: true } },
-          stage: { select: { id: true, name: true, color: true, order: true } },
-          installments: { select: { id: true } }
-        }
-      });
-      broadcast({ type: 'deal_created', dealId: result.deal.id, deal: fullDeal });
-    } catch (wsErr) {
-      console.warn('[Universal Lead WebSocket Broadcast Warn] UI ni yangilashda xato (muhim emas):', wsErr.message);
+    // 6. Real-time UI yangilanish (WebSocket)
+    if (broadcast) {
+      try {
+        const fullDeal = await prisma.deal.findUnique({
+          where: { id: result.deal.id },
+          include: {
+            client: { select: { id: true, name: true, company: true, phone: true, city: true } },
+            manager: { select: { id: true, fullName: true, email: true, role: true } },
+            stage: { select: { id: true, name: true, color: true, order: true } },
+            installments: { select: { id: true } }
+          }
+        });
+        broadcast({ type: 'deal_created', dealId: result.deal.id, deal: fullDeal });
+      } catch (wsErr) {
+        console.warn('[Universal Lead WebSocket Broadcast Warn] UI ni yangilashda xato (muhim emas):', wsErr.message);
+      }
     }
+  } else {
+    console.log(`[Universal Lead] Telefon raqamsiz lead. Telegram va WebSocket bildirishnomalari yuborilmadi.`);
   }
 
   return result;

@@ -100,11 +100,19 @@ router.get('/kpis', async (req, res, next) => {
       createdAt: { gte: where.OR[0].createdAt.gte, lte: where.OR[0].createdAt.lte }
     } : {};
 
-    const [totalContacts, totalCompanies, openDealsCount, wonDealsThisMonth, pendingTasksCount] = await Promise.all([
+    const [totalContacts, noPhoneContacts, totalCompanies, openDealsCount, wonDealsThisMonth, pendingTasksCount] = await Promise.all([
+      prisma.contact.count({
+        where: dateRangeWhere
+      }),
       prisma.contact.count({
         where: {
           ...dateRangeWhere,
-          deals: { some: {} }
+          OR: [
+            { phone: null },
+            { phone: "" },
+            { phone: "undefined" },
+            { phone: "noma'lum" }
+          ]
         }
       }),
       prisma.company.count({ where: dateRangeWhere }),
@@ -442,6 +450,7 @@ router.get('/kpis', async (req, res, next) => {
 
     res.json({
       totalContacts,
+      noPhoneContacts,
       totalCompanies,
       openDealsCount,
       monthlyRevenue,
@@ -479,6 +488,8 @@ router.get('/kpis', async (req, res, next) => {
   } catch (error) {
     console.error('KPI Error:', error);
     return res.status(200).json({
+      totalContacts: 0,
+      noPhoneContacts: 0,
       totalLeads: 0,
       totalOrders: 0,
       totalRevenue: 0,
