@@ -2,6 +2,37 @@
    DESCO CRM — Clean Premium v3.1
    Uslub: Stripe / Linear — kamroq rang, ko'proq nafosat
    ════════════════════════════════ */
+
+/* Custom Professional Scrollbar System */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.01);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35); /* Slate 400 with opacity */
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 99px;
+  transition: background 0.15s ease;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.7); /* Hover color */
+  border-width: 1px;
+}
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.01);
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.4);
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.75);
+}
+
 :root {
   /* Fon va sirt - Soft premium slate colors */
   --bg-app: #F8FAFC;
