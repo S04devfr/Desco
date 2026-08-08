@@ -532,14 +532,18 @@
     font-size: 13px;
     color: var(--text-500);
     font-weight: 500;
+    width: 130px;
+    flex-shrink: 0;
+    text-align: left;
   }
   .drawer-inline-value {
     flex: 1;
-    text-align: right;
+    text-align: left;
     display: flex;
-    justify-content: flex-end;
+    justify-content: flex-start;
     align-items: center;
     min-width: 0;
+    gap: 4px;
   }
   .drawer-inline-select, .drawer-inline-input {
     border: none;
@@ -547,8 +551,8 @@
     font-size: 13px;
     font-weight: 600;
     color: var(--text-900);
-    text-align: right;
-    text-align-last: right;
+    text-align: left;
+    text-align-last: left;
     outline: none;
     padding: 4px 0;
     width: 100%;
@@ -1427,11 +1431,7 @@
               </div>
             </div>
 
-            <!-- Izoh / Notes Field on Left Panel -->
-            <div class="drawer-inline-row" style="align-items: flex-start; flex-direction: column; gap: 4px; border-bottom: none; height: auto; padding: 8px 4px;">
-              <span class="drawer-inline-label" style="text-align: left; width: 100%;">Izoh / Eslatma</span>
-              <textarea id="dw-notes" class="drawer-inline-input" style="text-align: left; width: 100%; min-height: 80px; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-base); resize: vertical; font-family: inherit; font-size: 13px; font-weight: 500;" placeholder="Mijoz yoki bosqich haqida izoh yozing..."></textarea>
-            </div>
+            <input type="hidden" id="dw-notes">
           </div>
 
           <!-- Collapsible secondary details for compatibility -->
@@ -3153,14 +3153,24 @@ function renderTimelineAndTasks(deal) {
   const timelineBody = document.getElementById('drawerTimelineBody');
   timelineBody.innerHTML = '';
   
-  const timelineData = [];
+  const comments = [];
+  const otherItems = [];
   
-  // 1. Activities (Only manual comments)
+  // 1. Group manual comments
   if (deal.activities) {
     deal.activities.forEach(a => {
-      const isComment = a.action === "Izoh qoldirildi" || a.action === "Izoh yozildi" || a.action === "Yangi izoh" || a.action === "Izoh qo'shildi";
+      const isComment = a.action === "Izoh qoldirildi" || 
+                        a.action === "Izoh yozildi" || 
+                        a.action === "Yangi izoh" || 
+                        a.action === "Izoh qo'shildi";
       if (isComment) {
-        timelineData.push({
+        comments.push({
+          date: new Date(a.createdAt),
+          author: a.user ? (a.user.fullName || a.user.email) : 'Tizim',
+          details: a.details || ''
+        });
+      } else {
+        otherItems.push({
           type: 'activity',
           date: new Date(a.createdAt),
           author: a.user ? (a.user.fullName || a.user.email) : 'Tizim',
@@ -3171,11 +3181,10 @@ function renderTimelineAndTasks(deal) {
       }
     });
   }
-
-  // 2. Tasks
+  
   if (deal.tasks) {
     deal.tasks.forEach(t => {
-      timelineData.push({
+      otherItems.push({
         type: 'task',
         date: new Date(t.dueDate || t.createdAt),
         completed: t.completed,
@@ -3188,121 +3197,141 @@ function renderTimelineAndTasks(deal) {
       });
     });
   }
-
-  // Sort oldest at top, newest at bottom (to match amoCRM chronological list)
-  timelineData.sort((a, b) => a.date - b.date);
-
-  const groups = {};
-  timelineData.forEach(item => {
-    const dateStr = item.date.toLocaleDateString('ru-RU');
-    if (!groups[dateStr]) groups[dateStr] = [];
-    groups[dateStr].push(item);
-  });
-
-  const dateKeys = Object.keys(groups);
+  
+  // Sort comments oldest first (chronological Word document style)
+  comments.sort((a, b) => a.date - b.date);
+  
+  // Sort other timeline items newest first
+  otherItems.sort((a, b) => b.date - a.date);
+  
   let html = '';
   
-  dateKeys.forEach(dateStr => {
+  // 1. Single continuous Word-like paper card for comments
+  html += `
+    <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 24px;">
+      <div style="font-size: 12px; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+        <i class="fas fa-file-alt" style="color: #6366f1;"></i> Izohlar Daftari
+      </div>
+      <div id="comments-document-flow" style="display: flex; flex-direction: column; gap: 12px; max-height: 400px; overflow-y: auto; padding-right: 4px;">
+  `;
+  
+  if (comments.length > 0) {
+    comments.forEach((c, idx) => {
+      const isLast = idx === comments.length - 1;
+      const borderStyle = isLast ? '' : 'border-bottom: 1px dashed #e2e8f0; padding-bottom: 12px;';
+      html += `
+        <div style="${borderStyle}">
+          <div style="display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; margin-bottom: 4px;">
+            <span style="font-weight: 700; color: #6366f1;">✍️ ${c.author}</span>
+            <span>${c.date.toLocaleString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+          </div>
+          <div style="white-space: pre-wrap; font-size: 13px; color: #334155; line-height: 1.5; font-family: inherit;">${_esc(c.details)}</div>
+        </div>
+      `;
+    });
+  } else {
     html += `
-      <div class="timeline-group-hdr">
-        <span class="timeline-group-title">${dateStr}</span>
+      <div style="text-align: center; padding: 30px 10px; color: #94a3b8; font-size: 12.5px; font-style: italic;">
+        Hozircha izohlar yozilmagan. Pastdagi maydon orqali izoh yozishingiz mumkin.
+      </div>
+    `;
+  }
+  
+  html += `
+      </div>
+    </div>
+  `;
+  
+  // 2. Render other timeline items (tasks, history) below
+  if (otherItems.length > 0) {
+    html += `
+      <div style="font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+        Vazifalar va Tizim Tarixi
       </div>
     `;
     
-    groups[dateStr].forEach(item => {
-      if (item.type === 'stageHistory') {
-        html += `
-          <div class="timeline-entry note-entry" id="history-${item.id}">
-            <div class="timeline-icon green" style="background:#34C759; color:#fff; display:flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%;"><i class="fas fa-route" style="font-size:10px;"></i></div>
-            <div class="timeline-content">
-              <div class="timeline-meta">
-                <span class="timeline-author">${_esc(item.author)}</span>
-                <span class="timeline-time">${item.date.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}</span>
-              </div>
-              <div class="timeline-text" style="font-weight: 500; font-size:12.5px;">
-                Bosqich o'zgardi: <span style="text-decoration: line-through; color: var(--text-tertiary);">${_esc(item.fromStage)}</span> &rarr; <span style="color: #34C759; font-weight: bold;">${_esc(item.toStage)}</span>
-              </div>
-            </div>
-          </div>
-        `;
-      } else if (item.type === 'activity') {
-        const isComment = item.action === "Izoh qoldirildi" || item.action === "Izoh yozildi" || item.action === "Yangi izoh";
-        if (isComment) {
-          html += `
-            <div class="timeline-entry note-entry" id="activity-${item.id}">
-              <div class="timeline-entry-meta">
-                <span class="timeline-entry-author">${_esc(item.author)}</span>
-                <span>Izoh · ${item.date.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}</span>
-              </div>
-              <div style="white-space:pre-wrap;">${_esc(item.details)}</div>
-            </div>
-          `;
-        } else {
+    const groups = {};
+    otherItems.forEach(item => {
+      const dateStr = item.date.toLocaleDateString('ru-RU');
+      if (!groups[dateStr]) groups[dateStr] = [];
+      groups[dateStr].push(item);
+    });
+    
+    const dateKeys = Object.keys(groups);
+    dateKeys.forEach(dateStr => {
+      html += `
+        <div class="timeline-group-hdr">
+          <span class="timeline-group-title">${dateStr}</span>
+        </div>
+      `;
+      
+      groups[dateStr].forEach(item => {
+        if (item.type === 'activity') {
           html += `
             <div class="timeline-entry" id="activity-${item.id}">
               <div class="timeline-entry-meta">
                 <span class="timeline-entry-author">${_esc(item.author)}</span>
                 <span>Tarix · ${item.date.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}</span>
               </div>
-              <div><strong>${_esc(item.action)}</strong>: ${_esc(item.details)}</div>
+              <div style="font-size:12.5px; color:var(--text-secondary);"><strong>${_esc(item.action)}</strong>: ${_esc(item.details)}</div>
             </div>
           `;
-        }
-      } else if (item.type === 'task') {
-        if (item.completed) {
-          html += `
-            <div class="timeline-entry" style="border-left: 3px solid #10b981;" id="task-${item.id}">
-              <div class="timeline-entry-meta">
-                <span class="timeline-entry-author" style="color:#10b981;">${_esc(item.assignedTo)}</span>
-                <span>Vazifa bajarildi · ${item.date.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}</span>
+        } else if (item.type === 'task') {
+          if (item.completed) {
+            html += `
+              <div class="timeline-entry" style="border-left: 3px solid #10b981;" id="task-${item.id}">
+                <div class="timeline-entry-meta">
+                  <span class="timeline-entry-author" style="color:#10b981;">${_esc(item.assignedTo)}</span>
+                  <span>Vazifa bajarildi · ${item.date.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}</span>
+                </div>
+                <div><strong>${_esc(item.actionType)}</strong>: ${_esc(item.title)}</div>
+                ${item.result ? `<div style="margin-top:6px; font-size:11px; padding:4px 8px; background:rgba(16,185,129,0.06); border-radius:4px; color:#10b981;"><b>Natija:</b> ${_esc(item.result)}</div>` : ''}
               </div>
-              <div><strong>${_esc(item.actionType)}</strong>: ${_esc(item.title)}</div>
-              ${item.result ? `<div style="margin-top:6px; font-size:11px; padding:4px 8px; background:rgba(16,185,129,0.06); border-radius:4px; color:#10b981;"><b>Natija:</b> ${_esc(item.result)}</div>` : ''}
-            </div>
-          `;
-        } else {
-          // Calculate remaining/overdue days
-          const today = new Date().setHours(0,0,0,0);
-          const taskTime = new Date(item.date).setHours(0,0,0,0);
-          const diffDays = Math.round((taskTime - today) / (1000 * 60 * 60 * 24));
-          const dayText = diffDays === 0 ? 'Bugun' : diffDays === 1 ? 'Ertaga' : diffDays === -1 ? 'Kecha' : diffDays < 0 ? `${Math.abs(diffDays)} kun muddat o'tdi` : `${diffDays} kun qoldi`;
-          const isOverdue = diffDays < 0;
-          const colorClass = isOverdue ? 'color:#ef4444;' : 'color:#a78bfa;';
+            `;
+          } else {
+            // Calculate remaining/overdue days
+            const today = new Date().setHours(0,0,0,0);
+            const taskTime = new Date(item.date).setHours(0,0,0,0);
+            const diffDays = Math.round((taskTime - today) / (1000 * 60 * 60 * 24));
+            const dayText = diffDays === 0 ? 'Bugun' : diffDays === 1 ? 'Ertaga' : diffDays === -1 ? 'Kecha' : diffDays < 0 ? `${Math.abs(diffDays)} kun muddat o'tdi` : `${diffDays} kun qoldi`;
+            const isOverdue = diffDays < 0;
+            const colorClass = isOverdue ? 'color:#ef4444;' : 'color:#a78bfa;';
 
-          html += `
-            <div class="timeline-task-card" style="border-color:${isOverdue ? '#ef4444' : 'rgba(88,86,214,0.25)'}" id="task-${item.id}">
-              <div class="timeline-task-header">
-                <i class="far fa-clock" style="${colorClass}"></i>
-                <span style="${colorClass}"> Keyingi vazifa: ${dayText} </span>
+            html += `
+              <div class="timeline-task-card" style="border-color:${isOverdue ? '#ef4444' : 'rgba(88,86,214,0.25)'}" id="task-${item.id}">
+                <div class="timeline-task-header">
+                  <i class="far fa-clock" style="${colorClass}"></i>
+                  <span style="${colorClass}"> Keyingi vazifa: ${dayText} </span>
+                </div>
+                <div class="timeline-task-title">${_esc(item.actionType)}: ${_esc(item.title)}</div>
+                ${(() => {
+                  const desc = item.description || '';
+                  if (!desc) return '';
+                  const isMakeLead = desc.includes('Lead ID:') || desc.includes('Manba:') || desc.length > 120;
+                  if (isMakeLead) {
+                    return `
+                      <details style="font-size:11.5px; color:var(--text-secondary); margin-bottom:8px; border:1px solid var(--border); border-radius:6px; padding:6px; background:var(--bg-tertiary);">
+                        <summary style="cursor:pointer; font-weight:700; color:var(--brand); outline:none; font-size:11px; list-style:none; display:flex; align-items:center; gap:4px;">
+                          <i class="fas fa-info-circle" style="color:var(--brand);"></i> <span>Tafsilotlarni ko'rish</span>
+                        </summary>
+                        <div style="margin-top:6px; white-space:pre-wrap; word-break:break-word; line-height:1.4;">${_esc(desc)}</div>
+                      </details>
+                    `;
+                  }
+                  return `<div style="font-size:12px; color:var(--text-secondary); margin-bottom:6px;">${_esc(desc)}</div>`;
+                })()}
+                <div class="timeline-task-result-box">
+                  <input type="text" id="task-res-${item.id}" class="timeline-task-input" placeholder="Natijani yozing...">
+                  <button class="btn btn-primary btn-sm" style="padding:2px 10px; font-size:12px; height:32px;" onclick="completeTimelineTask(${item.id})">Bajarildi</button>
+                </div>
               </div>
-              <div class="timeline-task-title">${_esc(item.actionType)}: ${_esc(item.title)}</div>
-              ${(() => {
-                const desc = item.description || '';
-                if (!desc) return '';
-                const isMakeLead = desc.includes('Lead ID:') || desc.includes('Manba:') || desc.length > 120;
-                if (isMakeLead) {
-                  return `
-                    <details style="font-size:11.5px; color:var(--text-secondary); margin-bottom:8px; border:1px solid var(--border); border-radius:6px; padding:6px; background:var(--bg-tertiary);">
-                      <summary style="cursor:pointer; font-weight:700; color:var(--brand); outline:none; font-size:11px; list-style:none; display:flex; align-items:center; gap:4px;">
-                        <i class="fas fa-info-circle" style="color:var(--brand);"></i> <span>Tafsilotlarni ko'rish</span>
-                      </summary>
-                      <div style="margin-top:6px; white-space:pre-wrap; word-break:break-word; line-height:1.4;">${_esc(desc)}</div>
-                    </details>
-                  `;
-                }
-                return `<div style="font-size:12px; color:var(--text-secondary); margin-bottom:6px;">${_esc(desc)}</div>`;
-              })()}
-              <div class="timeline-task-result-box">
-                <input type="text" id="task-res-${item.id}" class="timeline-task-input" placeholder="Natijani yozing...">
-                <button class="btn btn-primary btn-sm" style="padding:2px 10px; font-size:12px; height:32px;" onclick="completeTimelineTask(${item.id})">Bajarildi</button>
-              </div>
-            </div>
-          `;
+            `;
+          }
         }
-      }
+      });
     });
-  });
-
+  }
+  
   timelineBody.innerHTML = html || '<div style="text-align:center; padding:40px; color:var(--text-tertiary);">Tarix bo\'sh</div>';
   
   // Set participants count
