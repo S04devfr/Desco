@@ -394,6 +394,21 @@
     flex-shrink: 0;
   }
 
+  body.detail-modal-open .sidebar {
+    display: none !important;
+  }
+  body.detail-modal-open .topbar {
+    display: none !important;
+  }
+  body.detail-modal-open .main-area {
+    width: 100vw !important;
+    max-width: 100vw !important;
+  }
+  body.detail-modal-open .page-content {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
   /* ── Premium Sliding Drawer Styles (amoCRM level) ── */
   #detailModal {
     position: fixed !important;
@@ -2231,12 +2246,7 @@ function dcardHtml(d) {
   let taskHtml = '';
   const activeTasks = d.tasks || [];
   if (activeTasks.length === 0) {
-    taskHtml = `
-      <div style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: #ef4444; font-weight: 700;">
-        <span style="width: 6px; height: 6px; border-radius: 50%; background: #ef4444; display: inline-block;"></span>
-        Vazifa yo'q
-      </div>
-    `;
+    taskHtml = '';
   } else {
     activeTasks.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
     const nextTask = activeTasks[0];
@@ -2953,6 +2963,7 @@ async function saveDeal() {
 // ── Detail modal ───────────────────────────────────────────────
 // ── Detail drawer (amoCRM level) ────────────────────────────────
 async function openDetail(id) {
+  document.body.classList.add('detail-modal-open');
   _detailId = id;
   const modal = document.getElementById('detailModal');
   modal.classList.remove('hidden');
@@ -3294,6 +3305,7 @@ function renderTimelineAndTasks(deal) {
 }
 
 function closeDetail() {
+  document.body.classList.remove('detail-modal-open');
   document.getElementById('detailModal').classList.add('hidden');
   _detailId = null;
   window._currentDeal = null;
