@@ -1104,53 +1104,6 @@
       </button>
     </div>
 
-    <!-- Smart Funnel Analytics Panel -->
-    <div class="card" id="smartFunnelAnalytics" style="margin-bottom: 20px; border-radius: 10px; background: var(--surface-card); border: 1px solid var(--border); padding: 16px; box-shadow: var(--shadow-sm);">
-      <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleFunnelDetails()">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(99,102,241,0.08); display: flex; align-items: center; justify-content: center; color: var(--accent); border: 1px solid rgba(99,102,241,0.15);">
-            <i class="fas fa-filter" style="font-size: 15px;"></i>
-          </div>
-          <div>
-            <h4 style="margin: 0; font-size: 13.5px; font-weight: 700; color: var(--text-primary);">Savdo Voronkasi va Konversiya Tahlili (Smart BI)</h4>
-            <p style="margin: 3px 0 0 0; font-size: 11px; color: var(--text-tertiary);">Sdelkalar harakati, konversiya va bosqichlar tiqilinchini aniqlash</p>
-          </div>
-        </div>
-        <button class="btn btn-ghost btn-sm btn-icon" id="toggleFunnelBtn" style="width: 28px; height: 28px; transition: transform 0.2s;">
-          <i class="fas fa-chevron-down" style="font-size: 12px; color: var(--text-secondary);"></i>
-        </button>
-      </div>
-      
-      <div id="funnelDetailsContainer" class="hidden" style="margin-top: 16px; display: none; flex-direction: column; gap: 16px; border-top: 1px solid var(--border); padding-top: 16px;">
-        <!-- Metrics Row -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
-          <div style="background: var(--bg-secondary); padding: 12px; border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center;">
-            <div style="font-size: 9.5px; font-weight: 700; text-transform: uppercase; color: var(--text-tertiary); letter-spacing: 0.5px;">Faol sdelkalar budjeti</div>
-            <div style="font-size: 16px; font-weight: 800; color: var(--text-primary); margin-top: 4px;" id="funnelActiveBudget">0 UZS</div>
-            <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;" id="funnelActiveCount">0 ta sdelka jarayonda</div>
-          </div>
-          <div style="background: var(--bg-secondary); padding: 12px; border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center;">
-            <div style="font-size: 9.5px; font-weight: 700; text-transform: uppercase; color: var(--text-tertiary); letter-spacing: 0.5px;">Voronka konversiyasi</div>
-            <div style="font-size: 16px; font-weight: 800; color: #34c759; margin-top: 4px;" id="funnelConversionRate">0%</div>
-            <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">Yutilgan sdelkalar ulushi</div>
-          </div>
-          <div style="background: var(--bg-secondary); padding: 12px; border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center;">
-            <div style="font-size: 9.5px; font-weight: 700; text-transform: uppercase; color: var(--text-tertiary); letter-spacing: 0.5px;">Eng katta to'siq (Bottleneck)</div>
-            <div style="font-size: 15px; font-weight: 800; color: #ff9500; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="funnelBottleneckStage">Yuklanmoqda...</div>
-            <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;" id="funnelBottleneckDesc">Eng ko'p sdelka to'plangan bosqich</div>
-          </div>
-        </div>
-
-        <!-- Funnel Progression Bars -->
-        <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; border: 1px solid var(--border);">
-          <div style="font-size: 12.5px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px;">Voronka bo'ylab konversiya oqimi (Lead Flow)</div>
-          <div style="display: flex; flex-direction: column; gap: 12px;" id="funnelFlowBars">
-            <!-- Dynamically populated stages -->
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Kanban wrapper -->
     <div class="kanban-wrap" id="kanbanWrap">
       <div class="kb-mock-banner" id="kbMockBanner" style="display:none">
@@ -1772,18 +1725,6 @@
       try {
         await loadAll();
         
-        if (localStorage.getItem('funnel_analytics_expanded') === 'true') {
-          const container = document.getElementById('funnelDetailsContainer');
-          const btn = document.getElementById('toggleFunnelBtn');
-          if (container) {
-            container.classList.remove('hidden');
-            container.style.display = 'flex';
-          }
-          if (btn) {
-            btn.style.transform = 'rotate(180deg)';
-          }
-        }
-
         const params = new URLSearchParams(window.location.search);
         const openId = params.get('openDealId');
         if (openId) {
@@ -2026,115 +1967,8 @@ async function loadDeals() {
     totalsEl.textContent = `${totalCount} ta sdelka: ${totalAmount.toLocaleString('uz-UZ')} so'm`;
   }
 
-  updateSmartFunnelAnalytics();
-
   if (_view === 'kanban') renderKanban();
   else renderTable();
-}
-
-function updateSmartFunnelAnalytics() {
-  const activeDeals = _deals.filter(d => {
-    const status = (d.status || 'open').toLowerCase();
-    return status === 'open' || status === 'new';
-  });
-
-  const activeBudget = activeDeals.reduce((sum, d) => sum + (d.amount || 0), 0);
-  const activeCount = activeDeals.length;
-
-  const totalDeals = _deals.length;
-  const wonDeals = _deals.filter(d => {
-    const status = (d.status || '').toLowerCase();
-    const sName = (d.stage?.name || '').toLowerCase();
-    return status === 'won' || 
-           sName.includes('100%') || 
-           sName.includes('yutil') || 
-           sName.includes('won') || 
-           sName.includes('olindi') || 
-           sName.includes('shopir') || 
-           sName.includes('desco') || 
-           sName.includes('ishonch') || 
-           sName.includes('baraka');
-  });
-  const conversionRate = totalDeals > 0 ? Math.round((wonDeals.length / totalDeals) * 100) : 0;
-
-  // Bottleneck
-  const stageCounts = {};
-  activeDeals.forEach(d => {
-    const sName = d.stage ? d.stage.name : 'Noma\'lum';
-    stageCounts[sName] = (stageCounts[sName] || 0) + 1;
-  });
-  let bottleneckStage = 'Yo\'q';
-  let maxCount = 0;
-  for (const [stage, count] of Object.entries(stageCounts)) {
-    if (count > maxCount) {
-      maxCount = count;
-      bottleneckStage = stage;
-    }
-  }
-
-  // Update DOM
-  const budgetEl = document.getElementById('funnelActiveBudget');
-  const countEl = document.getElementById('funnelActiveCount');
-  const rateEl = document.getElementById('funnelConversionRate');
-  const bottleneckEl = document.getElementById('funnelBottleneckStage');
-
-  if (budgetEl) budgetEl.textContent = activeBudget.toLocaleString('uz-UZ') + ' UZS';
-  if (countEl) countEl.textContent = activeCount + ' ta sdelka jarayonda';
-  if (rateEl) rateEl.textContent = conversionRate + '%';
-  if (bottleneckEl) {
-    if (maxCount > 0) {
-      bottleneckEl.innerHTML = `${bottleneckStage} <span style="font-size: 11px; font-weight: 600; color: var(--text-tertiary);">(${maxCount} ta sdelka)</span>`;
-    } else {
-      bottleneckEl.textContent = 'Mavjud emas';
-    }
-  }
-
-  // Build progression flow bars
-  const activePipeline = _pipelines.find(p => p.id === _activePid) || (_pipelines.length ? _pipelines[0] : null);
-  const barsContainer = document.getElementById('funnelFlowBars');
-  if (barsContainer) {
-    if (activePipeline && activePipeline.stages) {
-      const sortedStages = [...activePipeline.stages].sort((a, b) => a.order - b.order);
-      barsContainer.innerHTML = sortedStages.map((st, i) => {
-        const stageDeals = _deals.filter(d => d.stageId === st.id);
-        const count = stageDeals.length;
-        const pct = _deals.length > 0 ? Math.round((count / _deals.length) * 100) : 0;
-        const color = st.color || '#6366F1';
-        return `
-          <div style="display: flex; flex-direction: column; gap: 4px;">
-            <div style="display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 600; color: var(--text-primary);">
-              <span style="display: flex; align-items: center; gap: 6px;">
-                <span style="width: 8px; height: 8px; border-radius: 50%; background: ${color}; display: inline-block;"></span>
-                <span>${_esc(st.name)}</span>
-              </span>
-              <span style="color: var(--text-secondary);">${count} ta sdelka (${pct}%)</span>
-            </div>
-            <div style="height: 6px; background: var(--border); border-radius: 3px; position: relative; overflow: hidden;">
-              <div style="height: 100%; background: ${color}; width: ${pct}%; border-radius: 3px; transition: width 0.4s;"></div>
-            </div>
-          </div>
-        `;
-      }).join('');
-    } else {
-      barsContainer.innerHTML = '<div style="color:var(--text-tertiary); font-size:11.5px;">Bosqichlar topilmadi</div>';
-    }
-  }
-}
-
-function toggleFunnelDetails() {
-  const container = document.getElementById('funnelDetailsContainer');
-  const btn = document.getElementById('toggleFunnelBtn');
-  if (container.classList.contains('hidden')) {
-    container.classList.remove('hidden');
-    container.style.display = 'flex';
-    btn.style.transform = 'rotate(180deg)';
-    localStorage.setItem('funnel_analytics_expanded', 'true');
-  } else {
-    container.classList.add('hidden');
-    container.style.display = 'none';
-    btn.style.transform = 'rotate(0deg)';
-    localStorage.setItem('funnel_analytics_expanded', 'false');
-  }
 }
 
 // ── Loading / error states ─────────────────────────────────────
