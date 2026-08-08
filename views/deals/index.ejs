@@ -117,7 +117,7 @@
   .kb-board::-webkit-scrollbar-thumb { background:var(--border); border-radius:8px; }
 
   .kb-col {
-  flex-shrink:0; width:260px; display:flex; flex-direction:column;
+  flex-shrink:0; width:310px; display:flex; flex-direction:column;
   max-height:100%; border-radius:10px;
   background:var(--bg-secondary); border:1px solid var(--border); overflow:hidden;
   }
@@ -396,24 +396,31 @@
 
   /* ── Premium Sliding Drawer Styles (amoCRM level) ── */
   #detailModal {
-    background: rgba(0, 0, 0, 0.4);
+    position: fixed !important;
+    inset: 0 !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: rgba(0, 0, 0, 0.45);
     display: flex;
     justify-content: flex-end;
     align-items: stretch;
-    z-index: 9990;
+    z-index: 99999 !important;
     transition: opacity 0.25s ease;
     padding: 0 !important;
+    margin: 0 !important;
   }
   #detailModal.hidden {
     display: none !important;
   }
   #detailModal .modal-box {
-    width: 100vw;
-    max-width: 100vw;
-    margin: 0;
-    height: 100vh;
-    max-height: 100vh;
-    border-radius: 0;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
     display: flex;
     flex-direction: row;
     overflow: hidden;
@@ -429,7 +436,7 @@
 
   /* Drawer Columns */
   .drawer-left {
-    width: 440px;
+    width: 480px;
     flex-shrink: 0;
     border-right: 1px solid var(--border);
     display: flex;
@@ -1481,14 +1488,32 @@
           <h3 style="margin:0; font-size:14px; font-weight:700; color:#fff;">Tarix va Izohlar</h3>
           <span style="font-size:11px; color:#94a3b8;" id="dw-participants-count">Участники: 1</span>
         </div>
-        <div class="timeline-footer" style="border-top:none; border-bottom:1px solid var(--border); padding: 12px 24px; background: rgba(15, 23, 42, 0.3);">
-          <div style="display:flex; gap:8px;">
-            <textarea id="dw-newComment" class="timeline-task-input" style="flex:1; height:46px; resize:none; padding:6px 10px; font-size:13px;" placeholder="Izoh yoki eslatma yozing..."></textarea>
-            <button class="btn btn-primary btn-sm" onclick="submitDrawerComment()" style="align-self:center; height:34px; background:var(--brand); border-color:var(--brand);"><i class="fas fa-paper-plane"></i></button>
+        <div class="timeline-body" id="drawerTimelineBody" style="padding-top:16px; flex:1;">
+          <!-- Timeline entries will be populated here -->
+        </div>
+
+        <!-- Callback Scheduler Box (amoCRM-style) -->
+        <div id="drawerCallbackScheduleBox" class="hidden" style="border-top: 1px solid var(--border); padding: 12px 24px; background: rgba(124, 58, 237, 0.08); display: none; flex-direction: column; gap: 8px;">
+          <div style="font-size: 12.5px; font-weight: 700; color: #a78bfa; display: flex; align-items: center; gap: 6px;">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Qayta aloqa vaqtini belgilash</span>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <input type="date" id="cb-schedule-date" class="form-control" style="font-size: 13px; padding: 6px 10px; border-radius: 6px; flex: 1; border:1px solid var(--border); background:var(--bg-primary); color:var(--text-primary);">
+            <input type="time" id="cb-schedule-time" class="form-control" style="font-size: 13px; padding: 6px 10px; border-radius: 6px; width: 90px; border:1px solid var(--border); background:var(--bg-primary); color:var(--text-primary);" value="10:00">
+          </div>
+          <textarea id="cb-schedule-notes" class="form-control" style="font-size: 13px; padding: 6px 10px; border-radius: 6px; height: 42px; resize: none; border:1px solid var(--border); background:var(--bg-primary); color:var(--text-primary);" placeholder="Qayta aloqa sababi / izoh..." onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); saveCallbackSchedule(); }"></textarea>
+          <div style="display: flex; justify-content: flex-end; gap: 8px;">
+            <button class="btn btn-ghost btn-sm" onclick="cancelCallbackSchedule()" style="font-size: 12px; padding: 2px 8px; cursor:pointer;">Bekor qilish</button>
+            <button class="btn btn-primary btn-sm" onclick="saveCallbackSchedule()" style="background: #7c3aed; border-color: #7c3aed; font-size: 12px; padding: 2px 10px; cursor:pointer;">Saqlash</button>
           </div>
         </div>
-        <div class="timeline-body" id="drawerTimelineBody" style="padding-top:16px;">
-          <!-- Timeline entries will be populated here -->
+
+        <div class="timeline-footer" style="border-top:1px solid var(--border); border-bottom:none; padding: 12px 24px; background: rgba(15, 23, 42, 0.3);">
+          <div style="display:flex; gap:8px;">
+            <textarea id="dw-newComment" class="timeline-task-input" style="flex:1; height:46px; resize:none; padding:6px 10px; font-size:13px;" placeholder="Izoh yoki eslatma yozing..." onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); submitDrawerComment(); }"></textarea>
+            <button class="btn btn-primary btn-sm" onclick="submitDrawerComment()" style="align-self:center; height:34px; background:var(--brand); border-color:var(--brand);"><i class="fas fa-paper-plane"></i></button>
+          </div>
         </div>
       </div>
     </div>
@@ -2004,7 +2029,7 @@ function renderKanban() {
         </span>
       </div>
       <div class="kb-col-meta" style="margin-top:4px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:4px;">
-        <div><span>${sDeals.length}</span> sdelka · <span>${_fmt(total,true)}</span></div>
+        <div><span>${sDeals.length}</span> sdelka</div>
         <div style="display:flex; gap:4px; align-items:center;">
           ${sDeals.length ? `
             <span class="kb-col-select-btns" style="display:inline-flex; gap:4px;">
@@ -2021,7 +2046,7 @@ function renderKanban() {
         ${_esc(s.name)}
       </div>
       <div class="kb-col-meta" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:4px;">
-        <div><span>${sDeals.length}</span> sdelka · <span>${_fmt(total,true)}</span></div>
+        <div><span>${sDeals.length}</span> sdelka</div>
         <div style="display:flex; gap:4px; align-items:center;">
           ${sDeals.length ? `
             <span class="kb-col-select-btns" style="display:inline-flex; gap:4px;">
@@ -2228,69 +2253,83 @@ function dcardHtml(d) {
     `;
   }
 
+  const initials = clientName && typeof clientName === 'string' && !clientName.includes('span')
+    ? clientName.split(' ').slice(0,2).map(w => w.charAt(0).toUpperCase()).join('')
+    : '?';
+
+  const stageObj = _stages.find(s => s.id === d.stageId);
+  const stageColor = stageObj ? (stageObj.color || '#6366f1') : '#6366f1';
+
+  const callbackT = (d.tasks || []).find(t => !t.completed && (t.actionType === 'Qayta aloqa' || (t.title || '').toLowerCase().includes('qayta aloqa')));
+  let callbackHtml = '';
+  if (callbackT) {
+    const cbDate = new Date(callbackT.dueDate);
+    const pad = n => String(n).padStart(2, '0');
+    const cbFmt = `${pad(cbDate.getDate())}.${pad(cbDate.getMonth()+1)}.${cbDate.getFullYear()}`;
+    const cbIsOverdue = cbDate < new Date().setHours(0,0,0,0);
+    callbackHtml = `
+      <div class="dcard-callback-banner${cbIsOverdue ? ' overdue' : ''}" style="margin: 4px -14px -12px; padding: 6px 14px; background: rgba(124, 58, 237, 0.07); border-top: 1px dashed rgba(124, 58, 237, 0.15); display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: #7c3aed; font-weight: 700; border-radius: 0 0 10px 10px;">
+        <i class="fas fa-phone-alt" style="font-size:9px;"></i>
+        <span>Qayta aloqa: ${cbFmt}</span>
+      </div>
+    `;
+  }
+
   return `
     <div class="dcard" draggable="true" data-id="${d.id}"
       ondragstart="onDragStart(event,${d.id})" ondragend="onDragEnd(event)"
-      onclick="openDetail(${d.id})" style="position:relative; padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.03); border:1px solid var(--border); border-radius:10px; transition:all 0.2s; background:var(--bg-secondary); cursor:pointer; margin-bottom: 10px; display:flex; flex-direction:column; gap:8px;">
-      
-      <!-- Edit Button on Hover -->
-      <div onclick="event.stopPropagation(); openDealModal(null, ${d.id})" style="position:absolute; top:10px; right:10px; color:var(--text-tertiary); cursor:pointer; padding: 4px; border-radius: 4px; transition: background 0.2s; z-index: 5;" onmouseover="this.style.background='var(--bg-secondary)'; this.style.color='var(--accent)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-tertiary)'">
-        <i class="fas fa-edit" style="font-size:12px"></i>
+      onclick="openDetail(${d.id})"
+      style="position:relative; padding:12px 14px; border-radius:12px; background:var(--bg-primary); margin-bottom:10px; border:1px solid var(--border); border-left:4px solid ${stageColor}; box-shadow:0 1px 4px rgba(0,0,0,0.04), 0 4px 14px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.22s cubic-bezier(0.16,1,0.3,1); overflow:hidden; display:flex; flex-direction:column; gap:8px;">
+
+      <!-- Top row: product name + id badge -->
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+        <div style="display:flex; align-items:center; gap:7px; flex:1; min-width:0;">
+          <input type="checkbox" class="dcard-checkbox" value="${d.id}" onclick="event.stopPropagation(); onCardSelect(this)" ${window._selectedDeals && window._selectedDeals.includes(d.id) ? 'checked' : ''} style="cursor:pointer; width:12px; height:12px; accent-color:var(--accent); flex-shrink:0;">
+          <strong class="dcard-name" style="font-size:13.5px; font-weight:700; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; padding-right:0;" title="${_esc(d.productName || d.name || '')}">${_esc(d.productName || d.name || 'Belgilanmagan')}</strong>
+        </div>
+        <div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
+          <span style="font-size:10px; font-weight:700; color:var(--text-tertiary); background:var(--bg-secondary); padding:2px 6px; border-radius:4px; border:1px solid var(--border);">#${d.id}</span>
+          <div onclick="event.stopPropagation(); openDealModal(null, ${d.id})" style="color:var(--text-tertiary); cursor:pointer; padding:3px; border-radius:4px; transition:background 0.15s;" onmouseover="this.style.background='var(--bg-secondary)'; this.style.color='var(--accent)'" onmouseout="this.style.background='transparent'; this.style.color='var(--text-tertiary)'">
+            <i class="fas fa-edit" style="font-size:11px"></i>
+          </div>
+        </div>
       </div>
 
-      <div class="dcard-header" style="display:flex; justify-content:space-between; align-items:flex-start; padding-right:20px; width:100%; gap:8px;">
-        <div style="display:flex; flex-direction:column; gap:2px; flex:1; min-width:0;">
-          <div style="display:flex; align-items:center; gap:6px;">
-            <span class="dcard-checkbox-wrap" style="display:inline-flex;">
-              <input type="checkbox" class="dcard-checkbox" value="${d.id}" onclick="event.stopPropagation(); onCardSelect(this)" ${window._selectedDeals && window._selectedDeals.includes(d.id) ? 'checked' : ''} style="cursor:pointer; width:13px; height:13px; accent-color:var(--accent);">
-            </span>
-            <strong style="font-size:13.5px; color:var(--text-primary); text-overflow:ellipsis; overflow:hidden; white-space:nowrap; font-weight:700;" title="${_esc(d.productName || d.name)}">${_esc(d.productName || d.name)}</strong>
+      <!-- Avatar + Client Info -->
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div class="dcard-av" style="background:linear-gradient(135deg, ${stageColor}, ${stageColor}bb); flex-shrink:0; color:#fff; border:none; width:26px; height:26px; font-size:11px;">${initials}</div>
+        <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${clientName}</div>
+          <div style="font-size:12px; color:var(--accent); font-weight:700; display:flex; align-items:center; gap:4px;">
+            <i class="fas fa-phone-alt" style="font-size:9px; color:var(--text-tertiary);"></i>
+            ${clientPhone}
           </div>
-          <span style="font-size:10px; color:var(--text-muted); font-weight:500;">${formattedTime}</span>
-        </div>
-        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0;">
-          <span style="font-size:10px; font-weight:700; color:var(--text-secondary); background:var(--bg-tertiary); padding:1px 5px; border-radius:4px; border:1px solid var(--border)">#${d.id}</span>
-          
         </div>
       </div>
-      
-      <!-- Content Area (Clean layout matching amoCRM) -->
-      <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 2px;">
-        <!-- Contact Name -->
-        <div style="font-size:12.5px; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
-          <i class="far fa-user" style="color:var(--text-tertiary); font-size:11px; width:12px; text-align:center;"></i>
-          <span style="font-weight:600;">${clientName}</span>
+
+      <!-- City & Amount row -->
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="font-size:11.5px; color:var(--text-tertiary); display:flex; align-items:center; gap:4px;">
+          <i class="fas fa-map-marker-alt" style="font-size:10px;"></i>
+          ${clientCity}
         </div>
-        
-        <!-- Company Name (optional/if not default) -->
-        ${(d.client && d.client.company && d.client.company !== 'o\'zim_uchun') ? `
-        <div style="font-size:11.5px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
-          <i class="far fa-building" style="color:var(--text-tertiary); font-size:11px; width:12px; text-align:center;"></i>
-          <span>${_esc(d.client.company)}</span>
-        </div>
-        ` : ''}
-        
-        <!-- Phone Number -->
-        <div style="font-size:12px; color:var(--accent); display:flex; align-items:center; gap:6px;">
-          <i class="fas fa-phone-alt" style="color:var(--text-tertiary); font-size:11px; width:12px; text-align:center;"></i>
-          <span style="font-weight:700; letter-spacing:0.2px;">${clientPhone}</span>
-        </div>
-        
-        <!-- Address (City) -->
-        <div style="font-size:12px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
-          <i class="fas fa-map-marker-alt" style="color:var(--text-tertiary); font-size:11px; width:12px; text-align:center;"></i>
-          <span>${clientCity}</span>
-        </div>
-        
-        <!-- Tags chips list (hidden if empty) -->
-        ${tagsHtml ? `
-        <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">
-          ${tagsHtml}
-        </div>
-        ` : ''}
+        ${d.amount ? `<div class="dcard-amount" style="font-size:13.5px; font-weight:800; color:var(--text-primary);">${_fmt(d.amount)}</div>` : ''}
       </div>
+
+      <!-- Tags (if any) -->
+      ${tagsHtml ? `<div style="display:flex; flex-wrap:wrap; gap:3px;">${tagsHtml}</div>` : ''}
+
+      <!-- Footer: task status + date -->
+      <div style="display:flex; justify-content:space-between; align-items:center; padding-top:4px; border-top:1px solid var(--border);">
+        ${taskHtml}
+        <span style="font-size:10px; color:var(--text-muted); font-weight:500;">${formattedTime}</span>
+      </div>
+
+      <!-- Callback banner at bottom of card -->
+      ${callbackHtml}
     </div>
   `;
+}
 }
 
 // ── Table view ─────────────────────────────────────────────────
@@ -3409,7 +3448,40 @@ async function saveAllDrawerFields(event) {
 
 window._pendingStageId = null;
 
+window._pendingCallbackStageId = null;
+
 async function changeDrawerStage(stageId) {
+  const stage = _stages.find(s => s.id === Number(stageId));
+  const stageName = stage ? stage.name.toLowerCase() : '';
+  const isCallback = stageName.includes('qayta') || stageName.includes('aloqa') || stageName.includes('ko\'tarmadi') || stageName.includes('kotarmadi');
+
+  if (isCallback) {
+    // Show Callback Schedule Box
+    window._pendingCallbackStageId = stageId;
+    const box = document.getElementById('drawerCallbackScheduleBox');
+    if (box) {
+      box.style.display = 'flex';
+      box.classList.remove('hidden');
+      
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const pad = n => String(n).padStart(2, '0');
+      document.getElementById('cb-schedule-date').value = `${tomorrow.getFullYear()}-${pad(tomorrow.getMonth()+1)}-${pad(tomorrow.getDate())}`;
+      document.getElementById('cb-schedule-time').value = '10:00';
+      document.getElementById('cb-schedule-notes').value = `Qayta aloqa: ${stage ? stage.name : ''}`;
+      document.getElementById('cb-schedule-notes').focus();
+    }
+    
+    // Temporarily update select text
+    if (stage) {
+      const btnText = document.getElementById('drawerStageBtnText');
+      const btnDot = document.getElementById('drawerStageBtnDot');
+      if (btnText) btnText.textContent = stage.name;
+      if (btnDot) btnDot.style.backgroundColor = stage.color || '#007AFF';
+    }
+    return;
+  }
+
   try {
     await apiFetch('/api/deals/' + _detailId + '/stage', {
       method: 'PATCH',
@@ -3419,16 +3491,78 @@ async function changeDrawerStage(stageId) {
     
     _toast("Bosqich yangilandi", "success");
     
-    // Reload the deal from the backend to get the fully updated object
     const updatedDeal = await apiFetch('/api/deals/' + _detailId);
     window._currentDeal = updatedDeal;
 
-    // Reload the details layout
     openDetail(_detailId);
     loadDeals();
   } catch (e) {
     _toast(e.message, "error");
   }
+}
+
+async function saveCallbackSchedule() {
+  const stageId = window._pendingCallbackStageId;
+  if (!stageId) return;
+
+  const dateVal = document.getElementById('cb-schedule-date').value;
+  const timeVal = document.getElementById('cb-schedule-time').value || '10:00';
+  const notesVal = document.getElementById('cb-schedule-notes').value.trim() || 'Mijoz bilan qayta bog\'lanish';
+
+  if (!dateVal) {
+    _toast("Sana kiritilishi shart", "error");
+    return;
+  }
+
+  try {
+    const taskTitle = (window._currentDeal ? (window._currentDeal.productName || 'Sdelka') : 'Sdelka') + " bo'yicha qayta aloqa";
+    
+    // 1. Create task
+    await apiFetch('/api/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: taskTitle,
+        description: notesVal,
+        dueDate: new Date(dateVal + 'T' + timeVal + ':00'),
+        dueTime: timeVal,
+        actionType: 'Qayta aloqa',
+        dealId: Number(_detailId),
+        clientId: window._currentDeal ? window._currentDeal.clientId : null
+      })
+    });
+
+    // 2. Change stage
+    await apiFetch('/api/deals/' + _detailId + '/stage', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stageId: Number(stageId), reason: `[Qayta aloqa] ${notesVal} (${dateVal} ${timeVal})` })
+    });
+
+    _toast("Qayta aloqa muvaffaqiyatli belgilandi va bosqich o'zgartirildi", "success");
+
+    const box = document.getElementById('drawerCallbackScheduleBox');
+    if (box) {
+      box.style.display = 'none';
+      box.classList.add('hidden');
+    }
+    window._pendingCallbackStageId = null;
+
+    openDetail(_detailId);
+    loadDeals();
+  } catch (e) {
+    _toast(e.message, "error");
+  }
+}
+
+function cancelCallbackSchedule() {
+  const box = document.getElementById('drawerCallbackScheduleBox');
+  if (box) {
+    box.style.display = 'none';
+    box.classList.add('hidden');
+  }
+  window._pendingCallbackStageId = null;
+  cancelStageChange();
 }
 
 function cancelStageChange() {
