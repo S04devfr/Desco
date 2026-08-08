@@ -3153,17 +3153,20 @@ function renderTimelineAndTasks(deal) {
   
   const timelineData = [];
   
-  // 1. Activities
+  // 1. Activities (Only manual comments)
   if (deal.activities) {
     deal.activities.forEach(a => {
-      timelineData.push({
-        type: 'activity',
-        date: new Date(a.createdAt),
-        author: a.user ? (a.user.fullName || a.user.email) : 'Tizim',
-        action: a.action,
-        details: a.details || '',
-        id: a.id
-      });
+      const isComment = a.action === "Izoh qoldirildi" || a.action === "Izoh yozildi" || a.action === "Yangi izoh" || a.action === "Izoh qo'shildi";
+      if (isComment) {
+        timelineData.push({
+          type: 'activity',
+          date: new Date(a.createdAt),
+          author: a.user ? (a.user.fullName || a.user.email) : 'Tizim',
+          action: a.action,
+          details: a.details || '',
+          id: a.id
+        });
+      }
     });
   }
 
@@ -3180,20 +3183,6 @@ function renderTimelineAndTasks(deal) {
         description: t.description || '',
         result: t.result || '',
         id: t.id
-      });
-    });
-  }
-
-  // 3. Stage History
-  if (deal.stageHistory) {
-    deal.stageHistory.forEach(h => {
-      timelineData.push({
-        type: 'stageHistory',
-        date: new Date(h.changedAt),
-        author: h.changedBy ? (h.changedBy.fullName || h.changedBy.email) : 'Tizim',
-        fromStage: h.fromStage ? h.fromStage.name : 'Boshlang\'ich',
-        toStage: h.toStage ? h.toStage.name : 'Noma\'lum bosqich',
-        id: h.id
       });
     });
   }
