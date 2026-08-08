@@ -1322,7 +1322,7 @@
 
           <!-- Active Stage Row (amoCRM style dropdown) -->
           <div style="font-size:12px; padding-left:22px; color:var(--text-secondary); margin-top:2px;">
-            <div style="color:var(--text-tertiary); font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:0.3px;">Воронка</div>
+            <div style="color:var(--text-tertiary); font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:0.3px;">VORONKA</div>
             <div style="display:flex; align-items:center; gap:6px; margin-top:2px; position: relative;">
               <!-- Keep hidden element for backward compatibility with textContent updates -->
               <span id="drawerActiveStage" style="display:none;"></span>
@@ -1342,7 +1342,7 @@
               <!-- Hidden select for compatibility -->
               <select id="drawerStageSelect" style="display: none;"></select>
               
-              <span id="drawerStageDuration" style="font-size:11px; color:#ef4444; font-weight:600; margin-right: 8px;">(—)</span>
+              <span id="drawerStageDuration" style="display: none !important;">(—)</span>
               
               <!-- Floating Save Button Next to Stage Select -->
               <button type="button" class="btn btn-primary" onclick="saveAllDrawerFieldsAndClose(event)" style="background: var(--brand); border-color: var(--brand); font-size: 12.5px; font-weight: 700; height: 30px; padding: 0 14px; display: inline-flex; align-items: center; gap: 5px; border-radius: 6px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">
@@ -1371,15 +1371,15 @@
 
         <!-- Tabs -->
         <div class="drawer-tabs" style="margin-left: 22px;">
-          <div class="drawer-tab active" onclick="switchDrawerTab('main', this)">Основное</div>
-          <div class="drawer-tab" onclick="switchDrawerTab('stats', this)">Статистика</div>
-          <div class="drawer-tab" onclick="switchDrawerTab('files', this)">Файлы</div>
+          <div class="drawer-tab active" onclick="switchDrawerTab('main', this)">Asosiy</div>
+          <div class="drawer-tab" onclick="switchDrawerTab('stats', this)">Statistika</div>
+          <div class="drawer-tab" onclick="switchDrawerTab('files', this)">Fayllar</div>
         </div>
 
         <!-- General Tab Content -->
         <div class="drawer-tab-content active" id="tab-main" style="padding-left: 22px;">
           <div class="drawer-inline-row">
-            <span class="drawer-inline-label">Отв-ный</span>
+            <span class="drawer-inline-label">Mas'ul</span>
             <div class="drawer-inline-value">
               <select id="dw-managerId" class="drawer-inline-select">
                 <option value="">— Menejersiz —</option>
@@ -1387,7 +1387,7 @@
             </div>
           </div>
           <div class="drawer-inline-row">
-            <span class="drawer-inline-label">Бюджет</span>
+            <span class="drawer-inline-label">Budjet</span>
             <div class="drawer-inline-value" style="display:flex; align-items:center; gap:4px; justify-content:flex-end;">
               <input type="number" id="dw-amount" class="drawer-inline-input">
               <span style="font-size:12px; color:var(--text-tertiary); font-weight:600;">so'm</span>
@@ -1524,10 +1524,12 @@
           </div>
         </div>
 
-        <div class="timeline-footer" style="border-top:1px solid var(--border); border-bottom:none; padding: 12px 24px; background: rgba(15, 23, 42, 0.3);">
-          <div style="display:flex; gap:8px;">
-            <textarea id="dw-newComment" class="timeline-task-input" style="flex:1; height:46px; resize:none; padding:6px 10px; font-size:13px;" placeholder="Izoh yoki eslatma yozing..." onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); submitDrawerComment(); }"></textarea>
-            <button class="btn btn-primary btn-sm" onclick="submitDrawerComment()" style="align-self:center; height:34px; background:var(--brand); border-color:var(--brand);"><i class="fas fa-paper-plane"></i></button>
+        <div class="timeline-footer">
+          <div style="display:flex; gap:10px; align-items:center;">
+            <textarea id="dw-newComment" style="flex:1; height:42px; resize:none; padding:10px 14px; font-size:13px; border-radius:8px; border:1px solid var(--border); background:var(--bg-primary); color:var(--text-primary); outline:none; transition:border-color 0.15s;" placeholder="Izoh yoki eslatma yozing..." onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); submitDrawerComment(); }" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+            <button class="btn btn-primary" onclick="submitDrawerComment()" style="align-self:center; height:42px; width:42px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:var(--brand); border-color:var(--brand); border-radius:8px; cursor:pointer; flex-shrink:0;">
+              <i class="fas fa-paper-plane" style="font-size:13px;"></i>
+            </button>
           </div>
         </div>
       </div>
@@ -3010,7 +3012,7 @@ async function openDetail(id) {
     tagsContainer.innerHTML = '';
     const tags = (deal.tags || '').split(/[,\s]+/).filter(t => t.trim() !== '');
     if (tags.length === 0) {
-      tagsContainer.innerHTML = '<span style="font-size:11px; color:var(--text-tertiary)">Теги нет. Нажмите для добавления</span>';
+      tagsContainer.innerHTML = '<span style="font-size:11px; color:var(--text-tertiary)">Teglar yo\'q. Qo\'shish uchun bosing</span>';
     } else {
       tags.forEach(t => {
         tagsContainer.innerHTML += `
@@ -3022,7 +3024,7 @@ async function openDetail(id) {
       });
     }
     tagsContainer.innerHTML += `
-      <button class="btn btn-secondary btn-xs" onclick="addDrawerTagPrompt()" style="padding:2px 6px; font-size:10px; border-radius:4px; margin-top:2px;">+ Добавить тег</button>
+      <button class="btn btn-secondary btn-xs" onclick="addDrawerTagPrompt()" style="padding:2px 6px; font-size:10px; border-radius:4px; margin-top:2px;">+ Teg qo'shish</button>
     `;
 
     // Progress Bar & Stage Select Dropdown
