@@ -114,50 +114,11 @@
 </div>
 
 <script>
-// ── Notifications ──
-function playNotificationBeep() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(880, ctx.currentTime);
-    gain.gain.setValueAtTime(0.1, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.35);
-  } catch (e) {
-    console.error('AudioContext error:', e);
-  }
-}
-
 async function loadNotifications() {
   try {
     const res = await fetch('/api/notifications');
     if (!res.ok) return;
     const notifs = await res.json();
-    
-    // Alert user about new unread overdue notifications
-    let alertedNotifs = JSON.parse(sessionStorage.getItem('alerted_notifs') || '[]');
-    let hasNewAlert = false;
-    
-    notifs.forEach(n => {
-      if (!n.read && !alertedNotifs.includes(n.id)) {
-        alertedNotifs.push(n.id);
-        hasNewAlert = true;
-        
-        const toastFn = typeof showToast === 'function' ? showToast : (typeof _toast === 'function' ? _toast : console.log);
-        toastFn(`${n.title}: ${n.message}`, 'warning');
-      }
-    });
-    
-    if (hasNewAlert) {
-      sessionStorage.setItem('alerted_notifs', JSON.stringify(alertedNotifs));
-      playNotificationBeep();
-    }
-
     const unread = notifs.filter(n => !n.read).length;
     const countEl = document.getElementById('notifCount');
     if (unread > 0) {
@@ -269,6 +230,6 @@ function toggleMobileMenu() {
 
 document.addEventListener('DOMContentLoaded', () => {
   loadNotifications();
-  setInterval(loadNotifications, 15 * 1000);
+  setInterval(loadNotifications, 2 * 60 * 1000);
 });
 </script>
