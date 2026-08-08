@@ -107,78 +107,72 @@
 <!-- ═══════════════════════════════════════════════════════
      MENEJERLAR — SAVDO GRAFIGI + OYLIK/KPI (yonma-yon)
 ════════════════════════════════════════════════════════ -->
-<div class="card mb-6" id="managerKpiSection">
+<div class="card mb-6" id="salesAndProductSection">
   <div class="card-header flex justify-between items-center">
-    <div class="flex items-center" style="gap:10px;">
-      <h3 class="section-title"><i class="fas fa-users-cog text-brand"></i>Menejerlar — Savdo & Oylik/KPI</h3>
-    </div>
-    <div class="mgr-formula-badge">
-      <i class="fas fa-calculator"></i>
-      Asosiy maosh &plus; (Won &times; 100 000) &minus; Jarima
-    </div>
+    <h3 class="section-title"><i class="fas fa-chart-line text-brand"></i> Savdo va Mahsulotlar Tahlili</h3>
+    <span id="productTotalBadge" class="badge badge-info" style="font-size:11px;">0 ta sotildi</span>
   </div>
-  <!-- Split layout: chart left | table right -->
+  
   <div class="mgr-split-layout">
-
-    <!-- LEFT: bar chart + debtors sidebar -->
-    <div class="mgr-chart-panel">
-      <div style="display: flex; gap: 20px; width: 100%; flex-wrap: wrap;">
-        <!-- Chart container -->
-        <div style="flex: 1; min-width: 300px; display: flex; flex-direction: column; justify-content: space-between;">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 10px;">
-            <div style="display: flex; gap: 10px; align-items: center;">
-              <div style="width: 36px; height: 36px; border-radius: 8px; background: var(--brand-soft); display: flex; align-items: center; justify-content: center; color: var(--brand);">
-                <i class="fas fa-calendar-alt" style="font-size: 16px;"></i>
-              </div>
-              <div>
-                <div style="font-weight: 700; font-size: 14px; color: var(--text-primary);">Kunlar kesimida</div>
-                <div style="font-size: 11px; color: var(--text-tertiary);" id="chartSubtitleMonth">Kunlik statistika</div>
-              </div>
-            </div>
-            <div style="text-align: right;">
-              <div style="font-weight: 800; font-size: 18px; color: var(--text-primary); line-height: 1.1;" id="chartTotalWonSales">0 UZS</div>
-              <div style="font-size: 10px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Jami Savdo</div>
-            </div>
+    <!-- LEFT: Sales Chart -->
+    <div class="mgr-chart-panel" style="padding: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 10px;">
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <div style="width: 36px; height: 36px; border-radius: 8px; background: var(--brand-soft); display: flex; align-items: center; justify-content: center; color: var(--brand);">
+            <i class="fas fa-calendar-alt" style="font-size: 16px;"></i>
           </div>
-          <div class="mgr-chart-wrap" style="min-height: 190px; max-height: 230px;">
-            <canvas id="salesChart"></canvas>
-          </div>
-          <div style="display: flex; justify-content: center; gap: 20px; margin-top: 12px; font-size: 11px; font-weight: 700;">
-            <span style="display: flex; align-items: center; gap: 6px; color: var(--text-secondary);">
-              <span style="width: 8px; height: 8px; border-radius: 50%; background: #34C759; display: inline-block;"></span>
-              Muvaffaqiyatli Savdo
-            </span>
+          <div>
+            <div style="font-weight: 700; font-size: 14px; color: var(--text-primary);">Kunlar kesimida</div>
+            <div style="font-size: 11px; color: var(--text-tertiary);" id="chartSubtitleMonth">Kunlik statistika</div>
           </div>
         </div>
-        
+        <div style="text-align: right;">
+          <div style="font-weight: 800; font-size: 18px; color: var(--text-primary); line-height: 1.1;" id="chartTotalWonSales">0 UZS</div>
+          <div style="font-size: 10px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase;">Jami Savdo</div>
+        </div>
+      </div>
+      <div class="mgr-chart-wrap" style="min-height: 220px; max-height: 250px;">
+        <canvas id="salesChart"></canvas>
+      </div>
+      <div style="display: flex; justify-content: center; gap: 20px; margin-top: 12px; font-size: 11px; font-weight: 700;">
+        <span style="display: flex; align-items: center; gap: 6px; color: var(--text-secondary);">
+          <span style="width: 8px; height: 8px; border-radius: 50%; background: #34C759; display: inline-block;"></span>
+          Muvaffaqiyatli Savdo
+        </span>
       </div>
     </div>
 
     <!-- divider -->
     <div class="mgr-divider"></div>
 
-    <!-- RIGHT: KPI/salary table -->
-    <div class="mgr-table-panel">
-      <div class="mgr-panel-label"><i class="fas fa-calculator"></i> Oylik hisob-kitob</div>
-      <div class="mgr-table-scroll">
-        <table class="deals-tbl mgr-kpi-tbl">
-          <thead>
-            <tr>
-              <th>Menejer</th>
-              <th class="tc" style="width:60px;">Holat</th>
-              <th class="tc" style="width:72px;">Bugun</th>
-              <th class="tc">Won</th>
-              <th class="tc">Win%</th>
-              <th class="tr kpi-th-plus">+ Asosiy maosh</th>
-              <th class="tr kpi-th-plus">+ KPI bonus</th>
-              <th class="tc kpi-th-minus">− Jarima</th>
-              <th class="tr kpi-th-total">= Jami to'lov</th>
-            </tr>
-          </thead>
-          <tbody id="managerKpiTableBody">
-            <tr><td colspan="9" class="tc kpi-empty"><div class="spinner" style="margin:auto;"></div></td></tr>
-          </tbody>
-        </table>
+    <!-- RIGHT: Product Share (Mahsulotlar ulushi) -->
+    <div class="mgr-chart-panel" style="padding: 20px;">
+      <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 12px;">
+        <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(88,86,214,0.1); display: flex; align-items: center; justify-content: center; color: #5856D6;">
+          <i class="fas fa-chart-pie" style="font-size: 16px;"></i>
+        </div>
+        <div>
+          <div style="font-weight: 700; font-size: 14px; color: var(--text-primary);">Mahsulotlar ulushi</div>
+          <div style="font-size: 11px; color: var(--text-tertiary);">Sotilgan mahsulotlar nisbatan ulushi</div>
+        </div>
+      </div>
+
+      <div id="productEmpty" style="display:none;height:240px;align-items:center;justify-content:center;color:var(--text-tertiary);font-size:13px;flex-direction:column;gap:6px;">
+        <i class="fas fa-box-open" style="font-size:28px;opacity:.3;"></i>
+        <span>Ma'lumot yo'q</span>
+      </div>
+      
+      <div id="productTrading" style="display:flex; align-items:center; gap:20px; flex-wrap:wrap; justify-content: center; margin-top: 10px;">
+        <!-- Donut Chart -->
+        <div style="position:relative; width: 180px; height: 180px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <canvas id="productChart" width="180" height="180"></canvas>
+          <div id="productCenter" style="position:absolute;text-align:center;pointer-events:none;">
+            <div id="productCenterPct" style="font-size:24px;font-weight:800;color:var(--text-primary);line-height:1;"></div>
+            <div id="productCenterName" style="font-size:11px;color:var(--text-secondary);margin-top:4px;max-width:90px;word-break:break-word;"></div>
+          </div>
+        </div>
+        <!-- Trading rows list -->
+        <div id="productList" style="flex:1; display:flex; flex-direction:column; gap:6px; overflow-y:auto; max-height:180px; min-width: 200px;"></div>
       </div>
     </div>
   </div>
@@ -290,40 +284,45 @@
 <% } %>
 
 <% if (isAdmin) { %>
-<!-- CHARTS: Mahsulot ulushi (Full Width) -->
-<div class="card mb-6" id="productShareSection" style="max-width: 650px;">
-  <div class="card-header">
-    <h3 class="section-title"><i class="fas fa-chart-pie text-brand"></i>Mahsulotlar ulushi</h3>
-    <span id="productTotalBadge" class="badge badge-info" style="font-size:11px;"></span>
-  </div>
-  <div class="card-body" style="padding: 16px;">
-    <div id="productEmpty" style="display:none;height:240px;align-items:center;justify-content:center;color:var(--text-tertiary);font-size:13px;flex-direction:column;gap:6px;">
-      <i class="fas fa-box-open" style="font-size:28px;opacity:.3;"></i>
-      <span>Ma'lumot yo'q</span>
+<!-- ═══════════════════════════════════════════════════════
+     MENEJERLAR: OYLIK HISOB-KITOB & KPI (Full Width)
+     ════════════════════════════════════════════════════════ -->
+<div class="card mb-6" id="managerKpiSection">
+  <div class="card-header flex justify-between items-center" style="border-bottom: 1px solid var(--border);">
+    <div class="flex items-center" style="gap:10px;">
+      <h3 class="section-title"><i class="fas fa-users-cog text-brand"></i>Menejerlar — Savdo & Oylik/KPI</h3>
     </div>
-    <div id="productTrading" style="display:flex; align-items:center; gap:40px; flex-wrap:wrap; justify-content: center;">
-      <!-- Donut Chart Left -->
-      <div style="position:relative; width: 200px; height: 200px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-        <canvas id="productChart" width="200" height="200"></canvas>
-        <div id="productCenter" style="position:absolute;text-align:center;pointer-events:none;">
-          <div id="productCenterPct" style="font-size:24px;font-weight:800;color:var(--text-primary);line-height:1;"></div>
-          <div id="productCenterName" style="font-size:11px;color:var(--text-secondary);margin-top:4px;max-width:100px;word-break:break-word;"></div>
-        </div>
-      </div>
-      <!-- Trading rows list Right -->
-      <div id="productList" style="flex:1; display:flex; flex-direction:column; gap:8px; overflow-y:auto; max-height:200px; min-width: 280px;"></div>
+    <div class="mgr-formula-badge" style="background: var(--bg-tertiary); padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--text-secondary); border: 1px solid var(--border); display: flex; align-items: center; gap: 6px;">
+      <i class="fas fa-calculator" style="color: var(--brand);"></i>
+      Asosiy maosh &plus; (Won &times; 100 000) &minus; Jarima
     </div>
   </div>
-</div>
-          <div style="color: var(--text-tertiary); font-size: 10px; text-align: center; width: 100%; padding-bottom: 10px;">Yuklanmoqda...</div>
-        </div>
+  <div class="card-body" style="padding: 20px;">
+    <div class="mgr-table-panel" style="width: 100%; padding: 0;">
+      <div class="mgr-panel-label" style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+        <i class="fas fa-calculator" style="color: var(--brand);"></i> 
+        <span>Oylik hisob-kitob</span>
       </div>
-
-      
-
-
-
-
+      <div class="table-wrap">
+        <table class="deals-tbl mgr-kpi-tbl" style="width: 100%;">
+          <thead>
+            <tr>
+              <th>Menejer</th>
+              <th class="tc" style="width:100px;">Holat</th>
+              <th class="tc" style="width:100px;">Bugun</th>
+              <th class="tc" style="width:100px;">Won</th>
+              <th class="tc" style="width:100px;">Win%</th>
+              <th class="tr kpi-th-plus">+ Asosiy maosh</th>
+              <th class="tr kpi-th-plus">+ KPI bonus</th>
+              <th class="tc kpi-th-minus">− Jarima</th>
+              <th class="tr kpi-th-total" style="font-weight: 800;">= Jami to'lov</th>
+            </tr>
+          </thead>
+          <tbody id="managerKpiTableBody">
+            <tr><td colspan="9" class="tc kpi-empty"><div class="spinner" style="margin:auto;"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
@@ -1519,9 +1518,9 @@ async function loadDashboard() {
                 backgroundColor: gradientGreen,
                 fill: true,
                 tension: 0.4,
-                borderWidth: 2,
-                pointRadius: 2,
-                pointHoverRadius: 5
+                borderWidth: 3.5,
+                pointRadius: 0,
+                pointHoverRadius: 6
               }
             ]
           },
