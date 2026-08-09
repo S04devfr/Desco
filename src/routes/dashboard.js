@@ -3,7 +3,47 @@ const prisma = require('../config/database')
 const { protect } = require('../middleware/auth')
 
 const router = express.Router()
+// Protect routes - require authentication
 router.use(protect)
+
+// Diagnostics route to inspect database dates and counts
+router.get('/diagnostics', async (req, res) => {
+  try {
+    const totalContacts = await prisma.contact.count();
+    const contacts = await prisma.contact.findMany({
+      select: { createdAt: true }
+    });
+    
+    const monthlyDistribution = {};
+    contacts.forEach(c => {
+      if (c.createdAt) {
+        const key = c.createdAt.toISOString().substring(0, 7); // YYYY-MM
+        monthlyDistribution[key] = (monthlyDistribution[key] || 0) + 1;
+      }
+    });
+
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    const monthCount = await prisma.contact.count({
+      where: {
+        createdAt: { gte: start, lte: end }
+      }
+    });
+
+    res.json({
+      serverTime: now.toISOString(),
+      computedStart: start.toISOString(),
+      computedEnd: end.toISOString(),
+      totalContacts,
+      contactsInCurrentMonthFilter: monthCount,
+      monthlyDistribution
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Helper for dates
 function buildWhere(filter, req) {
