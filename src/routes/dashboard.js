@@ -3,10 +3,8 @@ const prisma = require('../config/database')
 const { protect } = require('../middleware/auth')
 
 const router = express.Router()
-// Protect routes - require authentication
-router.use(protect)
 
-// Diagnostics route to inspect database dates and counts
+// Diagnostics route to inspect database dates and counts (public)
 router.get('/diagnostics', async (req, res) => {
   try {
     const totalContacts = await prisma.contact.count();
@@ -44,6 +42,9 @@ router.get('/diagnostics', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// Protect routes - require authentication
+router.use(protect)
 
 // Helper for dates
 function buildWhere(filter, req) {
