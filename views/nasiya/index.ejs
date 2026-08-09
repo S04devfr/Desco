@@ -59,12 +59,12 @@
   }
 
   /* High-density Excel matrix table */
-  .nasiya-excel-wrap {
-    overflow-x: auto;
+  .nasiya-table-card {
     border-radius: 14px;
     border: 1px solid var(--border);
     background: var(--bg-primary);
     box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    overflow: hidden;
   }
   #nasiyaTable {
     border-collapse: collapse !important;
@@ -72,47 +72,62 @@
     font-family: var(--font-text);
   }
   #nasiyaTable th {
-    border: 1px solid var(--border) !important;
-    padding: 10px 12px !important;
+    border-bottom: 2px solid var(--border) !important;
+    padding: 12px 14px !important;
     font-size: 11px !important;
     font-weight: 700 !important;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     background: var(--bg-secondary) !important;
-    color: var(--text-primary) !important;
+    color: var(--text-tertiary) !important;
     white-space: nowrap;
   }
   #nasiyaTable td {
-    border: 1px solid var(--border) !important;
-    padding: 10px 12px !important;
-    font-size: 12.5px !important;
+    border-bottom: 1px solid var(--border) !important;
+    padding: 12px 14px !important;
+    font-size: 13px !important;
     color: var(--text-primary) !important;
     vertical-align: middle;
-    white-space: nowrap;
   }
   #nasiyaTable tbody tr:hover td {
-    background: rgba(0, 122, 255, 0.04) !important;
+    background: rgba(0, 122, 255, 0.03) !important;
   }
 
-  /* Month Payment Pill Badges */
+  /* Month Payment Pill Badges inside Row Timeline */
+  .months-timeline-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 4px 0;
+    max-width: 380px;
+  }
+  .months-timeline-container::-webkit-scrollbar {
+    height: 4px;
+  }
+  .months-timeline-container::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 2px;
+  }
+
   .month-pill {
     display: inline-flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 4px 8px;
+    padding: 4px 10px;
     border-radius: 8px;
     font-size: 11px;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.15s ease;
     border: 1px solid transparent;
-    min-width: 80px;
-    text-align: center;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
   .month-pill:hover {
-    transform: scale(1.05);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    transform: translateY(-1px) scale(1.04);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.08);
   }
   .month-pill.paid {
     background: rgba(16, 185, 129, 0.12);
@@ -120,15 +135,15 @@
     border-color: rgba(16, 185, 129, 0.3);
   }
   .month-pill.overdue {
-    background: rgba(239, 68, 68, 0.12);
+    background: rgba(239, 68, 68, 0.14);
     color: #ef4444;
-    border-color: rgba(239, 68, 68, 0.3);
+    border-color: rgba(239, 68, 68, 0.35);
     animation: pulseOverdue 2s infinite;
   }
   .month-pill.due-soon {
     background: rgba(245, 158, 11, 0.15);
     color: #d97706;
-    border-color: rgba(245, 158, 11, 0.3);
+    border-color: rgba(245, 158, 11, 0.35);
   }
   .month-pill.upcoming {
     background: var(--bg-secondary);
@@ -138,7 +153,7 @@
 
   @keyframes pulseOverdue {
     0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-    70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+    70% { box-shadow: 0 0 0 5px rgba(239, 68, 68, 0); }
     100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
   }
 
@@ -159,21 +174,25 @@
 <div class="page-header">
   <div>
     <h1 id="nasiyaTitle" style="display:flex; align-items:center; gap:10px;">
-      <i class="fas fa-file-invoice-dollar" style="color:var(--accent); font-size:24px;"></i> Nasiya Desco — Muddatli To'lov va Qarz Markazi
+      <i class="fas fa-file-invoice-dollar" style="color:var(--accent); font-size:24px;"></i> 
+      <span id="headerPageTitle">Nasiya Desco — Muddatli To'lov Markazi</span>
     </h1>
-    <p id="nasiyaSubtitle">Google Sheet uslubidagi oylik to'lovlar matratsasi hamda aqlli eslatmalar (Task auto-generator)</p>
+    <p id="nasiyaSubtitle">Nasiya shartnomalari, to'lov jadvali va aqlli eslatmalar (Task auto-generator)</p>
   </div>
   <div class="page-header-actions" style="display:flex; gap:10px; align-items:center;">
-    <button class="btn btn-secondary btn-sm" onclick="autoGenerateTasks()" style="border-radius:20px; font-weight:700; background:rgba(0,122,255,0.08); color:#007AFF; border-color:rgba(0,122,255,0.2);">
-      <i class="fas fa-bell" style="color:#007AFF;"></i> ⚡ Vazifalarni Avto-Yaratish
-    </button>
+    <% if (subPage === 'desco') { %>
+      <button class="btn btn-secondary btn-sm" onclick="autoGenerateTasks()" style="border-radius:20px; font-weight:700; background:rgba(0,122,255,0.08); color:#007AFF; border-color:rgba(0,122,255,0.2);">
+        <i class="fas fa-bell" style="color:#007AFF;"></i> ⚡ Vazifalarni Avto-Yaratish
+      </button>
+    <% } %>
     <button class="btn btn-primary btn-sm" onclick="openNewNasiyaDealModal()" style="border-radius:20px; font-weight:700;">
       <i class="fas fa-plus"></i> + Yangi Nasiya Shartnomasi
     </button>
   </div>
 </div>
 
-<!-- TOP KPI STATS CARDS -->
+<% if (subPage === 'desco') { %>
+<!-- TOP KPI STATS CARDS (Only for Desco) -->
 <div class="nasiya-stats-grid">
   <div class="nasiya-stat-card">
     <div class="nasiya-stat-icon" style="background:rgba(0,122,255,0.1); color:#007AFF;">
@@ -225,6 +244,7 @@
     </div>
   </div>
 </div>
+<% } %>
 
 <!-- ACTIONS & SEARCH BAR -->
 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
@@ -241,14 +261,16 @@
   </div>
 </div>
 
-<!-- HIGH DENSITY EXCEL MATRIX TABLE -->
-<div class="nasiya-excel-wrap">
-  <table id="nasiyaTable">
-    <thead id="nasiyaThead"></thead>
-    <tbody id="nasiyaTableBody">
-      <tr><td colspan="12" style="text-align:center; padding:40px;"><div class="spinner" style="margin:auto"></div></td></tr>
-    </tbody>
-  </table>
+<!-- HIGH DENSITY CLEAN TABLE -->
+<div class="nasiya-table-card">
+  <div style="overflow-x:auto;">
+    <table id="nasiyaTable">
+      <thead id="nasiyaThead"></thead>
+      <tbody id="nasiyaTableBody">
+        <tr><td colspan="8" style="text-align:center; padding:40px;"><div class="spinner" style="margin:auto"></div></td></tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <!-- ── RAPID 1-CLICK PAYMENT RECORD MODAL ── -->
@@ -417,8 +439,16 @@
   const activeStageKey = '<%= subPage %>';
   const isDescoStage = activeStageKey === 'desco';
   let _allNasiyaDeals = [];
-  let _allNasiyaMonths = [];
   let _filterState = 'all';
+
+  const titleMap = {
+    'desco': 'Nasiya Desco — Muddatli To\'lov Markazi',
+    'ishonch': 'Nasiya Ishonch — Shartnomalar Ro\'yxati',
+    'baraka': 'Nasiya Baraka — Shartnomalar Ro\'yxati'
+  };
+
+  const titleEl = document.getElementById('headerPageTitle');
+  if (titleEl) titleEl.textContent = titleMap[activeStageKey] || 'Nasiya Bo\'limi';
 
   function fmtMoney(n) {
     if (!n) return '0 UZS';
@@ -436,13 +466,20 @@
   }
 
   async function loadNasiyaStats() {
+    if (!isDescoStage) return;
     try {
       const res = await fetch('/api/nasiya/stats').then(r => r.json());
-      document.getElementById('statTotalPortfolio').textContent = fmtMoney(res.totalPortfolio || 0);
-      document.getElementById('statTotalPaid').textContent = fmtMoney(res.totalPaid || 0);
-      document.getElementById('statTotalRemaining').textContent = fmtMoney(res.totalRemaining || 0);
-      document.getElementById('statOverdue').textContent = (res.overdueCount || 0) + ' ta';
-      document.getElementById('statMonthTarget').textContent = fmtMoney(res.currentMonthTarget || 0);
+      const elPort = document.getElementById('statTotalPortfolio');
+      const elPaid = document.getElementById('statTotalPaid');
+      const elRem = document.getElementById('statTotalRemaining');
+      const elOver = document.getElementById('statOverdue');
+      const elTgt = document.getElementById('statMonthTarget');
+
+      if (elPort) elPort.textContent = fmtMoney(res.totalPortfolio || 0);
+      if (elPaid) elPaid.textContent = fmtMoney(res.totalPaid || 0);
+      if (elRem) elRem.textContent = fmtMoney(res.totalRemaining || 0);
+      if (elOver) elOver.textContent = (res.overdueCount || 0) + ' ta';
+      if (elTgt) elTgt.textContent = fmtMoney(res.currentMonthTarget || 0);
     } catch(e) {
       console.error(e);
     }
@@ -479,23 +516,22 @@
   async function loadNasiyaDeals() {
     loadNasiyaStats();
     const tbody = document.getElementById('nasiyaTableBody');
-    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:40px;"><div class="spinner" style="margin:auto"></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;"><div class="spinner" style="margin:auto"></div></td></tr>`;
 
     try {
-      const res = await fetch('/api/nasiya/excel-data').then(r => r.json());
-      _allNasiyaDeals = res.deals || [];
-      _allNasiyaMonths = res.months || [];
+      const res = await fetch('/api/nasiya/list-deals?stage=' + activeStageKey).then(r => r.json());
+      _allNasiyaDeals = Array.isArray(res) ? res : (res.deals || []);
 
       renderNasiyaTable();
     } catch(e) {
-      tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:40px;color:#ef4444">Ma'lumotlarni yuklashda xatolik yuz berdi</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:#ef4444">Ma'lumotlarni yuklashda xatolik yuz berdi</td></tr>`;
     }
   }
 
   function renderNasiyaTable() {
     const tbody = document.getElementById('nasiyaTableBody');
     const thead = document.getElementById('nasiyaThead');
-    const search = document.getElementById('nasiyaSearch').value.trim().toLowerCase();
+    const search = (document.getElementById('nasiyaSearch')?.value || '').trim().toLowerCase();
     const now = new Date();
 
     // Filter deals
@@ -521,16 +557,16 @@
     document.getElementById('dealCount').textContent = deals.length + ' ta shartnoma';
 
     if (!isDescoStage) {
-      // Simple View for Ishonch / Baraka
+      // Clean view for Ishonch / Baraka
       thead.innerHTML = `<tr style="background:var(--bg-secondary)">
-        <th>№</th>
+        <th style="width:40px; text-align:center;">№</th>
         <th>Mijoz & Telefon</th>
         <th>Shahar</th>
         <th>Mahsulot</th>
-        <th>Summa</th>
-        <th>To'langan</th>
+        <th style="text-align:right;">Kelishilgan Summa</th>
+        <th style="text-align:right;">To'langan</th>
         <th>Menejer</th>
-        <th style="text-align:center">Amallar</th>
+        <th style="text-align:center; width:90px;">Amallar</th>
       </tr>`;
 
       if (!deals.length) {
@@ -540,15 +576,15 @@
 
       tbody.innerHTML = deals.map((d, idx) => `
         <tr>
-          <td style="font-weight:700; text-align:center;">#${idx + 1}</td>
+          <td style="font-weight:700; text-align:center; color:var(--text-tertiary);">#${idx + 1}</td>
           <td>
-            <div style="font-weight:700;">${escHtml(d.client?.name || "Noma'lum")}</div>
+            <div style="font-weight:700; font-size:13.5px;">${escHtml(d.client?.name || "Noma'lum")}</div>
             <div style="font-size:11.5px; color:var(--accent); font-weight:600;">${escHtml(d.client?.phone || '—')}</div>
           </td>
           <td style="color:var(--text-secondary);">${escHtml(d.client?.city || '—')}</td>
           <td style="font-weight:600;">${escHtml(d.productName)}</td>
-          <td style="font-weight:800; color:var(--text-primary);">${fmtMoney(d.amount)}</td>
-          <td style="font-weight:800; color:#10b981;">${fmtMoney(d.paidAmount)}</td>
+          <td style="font-weight:800; text-align:right; color:var(--text-primary);">${fmtMoney(d.amount)}</td>
+          <td style="font-weight:800; text-align:right; color:#10b981;">${fmtMoney(d.paidAmount)}</td>
           <td style="font-size:12px; font-weight:600;">${escHtml(d.manager?.fullName || '—')}</td>
           <td style="text-align:center;">
             <button class="btn btn-sm btn-ghost text-danger" onclick="deleteNasiya(${d.id})" title="O'chirish"><i class="fas fa-trash"></i></button>
@@ -558,31 +594,20 @@
       return;
     }
 
-    // Google Sheet Style Matrix View for Nasiya Desco
-    const monthHeadersHtml = _allNasiyaMonths.map(m => `
-      <th style="text-align:center; min-width:95px; background:rgba(0,122,255,0.06); border-color:var(--border) !important;">
-        ${escHtml(m.label)}
-      </th>
-    `).join('');
-
+    // High-Definition Clean View for Nasiya Desco with Row Timeline Pills
     thead.innerHTML = `<tr>
-      <th style="width:30px; text-align:center;">№</th>
-      <th style="min-width:160px;">Mijoz & Telefon</th>
-      <th style="min-width:110px;">Shahar</th>
-      <th style="min-width:140px;">Mahsulot</th>
-      <th style="min-width:110px; text-align:right;">Kelishilgan Summa</th>
-      <th style="min-width:130px; text-align:center;">Oylik To'lov & Kun</th>
-      <th style="min-width:110px; text-align:right;">1-chi To'lov</th>
-      ${monthHeadersHtml}
-      <th style="min-width:110px; text-align:right;">Jami To'langan</th>
-      <th style="min-width:110px; text-align:right;">Qolgan Qarz</th>
-      <th style="min-width:95px; text-align:center;">Holati</th>
-      <th style="min-width:80px; text-align:center;">Amallar</th>
+      <th style="width:36px; text-align:center;">№</th>
+      <th style="min-width:170px;">Mijoz & Telefon</th>
+      <th style="min-width:140px;">Mahsulot & Rang</th>
+      <th style="min-width:130px; text-align:right;">Jami Summa</th>
+      <th style="min-width:150px; text-align:center;">Oylik To'lov & Kun</th>
+      <th style="min-width:320px;">Oylar Kesimida To'lovlar (Timeline)</th>
+      <th style="min-width:160px;">To'langan / Qolgan</th>
+      <th style="min-width:120px; text-align:center;">Holati & Amallar</th>
     </tr>`;
 
     if (!deals.length) {
-      const colSpan = 11 + _allNasiyaMonths.length;
-      tbody.innerHTML = `<tr><td colspan="${colSpan}" style="text-align:center;padding:40px;color:var(--text-tertiary)">Ma'lumotlar topilmadi</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-tertiary)">Ma'lumotlar topilmadi</td></tr>`;
       return;
     }
 
@@ -590,7 +615,6 @@
       const insts = d.installments || [];
       const firstInst = insts[0] || null;
       const firstPaymentAmt = firstInst && firstInst.paid ? firstInst.amount : (d.paidAmount || 0);
-
       const remainingDebt = Math.max(0, d.amount - d.paidAmount);
       const isClosed = (d.amount > 0 && d.paidAmount >= d.amount) || (insts.length > 0 && insts.every(i => i.paid));
       const hasOverdue = insts.some(i => !i.paid && new Date(i.dueDate) < now);
@@ -606,36 +630,29 @@
       const monthlyVal = regularInst ? regularInst.amount : (insts[1] ? insts[1].amount : Math.round((d.amount - firstPaymentAmt) / Math.max(1, insts.length - 1)));
       const dueDayStr = firstInst ? new Date(firstInst.dueDate).getDate() + '-kuni' : '23-kuni';
 
-      // Build month cells
-      const monthCellsHtml = _allNasiyaMonths.map(m => {
-        const inst = insts.find(i => {
-          const dt = new Date(i.dueDate);
-          return dt.getFullYear() === m.year && dt.getMonth() === m.month;
-        });
+      const progressPct = d.amount > 0 ? Math.min(100, Math.round((d.paidAmount / d.amount) * 100)) : 0;
 
-        if (!inst) {
-          return `<td style="text-align:center; color:var(--text-tertiary);">—</td>`;
-        }
-
+      // Month pills timeline HTML
+      const monthPillsHtml = insts.map((inst, iIdx) => {
         const isPaid = inst.paid;
         const dt = new Date(inst.dueDate);
         const isOverdue = !isPaid && dt < now;
         const isDueSoon = !isPaid && !isOverdue && (dt - now) <= 7 * 24 * 3600 * 1000;
 
         const pillCls = isPaid ? 'paid' : isOverdue ? 'overdue' : isDueSoon ? 'due-soon' : 'upcoming';
-        const dateTag = dt.getDate() + '.' + String(dt.getMonth() + 1).padStart(2, '0');
-        const labelText = isPaid
-          ? `${(inst.amount || 0).toLocaleString()} ✔️`
+        const dateTag = dt.toLocaleDateString('uz-UZ', { month:'short', day:'numeric' });
+        const monthLabel = inst.month || `${iIdx + 1}-oy`;
+
+        const displayTxt = isPaid
+          ? `${monthLabel} ✔️`
           : isOverdue
-          ? `🔴 ${dateTag} — ${(inst.amount || 0).toLocaleString()}`
-          : `${dateTag} — ${(inst.amount || 0).toLocaleString()}`;
+          ? `🔴 ${monthLabel} (${(inst.amount || 0).toLocaleString()})`
+          : `${monthLabel} (${dateTag})`;
 
         return `
-          <td style="text-align:center; padding:4px !important;">
-            <div class="month-pill ${pillCls}" onclick="openRapidPayModal(${d.id}, ${inst.id}, '${escHtml(m.fullLabel)}', ${inst.amount}, '${escHtml(d.client?.name || '')}')" title="To'lovni kiritish uchun bosing">
-              <span>${labelText}</span>
-            </div>
-          </td>
+          <div class="month-pill ${pillCls}" onclick="openRapidPayModal(${d.id}, ${inst.id}, '${escHtml(monthLabel)}', ${inst.amount}, '${escHtml(d.client?.name || '')}')" title="${isPaid ? 'To\'langan' : 'To\'lovni qabul qilish uchun bosing'}">
+            <span>${displayTxt}</span>
+          </div>
         `;
       }).join('');
 
@@ -643,28 +660,43 @@
         <tr>
           <td style="font-weight:700; text-align:center; color:var(--text-tertiary);">${idx + 1}</td>
           <td>
-            <div style="font-weight:700; font-size:13px;">${escHtml(d.client?.name || "Noma'lum")}</div>
-            <div style="font-size:11.5px; color:var(--accent); font-weight:600;">${escHtml(d.client?.phone || '—')}</div>
+            <div style="font-weight:700; font-size:13.5px; color:var(--text-primary);">${escHtml(d.client?.name || "Noma'lum")}</div>
+            <div style="font-size:12px; color:var(--accent); font-weight:600; margin-top:2px;">${escHtml(d.client?.phone || '—')}</div>
+            <div style="font-size:11px; color:var(--text-tertiary);">${escHtml(d.client?.city || '')}</div>
           </td>
-          <td style="font-size:12px; color:var(--text-secondary);">${escHtml(d.client?.city || '—')}</td>
-          <td style="font-weight:600;">
-            ${escHtml(d.productName)}
-            ${d.productColor ? `<span style="font-size:10px; color:var(--text-tertiary); display:block;">${escHtml(d.productColor)}</span>` : ''}
+          <td>
+            <div style="font-weight:700; color:var(--text-primary);">${escHtml(d.productName)}</div>
+            ${d.productColor ? `<span class="badge" style="font-size:10px; background:var(--bg-tertiary); color:var(--text-secondary); margin-top:4px;">${escHtml(d.productColor)}</span>` : ''}
           </td>
-          <td style="font-weight:800; text-align:right; color:var(--text-primary);">${fmtMoney(d.amount)}</td>
-          <td style="text-align:center; font-size:12px;">
-            <strong style="color:var(--brand);">${fmtMoney(monthlyVal)}</strong>
-            <span style="font-size:10.5px; color:var(--text-tertiary); display:block; font-weight:600;">Har oyning ${dueDayStr}</span>
+          <td style="text-align:right;">
+            <div style="font-weight:800; color:var(--text-primary); font-size:13.5px;">${fmtMoney(d.amount)}</div>
+            <div style="font-size:10.5px; font-weight:700; color:#10b981; margin-top:2px;">1-to'lov: ${fmtMoney(firstPaymentAmt)}</div>
           </td>
-          <td style="font-weight:700; text-align:right; color:#10b981;">${fmtMoney(firstPaymentAmt)}</td>
-          ${monthCellsHtml}
-          <td style="font-weight:800; text-align:right; color:#10b981;">${fmtMoney(d.paidAmount)}</td>
-          <td style="font-weight:800; text-align:right; color:${remainingDebt > 0 ? '#ef4444' : '#10b981'};">${fmtMoney(remainingDebt)}</td>
-          <td style="text-align:center;">${statusBadge}</td>
           <td style="text-align:center;">
-            <div style="display:flex; justify-content:center; gap:4px;">
-              <button class="btn btn-sm btn-primary" onclick="openDescoEdit(${d.id})" title="To'lov planini tahrirlash" style="padding:4px 8px;"><i class="fas fa-edit"></i></button>
-              <button class="btn btn-sm btn-ghost text-danger" onclick="deleteNasiya(${d.id})" title="O'chirish" style="padding:4px 8px;"><i class="fas fa-trash"></i></button>
+            <div style="font-weight:800; color:var(--brand); font-size:13px;">${fmtMoney(monthlyVal)}</div>
+            <div style="font-size:11px; color:var(--text-tertiary); font-weight:600; margin-top:2px;">Har oyning ${dueDayStr}</div>
+          </td>
+          <td>
+            <div class="months-timeline-container">
+              ${monthPillsHtml || '<span style="font-size:11px; color:var(--text-tertiary);">Reja belgilanmagan</span>'}
+            </div>
+          </td>
+          <td>
+            <div style="display:flex; justify-content:space-between; font-size:11.5px; font-weight:700; margin-bottom:3px;">
+              <span style="color:#10b981;">${fmtMoney(d.paidAmount)}</span>
+              <span style="color:${remainingDebt > 0 ? '#ef4444' : '#10b981'};">${fmtMoney(remainingDebt)}</span>
+            </div>
+            <div style="height:6px; background:var(--bg-secondary); border-radius:3px; overflow:hidden;">
+              <div style="width:${progressPct}%; height:100%; background:${isClosed ? '#007AFF' : hasOverdue ? '#ef4444' : '#10b981'}; border-radius:3px; transition:width 0.3s;"></div>
+            </div>
+          </td>
+          <td style="text-align:center;">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+              ${statusBadge}
+              <div style="display:flex; gap:4px;">
+                <button class="btn btn-sm btn-primary" onclick="openDescoEdit(${d.id})" title="To'lov planini tahrirlash" style="padding:4px 8px; font-size:11px;"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-sm btn-ghost text-danger" onclick="deleteNasiya(${d.id})" title="O'chirish" style="padding:4px 8px; font-size:11px;"><i class="fas fa-trash"></i></button>
+              </div>
             </div>
           </td>
         </tr>
