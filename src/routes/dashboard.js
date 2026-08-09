@@ -30,12 +30,37 @@ router.get('/diagnostics', async (req, res) => {
       }
     });
 
+    const noPhoneAll = await prisma.contact.count({
+      where: {
+        OR: [
+          { phone: null },
+          { phone: "" },
+          { phone: "undefined" },
+          { phone: "noma'lum" }
+        ]
+      }
+    });
+
+    const noPhoneMonth = await prisma.contact.count({
+      where: {
+        createdAt: { gte: start, lte: end },
+        OR: [
+          { phone: null },
+          { phone: "" },
+          { phone: "undefined" },
+          { phone: "noma'lum" }
+        ]
+      }
+    });
+
     res.json({
       serverTime: now.toISOString(),
       computedStart: start.toISOString(),
       computedEnd: end.toISOString(),
       totalContacts,
       contactsInCurrentMonthFilter: monthCount,
+      noPhoneAll,
+      noPhoneMonth,
       monthlyDistribution
     });
   } catch (err) {
