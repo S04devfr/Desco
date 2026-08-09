@@ -4,103 +4,322 @@
   user: user
 }) %>
 
+<style>
+  .wh-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  /* Stats Cards Grid */
+  .wh-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .wh-stat-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    transition: all 0.2s ease;
+  }
+  .wh-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -4px rgba(0,0,0,0.06);
+    border-color: var(--accent);
+  }
+
+  .wh-stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  /* Tabs & Controls */
+  .wh-controls-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .wh-pill-tab {
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 700;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .wh-pill-tab.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    box-shadow: 0 4px 12px rgba(99,102,241,0.25);
+  }
+
+  /* Table styling */
+  .wh-table-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.03);
+  }
+
+  .wh-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .wh-table th {
+    background: var(--bg-secondary);
+    padding: 14px 18px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stock-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    transition: all 0.15s ease;
+  }
+
+  .stock-ok {
+    background: rgba(16, 185, 129, 0.12) !important;
+    color: #10B981 !important;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+  }
+  .stock-ok:hover {
+    background: rgba(16, 185, 129, 0.2) !important;
+    transform: scale(1.05);
+  }
+  
+  .stock-low {
+    background: rgba(245, 158, 11, 0.12) !important;
+    color: #D97706 !important;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+  }
+  .stock-low:hover {
+    background: rgba(245, 158, 11, 0.2) !important;
+    transform: scale(1.05);
+  }
+  
+  .stock-zero {
+    background: rgba(239, 68, 68, 0.1) !important;
+    color: #EF4444 !important;
+    border: 1px solid rgba(239, 68, 68, 0.18);
+  }
+  .stock-zero:hover {
+    background: rgba(239, 68, 68, 0.18) !important;
+    transform: scale(1.05);
+  }
+  
+  .stock-total {
+    background: rgba(99, 102, 241, 0.12) !important;
+    color: #6366F1 !important;
+    border: 1px solid rgba(99, 102, 241, 0.22);
+    font-weight: 800;
+  }
+
+  .main-product-row {
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+  }
+  .main-product-row:hover {
+    background-color: var(--bg-secondary) !important;
+  }
+  
+  .variant-row {
+    background-color: rgba(0,0,0,0.015);
+    transition: background-color 0.15s ease;
+  }
+  .variant-row:hover {
+    background-color: var(--bg-secondary) !important;
+  }
+
+  .variant-color-text {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 6px;
+    transition: background-color 0.15s ease;
+  }
+  .variant-color-text:hover {
+    background-color: var(--border);
+  }
+  .variant-color-text .edit-color-icon {
+    font-size: 10px;
+    opacity: 0;
+    margin-left: 6px;
+    transition: opacity 0.15s ease, color 0.15s ease;
+    color: var(--text-secondary);
+  }
+  .variant-color-text:hover .edit-color-icon {
+    opacity: 0.8;
+  }
+
+  .color-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
+  }
+
+  /* Modal Backdrop blur */
+  .modal-overlay {
+    backdrop-filter: blur(8px);
+    background: rgba(0,0,0,0.4);
+  }
+  .modal-box {
+    border-radius: 18px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+  }
+</style>
+
 <main class="main-content">
-  <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+
+  <!-- Header -->
+  <div class="wh-header">
     <div>
-      <h1 style="font-size:22px;font-weight:700;margin:0;display:flex;align-items:center;gap:10px">
-        <i class="fas fa-warehouse" style="color:var(--accent)"></i> Ombor boshqaruvi
+      <h1 style="font-size:22px; font-weight:800; margin:0; display:flex; align-items:center; gap:10px;">
+        <i class="fas fa-warehouse" style="color:var(--accent)"></i> Ombor Boshqaruvi
       </h1>
-      <p style="font-size:13px;color:var(--text-tertiary);margin:4px 0 0">Toshkent va Qo'qon omborlaridagi zaxira holati</p>
+      <p style="font-size:13px; color:var(--text-tertiary); margin:4px 0 0">Filiallar va mahsulotlar kesimida zaxira monitoringi</p>
     </div>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-primary" onclick="openFillModal()">
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-primary" onclick="openFillModal()" style="border-radius:10px; font-weight:700; box-shadow:0 4px 12px rgba(99,102,241,0.3);">
         <i class="fas fa-plus"></i> Zaxira qo'shish
       </button>
-      <button class="btn btn-secondary" onclick="openProductModal()">
+      <button class="btn btn-secondary" onclick="openProductModal()" style="border-radius:10px; font-weight:600;">
         <i class="fas fa-tags"></i> Mahsulot turlari
       </button>
     </div>
   </div>
 
-  <!-- Umumiy statistika -->
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px" id="statsCards">
+  <!-- Stats Cards Grid -->
+  <div class="wh-stats-grid" id="statsCards">
+    <!-- Dynamic Stats Cards -->
   </div>
 
-  <!-- Tabs -->
-  <div style="display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0">
-    <button class="tab-btn active" onclick="switchTab('inventory', this)" style="padding:8px 16px;font-size:13px;font-weight:600;border:none;background:none;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px">
-      <i class="fas fa-boxes"></i> Zaxira
-    </button>
-    <button class="tab-btn" onclick="switchTab('logs', this)" style="padding:8px 16px;font-size:13px;font-weight:600;border:none;background:none;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px">
-      <i class="fas fa-history"></i> Tarix
-    </button>
+  <!-- Controls Bar: Tabs & Search -->
+  <div class="wh-controls-bar">
+    <div style="display:flex; gap:8px;">
+      <button class="wh-pill-tab active" onclick="switchTab('inventory', this)">
+        <i class="fas fa-boxes"></i> Zaxira Holati
+      </button>
+      <button class="wh-pill-tab" onclick="switchTab('logs', this)">
+        <i class="fas fa-history"></i> Harakatlar Tarixi
+      </button>
+    </div>
+
+    <input type="text" id="whSearch" class="form-control" style="width:230px; border-radius:20px; padding-left:14px; font-size:13px;" placeholder="🔍 Mahsulot qidirish..." oninput="filterInventoryList()">
   </div>
 
-  <!-- Inventory Table -->
+  <!-- Inventory Table Card -->
   <div id="tab-inventory">
-    <div class="card" style="overflow:hidden">
-      <table class="data-table" style="width:100%;border-collapse:collapse">
+    <div class="wh-table-card">
+      <table class="wh-table">
         <thead>
           <tr>
-            <th style="text-align:left;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">Mahsulot</th>
-            <th style="text-align:center;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">Toshkent</th>
-            <th style="text-align:center;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">Qo'qon</th>
-            <th style="text-align:center;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">Jami</th>
+            <th style="text-align:left;">Mahsulot</th>
+            <th style="text-align:center;">Toshkent</th>
+            <th style="text-align:center;">Qo'qon</th>
+            <th style="text-align:center;">Jami Zaxira</th>
           </tr>
         </thead>
         <tbody id="inventoryBody">
-          <tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-tertiary)"><div class="spinner"></div></td></tr>
+          <tr><td colspan="4" style="text-align:center; padding:40px; color:var(--text-tertiary)"><div class="spinner"></div></td></tr>
         </tbody>
       </table>
     </div>
   </div>
 
-  <!-- Logs Table -->
+  <!-- Logs Table Card -->
   <div id="tab-logs" style="display:none">
-    <div class="card" style="overflow:hidden">
-      <table class="data-table" style="width:100%;border-collapse:collapse">
+    <div class="wh-table-card">
+      <table class="wh-table">
         <thead>
           <tr>
-            <th style="text-align:left;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">Sana</th>
-            <th style="text-align:left;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">Mahsulot</th>
-            <th style="text-align:center;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">Ombor</th>
-            <th style="text-align:center;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">Miqdor</th>
-            <th style="text-align:center;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">Harakat</th>
-            <th style="text-align:left;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">Izoh</th>
+            <th style="text-align:left;">Sana va Vaqt</th>
+            <th style="text-align:left;">Mahsulot va Rang</th>
+            <th style="text-align:center;">Ombor</th>
+            <th style="text-align:center;">Miqdor</th>
+            <th style="text-align:center;">Harakat</th>
+            <th style="text-align:left;">Izoh / Mas'ul</th>
           </tr>
         </thead>
         <tbody id="logsBody">
-          <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-tertiary)"><div class="spinner"></div></td></tr>
+          <tr><td colspan="6" style="text-align:center; padding:40px; color:var(--text-tertiary)"><div class="spinner"></div></td></tr>
         </tbody>
       </table>
     </div>
   </div>
+
 </main>
 
 <!-- FILL MODAL -->
 <div class="modal-overlay hidden" id="fillModal">
   <div class="modal-box" style="max-width:440px">
     <div class="modal-header">
-      <h2><i class="fas fa-plus-circle" style="color:var(--success);margin-right:8px"></i>Zaxira qo'shish</h2>
+      <h2><i class="fas fa-plus-circle" style="color:#10B981; margin-right:8px"></i> Zaxira Qo'shish</h2>
       <button class="modal-close" onclick="closeFillModal()">&times;</button>
     </div>
     <div class="modal-body">
       <div class="form-group">
         <label class="form-label">Ombor <span style="color:var(--danger)">*</span></label>
         <select id="fill-warehouse" class="form-control">
-          <option value="">— Tanlang —</option>
+          <option value="">— Omborni tanlang —</option>
           <option value="Toshkent">Toshkent</option>
           <option value="Qo'qon">Qo'qon</option>
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label">Mahsulot turi *</label>
+        <label class="form-label">Mahsulot Turi <span style="color:var(--danger)">*</span></label>
         <select id="fill-product" class="form-control">
-          <option value="">— Tanlang —</option>
+          <option value="">— Mahsulotni tanlang —</option>
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label">Mahsulot rangi *</label>
+        <label class="form-label">Mahsulot Rangi</label>
         <select id="fill-color" class="form-control">
           <option value="oddiy">Oddiy</option>
           <option value="Brak (Buzilgan)">Brak (Buzilgan)</option>
@@ -111,17 +330,17 @@
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label">Miqdor <span style="color:var(--danger)">*</span></label>
-        <input type="number" id="fill-qty" class="form-control" placeholder="0" min="1">
+        <label class="form-label">Miqdor (dona) <span style="color:var(--danger)">*</span></label>
+        <input type="number" id="fill-qty" class="form-control" placeholder="Masalan: 10" min="1">
       </div>
       <div class="form-group">
         <label class="form-label">Izoh</label>
-        <input type="text" id="fill-notes" class="form-control" placeholder="Ixtiyoriy izoh...">
+        <input type="text" id="fill-notes" class="form-control" placeholder="Partiya raqami yoki izoh...">
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeFillModal()">Bekor</button>
-      <button class="btn btn-primary" id="fillSaveBtn" onclick="saveFill()">
+      <button class="btn btn-secondary" onclick="closeFillModal()">Bekor qilish</button>
+      <button class="btn btn-primary" id="fillSaveBtn" onclick="saveFill()" style="font-weight:700;">
         <i class="fas fa-save"></i> Saqlash
       </button>
     </div>
@@ -132,18 +351,18 @@
 <div class="modal-overlay hidden" id="productModal">
   <div class="modal-box" style="max-width:520px">
     <div class="modal-header">
-      <h2><i class="fas fa-tags" style="color:var(--accent);margin-right:8px"></i>Mahsulot turlari</h2>
+      <h2><i class="fas fa-tags" style="color:var(--accent); margin-right:8px"></i> Mahsulot Turlari Katalogi</h2>
       <button class="modal-close" onclick="closeProductModal()">&times;</button>
     </div>
     <div class="modal-body">
-      <div style="display:flex;gap:8px;margin-bottom:16px">
+      <div style="display:flex; gap:8px; margin-bottom:16px">
         <input type="text" id="newProductName" class="form-control" placeholder="Yangi mahsulot nomi..." style="flex:1">
-        <button class="btn btn-primary" onclick="addProduct()" style="white-space:nowrap">
+        <button class="btn btn-primary" onclick="addProduct()" style="white-space:nowrap; font-weight:700;">
           <i class="fas fa-plus"></i> Qo'shish
         </button>
       </div>
-      <div id="productList" style="max-height:350px;overflow-y:auto">
-        <div style="text-align:center;padding:20px;color:var(--text-tertiary)"><div class="spinner"></div></div>
+      <div id="productList" style="max-height:350px; overflow-y:auto">
+        <div style="text-align:center; padding:20px; color:var(--text-tertiary)"><div class="spinner"></div></div>
       </div>
     </div>
     <div class="modal-footer">
@@ -152,109 +371,11 @@
   </div>
 </div>
 
-<style>
-  .tab-btn.active {
-    color: var(--accent) !important;
-    border-bottom-color: var(--accent) !important;
-  }
-  .stock-badge {
-    display: inline-flex; align-items: center; justify-content: center;
-    min-width: 40px; height: 26px; padding: 0 8px; border-radius: 6px;
-    font-size: 13px; font-weight: 700; transition: all 150ms ease;
-  }
-  .stock-ok { background: rgba(16, 185, 129, 0.1) !important; color: #10B981 !important; border: 1px solid rgba(16, 185, 129, 0.18); }
-  .stock-ok:hover { background: rgba(16, 185, 129, 0.16) !important; transform: translateY(-1px); }
-  
-  .stock-low { background: rgba(245, 158, 11, 0.1) !important; color: #D97706 !important; border: 1px solid rgba(245, 158, 11, 0.18); }
-  .stock-low:hover { background: rgba(245, 158, 11, 0.16) !important; transform: translateY(-1px); }
-  
-  .stock-zero { background: rgba(239, 68, 68, 0.08) !important; color: #EF4444 !important; border: 1px solid rgba(239, 68, 68, 0.12); }
-  .stock-zero:hover { background: rgba(239, 68, 68, 0.14) !important; transform: translateY(-1px); }
-  
-  .stock-total {
-    background: rgba(99, 102, 241, 0.1) !important;
-    color: #6366F1 !important;
-    border: 1px solid rgba(99, 102, 241, 0.18);
-    font-weight: 800;
-  }
-  .stock-total:hover { background: rgba(99, 102, 241, 0.16) !important; transform: translateY(-1px); }
-
-  .action-fill { background: rgba(16, 185, 129, 0.1); color: #10B981; }
-  .action-ship { background: rgba(239, 68, 68, 0.08); color: #EF4444; }
-  .action-transfer { background: rgba(99, 102, 241, 0.1); color: #6366F1; }
-  .action-return { background: rgba(245, 158, 11, 0.1); color: #D97706; }
-
-  .stat-card {
-    background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px;
-    padding: 16px 20px; display: flex; flex-direction: column; gap: 4px;
-    box-shadow: var(--shadow-sm);
-  }
-  .stat-card .stat-label { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
-  .stat-card .stat-value { font-size: 24px; font-weight: 800; }
-  
-  .product-item {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 12px; border-bottom: 1px solid var(--border);
-    transition: background 0.15s;
-  }
-  .product-item:hover { background: var(--bg-secondary); }
-  .product-item:last-child { border-bottom: none; }
-  
-  .main-product-row {
-    cursor: pointer;
-    transition: background-color 0.15s ease;
-  }
-  .main-product-row:hover {
-    background-color: var(--bg-surface-hover) !important;
-  }
-  
-  .variant-row {
-    transition: background-color 0.15s ease;
-  }
-  .variant-row:hover {
-    background-color: var(--bg-surface-hover) !important;
-  }
-
-  .variant-color-text {
-    cursor: pointer;
-    font-weight: 600;
-    color: var(--text-primary);
-    display: inline-flex;
-    align-items: center;
-    padding: 2px 6px;
-    border-radius: 4px;
-    transition: background-color 0.15s ease;
-  }
-  .variant-color-text:hover {
-    background-color: var(--border-subtle);
-  }
-  .variant-color-text .edit-color-icon {
-    font-size: 10px;
-    opacity: 0;
-    margin-left: 6px;
-    transition: opacity 0.15s ease, color 0.15s ease;
-    color: var(--text-secondary);
-  }
-  .variant-color-text:hover .edit-color-icon {
-    opacity: 0.7;
-  }
-  .variant-color-text:hover .edit-color-icon:hover {
-    opacity: 1;
-    color: var(--primary);
-  }
-  .color-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    display: inline-block;
-    box-shadow: 0 0 0 2px var(--border-subtle);
-  }
-</style>
-
 <script>
   let _inventoryData = [];
   let _logsData = [];
   let _productCatalog = [];
+  let _warehouses = [];
 
   async function apiFetch(url, opts) {
     const r = await fetch(url, opts);
@@ -269,7 +390,7 @@
   function _toast(msg, type) {
     if (typeof showToast === 'function') { showToast(msg, type); return; }
     const c = document.getElementById('toastContainer');
-    if (!c) return;
+    if (!c) { alert(msg); return; }
     const t = document.createElement('div');
     t.className = 'toast toast-' + (type || 'info');
     t.innerHTML = '<span>' + msg + '</span>';
@@ -279,7 +400,9 @@
     setTimeout(() => t.remove(), 3500);
   }
 
-  function _esc(s) { return s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function _esc(s) {
+    return s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
 
   function _dateTime(d) {
     if (!d) return '';
@@ -312,14 +435,14 @@
     const input = document.createElement('input');
     input.type = 'number';
     input.value = s;
-    input.style.width = '60px';
+    input.style.width = '64px';
     input.style.padding = '4px 6px';
-    input.style.fontSize = '12.5px';
+    input.style.fontSize = '13px';
     input.style.fontWeight = '700';
     input.style.textAlign = 'center';
-    input.style.border = '1px solid var(--accent)';
-    input.style.borderRadius = '6px';
-    input.style.background = 'var(--surface-base)';
+    input.style.border = '2px solid var(--accent)';
+    input.style.borderRadius = '8px';
+    input.style.background = 'var(--bg-primary)';
     input.style.color = 'var(--text-primary)';
     input.min = '0';
     
@@ -380,100 +503,29 @@
     td.innerHTML = stockBadge(oldStock, p, c, w, true);
   }
 
-  function initiateColorRename(event, spanEl, productName, oldColor) {
-    event.stopPropagation();
-    const parent = spanEl.parentNode;
+  function getColorHash(color) {
+    const c = String(color || '').toLowerCase().trim();
+    if (c.includes('brak') || c.includes('buzilgan')) return '#FF3B30';
+    if (c === 'qizil') return '#FF3B30';
+    if (c === 'ko\'k' || c === 'kok' || c === 'ko`k') return '#007AFF';
+    if (c === 'yashil') return '#34C759';
+    if (c === 'sariq') return '#FFCC00';
+    if (c === 'qora') return '#1C1C1E';
+    if (c === 'oq') return '#E5E5EA';
+    if (c === 'kulrang') return '#8E8E93';
+    if (c === 'tillo' || c === 'tilla') return '#D4AF37';
+    if (c === 'pushti') return '#FF2D55';
+    if (c === 'binafsha') return '#5856D6';
     
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.value = oldColor;
-    input.className = 'color-rename-input';
-    
-    input.dataset.product = productName;
-    input.dataset.oldColor = oldColor;
-
-    parent.replaceChild(input, spanEl);
-    input.focus();
-    input.select();
-
-    input.addEventListener('click', (e) => e.stopPropagation());
-    input.addEventListener('blur', () => finishColorRename(input, spanEl));
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        input.blur();
-      } else if (e.key === 'Escape') {
-        cancelColorRename(input, spanEl);
-      }
-    });
-  }
-
-  async function finishColorRename(input, originalSpan) {
-    const parent = input.parentNode;
-    if (!parent) return;
-    
-    const productName = input.dataset.product;
-    const oldColor = input.dataset.oldColor;
-    const newColor = input.value.trim();
-
-    if (!newColor || newColor === oldColor) {
-      cancelColorRename(input, originalSpan);
-      return;
+    let hash = 0;
+    for (let i = 0; i < c.length; i++) {
+      hash = c.charCodeAt(i) + ((hash << 5) - hash);
     }
-
-    try {
-      await apiFetch('/api/warehouse/rename-color', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productName, oldColor, newColor })
-      });
-      _toast("Rang nomi yangilandi", 'success');
-      await loadData();
-    } catch(e) {
-      _toast(e.message, 'error');
-      cancelColorRename(input, originalSpan);
-    }
-  }
-
-  function cancelColorRename(input, originalSpan) {
-    const parent = input.parentNode;
-    if (parent) {
-      parent.replaceChild(originalSpan, input);
-    }
-  }
-
-  async function deleteColorVariant(event, productName, color) {
-    if (event) event.stopPropagation();
-    if (!confirm('Haqiqatan ham "' + productName + '" mahsulotining "' + color + '" variantini o\'chirmoqchisiz? \n\nDiqqat: Ushbu rangdagi barcha ombor zaxiralari o\'chib ketadi!')) {
-      return;
-    }
-    
-    try {
-      await apiFetch('/api/warehouse/delete-color', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productName, color })
-      });
-      _toast("Variant muvaffaqiyatli o'chirildi", 'success');
-      await loadData();
-    } catch(e) {
-      _toast(e.message, 'error');
-    }
-  }
-
-  function actionBadge(action) {
-    const labels = { fill: "To'ldirish", ship: 'Chiqarish', transfer: "Ko'chirish", return: 'Qaytarish' };
-    const cls = 'action-' + action;
-    return '<span class="stock-badge ' + cls + '">' + (labels[action] || action) + '</span>';
-  }
-
-  function fmtPrice(n) {
-    if (!n) return '';
-    return Number(n).toLocaleString('uz-UZ') + " so'm";
+    const colors = ['#007AFF', '#34C759', '#FF9500', '#FF3B30', '#5856D6', '#AF52DE', '#FF2D55'];
+    return colors[Math.abs(hash) % colors.length];
   }
 
   // ── DATA LOADING ──
-  let _warehouses = [];
-
   async function loadData() {
     try {
       const data = await apiFetch('/api/warehouse');
@@ -502,11 +554,10 @@
     const sel = document.getElementById('fill-product');
     if (!sel) return;
     sel.innerHTML = '<option value="">— Tanlang —</option>' +
-      _productCatalog.map(p => '<option value="' + _esc(p.name) + '">' + _esc(p.name) + (p.price ? ' (' + fmtPrice(p.price) + ')' : '') + '</option>').join('');
+      _productCatalog.map(p => '<option value="' + _esc(p.name) + '">' + _esc(p.name) + '</option>').join('');
   }
 
-  // ── STATS ──
-  const STAT_COLORS = ['#34C759','#FF9500','#007AFF','#FF3B30','#5856D6'];
+  // ── STATS CARDS ──
   function renderStats() {
     const wTotals = {};
     _warehouses.forEach(w => { wTotals[w] = 0; });
@@ -519,59 +570,54 @@
       });
     });
 
+    const STAT_ICONS = ['fa-building', 'fa-store', 'fa-city', 'fa-warehouse'];
+    const STAT_COLORS = ['#34C759','#FF9500','#007AFF','#5856D6'];
+
     const warehouseCards = _warehouses.map((w, i) => `
-      <div class="stat-card">
-        <span class="stat-label">${_esc(w)}</span>
-        <span class="stat-value" style="color:${STAT_COLORS[i % STAT_COLORS.length]}">${wTotals[w] || 0}</span>
-      </div>`).join('');
+      <div class="wh-stat-card">
+        <div>
+          <div style="font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">${_esc(w)}</div>
+          <div style="font-size:22px; font-weight:800; color:${STAT_COLORS[i % STAT_COLORS.length]}; margin-top:2px;">${wTotals[w] || 0}</div>
+        </div>
+        <div class="wh-stat-icon" style="background:${STAT_COLORS[i % STAT_COLORS.length]}18; color:${STAT_COLORS[i % STAT_COLORS.length]}">
+          <i class="fas ${STAT_ICONS[i % STAT_ICONS.length]}"></i>
+        </div>
+      </div>
+    `).join('');
 
     document.getElementById('statsCards').innerHTML = `
-      <div class="stat-card">
-        <span class="stat-label">Jami zaxira</span>
-        <span class="stat-value" style="color:var(--accent)">${totalAll}</span>
+      <div class="wh-stat-card" style="border-left:4px solid var(--accent)">
+        <div>
+          <div style="font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Jami Zaxira</div>
+          <div style="font-size:24px; font-weight:800; color:var(--accent); margin-top:2px;">${totalAll}</div>
+        </div>
+        <div class="wh-stat-icon" style="background:rgba(99,102,241,0.12); color:var(--accent)">
+          <i class="fas fa-boxes"></i>
+        </div>
       </div>
       ${warehouseCards}
-      <div class="stat-card">
-        <span class="stat-label">Mahsulot turlari</span>
-        <span class="stat-value" style="color:var(--text-primary)">${_inventoryData.length}</span>
+      <div class="wh-stat-card">
+        <div>
+          <div style="font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Mahsulot Turlari</div>
+          <div style="font-size:22px; font-weight:800; color:var(--text-primary); margin-top:2px;">${_inventoryData.length}</div>
+        </div>
+        <div class="wh-stat-icon" style="background:rgba(142,142,147,0.12); color:var(--text-secondary)">
+          <i class="fas fa-tags"></i>
+        </div>
       </div>
     `;
   }
 
   // ── INVENTORY TABLE ──
-  // ── TABLE HEADER — dinamik ──
   function renderTableHeader() {
     const thead = document.querySelector('#tab-inventory thead tr');
     if (!thead) return;
     const wCols = _warehouses.map(w =>
-      '<th style="text-align:center;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">' + _esc(w) + '</th>'
+      '<th style="text-align:center;">' + _esc(w) + '</th>'
     ).join('');
-    thead.innerHTML = '<th style="text-align:left;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">Mahsulot</th>' +
+    thead.innerHTML = '<th style="text-align:left;">Mahsulot Nomi</th>' +
       wCols +
-      '<th style="text-align:center;padding:12px 16px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">Jami</th>';
-  }
-
-  function getColorHash(color) {
-    const c = String(color || '').toLowerCase().trim();
-    if (c.includes('brak') || c.includes('buzilgan')) return '#FF3B30';
-    if (c === 'qizil') return '#FF3B30';
-    if (c === 'ko\'k' || c === 'kok' || c === 'ko`k') return '#007AFF';
-    if (c === 'yashil') return '#34C759';
-    if (c === 'sariq') return '#FFCC00';
-    if (c === 'qora') return '#1C1C1E';
-    if (c === 'oq') return '#E5E5EA';
-    if (c === 'kulrang') return '#8E8E93';
-    if (c === 'tillo' || c === 'tilla') return '#D4AF37';
-    if (c === 'pushti') return '#FF2D55';
-    if (c === 'binafsha') return '#5856D6';
-    
-    // Hash fallback
-    let hash = 0;
-    for (let i = 0; i < c.length; i++) {
-      hash = c.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const colors = ['#007AFF', '#34C759', '#FF9500', '#FF3B30', '#5856D6', '#AF52DE', '#FF2D55'];
-    return colors[Math.abs(hash) % colors.length];
+      '<th style="text-align:center;">Jami Zaxira</th>';
   }
 
   function toggleVariants(idx, rowEl) {
@@ -580,61 +626,66 @@
     let isOpening = false;
 
     subRows.forEach(r => {
-      if (r.classList.contains('hidden')) {
+      if (r.style.display === 'none' || r.classList.contains('hidden')) {
+        r.style.display = '';
         r.classList.remove('hidden');
         isOpening = true;
       } else {
+        r.style.display = 'none';
         r.classList.add('hidden');
       }
     });
 
     if (icon) {
-      if (isOpening) {
-        icon.style.transform = 'rotate(90deg)';
-      } else {
-        icon.style.transform = 'rotate(0deg)';
-      }
+      icon.style.transform = isOpening ? 'rotate(90deg)' : 'rotate(0deg)';
     }
   }
 
   function renderInventory() {
     const body = document.getElementById('inventoryBody');
+    const searchVal = (document.getElementById('whSearch')?.value || '').toLowerCase().trim();
     const colspan = _warehouses.length + 2;
-    if (!_inventoryData.length) {
-      body.innerHTML = '<tr><td colspan="' + colspan + '" style="text-align:center;padding:40px;color:var(--text-tertiary)"><i class="fas fa-box-open" style="font-size:32px;margin-bottom:8px;display:block"></i>Hozircha mahsulot yo\'q</td></tr>';
+
+    const filteredData = _inventoryData.filter(item => {
+      if (!searchVal) return true;
+      return item.productName.toLowerCase().includes(searchVal);
+    });
+
+    if (!filteredData.length) {
+      body.innerHTML = '<tr><td colspan="' + colspan + '" style="text-align:center;padding:40px;color:var(--text-tertiary)"><i class="fas fa-box-open" style="font-size:32px;margin-bottom:8px;display:block"></i>Mahsulot topilmadi</td></tr>';
       return;
     }
 
     let html = '';
-    _inventoryData.forEach(function(item, idx) {
+    filteredData.forEach(function(item, idx) {
       const hasVariants = item.variants && (item.variants.length > 1 || (item.variants.length === 1 && item.variants[0].color !== 'oddiy'));
 
       // 1. MAIN PRODUCT ROW
       const wCells = _warehouses.map(function(w) {
         const val = (item.warehouses && item.warehouses[w] != null) ? item.warehouses[w] : 0;
         const isEditable = !hasVariants;
-        return '<td style="padding:12px 16px;text-align:center;font-weight:' + (hasVariants ? '700' : '500') + '">' + stockBadge(val, item.productName, 'oddiy', w, isEditable) + '</td>';
+        return '<td style="padding:14px 18px;text-align:center;">' + stockBadge(val, item.productName, 'oddiy', w, isEditable) + '</td>';
       }).join('');
 
-      const mainRowBg = hasVariants ? 'background-color:rgba(99,102,241,0.015); border-left:3px solid var(--accent);' : '';
+      const mainRowBg = hasVariants ? 'border-left:3px solid var(--accent);' : '';
       const mainRowClass = hasVariants ? 'class="main-product-row" onclick="toggleVariants(' + idx + ', this)"' : '';
       
-      let productNameHtml = '<div style="display:flex;align-items:center;gap:8px">';
+      let productNameHtml = '<div style="display:flex;align-items:center;gap:10px">';
       if (hasVariants) {
-        productNameHtml += '<i class="fas fa-chevron-right toggle-icon" style="transition: transform 0.2s ease; color:var(--text-tertiary); font-size:11px; margin-right:4px"></i>';
-        productNameHtml += '<i class="fas fa-boxes" style="color:var(--accent);font-size:14px"></i>';
-        productNameHtml += '<span style="font-weight:700;color:var(--text-primary)">' + _esc(item.productName) + '</span>';
-        productNameHtml += '<span style="background:rgba(99,102,241,0.08);color:var(--accent);font-size:10.5px;padding:2px 6px;border-radius:4px;font-weight:600">' + item.variants.length + ' xil rang</span>';
+        productNameHtml += '<i class="fas fa-chevron-right toggle-icon" style="transition: transform 0.2s ease; color:var(--text-tertiary); font-size:11px;"></i>';
+        productNameHtml += '<div style="width:32px;height:32px;border-radius:8px;background:rgba(99,102,241,0.1);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;"><i class="fas fa-boxes"></i></div>';
+        productNameHtml += '<div><span style="font-weight:700;color:var(--text-primary);font-size:14px;">' + _esc(item.productName) + '</span>';
+        productNameHtml += ' <span style="background:rgba(99,102,241,0.1);color:var(--accent);font-size:10.5px;padding:2px 6px;border-radius:6px;font-weight:700;margin-left:6px">' + item.variants.length + ' xil rang</span></div>';
       } else {
-        productNameHtml += '<i class="fas fa-box" style="color:var(--text-tertiary);font-size:14px;margin-left:15px"></i>';
-        productNameHtml += '<span style="font-weight:600;color:var(--text-primary)">' + _esc(item.productName) + '</span>';
+        productNameHtml += '<div style="width:32px;height:32px;border-radius:8px;background:rgba(142,142,147,0.1);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;font-size:13px;margin-left:18px"><i class="fas fa-box"></i></div>';
+        productNameHtml += '<span style="font-weight:600;color:var(--text-primary);font-size:14px;">' + _esc(item.productName) + '</span>';
       }
       productNameHtml += '</div>';
 
       html += '<tr style="border-bottom:1px solid var(--border);' + mainRowBg + '" ' + mainRowClass + '>' +
-              '<td style="padding:12px 16px;font-size:14px;">' + productNameHtml + '</td>' +
+              '<td style="padding:14px 18px;">' + productNameHtml + '</td>' +
               wCells +
-              '<td style="padding:12px 16px;text-align:center">' +
+              '<td style="padding:14px 18px;text-align:center">' +
                 '<span class="stock-badge stock-total">' + (item.total || 0) + '</span>' +
               '</td>' +
              '</tr>';
@@ -644,13 +695,13 @@
         item.variants.forEach(function(v) {
           const vWCells = _warehouses.map(function(w) {
             const val = (v.warehouses && v.warehouses[w] != null) ? v.warehouses[w] : 0;
-            return '<td style="padding:8px 16px;text-align:center;opacity:0.9">' + stockBadge(val, item.productName, v.color, w, true) + '</td>';
+            return '<td style="padding:10px 18px;text-align:center;">' + stockBadge(val, item.productName, v.color, w, true) + '</td>';
           }).join('');
 
           const colorDot = '<span class="color-dot" style="background-color:' + getColorHash(v.color) + '"></span>';
           
-          html += '<tr class="variant-row variant-row-' + idx + ' hidden" style="border-bottom:1px solid var(--border);">' +
-                  '<td style="padding:8px 16px 8px 36px;font-size:13px;font-weight:500;color:var(--text-secondary);">' +
+          html += '<tr class="variant-row variant-row-' + idx + ' hidden" style="display:none; border-bottom:1px solid var(--border);">' +
+                  '<td style="padding:10px 18px 10px 48px;font-size:13px;font-weight:500;color:var(--text-secondary);">' +
                     '<div style="display:flex;align-items:center;gap:8px">' +
                       '<span style="color:var(--text-tertiary);font-weight:bold;margin-right:2px">└─</span>' +
                       colorDot +
@@ -662,7 +713,7 @@
                     '</div>' +
                   '</td>' +
                   vWCells +
-                  '<td style="padding:8px 16px;text-align:center">' +
+                  '<td style="padding:10px 18px;text-align:center">' +
                     '<span class="stock-badge" style="background:rgba(120,120,128,0.08);color:var(--text-secondary);font-size:12px;font-weight:700">' + (v.total || 0) + '</span>' +
                   '</td>' +
                  '</tr>';
@@ -673,7 +724,10 @@
     body.innerHTML = html;
   }
 
-  
+  function filterInventoryList() {
+    renderInventory();
+  }
+
   // ── LOGS TABLE ──
   function renderLogs() {
     const body = document.getElementById('logsBody');
@@ -683,20 +737,24 @@
     }
     body.innerHTML = _logsData.map(log => {
       const displayColor = log.color && log.color !== 'oddiy' ? ` (${log.color})` : '';
+      const actionBadge = log.changeQty > 0
+        ? `<span class="stock-badge stock-ok" style="font-size:11px;">+ To'ldirish</span>`
+        : `<span class="stock-badge stock-zero" style="font-size:11px;">- Chiqarish</span>`;
+
       return `
       <tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:10px 16px;font-size:12px;color:var(--text-secondary)">${_dateTime(log.createdAt)}</td>
-        <td style="padding:10px 16px;font-size:13px;font-weight:500">${_esc(log.productName)}${displayColor}</td>
-        <td style="padding:10px 16px;text-align:center;font-size:12px">${_esc(log.warehouse)}</td>
-        <td style="padding:10px 16px;text-align:center;font-weight:700;color:${log.changeQty > 0 ? '#34C759' : '#FF3B30'}">${log.changeQty > 0 ? '+' : ''}${log.changeQty}</td>
-        <td style="padding:10px 16px;text-align:center">${actionBadge(log.action)}</td>
-        <td style="padding:10px 16px;font-size:12px;color:var(--text-secondary)">${_esc(log.notes || '')}${log.userName ? ' <span style="opacity:0.6">(' + _esc(log.userName) + ')</span>' : ''}</td>
+        <td style="padding:12px 18px;font-size:12px;color:var(--text-secondary);">${_dateTime(log.createdAt)}</td>
+        <td style="padding:12px 18px;font-size:13.5px;font-weight:600;">${_esc(log.productName)}${displayColor}</td>
+        <td style="padding:12px 18px;text-align:center;font-size:12.5px;font-weight:600;">${_esc(log.warehouse)}</td>
+        <td style="padding:12px 18px;text-align:center;font-weight:800;color:${log.changeQty > 0 ? '#10B981' : '#EF4444'}">${log.changeQty > 0 ? '+' : ''}${log.changeQty}</td>
+        <td style="padding:12px 18px;text-align:center">${actionBadge}</td>
+        <td style="padding:12px 18px;font-size:12px;color:var(--text-secondary);">${_esc(log.notes || '')}${log.userName ? ' <span style="opacity:0.75; font-weight:600;">(' + _esc(log.userName) + ')</span>' : ''}</td>
       </tr>
     `;}).join('');
   }
 
   function switchTab(tab, btn) {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.wh-pill-tab').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-inventory').style.display = tab === 'inventory' ? '' : 'none';
     document.getElementById('tab-logs').style.display = tab === 'logs' ? '' : 'none';
@@ -749,12 +807,9 @@
       return;
     }
     c.innerHTML = _productCatalog.map(p => `
-      <div class="product-item">
-        <div>
-          <div style="font-size:14px;font-weight:600;color:var(--text-primary)">${_esc(p.name)}</div>
-          ${p.price ? '<div style="font-size:12px;color:var(--text-tertiary);margin-top:2px">' + fmtPrice(p.price) + '</div>' : ''}
-        </div>
-        <button class="btn btn-danger" style="padding:4px 10px;font-size:11px" onclick="deleteProduct(${p.id})">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-bottom:1px solid var(--border);">
+        <div style="font-size:14px; font-weight:600; color:var(--text-primary)">${_esc(p.name)}</div>
+        <button class="btn btn-danger" style="padding:4px 10px; font-size:11px" onclick="deleteProduct(${p.id})">
           <i class="fas fa-trash"></i>
         </button>
       </div>
