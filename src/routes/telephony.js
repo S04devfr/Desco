@@ -394,4 +394,85 @@ router.post('/webhook', async (req, res) => {
   }
 });
 
+// ── GET /api/telephony/operator-analytics — Operatorlar Tahlili va Grafiklar ──
+router.get('/operator-analytics', async (req, res) => {
+  try {
+    await ensureCallLogsTableExists();
+    const { period = 'all' } = req.query;
+
+    let startDate = null;
+    const now = new Date();
+    if (period === 'today') {
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    } else if (period === 'week') {
+      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    } else if (period === 'month') {
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    const where = startDate ? { createdAt: { gte: startDate } } : {};
+
+    const [managers, allLogs] = await Promise.all([
+      prisma.user.findMany({
+        select: { id: true, fullName: true, name: true, role: true, avatar: true, isActive: true }
+      }).catch(() => []),
+      prisma.callLog.findMany({
+        where,
+        orderBy: { createdAt: 'desc' }
+      }).catch(() => [])
+    ]);
+
+    const operatorStats = managers.map((m, index) => {
+      const ext = (101 + index).toString();
+      const mLogs = allLogs.filter(l => l.managerId === m.id || l.sipExtension === ext || l.toNumber === ext);
+      const totalCalls = mLogs.length;
+      const answeredCalls = mLogs.filter(l => l.status === 'answered' || l.duration > 0).length;
+      const missedCalls = mLogs.filter(l => l.status === 'missed' || l.duration === 0).length;
+      const totalTalkTime = mLogs.reduce((s, l) => s + (l.duration || 0), 0);
+      const avgTalkTime = answeredCalls > 0 ? Math.round(totalTalkTime / answeredCalls) : 0;
+      const efficiencyRate = totalCalls > 0 ? Math.round((answeredCalls / totalCalls) * 100) : 100;
+
+      let badge = '⚡ Professional';
+      if (efficiencyRate >= 90 && totalCalls > 0) badge = '⭐ Top Performer';
+      else if (totalTalkTime > 300) badge = '🔥 Aktiv Talker';
+
+      return {
+        managerId: m.id,
+        name: m.fullName || m.name || 'Manager',
+        ext,
+        role: m.role,
+        avatar: m.avatar,
+        totalCalls,
+        answeredCalls,
+        missedCalls,
+        totalTalkTime,
+        avgTalkTime,
+        efficiencyRate,
+        badge
+      };
+    });
+
+    // Sort by total calls descending
+    operatorStats.sort((a, b) => b.totalCalls - a.totalCalls);
+
+    // Top Performers
+    const topTalker = [...operatorStats].sort((a, b) => b.totalTalkTime - a.totalTalkTime)[0] || null;
+    const topAnswered = [...operatorStats].sort((a, b) => b.answeredCalls - a.answeredCalls)[0] || null;
+    const topEfficiency = [...operatorStats].sort((a, b) => b.efficiencyRate - a.efficiencyRate)[0] || null;
+
+    res.json({
+      period,
+      operators: operatorStats,
+      topPerformers: {
+        topTalker,
+        topAnswered,
+        topEfficiency
+      }
+    });
+  } catch (err) {
+    console.error('[Telephony Analytics Error]', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;

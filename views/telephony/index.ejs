@@ -5,10 +5,33 @@
 }) %>
 
 <style>
-  .telephony-container {
+  .telephony-nav-tabs {
     display: flex;
-    flex-direction: column;
-    gap: 20px;
+    gap: 8px;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 20px;
+  }
+  .telephony-nav-tab {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .telephony-nav-tab:hover {
+    color: var(--accent);
+  }
+  .telephony-nav-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
   }
 
   /* Stats grid */
@@ -257,6 +280,18 @@
   .op-online { background: rgba(16,185,129,0.12); color: #10b981; }
   .op-busy { background: rgba(255,149,0,0.12); color: #FF9500; }
   .op-away { background: rgba(142,142,147,0.12); color: var(--text-tertiary); }
+
+  /* Analytics section styles */
+  .performer-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+  }
 </style>
 
 <div class="page-header">
@@ -264,7 +299,7 @@
     <h1 style="display:flex; align-items:center; gap:10px;">
       <i class="fas fa-phone-alt" style="color:#10b981; font-size:24px;"></i> IP Telefoniya Markazi
     </h1>
-    <p>Softphone terish paneli, qo'ng'iroqlar yozuvlari va operatorlar monitoringi</p>
+    <p>Qo'ng'iroqlar tarixi, Softphone va Operatorlar tahlili</p>
   </div>
   <div class="page-header-actions" style="display:flex; gap:10px; align-items:center;">
     <button class="btn btn-secondary btn-sm" onclick="triggerIncomingCallSimulation()">
@@ -277,160 +312,241 @@
   </div>
 </div>
 
-<!-- STATS GRID -->
-<div class="telephony-stats-grid">
-  <div class="stat-card-tel">
-    <div class="stat-card-icon" style="background:rgba(0,122,255,0.1); color:#007AFF;">
-      <i class="fas fa-phone-volume"></i>
+<!-- TOP TAB NAVIGATION -->
+<div class="telephony-nav-tabs">
+  <button class="telephony-nav-tab active" onclick="switchTelephonyTab('calls', this)">
+    <i class="fas fa-headset"></i> 1-bo'lim: Qo'ng'iroqlar va Terish
+  </button>
+  <button class="telephony-nav-tab" onclick="switchTelephonyTab('analytics', this)">
+    <i class="fas fa-chart-pie"></i> 2-bo'lim: Operatorlar Tahlili (Analytics)
+  </button>
+</div>
+
+<!-- ==================== TAB 1: CALLS & SOFTPHONE ==================== -->
+<div id="tabContentCalls">
+
+  <!-- STATS GRID -->
+  <div class="telephony-stats-grid">
+    <div class="stat-card-tel">
+      <div class="stat-card-icon" style="background:rgba(0,122,255,0.1); color:#007AFF;">
+        <i class="fas fa-phone-volume"></i>
+      </div>
+      <div>
+        <div style="font-size:22px; font-weight:800; color:var(--text-primary);" id="statTotalCalls">0</div>
+        <div style="font-size:11px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase;">Bugungi Qo'ng'iroqlar</div>
+      </div>
     </div>
-    <div>
-      <div style="font-size:22px; font-weight:800; color:var(--text-primary);" id="statTotalCalls">0</div>
-      <div style="font-size:11px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase;">Bugungi Qo'ng'iroqlar</div>
+
+    <div class="stat-card-tel">
+      <div class="stat-card-icon" style="background:rgba(16,185,129,0.1); color:#10b981;">
+        <i class="fas fa-phone-slash"></i>
+      </div>
+      <div>
+        <div style="font-size:22px; font-weight:800; color:#10b981;" id="statAnswered">0</div>
+        <div style="font-size:11px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase;">Qabul Qilingan</div>
+      </div>
+    </div>
+
+    <div class="stat-card-tel">
+      <div class="stat-card-icon" style="background:rgba(239,68,68,0.1); color:#ef4444;">
+        <i class="fas fa-phone-missed"></i>
+      </div>
+      <div>
+        <div style="font-size:22px; font-weight:800; color:#ef4444;" id="statMissed">0</div>
+        <div style="font-size:11px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase;">O'tkazib Yuborilgan</div>
+      </div>
+    </div>
+
+    <div class="stat-card-tel">
+      <div class="stat-card-icon" style="background:rgba(255,149,0,0.1); color:#FF9500;">
+        <i class="fas fa-stopwatch"></i>
+      </div>
+      <div>
+        <div style="font-size:22px; font-weight:800; color:#FF9500;" id="statAvgDuration">00:00</div>
+        <div style="font-size:11px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase;">O'rtacha Suhbat</div>
+      </div>
     </div>
   </div>
 
-  <div class="stat-card-tel">
-    <div class="stat-card-icon" style="background:rgba(16,185,129,0.1); color:#10b981;">
-      <i class="fas fa-phone-slash"></i>
+  <!-- OPERATORS / AGENTS SECTION -->
+  <div style="margin-top:24px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h3 style="margin:0; font-size:15px; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:8px;">
+        <i class="fas fa-headset" style="color:var(--accent)"></i> Operatorlar va SIP Liniyalar Monitoringi
+      </h3>
+      <span style="font-size:11.5px; font-weight:600; color:var(--text-secondary);" id="opCountBadge">0 ta operator</span>
     </div>
-    <div>
-      <div style="font-size:22px; font-weight:800; color:#10b981;" id="statAnswered">0</div>
-      <div style="font-size:11px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase;">Qabul Qilingan</div>
+
+    <div class="operator-cards-grid" id="operatorCardsContainer">
+      <!-- Dynamic Operator Cards -->
     </div>
   </div>
 
-  <div class="stat-card-tel">
-    <div class="stat-card-icon" style="background:rgba(239,68,68,0.1); color:#ef4444;">
-      <i class="fas fa-phone-missed"></i>
-    </div>
-    <div>
-      <div style="font-size:22px; font-weight:800; color:#ef4444;" id="statMissed">0</div>
-      <div style="font-size:11px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase;">O'tkazib Yuborilgan</div>
-    </div>
-  </div>
+  <!-- MAIN TELEPHONY LAYOUT -->
+  <div class="telephony-layout" style="margin-top:10px;">
 
-  <div class="stat-card-tel">
-    <div class="stat-card-icon" style="background:rgba(255,149,0,0.1); color:#FF9500;">
-      <i class="fas fa-stopwatch"></i>
+    <!-- LEFT: SOFTPHONE DIALER -->
+    <div class="softphone-card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="font-size:13px; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
+          <i class="fas fa-phone-alt" style="color:#10b981"></i> Web Softphone
+        </div>
+        <span style="font-size:11px; font-weight:700; color:#10b981; background:rgba(16,185,129,0.1); padding:2px 8px; border-radius:6px;">
+          Liniya 101
+        </span>
+      </div>
+
+      <!-- Active Call Display -->
+      <div class="softphone-display">
+        <div style="font-size:10px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:4px;" id="callStateLabel">Raqam Terilmoqda</div>
+        <input type="text" id="dialerInput" class="softphone-number-input" placeholder="+998 90 123 45 67">
+        <div id="callTimer" style="display:none; font-size:16px; font-weight:800; color:#10b981; margin-top:6px;">00:00</div>
+      </div>
+
+      <!-- Numpad -->
+      <div class="numpad-grid">
+        <button class="numpad-btn" onclick="pressNumpad('1')">1 <span class="numpad-subtext">&nbsp;</span></button>
+        <button class="numpad-btn" onclick="pressNumpad('2')">2 <span class="numpad-subtext">ABC</span></button>
+        <button class="numpad-btn" onclick="pressNumpad('3')">3 <span class="numpad-subtext">DEF</span></button>
+
+        <button class="numpad-btn" onclick="pressNumpad('4')">4 <span class="numpad-subtext">GHI</span></button>
+        <button class="numpad-btn" onclick="pressNumpad('5')">5 <span class="numpad-subtext">JKL</span></button>
+        <button class="numpad-btn" onclick="pressNumpad('6')">6 <span class="numpad-subtext">MNO</span></button>
+
+        <button class="numpad-btn" onclick="pressNumpad('7')">7 <span class="numpad-subtext">PQRS</span></button>
+        <button class="numpad-btn" onclick="pressNumpad('8')">8 <span class="numpad-subtext">TUV</span></button>
+        <button class="numpad-btn" onclick="pressNumpad('9')">9 <span class="numpad-subtext">WXYZ</span></button>
+
+        <button class="numpad-btn" onclick="pressNumpad('*')">* <span class="numpad-subtext">&nbsp;</span></button>
+        <button class="numpad-btn" onclick="pressNumpad('0')">0 <span class="numpad-subtext">+</span></button>
+        <button class="numpad-btn" onclick="pressNumpad('#')"># <span class="numpad-subtext">&nbsp;</span></button>
+      </div>
+
+      <!-- Dial Action Buttons -->
+      <div style="display:grid; grid-template-columns:1fr 48px; gap:8px;">
+        <button id="btnStartCall" class="dial-action-btn btn-call-start" onclick="startSoftphoneCall()">
+          <i class="fas fa-phone"></i> Qo'ng'iroq Qilish
+        </button>
+        <button class="numpad-btn" onclick="backspaceNumpad()" style="height:48px; background:var(--bg-secondary); border-color:var(--border);" title="O'chirish">
+          <i class="fas fa-backspace" style="font-size:14px;"></i>
+        </button>
+      </div>
+
+      <!-- Active Call Controls -->
+      <div id="activeCallControls" style="display:none; flex-direction:column; gap:10px; border-top:1px solid var(--border); padding-top:12px;">
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-ghost btn-sm" style="flex:1; border:1px solid var(--border); font-size:11.5px;" onclick="toggleMuteCall(this)">
+            <i class="fas fa-microphone-slash"></i> Mute
+          </button>
+
+          <button class="btn btn-ghost btn-sm" style="flex:1; border:1px solid var(--border); font-size:11.5px;" onclick="toggleHoldCall(this)">
+            <i class="fas fa-pause"></i> Hold
+          </button>
+        </div>
+
+        <button id="btnEndCall" class="dial-action-btn btn-call-end" onclick="endSoftphoneCall()">
+          <i class="fas fa-phone-slash"></i> Yakunlash
+        </button>
+      </div>
+
     </div>
-    <div>
-      <div style="font-size:22px; font-weight:800; color:#FF9500;" id="statAvgDuration">00:00</div>
-      <div style="font-size:11px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase;">O'rtacha Suhbat</div>
+
+    <!-- RIGHT: CALL LOGS HISTORY -->
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <!-- Filter bar -->
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <button class="filter-pill-tel active" onclick="setTelephonyFilter('all', this)">Barchasi</button>
+          <button class="filter-pill-tel" onclick="setTelephonyFilter('incoming', this)"><i class="fas fa-phone-incoming" style="color:#10b981"></i> Kiruvchi</button>
+          <button class="filter-pill-tel" onclick="setTelephonyFilter('outgoing', this)"><i class="fas fa-phone-outgoing" style="color:#007AFF"></i> Chiquvchi</button>
+          <button class="filter-pill-tel" onclick="setTelephonyFilter('missed', this)"><i class="fas fa-phone-slash" style="color:#ef4444"></i> O'tkazib yuborilgan</button>
+        </div>
+
+        <input type="text" id="telephonySearch" class="form-control" style="width:220px; border-radius:20px; padding-left:14px;" placeholder="🔍 Qidirish..." oninput="debounceTelephonySearch()">
+      </div>
+
+      <!-- Call history headers -->
+      <div style="display:grid; grid-template-columns: 40px 1.8fr 1.2fr 1fr 1.2fr 100px; gap:14px; padding:8px 18px; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; border-bottom:1px solid var(--border);">
+        <div>Turi</div>
+        <div>Mijoz / Telefon</div>
+        <div>Operator</div>
+        <div>Davomiyligi</div>
+        <div>Audio Yozuv</div>
+        <div style="text-align:right;">Amallar</div>
+      </div>
+
+      <!-- Call logs container -->
+      <div id="callLogsContainer" style="display:flex; flex-direction:column; gap:10px;">
+        <div style="text-align:center; padding:40px;"><div class="spinner"></div></div>
+      </div>
     </div>
+
   </div>
 </div>
 
-<!-- OPERATORS / AGENTS SECTION (Senior CRM Style) -->
-<div style="margin-top:24px;">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-    <h3 style="margin:0; font-size:15px; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:8px;">
-      <i class="fas fa-headset" style="color:var(--accent)"></i> Operatorlar va SIP Liniyalar Monitoringi
-    </h3>
-    <span style="font-size:11.5px; font-weight:600; color:var(--text-secondary);" id="opCountBadge">0 ta operator</span>
+<!-- ==================== TAB 2: OPERATOR ANALYTICS ==================== -->
+<div id="tabContentAnalytics" style="display:none; flex-direction:column; gap:20px;">
+
+  <!-- Period Filters -->
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+    <div style="display:flex; gap:6px;">
+      <button class="filter-pill-tel active" onclick="setAnalyticsPeriod('all', this)">Barchasi</button>
+      <button class="filter-pill-tel" onclick="setAnalyticsPeriod('today', this)">☀️ Bugun</button>
+      <button class="filter-pill-tel" onclick="setAnalyticsPeriod('week', this)">📅 Bu Hafta</button>
+      <button class="filter-pill-tel" onclick="setAnalyticsPeriod('month', this)">📅 Bu Oy</button>
+    </div>
+    <span style="font-size:12px; font-weight:600; color:var(--text-secondary);">⭐ Operatorlar KPI va Konversiya Tahlili</span>
   </div>
 
-  <div class="operator-cards-grid" id="operatorCardsContainer">
-    <!-- Dynamic Operator Cards -->
-  </div>
-</div>
-
-<!-- MAIN TELEPHONY LAYOUT -->
-<div class="telephony-layout" style="margin-top:10px;">
-
-  <!-- LEFT: SOFTPHONE DIALER -->
-  <div class="softphone-card">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <div style="font-size:13px; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
-        <i class="fas fa-phone-alt" style="color:#10b981"></i> Web Softphone
-      </div>
-      <span style="font-size:11px; font-weight:700; color:#10b981; background:rgba(16,185,129,0.1); padding:2px 8px; border-radius:6px;">
-        Liniya 101
-      </span>
-    </div>
-
-    <!-- Active Call Display -->
-    <div class="softphone-display">
-      <div style="font-size:10px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:4px;" id="callStateLabel">Raqam Terilmoqda</div>
-      <input type="text" id="dialerInput" class="softphone-number-input" placeholder="+998 90 123 45 67">
-      <div id="callTimer" style="display:none; font-size:16px; font-weight:800; color:#10b981; margin-top:6px;">00:00</div>
-    </div>
-
-    <!-- Numpad -->
-    <div class="numpad-grid">
-      <button class="numpad-btn" onclick="pressNumpad('1')">1 <span class="numpad-subtext">&nbsp;</span></button>
-      <button class="numpad-btn" onclick="pressNumpad('2')">2 <span class="numpad-subtext">ABC</span></button>
-      <button class="numpad-btn" onclick="pressNumpad('3')">3 <span class="numpad-subtext">DEF</span></button>
-
-      <button class="numpad-btn" onclick="pressNumpad('4')">4 <span class="numpad-subtext">GHI</span></button>
-      <button class="numpad-btn" onclick="pressNumpad('5')">5 <span class="numpad-subtext">JKL</span></button>
-      <button class="numpad-btn" onclick="pressNumpad('6')">6 <span class="numpad-subtext">MNO</span></button>
-
-      <button class="numpad-btn" onclick="pressNumpad('7')">7 <span class="numpad-subtext">PQRS</span></button>
-      <button class="numpad-btn" onclick="pressNumpad('8')">8 <span class="numpad-subtext">TUV</span></button>
-      <button class="numpad-btn" onclick="pressNumpad('9')">9 <span class="numpad-subtext">WXYZ</span></button>
-
-      <button class="numpad-btn" onclick="pressNumpad('*')">* <span class="numpad-subtext">&nbsp;</span></button>
-      <button class="numpad-btn" onclick="pressNumpad('0')">0 <span class="numpad-subtext">+</span></button>
-      <button class="numpad-btn" onclick="pressNumpad('#')"># <span class="numpad-subtext">&nbsp;</span></button>
-    </div>
-
-    <!-- Dial Action Buttons -->
-    <div style="display:grid; grid-template-columns:1fr 48px; gap:8px;">
-      <button id="btnStartCall" class="dial-action-btn btn-call-start" onclick="startSoftphoneCall()">
-        <i class="fas fa-phone"></i> Qo'ng'iroq Qilish
-      </button>
-      <button class="numpad-btn" onclick="backspaceNumpad()" style="height:48px; background:var(--bg-secondary); border-color:var(--border);" title="O'chirish">
-        <i class="fas fa-backspace" style="font-size:14px;"></i>
-      </button>
-    </div>
-
-    <!-- Active Call Controls (Hidden by default) -->
-    <div id="activeCallControls" style="display:none; flex-direction:column; gap:10px; border-top:1px solid var(--border); padding-top:12px;">
-      <div style="display:flex; gap:8px;">
-        <button class="btn btn-ghost btn-sm" style="flex:1; border:1px solid var(--border); font-size:11.5px;" onclick="toggleMuteCall(this)">
-          <i class="fas fa-microphone-slash"></i> Mute
-        </button>
-
-        <button class="btn btn-ghost btn-sm" style="flex:1; border:1px solid var(--border); font-size:11.5px;" onclick="toggleHoldCall(this)">
-          <i class="fas fa-pause"></i> Hold
-        </button>
-      </div>
-
-      <button id="btnEndCall" class="dial-action-btn btn-call-end" onclick="endSoftphoneCall()">
-        <i class="fas fa-phone-slash"></i> Yakunlash
-      </button>
-    </div>
-
+  <!-- TOP PERFORMERS CARDS -->
+  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:16px;" id="topPerformersContainer">
+    <!-- Dynamic Top Performers -->
   </div>
 
-  <!-- RIGHT: CALL LOGS HISTORY -->
-  <div style="display:flex; flex-direction:column; gap:16px;">
-    <!-- Filter bar -->
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-      <div style="display:flex; gap:6px; flex-wrap:wrap;">
-        <button class="filter-pill-tel active" onclick="setTelephonyFilter('all', this)">Barchasi</button>
-        <button class="filter-pill-tel" onclick="setTelephonyFilter('incoming', this)"><i class="fas fa-phone-incoming" style="color:#10b981"></i> Kiruvchi</button>
-        <button class="filter-pill-tel" onclick="setTelephonyFilter('outgoing', this)"><i class="fas fa-phone-outgoing" style="color:#007AFF"></i> Chiquvchi</button>
-        <button class="filter-pill-tel" onclick="setTelephonyFilter('missed', this)"><i class="fas fa-phone-slash" style="color:#ef4444"></i> O'tkazib yuborilgan</button>
+  <!-- CHARTS SECTION -->
+  <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px;">
+    <div style="background:var(--bg-primary); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+      <h4 style="margin:0 0 16px 0; font-size:14px; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:8px;">
+        <i class="fas fa-chart-bar" style="color:var(--accent)"></i> Operatorlar bo'yicha Qo'ng'iroqlar Taqsimoti
+      </h4>
+      <div style="height:260px; position:relative;">
+        <canvas id="opCallsChart"></canvas>
       </div>
-
-      <input type="text" id="telephonySearch" class="form-control" style="width:220px; border-radius:20px; padding-left:14px;" placeholder="🔍 Qidirish..." oninput="debounceTelephonySearch()">
     </div>
 
-    <!-- Call history headers -->
-    <div style="display:grid; grid-template-columns: 40px 1.8fr 1.2fr 1fr 1.2fr 100px; gap:14px; padding:8px 18px; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; border-bottom:1px solid var(--border);">
-      <div>Turi</div>
-      <div>Mijoz / Telefon</div>
-      <div>Operator</div>
-      <div>Davomiyligi</div>
-      <div>Audio Yozuv</div>
-      <div style="text-align:right;">Amallar</div>
+    <div style="background:var(--bg-primary); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+      <h4 style="margin:0 0 16px 0; font-size:14px; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:8px;">
+        <i class="fas fa-chart-pie" style="color:#10b981"></i> Qo'ng'iroqlar Maqomi
+      </h4>
+      <div style="height:260px; position:relative;">
+        <canvas id="opStatusChart"></canvas>
+      </div>
     </div>
+  </div>
 
-    <!-- Call logs container -->
-    <div id="callLogsContainer" style="display:flex; flex-direction:column; gap:10px;">
-      <div style="text-align:center; padding:40px;"><div class="spinner"></div></div>
+  <!-- LEADERBOARD TABLE -->
+  <div style="background:var(--bg-primary); border:1px solid var(--border); border-radius:16px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+    <div style="padding:16px 20px; border-bottom:1px solid var(--border); font-size:14px; font-weight:700; color:var(--text-primary); display:flex; align-items:center; justify-content:space-between;">
+      <span><i class="fas fa-trophy" style="color:#FF9500; margin-right:8px;"></i> Operatorlar Reytingi va Samaradorlik Ko'rsatkichlari</span>
     </div>
+    
+    <table style="width:100%; border-collapse:collapse;">
+      <thead>
+        <tr style="background:var(--bg-secondary); border-bottom:1px solid var(--border);">
+          <th style="padding:12px 18px; text-align:left; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Operator</th>
+          <th style="padding:12px 18px; text-align:center; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">SIP Liniya</th>
+          <th style="padding:12px 18px; text-align:center; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Jami Qo'ng'iroq</th>
+          <th style="padding:12px 18px; text-align:center; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Qabul Qilingan</th>
+          <th style="padding:12px 18px; text-align:center; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">O'tkazib Yuborilgan</th>
+          <th style="padding:12px 18px; text-align:center; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Umumiy Vaqt</th>
+          <th style="padding:12px 18px; text-align:center; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">O'rtacha Vaqt</th>
+          <th style="padding:12px 18px; text-align:left; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Samaradorlik (%)</th>
+        </tr>
+      </thead>
+      <tbody id="analyticsLeaderboardBody">
+        <!-- Dynamic Table Rows -->
+      </tbody>
+    </table>
   </div>
 
 </div>
@@ -473,10 +589,27 @@
   let activeAudio = null;
   let activeAudioBtn = null;
   let _telephonyFilter = 'all';
+  let _analyticsPeriod = 'all';
+  let opCallsChartInstance = null;
+  let opStatusChartInstance = null;
 
   // Web Audio Synthesizer for realistic dialing ringtone on laptops
   let audioCtx = null;
   let ringOsc = null;
+
+  function switchTelephonyTab(tabName, btn) {
+    document.querySelectorAll('.telephony-nav-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    if (tabName === 'calls') {
+      document.getElementById('tabContentCalls').style.display = 'block';
+      document.getElementById('tabContentAnalytics').style.display = 'none';
+    } else {
+      document.getElementById('tabContentCalls').style.display = 'none';
+      document.getElementById('tabContentAnalytics').style.display = 'flex';
+      loadOperatorAnalytics();
+    }
+  }
 
   function startRingtone() {
     try {
@@ -487,15 +620,13 @@
       const gainNode = audioCtx.createGain();
       
       ringOsc.type = 'sine';
-      ringOsc.frequency.setValueAtTime(440, audioCtx.currentTime); // Standard 440Hz tone
+      ringOsc.frequency.setValueAtTime(440, audioCtx.currentTime);
       gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
 
       ringOsc.connect(gainNode);
       gainNode.connect(audioCtx.destination);
       ringOsc.start();
-    } catch(e) {
-      console.log('Audio Context ringtone silent');
-    }
+    } catch(e) {}
   }
 
   function stopRingtone() {
@@ -640,9 +771,16 @@
 
   function setTelephonyFilter(type, btn) {
     _telephonyFilter = type;
-    document.querySelectorAll('.filter-pill-tel').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#tabContentCalls .filter-pill-tel').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     loadTelephonyLogs();
+  }
+
+  function setAnalyticsPeriod(period, btn) {
+    _analyticsPeriod = period;
+    document.querySelectorAll('#tabContentAnalytics .filter-pill-tel').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    loadOperatorAnalytics();
   }
 
   let searchTimeout = null;
@@ -841,6 +979,181 @@
 
     } catch(e) {
       container.innerHTML = `<div style="color:#ef4444; padding:20px; text-align:center;">Xatolik: ${e.message}</div>`;
+    }
+  }
+
+  // TAB 2: OPERATOR ANALYTICS LOADER
+  async function loadOperatorAnalytics() {
+    const topContainer = document.getElementById('topPerformersContainer');
+    const tbody = document.getElementById('analyticsLeaderboardBody');
+
+    try {
+      const res = await apiFetch(`/api/telephony/operator-analytics?period=${_analyticsPeriod}`);
+      const operators = res.operators || [];
+      const top = res.topPerformers || {};
+
+      // 1. Top Performers Cards
+      topContainer.innerHTML = `
+        <div class="performer-card">
+          <div style="width:40px; height:40px; border-radius:12px; background:rgba(255,149,0,0.12); color:#FF9500; font-size:18px; display:flex; align-items:center; justify-content:center;">
+            🏆
+          </div>
+          <div>
+            <div style="font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Eng ko'p muloqot qilgan</div>
+            <div style="font-size:15px; font-weight:800; color:var(--text-primary); margin-top:2px;">
+              ${_esc(top.topTalker?.name || 'Mavjud emas')}
+            </div>
+            <div style="font-size:11.5px; font-weight:700; color:#FF9500;">
+              ${fmtDuration(top.topTalker?.totalTalkTime || 0)} suhbat
+            </div>
+          </div>
+        </div>
+
+        <div class="performer-card">
+          <div style="width:40px; height:40px; border-radius:12px; background:rgba(16,185,129,0.12); color:#10b981; font-size:18px; display:flex; align-items:center; justify-content:center;">
+            🎯
+          </div>
+          <div>
+            <div style="font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Eng yuqori samaradorlik</div>
+            <div style="font-size:15px; font-weight:800; color:var(--text-primary); margin-top:2px;">
+              ${_esc(top.topEfficiency?.name || 'Mavjud emas')}
+            </div>
+            <div style="font-size:11.5px; font-weight:700; color:#10b981;">
+              ${top.topEfficiency?.efficiencyRate || 0}% konversiya
+            </div>
+          </div>
+        </div>
+
+        <div class="performer-card">
+          <div style="width:40px; height:40px; border-radius:12px; background:rgba(0,122,255,0.12); color:#007AFF; font-size:18px; display:flex; align-items:center; justify-content:center;">
+            ⚡
+          </div>
+          <div>
+            <div style="font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Eng ko'p qo'ng'iroq qabul qilgan</div>
+            <div style="font-size:15px; font-weight:800; color:var(--text-primary); margin-top:2px;">
+              ${_esc(top.topAnswered?.name || 'Mavjud emas')}
+            </div>
+            <div style="font-size:11.5px; font-weight:700; color:#007AFF;">
+              ${top.topAnswered?.answeredCalls || 0} ta qo'ng'iroq
+            </div>
+          </div>
+        </div>
+      `;
+
+      // 2. Leaderboard Table
+      if (!operators.length) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:30px; color:var(--text-tertiary);">Ma\'lumotlar mavjud emas</td></tr>';
+      } else {
+        tbody.innerHTML = operators.map((op, idx) => {
+          const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
+          return `
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:12px 18px; font-size:13px; font-weight:700; color:var(--text-primary);">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-size:14px; min-width:20px; font-weight:800; color:var(--text-tertiary);">${medal}</span>
+                  <div style="width:30px; height:30px; border-radius:50%; background:var(--brand-soft); color:var(--brand); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:11px;">
+                    ${_esc(op.name.charAt(0).toUpperCase())}
+                  </div>
+                  <div>
+                    <div>${_esc(op.name)}</div>
+                    <div style="font-size:10px; color:var(--text-tertiary);">${_esc(op.badge)}</div>
+                  </div>
+                </div>
+              </td>
+              <td style="padding:12px 18px; text-align:center; font-size:12px; font-weight:700; color:var(--text-secondary);">${op.ext}</td>
+              <td style="padding:12px 18px; text-align:center; font-size:13px; font-weight:800;">${op.totalCalls}</td>
+              <td style="padding:12px 18px; text-align:center; font-size:13px; font-weight:800; color:#10b981;">${op.answeredCalls}</td>
+              <td style="padding:12px 18px; text-align:center; font-size:13px; font-weight:800; color:#ef4444;">${op.missedCalls}</td>
+              <td style="padding:12px 18px; text-align:center; font-size:12px; font-weight:700; color:#FF9500;">${fmtDuration(op.totalTalkTime)}</td>
+              <td style="padding:12px 18px; text-align:center; font-size:12px; font-weight:700; color:var(--text-secondary);">${fmtDuration(op.avgTalkTime)}</td>
+              <td style="padding:12px 18px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <div style="flex:1; height:6px; background:var(--bg-secondary); border-radius:3px; overflow:hidden;">
+                    <div style="width:${op.efficiencyRate}%; height:100%; background:${op.efficiencyRate >= 80 ? '#10b981' : op.efficiencyRate >= 50 ? '#FF9500' : '#ef4444'}; border-radius:3px;"></div>
+                  </div>
+                  <span style="font-size:11.5px; font-weight:800; color:var(--text-primary);">${op.efficiencyRate}%</span>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // 3. Render Chart.js charts
+      renderOperatorCharts(operators);
+
+    } catch(e) {
+      console.error(e);
+    }
+  }
+
+  function renderOperatorCharts(operators) {
+    if (typeof Chart === 'undefined') return;
+
+    const labels = operators.map(o => o.name);
+    const totalCallsData = operators.map(o => o.totalCalls);
+    const answeredData = operators.map(o => o.answeredCalls);
+    const missedData = operators.map(o => o.missedCalls);
+
+    // Chart 1: Bar Chart
+    const ctx1 = document.getElementById('opCallsChart');
+    if (ctx1) {
+      if (opCallsChartInstance) opCallsChartInstance.destroy();
+      opCallsChartInstance = new Chart(ctx1, {
+        type: 'bar',
+        data: {
+          labels: labels.length ? labels : ['Operator 1', 'Operator 2'],
+          datasets: [
+            {
+              label: 'Qabul qilingan',
+              data: answeredData.length ? answeredData : [0, 0],
+              backgroundColor: '#10b981',
+              borderRadius: 6
+            },
+            {
+              label: 'O\'tkazib yuborilgan',
+              data: missedData.length ? missedData : [0, 0],
+              backgroundColor: '#ef4444',
+              borderRadius: 6
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'top' } },
+          scales: {
+            x: { grid: { display: false } },
+            y: { beginAtZero: true, ticks: { precision: 0 } }
+          }
+        }
+      });
+    }
+
+    // Chart 2: Doughnut Chart
+    const ctx2 = document.getElementById('opStatusChart');
+    if (ctx2) {
+      const totalAns = answeredData.reduce((a, b) => a + b, 0);
+      const totalMiss = missedData.reduce((a, b) => a + b, 0);
+
+      if (opStatusChartInstance) opStatusChartInstance.destroy();
+      opStatusChartInstance = new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+          labels: ['Qabul qilingan', 'O\'tkazib yuborilgan'],
+          datasets: [{
+            data: [totalAns || 1, totalMiss || 0],
+            backgroundColor: ['#10b981', '#ef4444'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } },
+          cutout: '70%'
+        }
+      });
     }
   }
 
