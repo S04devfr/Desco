@@ -436,12 +436,26 @@ router.get('/operator-analytics', async (req, res) => {
       if (efficiencyRate >= 90 && totalCalls > 0) badge = '⭐ Top Performer';
       else if (totalTalkTime > 300) badge = '🔥 Aktiv Talker';
 
+      // Status mock/live logic
+      let status = 'online';
+      let currentCall = null;
+      if (index === 0) {
+        status = 'online';
+      } else if (index === 1) {
+        status = 'busy';
+        currentCall = { number: '+998 90 987 65 43', duration: '01:42', clientName: 'Munira Karimova' };
+      } else if (index === 2) {
+        status = 'away';
+      }
+
       return {
         managerId: m.id,
         name: m.fullName || m.name || 'Manager',
         ext,
         role: m.role,
         avatar: m.avatar,
+        status,
+        currentCall,
         totalCalls,
         answeredCalls,
         missedCalls,

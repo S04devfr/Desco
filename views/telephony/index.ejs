@@ -39,6 +39,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 16px;
+    margin-bottom: 20px;
   }
 
   .stat-card-tel {
@@ -65,118 +66,6 @@
     justify-content: center;
     font-size: 18px;
     flex-shrink: 0;
-  }
-
-  /* Layout grid: Left Softphone, Right History & Operators */
-  .telephony-layout {
-    display: grid;
-    grid-template-columns: 320px 1fr;
-    gap: 20px;
-    align-items: start;
-  }
-
-  @media (max-width: 1024px) {
-    .telephony-layout {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  /* Web Softphone Dialer */
-  .softphone-card {
-    background: var(--bg-primary);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 20px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.03);
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .softphone-display {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 14px;
-    text-align: center;
-  }
-  .softphone-number-input {
-    width: 100%;
-    background: transparent;
-    border: none;
-    outline: none;
-    font-size: 20px;
-    font-weight: 700;
-    text-align: center;
-    color: var(--text-primary);
-    letter-spacing: 0.5px;
-  }
-
-  .numpad-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-  }
-
-  .numpad-btn {
-    height: 48px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-    font-size: 18px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  .numpad-btn:hover {
-    background: var(--accent);
-    color: #fff;
-    border-color: var(--accent);
-    transform: scale(1.04);
-  }
-  .numpad-btn:active {
-    transform: scale(0.96);
-  }
-  .numpad-subtext {
-    font-size: 8.5px;
-    font-weight: 600;
-    opacity: 0.6;
-    margin-top: -2px;
-  }
-
-  .dial-action-btn {
-    height: 48px;
-    border-radius: 12px;
-    border: none;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: all 0.2s ease;
-  }
-  .btn-call-start {
-    background: #10b981;
-    color: #fff;
-  }
-  .btn-call-start:hover {
-    background: #059669;
-    box-shadow: 0 4px 12px rgba(16,185,129,0.3);
-  }
-  .btn-call-end {
-    background: #ef4444;
-    color: #fff;
-  }
-  .btn-call-end:hover {
-    background: #dc2626;
-    box-shadow: 0 4px 12px rgba(239,68,68,0.3);
   }
 
   /* Audio player styling */
@@ -299,7 +188,7 @@
     <h1 style="display:flex; align-items:center; gap:10px;">
       <i class="fas fa-phone-alt" style="color:#10b981; font-size:24px;"></i> IP Telefoniya Markazi
     </h1>
-    <p>Qo'ng'iroqlar tarixi, Softphone va Operatorlar tahlili</p>
+    <p>Qo'ng'iroqlar tarixi, audio yozuvlar va Operatorlar tahlili</p>
   </div>
   <div class="page-header-actions" style="display:flex; gap:10px; align-items:center;">
     <button class="btn btn-secondary btn-sm" onclick="triggerIncomingCallSimulation()">
@@ -315,14 +204,14 @@
 <!-- TOP TAB NAVIGATION -->
 <div class="telephony-nav-tabs">
   <button class="telephony-nav-tab active" onclick="switchTelephonyTab('calls', this)">
-    <i class="fas fa-headset"></i> 1-bo'lim: Qo'ng'iroqlar va Terish
+    <i class="fas fa-phone-volume"></i> 1-bo'lim: Qo'ng'iroqlar Tarixi
   </button>
   <button class="telephony-nav-tab" onclick="switchTelephonyTab('analytics', this)">
-    <i class="fas fa-chart-pie"></i> 2-bo'lim: Operatorlar Tahlili (Analytics)
+    <i class="fas fa-chart-pie"></i> 2-bo'lim: Operatorlar Tahlili & Monitoring
   </button>
 </div>
 
-<!-- ==================== TAB 1: CALLS & SOFTPHONE ==================== -->
+<!-- ==================== TAB 1: CALLS HISTORY ==================== -->
 <div id="tabContentCalls">
 
   <!-- STATS GRID -->
@@ -368,9 +257,44 @@
     </div>
   </div>
 
-  <!-- OPERATORS / AGENTS SECTION -->
-  <div style="margin-top:24px;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+  <!-- CALL LOGS HISTORY -->
+  <div style="display:flex; flex-direction:column; gap:16px;">
+    <!-- Filter bar -->
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+      <div style="display:flex; gap:6px; flex-wrap:wrap;">
+        <button class="filter-pill-tel active" onclick="setTelephonyFilter('all', this)">Barchasi</button>
+        <button class="filter-pill-tel" onclick="setTelephonyFilter('incoming', this)"><i class="fas fa-phone-incoming" style="color:#10b981"></i> Kiruvchi</button>
+        <button class="filter-pill-tel" onclick="setTelephonyFilter('outgoing', this)"><i class="fas fa-phone-outgoing" style="color:#007AFF"></i> Chiquvchi</button>
+        <button class="filter-pill-tel" onclick="setTelephonyFilter('missed', this)"><i class="fas fa-phone-slash" style="color:#ef4444"></i> O'tkazib yuborilgan</button>
+      </div>
+
+      <input type="text" id="telephonySearch" class="form-control" style="width:240px; border-radius:20px; padding-left:14px;" placeholder="🔍 Qidirish..." oninput="debounceTelephonySearch()">
+    </div>
+
+    <!-- Call history headers -->
+    <div style="display:grid; grid-template-columns: 40px 1.8fr 1.2fr 1fr 1.2fr 100px; gap:14px; padding:8px 18px; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; border-bottom:1px solid var(--border);">
+      <div>Turi</div>
+      <div>Mijoz / Telefon</div>
+      <div>Operator</div>
+      <div>Davomiyligi</div>
+      <div>Audio Yozuv</div>
+      <div style="text-align:right;">Harakat</div>
+    </div>
+
+    <!-- Call logs container -->
+    <div id="callLogsContainer" style="display:flex; flex-direction:column; gap:10px;">
+      <div style="text-align:center; padding:40px;"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== TAB 2: OPERATOR ANALYTICS & MONITORING ==================== -->
+<div id="tabContentAnalytics" style="display:none; flex-direction:column; gap:24px;">
+
+  <!-- OPERATORS / AGENTS MONITORING CARDS -->
+  <div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
       <h3 style="margin:0; font-size:15px; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:8px;">
         <i class="fas fa-headset" style="color:var(--accent)"></i> Operatorlar va SIP Liniyalar Monitoringi
       </h3>
@@ -382,113 +306,8 @@
     </div>
   </div>
 
-  <!-- MAIN TELEPHONY LAYOUT -->
-  <div class="telephony-layout" style="margin-top:10px;">
-
-    <!-- LEFT: SOFTPHONE DIALER -->
-    <div class="softphone-card">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div style="font-size:13px; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
-          <i class="fas fa-phone-alt" style="color:#10b981"></i> Web Softphone
-        </div>
-        <span style="font-size:11px; font-weight:700; color:#10b981; background:rgba(16,185,129,0.1); padding:2px 8px; border-radius:6px;">
-          Liniya 101
-        </span>
-      </div>
-
-      <!-- Active Call Display -->
-      <div class="softphone-display">
-        <div style="font-size:10px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; margin-bottom:4px;" id="callStateLabel">Raqam Terilmoqda</div>
-        <input type="text" id="dialerInput" class="softphone-number-input" placeholder="+998 90 123 45 67">
-        <div id="callTimer" style="display:none; font-size:16px; font-weight:800; color:#10b981; margin-top:6px;">00:00</div>
-      </div>
-
-      <!-- Numpad -->
-      <div class="numpad-grid">
-        <button class="numpad-btn" onclick="pressNumpad('1')">1 <span class="numpad-subtext">&nbsp;</span></button>
-        <button class="numpad-btn" onclick="pressNumpad('2')">2 <span class="numpad-subtext">ABC</span></button>
-        <button class="numpad-btn" onclick="pressNumpad('3')">3 <span class="numpad-subtext">DEF</span></button>
-
-        <button class="numpad-btn" onclick="pressNumpad('4')">4 <span class="numpad-subtext">GHI</span></button>
-        <button class="numpad-btn" onclick="pressNumpad('5')">5 <span class="numpad-subtext">JKL</span></button>
-        <button class="numpad-btn" onclick="pressNumpad('6')">6 <span class="numpad-subtext">MNO</span></button>
-
-        <button class="numpad-btn" onclick="pressNumpad('7')">7 <span class="numpad-subtext">PQRS</span></button>
-        <button class="numpad-btn" onclick="pressNumpad('8')">8 <span class="numpad-subtext">TUV</span></button>
-        <button class="numpad-btn" onclick="pressNumpad('9')">9 <span class="numpad-subtext">WXYZ</span></button>
-
-        <button class="numpad-btn" onclick="pressNumpad('*')">* <span class="numpad-subtext">&nbsp;</span></button>
-        <button class="numpad-btn" onclick="pressNumpad('0')">0 <span class="numpad-subtext">+</span></button>
-        <button class="numpad-btn" onclick="pressNumpad('#')"># <span class="numpad-subtext">&nbsp;</span></button>
-      </div>
-
-      <!-- Dial Action Buttons -->
-      <div style="display:grid; grid-template-columns:1fr 48px; gap:8px;">
-        <button id="btnStartCall" class="dial-action-btn btn-call-start" onclick="startSoftphoneCall()">
-          <i class="fas fa-phone"></i> Qo'ng'iroq Qilish
-        </button>
-        <button class="numpad-btn" onclick="backspaceNumpad()" style="height:48px; background:var(--bg-secondary); border-color:var(--border);" title="O'chirish">
-          <i class="fas fa-backspace" style="font-size:14px;"></i>
-        </button>
-      </div>
-
-      <!-- Active Call Controls -->
-      <div id="activeCallControls" style="display:none; flex-direction:column; gap:10px; border-top:1px solid var(--border); padding-top:12px;">
-        <div style="display:flex; gap:8px;">
-          <button class="btn btn-ghost btn-sm" style="flex:1; border:1px solid var(--border); font-size:11.5px;" onclick="toggleMuteCall(this)">
-            <i class="fas fa-microphone-slash"></i> Mute
-          </button>
-
-          <button class="btn btn-ghost btn-sm" style="flex:1; border:1px solid var(--border); font-size:11.5px;" onclick="toggleHoldCall(this)">
-            <i class="fas fa-pause"></i> Hold
-          </button>
-        </div>
-
-        <button id="btnEndCall" class="dial-action-btn btn-call-end" onclick="endSoftphoneCall()">
-          <i class="fas fa-phone-slash"></i> Yakunlash
-        </button>
-      </div>
-
-    </div>
-
-    <!-- RIGHT: CALL LOGS HISTORY -->
-    <div style="display:flex; flex-direction:column; gap:16px;">
-      <!-- Filter bar -->
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-        <div style="display:flex; gap:6px; flex-wrap:wrap;">
-          <button class="filter-pill-tel active" onclick="setTelephonyFilter('all', this)">Barchasi</button>
-          <button class="filter-pill-tel" onclick="setTelephonyFilter('incoming', this)"><i class="fas fa-phone-incoming" style="color:#10b981"></i> Kiruvchi</button>
-          <button class="filter-pill-tel" onclick="setTelephonyFilter('outgoing', this)"><i class="fas fa-phone-outgoing" style="color:#007AFF"></i> Chiquvchi</button>
-          <button class="filter-pill-tel" onclick="setTelephonyFilter('missed', this)"><i class="fas fa-phone-slash" style="color:#ef4444"></i> O'tkazib yuborilgan</button>
-        </div>
-
-        <input type="text" id="telephonySearch" class="form-control" style="width:220px; border-radius:20px; padding-left:14px;" placeholder="🔍 Qidirish..." oninput="debounceTelephonySearch()">
-      </div>
-
-      <!-- Call history headers -->
-      <div style="display:grid; grid-template-columns: 40px 1.8fr 1.2fr 1fr 1.2fr 100px; gap:14px; padding:8px 18px; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; border-bottom:1px solid var(--border);">
-        <div>Turi</div>
-        <div>Mijoz / Telefon</div>
-        <div>Operator</div>
-        <div>Davomiyligi</div>
-        <div>Audio Yozuv</div>
-        <div style="text-align:right;">Amallar</div>
-      </div>
-
-      <!-- Call logs container -->
-      <div id="callLogsContainer" style="display:flex; flex-direction:column; gap:10px;">
-        <div style="text-align:center; padding:40px;"><div class="spinner"></div></div>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<!-- ==================== TAB 2: OPERATOR ANALYTICS ==================== -->
-<div id="tabContentAnalytics" style="display:none; flex-direction:column; gap:20px;">
-
   <!-- Period Filters -->
-  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-top:1px solid var(--border); padding-top:20px;">
     <div style="display:flex; gap:6px;">
       <button class="filter-pill-tel active" onclick="setAnalyticsPeriod('all', this)">Barchasi</button>
       <button class="filter-pill-tel" onclick="setAnalyticsPeriod('today', this)">☀️ Bugun</button>
@@ -583,19 +402,12 @@
     return s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  let currentActiveCallId = null;
-  let callTimerInterval = null;
-  let callSeconds = 0;
   let activeAudio = null;
   let activeAudioBtn = null;
   let _telephonyFilter = 'all';
   let _analyticsPeriod = 'all';
   let opCallsChartInstance = null;
   let opStatusChartInstance = null;
-
-  // Web Audio Synthesizer for realistic dialing ringtone on laptops
-  let audioCtx = null;
-  let ringOsc = null;
 
   function switchTelephonyTab(tabName, btn) {
     document.querySelectorAll('.telephony-nav-tab').forEach(b => b.classList.remove('active'));
@@ -608,113 +420,6 @@
       document.getElementById('tabContentCalls').style.display = 'none';
       document.getElementById('tabContentAnalytics').style.display = 'flex';
       loadOperatorAnalytics();
-    }
-  }
-
-  function startRingtone() {
-    try {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-
-      ringOsc = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
-      
-      ringOsc.type = 'sine';
-      ringOsc.frequency.setValueAtTime(440, audioCtx.currentTime);
-      gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
-
-      ringOsc.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-      ringOsc.start();
-    } catch(e) {}
-  }
-
-  function stopRingtone() {
-    try {
-      if (ringOsc) {
-        ringOsc.stop();
-        ringOsc.disconnect();
-        ringOsc = null;
-      }
-    } catch(e) {}
-  }
-
-  function pressNumpad(val) {
-    const inp = document.getElementById('dialerInput');
-    inp.value += val;
-  }
-
-  function backspaceNumpad() {
-    const inp = document.getElementById('dialerInput');
-    inp.value = inp.value.slice(0, -1);
-  }
-
-  async function startSoftphoneCall() {
-    const num = document.getElementById('dialerInput').value.trim();
-    if (!num) {
-      _toast('Raqam kiritilishi shart!', 'error');
-      return;
-    }
-
-    try {
-      startRingtone();
-      const res = await apiFetch('/api/telephony/dial', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phoneNumber: num })
-      });
-
-      if (res.callLog) {
-        currentActiveCallId = res.callLog.id;
-        document.getElementById('callStateLabel').textContent = 'Suhbat Ketmoqda...';
-        document.getElementById('btnStartCall').style.display = 'none';
-        document.getElementById('activeCallControls').style.display = 'flex';
-        document.getElementById('callTimer').style.display = 'block';
-
-        callSeconds = 0;
-        clearInterval(callTimerInterval);
-        callTimerInterval = setInterval(() => {
-          callSeconds++;
-          const m = String(Math.floor(callSeconds / 60)).padStart(2, '0');
-          const s = String(callSeconds % 60).padStart(2, '0');
-          document.getElementById('callTimer').textContent = `${m}:${s}`;
-        }, 1000);
-
-        stopRingtone();
-        _toast('Qo\'ng\'iroq ulandi (Web-Softphone)!', 'success');
-        loadTelephonyLogs();
-      }
-    } catch(e) {
-      stopRingtone();
-      _toast(e.message, 'error');
-    }
-  }
-
-  async function endSoftphoneCall() {
-    if (!currentActiveCallId) return;
-
-    try {
-      stopRingtone();
-      await apiFetch('/api/telephony/hangup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ callId: currentActiveCallId, duration: callSeconds })
-      });
-
-      clearInterval(callTimerInterval);
-      document.getElementById('callStateLabel').textContent = 'Raqam Terilmoqda';
-      document.getElementById('btnStartCall').style.display = 'flex';
-      document.getElementById('activeCallControls').style.display = 'none';
-      document.getElementById('callTimer').style.display = 'none';
-      document.getElementById('callTimer').textContent = '00:00';
-
-      currentActiveCallId = null;
-      _toast('Suhbat yakunlandi va yozib olindi', 'info');
-      loadTelephonyLogs();
-      loadTelephonyStats();
-      loadOperators();
-    } catch(e) {
-      _toast(e.message, 'error');
     }
   }
 
@@ -736,36 +441,11 @@
       _toast(`Kiruvchi simulyatsiya: ${randomPhone}`, 'success');
       loadTelephonyLogs();
       loadTelephonyStats();
+      if (document.getElementById('tabContentAnalytics').style.display !== 'none') {
+        loadOperatorAnalytics();
+      }
     } catch(e) {
       _toast(e.message, 'error');
-    }
-  }
-
-  function toggleMuteCall(btn) {
-    if (btn.classList.contains('active')) {
-      btn.classList.remove('active');
-      btn.style.background = 'transparent';
-      btn.style.color = 'var(--text-primary)';
-      _toast('Mikrofon yoqildi', 'info');
-    } else {
-      btn.classList.add('active');
-      btn.style.background = '#ef4444';
-      btn.style.color = '#fff';
-      _toast('Mikrofon o\'chirildi', 'info');
-    }
-  }
-
-  function toggleHoldCall(btn) {
-    if (btn.classList.contains('active')) {
-      btn.classList.remove('active');
-      btn.style.background = 'transparent';
-      btn.style.color = 'var(--text-primary)';
-      _toast('Kutish rejasi o\'chirildi', 'info');
-    } else {
-      btn.classList.add('active');
-      btn.style.background = '#FF9500';
-      btn.style.color = '#fff';
-      _toast('Kutish rejasiga o\'tkazildi', 'info');
     }
   }
 
@@ -829,69 +509,6 @@
     activeAudio.onended = () => {
       btn.innerHTML = '<i class="fas fa-play"></i>';
     };
-  }
-
-  function quickCallNumber(num) {
-    document.getElementById('dialerInput').value = num;
-    startSoftphoneCall();
-  }
-
-  async function loadOperators() {
-    const container = document.getElementById('operatorCardsContainer');
-    try {
-      const res = await apiFetch('/api/telephony/sip-status');
-      const lines = res.sipLines || [];
-      document.getElementById('opCountBadge').textContent = `${lines.length} ta operator`;
-
-      container.innerHTML = lines.map(op => {
-        const isOnline = op.status === 'online';
-        const isBusy = op.status === 'busy';
-        const badgeCls = isBusy ? 'op-busy' : isOnline ? 'op-online' : 'op-away';
-        const badgeText = isBusy ? '🟡 Suhbatda' : isOnline ? '🟢 Online (Tayyor)' : '⚪ Offline';
-
-        return `
-          <div class="operator-card">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <div style="display:flex; align-items:center; gap:8px;">
-                <div style="width:32px; height:32px; border-radius:50%; background:var(--brand-soft); color:var(--brand); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center;">
-                  ${_esc(op.managerName.charAt(0).toUpperCase())}
-                </div>
-                <div>
-                  <div style="font-size:13px; font-weight:700; color:var(--text-primary);">${_esc(op.managerName)}</div>
-                  <div style="font-size:10.5px; color:var(--text-tertiary);">Liniya: ${op.ext}</div>
-                </div>
-              </div>
-              <span class="op-status-badge ${badgeCls}">${badgeText}</span>
-            </div>
-
-            <div style="display:flex; justify-content:space-between; border-top:1px solid var(--border); padding-top:8px; font-size:11.5px;">
-              <div>
-                <span style="color:var(--text-tertiary);">Bugun: </span>
-                <strong style="color:var(--text-primary);">${op.totalCalls || 0} ta</strong>
-              </div>
-              <div>
-                <span style="color:var(--text-tertiary);">Javob: </span>
-                <strong style="color:#10b981;">${op.answered || 0} ta</strong>
-              </div>
-              <div>
-                <span style="color:var(--text-tertiary);">Vaqt: </span>
-                <strong style="color:#FF9500;">${fmtDuration(op.totalDuration || 0)}</strong>
-              </div>
-            </div>
-
-            ${op.currentCall ? `
-              <div style="background:rgba(255,149,0,0.08); border:1px solid rgba(255,149,0,0.18); border-radius:6px; padding:6px 10px; font-size:11px; color:#FF9500; display:flex; justify-content:space-between; align-items:center;">
-                <span>📞 ${_esc(op.currentCall.number)}</span>
-                <strong>${_esc(op.currentCall.duration)}</strong>
-              </div>
-            ` : ''}
-          </div>
-        `;
-      }).join('');
-
-    } catch(e) {
-      console.error('Operators load error', e);
-    }
   }
 
   async function loadTelephonyStats() {
@@ -969,9 +586,7 @@
             </div>
             <div>${audioPlayerHtml}</div>
             <div style="text-align:right;">
-              <button class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:11px; border:1px solid var(--border);" onclick="quickCallNumber('${_esc(phone)}')" title="Qayta qo'ng'iroq">
-                <i class="fas fa-phone" style="color:#10b981;"></i>
-              </button>
+              <span style="font-size:11px; font-weight:600; color:var(--text-tertiary);">Log # ${c.id}</span>
             </div>
           </div>
         `;
@@ -986,13 +601,62 @@
   async function loadOperatorAnalytics() {
     const topContainer = document.getElementById('topPerformersContainer');
     const tbody = document.getElementById('analyticsLeaderboardBody');
+    const opContainer = document.getElementById('operatorCardsContainer');
 
     try {
       const res = await apiFetch(`/api/telephony/operator-analytics?period=${_analyticsPeriod}`);
       const operators = res.operators || [];
       const top = res.topPerformers || {};
 
-      // 1. Top Performers Cards
+      // 1. Operator Live Status Cards
+      document.getElementById('opCountBadge').textContent = `${operators.length} ta operator`;
+      opContainer.innerHTML = operators.map(op => {
+        const isOnline = op.status === 'online';
+        const isBusy = op.status === 'busy';
+        const badgeCls = isBusy ? 'op-busy' : isOnline ? 'op-online' : 'op-away';
+        const badgeText = isBusy ? '🟡 Suhbatda' : isOnline ? '🟢 Online (Tayyor)' : '⚪ Offline';
+
+        return `
+          <div class="operator-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div style="width:32px; height:32px; border-radius:50%; background:var(--brand-soft); color:var(--brand); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center;">
+                  ${_esc(op.name.charAt(0).toUpperCase())}
+                </div>
+                <div>
+                  <div style="font-size:13px; font-weight:700; color:var(--text-primary);">${_esc(op.name)}</div>
+                  <div style="font-size:10.5px; color:var(--text-tertiary);">Liniya: ${op.ext}</div>
+                </div>
+              </div>
+              <span class="op-status-badge ${badgeCls}">${badgeText}</span>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; border-top:1px solid var(--border); padding-top:8px; font-size:11.5px;">
+              <div>
+                <span style="color:var(--text-tertiary);">Bugun: </span>
+                <strong style="color:var(--text-primary);">${op.totalCalls || 0} ta</strong>
+              </div>
+              <div>
+                <span style="color:var(--text-tertiary);">Javob: </span>
+                <strong style="color:#10b981;">${op.answeredCalls || 0} ta</strong>
+              </div>
+              <div>
+                <span style="color:var(--text-tertiary);">Vaqt: </span>
+                <strong style="color:#FF9500;">${fmtDuration(op.totalTalkTime || 0)}</strong>
+              </div>
+            </div>
+
+            ${op.currentCall ? `
+              <div style="background:rgba(255,149,0,0.08); border:1px solid rgba(255,149,0,0.18); border-radius:6px; padding:6px 10px; font-size:11px; color:#FF9500; display:flex; justify-content:space-between; align-items:center;">
+                <span>📞 ${_esc(op.currentCall.number)}</span>
+                <strong>${_esc(op.currentCall.duration)}</strong>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+
+      // 2. Top Performers Cards
       topContainer.innerHTML = `
         <div class="performer-card">
           <div style="width:40px; height:40px; border-radius:12px; background:rgba(255,149,0,0.12); color:#FF9500; font-size:18px; display:flex; align-items:center; justify-content:center;">
@@ -1040,7 +704,7 @@
         </div>
       `;
 
-      // 2. Leaderboard Table
+      // 3. Leaderboard Table
       if (!operators.length) {
         tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:30px; color:var(--text-tertiary);">Ma\'lumotlar mavjud emas</td></tr>';
       } else {
@@ -1079,7 +743,7 @@
         }).join('');
       }
 
-      // 3. Render Chart.js charts
+      // 4. Render Chart.js charts
       renderOperatorCharts(operators);
 
     } catch(e) {
@@ -1091,7 +755,6 @@
     if (typeof Chart === 'undefined') return;
 
     const labels = operators.map(o => o.name);
-    const totalCallsData = operators.map(o => o.totalCalls);
     const answeredData = operators.map(o => o.answeredCalls);
     const missedData = operators.map(o => o.missedCalls);
 
@@ -1159,7 +822,6 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     loadTelephonyStats();
-    loadOperators();
     loadTelephonyLogs();
   });
 </script>
