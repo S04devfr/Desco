@@ -44,7 +44,7 @@
     flex-shrink: 0;
   }
 
-  /* Layout grid: Left Softphone, Right History & SIP */
+  /* Layout grid: Left Softphone, Right History & Operators */
   .telephony-layout {
     display: grid;
     grid-template-columns: 320px 1fr;
@@ -221,6 +221,42 @@
     color: #fff;
     border-color: var(--accent);
   }
+
+  /* Operator Card Grid */
+  .operator-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .operator-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    transition: all 0.2s ease;
+  }
+  .operator-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.05);
+    border-color: var(--accent);
+  }
+  .op-status-badge {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10.5px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .op-online { background: rgba(16,185,129,0.12); color: #10b981; }
+  .op-busy { background: rgba(255,149,0,0.12); color: #FF9500; }
+  .op-away { background: rgba(142,142,147,0.12); color: var(--text-tertiary); }
 </style>
 
 <div class="page-header">
@@ -228,12 +264,15 @@
     <h1 style="display:flex; align-items:center; gap:10px;">
       <i class="fas fa-phone-alt" style="color:#10b981; font-size:24px;"></i> IP Telefoniya Markazi
     </h1>
-    <p>Qo'ng'iroqlar tarixi, yozuvlar va Softphone terish paneli</p>
+    <p>Softphone terish paneli, qo'ng'iroqlar yozuvlari va operatorlar monitoringi</p>
   </div>
   <div class="page-header-actions" style="display:flex; gap:10px; align-items:center;">
+    <button class="btn btn-secondary btn-sm" onclick="triggerIncomingCallSimulation()">
+      <i class="fas fa-phone-incoming" style="color:#10b981;"></i> Kiruvchi Sinov Qo'ng'irog'i
+    </button>
     <div style="display:flex; align-items:center; gap:6px; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.2); padding:6px 12px; border-radius:20px; font-size:12px; font-weight:700; color:#10b981;">
       <span style="width:8px; height:8px; border-radius:50%; background:#10b981; animation: pulse 1.5s infinite;"></span>
-      SIP Server: OnlinePBX Connected (101 Line Active)
+      OnlinePBX SIP Connected
     </div>
   </div>
 </div>
@@ -281,14 +320,28 @@
   </div>
 </div>
 
+<!-- OPERATORS / AGENTS SECTION (Senior CRM Style) -->
+<div style="margin-top:24px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+    <h3 style="margin:0; font-size:15px; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:8px;">
+      <i class="fas fa-headset" style="color:var(--accent)"></i> Operatorlar va SIP Liniyalar Monitoringi
+    </h3>
+    <span style="font-size:11.5px; font-weight:600; color:var(--text-secondary);" id="opCountBadge">0 ta operator</span>
+  </div>
+
+  <div class="operator-cards-grid" id="operatorCardsContainer">
+    <!-- Dynamic Operator Cards -->
+  </div>
+</div>
+
 <!-- MAIN TELEPHONY LAYOUT -->
-<div class="telephony-layout" style="margin-top:20px;">
+<div class="telephony-layout" style="margin-top:10px;">
 
   <!-- LEFT: SOFTPHONE DIALER -->
   <div class="softphone-card">
     <div style="display:flex; justify-content:space-between; align-items:center;">
       <div style="font-size:13px; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
-        <i class="fas fa-[#10b981] fa-phone-alt"></i> Web Softphone
+        <i class="fas fa-phone-alt" style="color:#10b981"></i> Web Softphone
       </div>
       <span style="font-size:11px; font-weight:700; color:#10b981; background:rgba(16,185,129,0.1); padding:2px 8px; border-radius:6px;">
         Liniya 101
@@ -348,25 +401,6 @@
       </button>
     </div>
 
-    <!-- SIP Extensions status preview -->
-    <div style="border-top:1px solid var(--border); padding-top:12px; font-size:11.5px;">
-      <div style="font-weight:700; color:var(--text-secondary); margin-bottom:8px;">Operator Liniyalari:</div>
-      <div id="sipLinesList" style="display:flex; flex-direction:column; gap:6px;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span>🟢 101 — Muhammad (Siz)</span>
-          <span style="font-size:10px; color:#10b981; font-weight:700;">Aktiv</span>
-        </div>
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span>🟡 102 — Jasurbek</span>
-          <span style="font-size:10px; color:#FF9500; font-weight:700;">Suhbatda</span>
-        </div>
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span>🟢 103 — Shahnoza</span>
-          <span style="font-size:10px; color:#10b981; font-weight:700;">Aktiv</span>
-        </div>
-      </div>
-    </div>
-
   </div>
 
   <!-- RIGHT: CALL LOGS HISTORY -->
@@ -402,12 +436,77 @@
 </div>
 
 <script>
+  // Utility functions
+  async function apiFetch(url, opts) {
+    const r = await fetch(url, opts);
+    if (!r.ok) {
+      let msg = 'Xatolik';
+      try { const j = await r.json(); msg = j.message || msg; } catch(e) { msg = await r.text(); }
+      throw new Error(msg);
+    }
+    return r.json();
+  }
+
+  function _toast(msg, type) {
+    if (typeof showToast === 'function') { showToast(msg, type); return; }
+    const c = document.getElementById('toastContainer');
+    if (!c) {
+      alert(msg);
+      return;
+    }
+    const t = document.createElement('div');
+    t.className = 'toast toast-' + (type || 'info');
+    t.innerHTML = '<span>' + msg + '</span>';
+    t.style.cssText = 'margin-top:8px;padding:10px 16px;border-radius:8px;font-size:13px;color:#fff;background:' +
+      (type === 'error' ? '#FF3B30' : type === 'success' ? '#34C759' : '#007AFF');
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  function _esc(s) {
+    return s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
   let currentActiveCallId = null;
   let callTimerInterval = null;
   let callSeconds = 0;
   let activeAudio = null;
   let activeAudioBtn = null;
   let _telephonyFilter = 'all';
+
+  // Web Audio Synthesizer for realistic dialing ringtone on laptops
+  let audioCtx = null;
+  let ringOsc = null;
+
+  function startRingtone() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+
+      ringOsc = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      ringOsc.type = 'sine';
+      ringOsc.frequency.setValueAtTime(440, audioCtx.currentTime); // Standard 440Hz tone
+      gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+
+      ringOsc.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      ringOsc.start();
+    } catch(e) {
+      console.log('Audio Context ringtone silent');
+    }
+  }
+
+  function stopRingtone() {
+    try {
+      if (ringOsc) {
+        ringOsc.stop();
+        ringOsc.disconnect();
+        ringOsc = null;
+      }
+    } catch(e) {}
+  }
 
   function pressNumpad(val) {
     const inp = document.getElementById('dialerInput');
@@ -422,11 +521,12 @@
   async function startSoftphoneCall() {
     const num = document.getElementById('dialerInput').value.trim();
     if (!num) {
-      if (typeof _toast === 'function') _toast('Raqam kiritilishi shart!', 'error');
+      _toast('Raqam kiritilishi shart!', 'error');
       return;
     }
 
     try {
+      startRingtone();
       const res = await apiFetch('/api/telephony/dial', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -449,11 +549,13 @@
           document.getElementById('callTimer').textContent = `${m}:${s}`;
         }, 1000);
 
-        if (typeof _toast === 'function') _toast('Qo\'ng\'iroq ulandi!', 'success');
+        stopRingtone();
+        _toast('Qo\'ng\'iroq ulandi (Web-Softphone)!', 'success');
         loadTelephonyLogs();
       }
     } catch(e) {
-      if (typeof _toast === 'function') _toast(e.message, 'error');
+      stopRingtone();
+      _toast(e.message, 'error');
     }
   }
 
@@ -461,6 +563,7 @@
     if (!currentActiveCallId) return;
 
     try {
+      stopRingtone();
       await apiFetch('/api/telephony/hangup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -475,11 +578,35 @@
       document.getElementById('callTimer').textContent = '00:00';
 
       currentActiveCallId = null;
-      if (typeof _toast === 'function') _toast('Suhbat yakunlandi va yozib olindi', 'info');
+      _toast('Suhbat yakunlandi va yozib olindi', 'info');
+      loadTelephonyLogs();
+      loadTelephonyStats();
+      loadOperators();
+    } catch(e) {
+      _toast(e.message, 'error');
+    }
+  }
+
+  async function triggerIncomingCallSimulation() {
+    try {
+      const testPhones = ['+998 93 111 22 33', '+998 90 444 55 66', '+998 97 777 88 99'];
+      const randomPhone = testPhones[Math.floor(Math.random() * testPhones.length)];
+      
+      await apiFetch('/api/telephony/webhook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'incoming_call',
+          from: randomPhone,
+          to: '101'
+        })
+      });
+
+      _toast(`Kiruvchi simulyatsiya: ${randomPhone}`, 'success');
       loadTelephonyLogs();
       loadTelephonyStats();
     } catch(e) {
-      if (typeof _toast === 'function') _toast(e.message, 'error');
+      _toast(e.message, 'error');
     }
   }
 
@@ -488,12 +615,12 @@
       btn.classList.remove('active');
       btn.style.background = 'transparent';
       btn.style.color = 'var(--text-primary)';
-      if (typeof _toast === 'function') _toast('Mikrofon yoqildi', 'info');
+      _toast('Mikrofon yoqildi', 'info');
     } else {
       btn.classList.add('active');
       btn.style.background = '#ef4444';
       btn.style.color = '#fff';
-      if (typeof _toast === 'function') _toast('Mikrofon o\'chirildi', 'info');
+      _toast('Mikrofon o\'chirildi', 'info');
     }
   }
 
@@ -502,12 +629,12 @@
       btn.classList.remove('active');
       btn.style.background = 'transparent';
       btn.style.color = 'var(--text-primary)';
-      if (typeof _toast === 'function') _toast('Kutish rejasi o\'chirildi', 'info');
+      _toast('Kutish rejasi o\'chirildi', 'info');
     } else {
       btn.classList.add('active');
       btn.style.background = '#FF9500';
       btn.style.color = '#fff';
-      if (typeof _toast === 'function') _toast('Kutish rejasiga o\'tkazildi', 'info');
+      _toast('Kutish rejasiga o\'tkazildi', 'info');
     }
   }
 
@@ -558,7 +685,7 @@
       btn.innerHTML = '<i class="fas fa-pause"></i>';
     }).catch(e => {
       btn.innerHTML = '<i class="fas fa-play"></i>';
-      if (typeof _toast === 'function') _toast('Audio play error: ' + e.message, 'error');
+      _toast('Audio play error: ' + e.message, 'error');
     });
 
     activeAudio.onended = () => {
@@ -569,6 +696,64 @@
   function quickCallNumber(num) {
     document.getElementById('dialerInput').value = num;
     startSoftphoneCall();
+  }
+
+  async function loadOperators() {
+    const container = document.getElementById('operatorCardsContainer');
+    try {
+      const res = await apiFetch('/api/telephony/sip-status');
+      const lines = res.sipLines || [];
+      document.getElementById('opCountBadge').textContent = `${lines.length} ta operator`;
+
+      container.innerHTML = lines.map(op => {
+        const isOnline = op.status === 'online';
+        const isBusy = op.status === 'busy';
+        const badgeCls = isBusy ? 'op-busy' : isOnline ? 'op-online' : 'op-away';
+        const badgeText = isBusy ? '🟡 Suhbatda' : isOnline ? '🟢 Online (Tayyor)' : '⚪ Offline';
+
+        return `
+          <div class="operator-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div style="width:32px; height:32px; border-radius:50%; background:var(--brand-soft); color:var(--brand); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center;">
+                  ${_esc(op.managerName.charAt(0).toUpperCase())}
+                </div>
+                <div>
+                  <div style="font-size:13px; font-weight:700; color:var(--text-primary);">${_esc(op.managerName)}</div>
+                  <div style="font-size:10.5px; color:var(--text-tertiary);">Liniya: ${op.ext}</div>
+                </div>
+              </div>
+              <span class="op-status-badge ${badgeCls}">${badgeText}</span>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; border-top:1px solid var(--border); padding-top:8px; font-size:11.5px;">
+              <div>
+                <span style="color:var(--text-tertiary);">Bugun: </span>
+                <strong style="color:var(--text-primary);">${op.totalCalls || 0} ta</strong>
+              </div>
+              <div>
+                <span style="color:var(--text-tertiary);">Javob: </span>
+                <strong style="color:#10b981;">${op.answered || 0} ta</strong>
+              </div>
+              <div>
+                <span style="color:var(--text-tertiary);">Vaqt: </span>
+                <strong style="color:#FF9500;">${fmtDuration(op.totalDuration || 0)}</strong>
+              </div>
+            </div>
+
+            ${op.currentCall ? `
+              <div style="background:rgba(255,149,0,0.08); border:1px solid rgba(255,149,0,0.18); border-radius:6px; padding:6px 10px; font-size:11px; color:#FF9500; display:flex; justify-content:space-between; align-items:center;">
+                <span>📞 ${_esc(op.currentCall.number)}</span>
+                <strong>${_esc(op.currentCall.duration)}</strong>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+
+    } catch(e) {
+      console.error('Operators load error', e);
+    }
   }
 
   async function loadTelephonyStats() {
@@ -661,6 +846,7 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     loadTelephonyStats();
+    loadOperators();
     loadTelephonyLogs();
   });
 </script>

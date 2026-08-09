@@ -250,19 +250,53 @@ router.post('/hangup', async (req, res) => {
   }
 });
 
-// ── GET /api/telephony/sip-status — SIP liniyalar holati ──
+// ── GET /api/telephony/sip-status — SIP liniyalar va operatorlar holati ──
 router.get('/sip-status', async (req, res) => {
   try {
-    const managers = await prisma.user.findMany({
-      select: { id: true, fullName: true, role: true, isActive: true }
-    });
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    const sipLines = managers.map((m, index) => ({
-      ext: (101 + index).toString(),
-      managerName: m.fullName || 'Manager',
-      status: index === 0 ? 'online' : (index === 1 ? 'busy' : 'online'),
-      currentCall: index === 1 ? { number: '+998 90 987 65 43', duration: '01:24' } : null
-    }));
+    const [managers, todayLogs] = await Promise.all([
+      prisma.user.findMany({
+        select: { id: true, fullName: true, name: true, role: true, avatar: true, isActive: true }
+      }),
+      prisma.callLog.findMany({
+        where: { createdAt: { gte: today } }
+      })
+    ]);
+
+    const sipLines = managers.map((m, index) => {
+      const ext = (101 + index).toString();
+      const mLogs = todayLogs.filter(l => l.managerId === m.id || l.sipExtension === ext || l.toNumber === ext);
+      const totalCalls = mLogs.length;
+      const totalDuration = mLogs.reduce((s, l) => s + (l.duration || 0), 0);
+      const answered = mLogs.filter(l => l.status === 'answered' || l.duration > 0).length;
+
+      // Status mock logic (Online/Busy/Away)
+      let status = 'online';
+      let currentCall = null;
+      if (index === 0) {
+        status = 'online';
+      } else if (index === 1) {
+        status = 'busy';
+        currentCall = { number: '+998 90 987 65 43', duration: '01:42', clientName: 'Munira Karimova' };
+      } else if (index === 2) {
+        status = 'away';
+      }
+
+      return {
+        ext,
+        managerId: m.id,
+        managerName: m.fullName || m.name || 'Manager',
+        role: m.role,
+        avatar: m.avatar,
+        status,
+        totalCalls,
+        answered,
+        totalDuration,
+        currentCall
+      };
+    });
 
     res.json({ sipLines, provider: 'OnlinePBX / Asterisk SIP Server', status: 'connected' });
   } catch (err) {
