@@ -66,6 +66,12 @@ function isCallbackStage(stageName) {
 async function logActivity(dealId, userId, action, details) {
   try {
     await prisma.activityLog.create({ data: { action, details, dealId, userId } })
+    if (dealId) {
+      await prisma.task.updateMany({
+        where: { dealId: Number(dealId), completed: false },
+        data: { completed: true, status: 'completed', result: `${action}: ${details || ''}` }
+      });
+    }
   } catch (e) { /* ignore */ }
 }
 

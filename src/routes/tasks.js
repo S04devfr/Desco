@@ -56,7 +56,17 @@ router.get('/', async (req, res) => {
     try {
       const activeTasksWithDeals = await prisma.task.findMany({
         where: { completed: false, NOT: { dealId: null } },
-        include: { deal: { include: { stage: true } } }
+        include: { 
+          deal: { 
+            include: { 
+              stage: true,
+              activityLogs: {
+                orderBy: { createdAt: 'desc' },
+                take: 1
+              }
+            } 
+          } 
+        }
       });
       
       const isCallbackStage = (stageName) => {
@@ -118,6 +128,29 @@ router.get('/', async (req, res) => {
           data: { completed: true, status: 'completed', result: "Avtomatik yopildi: Yangi vazifa yaratildi" }
         });
         console.log(`[Auto-Cleanup] ${duplicateTaskIdsToClose.length} ta dublikat vazifa yopildi.`);
+      }
+
+      // ── Auto-complete tasks if the deal already has newer activity logs (i.e. manager already worked on it) ──
+      const resolvedTaskIds = [];
+      activeTasksWithDeals.forEach(t => {
+        if (!t.deal) return;
+        const latestLog = t.deal.activityLogs?.[0];
+        if (latestLog) {
+          const taskTime = new Date(t.createdAt).getTime();
+          const logTime = new Date(latestLog.createdAt).getTime();
+          // If any activity happened after the task was created, the task is resolved
+          if (logTime > taskTime) {
+            resolvedTaskIds.push(t.id);
+          }
+        }
+      });
+
+      if (resolvedTaskIds.length > 0) {
+        await prisma.task.updateMany({
+          where: { id: { in: resolvedTaskIds } },
+          data: { completed: true, status: 'completed', result: "Avtomatik yopildi: Sdelkada yangi harakat bajarildi" }
+        });
+        console.log(`[Auto-Cleanup] ${resolvedTaskIds.length} ta eskirgan vazifa yangi sdelka harakati sababli yopildi.`);
       }
     } catch (cleanupErr) {
       console.error('[Auto-Cleanup Error] Obsolete/duplicate tasks cleanup failed:', cleanupErr.message);
