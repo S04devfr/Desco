@@ -88,6 +88,40 @@ router.get('/', requireRole('admin', 'manager'), async (req, res) => {
   }
 });
 
+// ── GET /api/warehouse/stock-for-product — Mahsulot ranglari va zaxirasini olish ──
+router.get('/stock-for-product', async (req, res) => {
+  try {
+    const { productName, warehouse } = req.query;
+    if (!productName) {
+      return res.json({ variants: [] });
+    }
+
+    const where = { productName };
+    if (warehouse) {
+      where.warehouse = warehouse;
+    }
+
+    const stocks = await prisma.warehouseStock.findMany({ where });
+
+    // Group by color
+    const colorMap = {};
+    stocks.forEach(s => {
+      const c = s.color || 'oddiy';
+      colorMap[c] = (colorMap[c] || 0) + (s.stock || 0);
+    });
+
+    const variants = Object.entries(colorMap).map(([color, stock]) => ({
+      color,
+      stock: Math.max(0, stock)
+    })).sort((a, b) => b.stock - a.stock);
+
+    res.json({ productName, warehouse: warehouse || null, variants });
+  } catch (err) {
+    console.error('[Warehouse Stock For Product]', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // ── POST /api/warehouse/fill — Omborga tovar qo'shish ──
 router.post('/fill', requireRole('admin', 'manager'), async (req, res) => {
   try {

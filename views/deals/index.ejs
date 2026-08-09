@@ -1207,17 +1207,17 @@
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Mahsulot rangi</label>
+            <label class="form-label">Mahsulot rangi <span id="stockStatusBadge" style="font-size:11px; margin-left:6px;"></span></label>
             <div class="custom-select-wrapper" style="position: relative;">
-              <input type="text" id="f-color" class="form-control" autocomplete="off" placeholder="Rangni yozing yoki tanlang" onfocus="document.getElementById('colorSelectDropdown').classList.remove('hidden')" onblur="setTimeout(() => { const el = document.getElementById('colorSelectDropdown'); if(el) el.classList.add('hidden'); }, 200)">
+              <input type="text" id="f-color" class="form-control" autocomplete="off" placeholder="Rangni yozing yoki tanlang" onfocus="updateStockVariantsForDeal(); document.getElementById('colorSelectDropdown').classList.remove('hidden')" onblur="setTimeout(() => { const el = document.getElementById('colorSelectDropdown'); if(el) el.classList.add('hidden'); }, 250)">
               <i class="fas fa-chevron-down" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); color:var(--text-tertiary); pointer-events:none;"></i>
-              <div id="colorSelectDropdown" class="custom-select-dropdown hidden">
-                <div class="cs-option" onclick="document.getElementById('f-color').value = 'Oddiy'">Oddiy</div>
-                <div class="cs-option" onclick="document.getElementById('f-color').value = 'Brak (Buzilgan)'">Brak (Buzilgan)</div>
-                <div class="cs-option" onclick="document.getElementById('f-color').value = 'Kulrang'">Kulrang (Grey)</div>
-                <div class="cs-option" onclick="document.getElementById('f-color').value = 'Tillo'">Tillo (Gold)</div>
-                <div class="cs-option" onclick="document.getElementById('f-color').value = 'Qora'">Qora (Black)</div>
-                <div class="cs-option" onclick="document.getElementById('f-color').value = 'Qizil'">Qizil (Red)</div>
+              <div id="colorSelectDropdown" class="custom-select-dropdown hidden" style="max-height:220px; overflow-y:auto;">
+                <div class="cs-option" onclick="selectDealColor('Oddiy', true)">Oddiy</div>
+                <div class="cs-option" onclick="selectDealColor('Brak (Buzilgan)', true)">Brak (Buzilgan)</div>
+                <div class="cs-option" onclick="selectDealColor('Kulrang', true)">Kulrang (Grey)</div>
+                <div class="cs-option" onclick="selectDealColor('Tillo', true)">Tillo (Gold)</div>
+                <div class="cs-option" onclick="selectDealColor('Qora', true)">Qora (Black)</div>
+                <div class="cs-option" onclick="selectDealColor('Qizil', true)">Qizil (Red)</div>
               </div>
             </div>
           </div>
@@ -1271,7 +1271,7 @@
 
         <div class="form-group">
           <label class="form-label">Ombor (Sklad) <span style="font-size:10px;font-weight:normal;color:#999">(Tovar chiqarish uchun)</span></label>
-          <select id="f-warehouse" class="form-control">
+          <select id="f-warehouse" class="form-control" onchange="updateStockVariantsForDeal()">
             <option value="">— Omborni tanlang —</option>
             <option value="Toshkent">Toshkent</option>
             <option value="Qo'qon">Qo'qon</option>
@@ -1979,6 +1979,90 @@ function onProductSelect(select) {
         amountInput.value = price;
       }
     }
+  }
+  updateStockVariantsForDeal();
+}
+
+async function updateStockVariantsForDeal() {
+  const pName = document.getElementById('f-name')?.value || '';
+  const wh = document.getElementById('f-warehouse')?.value || '';
+  const dropdown = document.getElementById('colorSelectDropdown');
+  const badgeEl = document.getElementById('stockStatusBadge');
+
+  if (!pName) {
+    if (dropdown) dropdown.innerHTML = '<div class="cs-option disabled" style="padding:10px; color:var(--text-tertiary); text-align:center; font-size:12px;">Avval mahsulotni tanlang</div>';
+    if (badgeEl) badgeEl.innerHTML = '';
+    return;
+  }
+
+  try {
+    const res = await apiFetch(`/api/warehouse/stock-for-product?productName=${encodeURIComponent(pName)}&warehouse=${encodeURIComponent(wh)}`);
+    const variants = res.variants || [];
+    
+    let totalStock = 0;
+    variants.forEach(v => totalStock += v.stock);
+
+    if (badgeEl) {
+      if (wh) {
+        badgeEl.innerHTML = totalStock > 0 
+          ? `<span style="color:#10b981; font-weight:700;">(${wh}: ${totalStock} ta mavjud)</span>` 
+          : `<span style="color:#ef4444; font-weight:700;">(${wh}: Zaxira tugagan ❌)</span>`;
+      } else {
+        badgeEl.innerHTML = totalStock > 0 
+          ? `<span style="color:#10b981; font-weight:700;">(Omborlarda: ${totalStock} ta mavjud)</span>` 
+          : `<span style="color:#ef4444; font-weight:700;">(Zaxira tugagan ❌)</span>`;
+      }
+    }
+
+    if (!dropdown) return;
+
+    if (!variants.length) {
+      dropdown.innerHTML = `
+        <div class="cs-option" style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px;" onclick="selectDealColor('Oddiy', true)">
+          <span>Oddiy</span>
+          <span style="font-size:10.5px; padding:2px 6px; border-radius:4px; background:rgba(142,142,147,0.12); color:var(--text-secondary); font-weight:700;">Standart</span>
+        </div>
+      `;
+      return;
+    }
+
+    dropdown.innerHTML = variants.map(v => {
+      const isAvailable = v.stock > 0;
+      const stockBadge = isAvailable
+        ? `<span style="font-size:10.5px; padding:2px 6px; border-radius:4px; background:rgba(16,185,129,0.12); color:#10b981; font-weight:700;">${v.stock} ta mavjud</span>`
+        : `<span style="font-size:10.5px; padding:2px 6px; border-radius:4px; background:rgba(239,68,68,0.12); color:#ef4444; font-weight:700;">❌ 0 ta (Tugagan)</span>`;
+
+      const colorHash = typeof getColorHash === 'function' ? getColorHash(v.color) : '#007AFF';
+      const colorDot = `<span style="width:10px; height:10px; border-radius:50%; background:${colorHash}; display:inline-block; margin-right:6px; flex-shrink:0;"></span>`;
+
+      if (isAvailable) {
+        return `
+          <div class="cs-option" style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; cursor:pointer;" onclick="selectDealColor('${_esc(v.color)}', true)">
+            <span style="display:flex; align-items:center; font-weight:600;">${colorDot} ${_esc(v.color)}</span>
+            ${stockBadge}
+          </div>
+        `;
+      } else {
+        return `
+          <div class="cs-option disabled" style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; opacity:0.45; cursor:not-allowed; background:rgba(0,0,0,0.02);" onclick="event.stopPropagation(); if (typeof _toast === 'function') _toast('${_esc(v.color)} rangi bo\\'yicha zaxira tugagan!', 'error');">
+            <span style="display:flex; align-items:center; text-decoration:line-through; color:var(--text-tertiary);">${colorDot} ${_esc(v.color)}</span>
+            ${stockBadge}
+          </div>
+        `;
+      }
+    }).join('');
+
+  } catch(e) {
+    console.error('Error loading stock variants:', e);
+  }
+}
+
+function selectDealColor(color, close) {
+  const el = document.getElementById('f-color');
+  if (el) el.value = color;
+  if (close) {
+    const dd = document.getElementById('colorSelectDropdown');
+    if (dd) dd.classList.add('hidden');
   }
 }
 
@@ -2931,6 +3015,7 @@ function openDealModal(defaultStageId, editId) {
   const container = document.getElementById('dealModalInstRowsContainer');
   if (container) container.innerHTML = '';
   dealModalStageChanged();
+  updateStockVariantsForDeal();
 
   if (modal) modal.classList.remove('hidden');
   setTimeout(() => { const el = document.getElementById('f-name'); if (el) el.focus(); }, 100);
