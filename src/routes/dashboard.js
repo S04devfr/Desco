@@ -53,6 +53,18 @@ router.get('/diagnostics', async (req, res) => {
       }
     });
 
+    const deals = await prisma.deal.findMany({
+      select: { createdAt: true, status: true, amount: true }
+    });
+
+    const dealsMonthlyDistribution = {};
+    deals.forEach(d => {
+      if (d.createdAt) {
+        const key = d.createdAt.toISOString().substring(0, 7); // YYYY-MM
+        dealsMonthlyDistribution[key] = (dealsMonthlyDistribution[key] || 0) + 1;
+      }
+    });
+
     res.json({
       serverTime: now.toISOString(),
       computedStart: start.toISOString(),
@@ -61,7 +73,9 @@ router.get('/diagnostics', async (req, res) => {
       contactsInCurrentMonthFilter: monthCount,
       noPhoneAll,
       noPhoneMonth,
-      monthlyDistribution
+      monthlyDistribution,
+      totalDeals: deals.length,
+      dealsMonthlyDistribution
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
