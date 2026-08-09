@@ -862,14 +862,10 @@ async function loadDashboard() {
             </a>
           </div>
           <div class="stat-value" style="display: flex; align-items: center; gap: 8px;">
-            <span>${safeKpis.totalContacts ?? 0}</span>
+            <span>${safeKpis.totalLeads ?? 0}</span>
             <span style="font-size: 11px; font-weight: normal; color: var(--brand); background: rgba(14, 165, 233, 0.1); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 4px;">
               Tafsilotlar <i class="fas fa-chevron-down" id="leadChevron"></i>
             </span>
-          </div>
-          <div style="font-size: 12px; margin-top: 6px; color: var(--text-tertiary); display: flex; align-items: center; gap: 4px;">
-            <i class="fas fa-phone-slash" style="color: var(--danger); font-size: 11.5px;"></i>
-            <span>Raqamsiz kelgan: <strong style="color: var(--text-primary);">${safeKpis.noPhoneContacts ?? 0} ta</strong></span>
           </div>
           <div id="leadBreakdownList" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); padding: 12px 16px; z-index: 999; flex-direction: column; gap: 6px; font-size: 11.5px; color: var(--text-secondary);">
             <div style="display: flex; justify-content: space-between; gap: 8px;">
