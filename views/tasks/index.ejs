@@ -574,11 +574,20 @@ function renderSingleTaskCardHtml(t) {
               return `<div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">${_esc(desc)}</div>`;
             })()}
             
-            <!-- Inline quick completion box (hidden by default) -->
-            <div id="quick-complete-${t.id}" style="display:none; margin-top:8px; padding:8px; background:var(--bg-secondary); border-radius:6px; border:1px solid var(--border); gap:6px; align-items:center; width: 100%;" onclick="event.stopPropagation();">
-              <input type="text" id="quick-res-${t.id}" class="form-control" style="font-size:11.5px; height:26px; padding:2px 8px; flex:1; background:var(--bg-primary); color:var(--text-primary); border-color:var(--border);" placeholder="Natijani yozing...">
-              <button class="btn btn-primary btn-sm" style="font-size:11px; padding:2px 10px; height:26px; background:var(--brand); border-color:var(--brand);" onclick="submitQuickComplete(${t.id})">Saqlash</button>
-              <button class="btn btn-ghost btn-sm" style="font-size:11px; padding:2px 6px; height:26px; color:var(--text-secondary);" onclick="cancelQuickComplete(${t.id})">Bekor</button>
+            <!-- Inline quick completion box (amoCRM style outcomes) -->
+            <div id="quick-complete-${t.id}" style="display:none; margin-top:8px; padding:10px; background:var(--bg-secondary); border-radius:10px; border:1px solid var(--border); flex-direction:column; gap:8px; width: 100%;" onclick="event.stopPropagation();">
+              <div style="font-size:11px; font-weight:700; color:var(--text-secondary);">Tezkor natija tanlang:</div>
+              <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                <button class="btn btn-sm" style="font-size:10.5px; padding:2px 8px; height:24px; background:rgba(239, 68, 68, 0.1); color:#ef4444; border:1px solid rgba(239, 68, 68, 0.2);" onclick="submitQuickCompleteWithResult(${t.id}, 'Telefon ko\\'tarmadi')">📞 Ko'tarmadi</button>
+                <button class="btn btn-sm" style="font-size:10.5px; padding:2px 8px; height:24px; background:rgba(16, 185, 129, 0.1); color:#10b981; border:1px solid rgba(16, 185, 129, 0.2);" onclick="submitQuickCompleteWithResult(${t.id}, 'Suhbatlashildi')">🤝 Suhbatlashildi</button>
+                <button class="btn btn-sm" style="font-size:10.5px; padding:2px 8px; height:24px; background:rgba(99, 102, 241, 0.1); color:#6366f1; border:1px solid rgba(99, 102, 241, 0.2);" onclick="submitQuickCompleteWithResult(${t.id}, 'SMS yuborildi')">💬 SMS yuborildi</button>
+                <button class="btn btn-sm" style="font-size:10.5px; padding:2px 8px; height:24px; background:rgba(142, 142, 147, 0.1); color:var(--text-secondary); border:1px solid var(--border);" onclick="submitQuickCompleteWithResult(${t.id}, 'Bajarildi')">✅ Shunchaki yopish</button>
+              </div>
+              <div style="display:flex; gap:6px; align-items:center; border-top:1px solid var(--border); padding-top:8px; margin-top:4px;">
+                <input type="text" id="quick-res-${t.id}" class="form-control" style="font-size:11.5px; height:26px; padding:2px 8px; flex:1; background:var(--bg-primary); color:var(--text-primary); border-color:var(--border);" placeholder="Batafsil izoh yozish...">
+                <button class="btn btn-primary btn-sm" style="font-size:11px; padding:2px 10px; height:26px; background:var(--brand); border-color:var(--brand);" onclick="submitQuickComplete(${t.id})">Saqlash</button>
+                <button class="btn btn-ghost btn-sm" style="font-size:11px; padding:2px 6px; height:26px; color:var(--text-secondary);" onclick="cancelQuickComplete(${t.id})">Bekor</button>
+              </div>
             </div>
           </div>
         </div>
@@ -814,11 +823,7 @@ async function onCheckboxClick(taskId, isCompleted) {
 
 async function submitQuickComplete(taskId) {
   const input = document.getElementById('quick-res-' + taskId);
-  const result = input ? input.value.trim() : '';
-  if (!result) {
-    showToast("Natijani yozish majburiy!", "error");
-    return;
-  }
+  const result = (input ? input.value.trim() : '') || 'Bajarildi';
   try {
     const res = await fetch('/api/tasks/' + taskId + '/complete', {
       method: 'PATCH',
@@ -834,6 +839,24 @@ async function submitQuickComplete(taskId) {
     showToast(err.message, "error");
   }
 }
+
+async function submitQuickCompleteWithResult(taskId, result) {
+  try {
+    const res = await fetch('/api/tasks/' + taskId + '/complete', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ result })
+    });
+    if (!res.ok) throw new Error("Vazifani yakunlashda xatolik");
+    showToast("Vazifa bajarildi!", "success");
+    await loadTasks();
+    if (typeof window.updateSidebarTaskBadge === 'function') window.updateSidebarTaskBadge();
+    if (typeof loadNotifications === 'function') loadNotifications();
+  } catch (err) {
+    showToast(err.message, "error");
+  }
+}
+window.submitQuickCompleteWithResult = submitQuickCompleteWithResult;
 
 function cancelQuickComplete(taskId) {
   const box = document.getElementById('quick-complete-' + taskId);
