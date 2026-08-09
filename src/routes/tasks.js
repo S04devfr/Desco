@@ -92,8 +92,35 @@ router.get('/', async (req, res) => {
         });
         console.log(`[Auto-Cleanup] ${obsoleteTaskIds.length} ta eskirgan vazifa yopildi.`);
       }
+
+      // ── Clean up duplicate active tasks for the same deal (keeping only the latest one) ──
+      const dealTaskGroups = {};
+      activeTasksWithDeals.forEach(t => {
+        if (!dealTaskGroups[t.dealId]) dealTaskGroups[t.dealId] = [];
+        dealTaskGroups[t.dealId].push(t);
+      });
+
+      const duplicateTaskIdsToClose = [];
+      for (const dealId in dealTaskGroups) {
+        const group = dealTaskGroups[dealId];
+        if (group.length > 1) {
+          // Sort by id descending so the latest task is first
+          group.sort((a, b) => b.id - a.id);
+          // Keep the first one (latest), mark others to close
+          const toClose = group.slice(1).map(t => t.id);
+          duplicateTaskIdsToClose.push(...toClose);
+        }
+      }
+
+      if (duplicateTaskIdsToClose.length > 0) {
+        await prisma.task.updateMany({
+          where: { id: { in: duplicateTaskIdsToClose } },
+          data: { completed: true, status: 'completed', result: "Avtomatik yopildi: Yangi vazifa yaratildi" }
+        });
+        console.log(`[Auto-Cleanup] ${duplicateTaskIdsToClose.length} ta dublikat vazifa yopildi.`);
+      }
     } catch (cleanupErr) {
-      console.error('[Auto-Cleanup Error] Obsolete tasks cleanup failed:', cleanupErr.message);
+      console.error('[Auto-Cleanup Error] Obsolete/duplicate tasks cleanup failed:', cleanupErr.message);
     }
 
     const tasks = await prisma.task.findMany({

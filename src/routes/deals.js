@@ -1343,6 +1343,13 @@ router.post('/:id/activity', requireRole('admin', 'manager'), async (req, res, n
       data: { action: "Izoh qo'shildi", details, dealId: Number(req.params.id), userId: req.userId },
       include: { user: managerSelect }
     })
+    
+    // Auto-complete active tasks for this deal when manager posts a comment/note
+    await prisma.task.updateMany({
+      where: { dealId: Number(req.params.id), completed: false },
+      data: { completed: true, status: 'completed', result: details }
+    });
+    
     res.status(201).json(activity)
   } catch (error) { next(error) }
 })
