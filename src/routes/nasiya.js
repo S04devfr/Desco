@@ -5,6 +5,184 @@ const router = express.Router();
 
 router.use(protect);
 
+// GET /api/nasiya/stats — Nasiya Portfeli Statistikasi
+router.get('/stats', async (req, res, next) => {
+  try {
+    const stages = await prisma.pipelineStage.findMany({
+      where: { name: { contains: 'Nasiya', mode: 'insensitive' } },
+      select: { id: true }
+    });
+    const stageIds = stages.map(s => s.id);
+
+    const deals = await prisma.deal.findMany({
+      where: { stageId: { in: stageIds } },
+      include: { installments: true }
+    });
+
+    let totalPortfolio = 0;
+    let totalPaid = 0;
+    let overdueCount = 0;
+    let overdueAmount = 0;
+    let currentMonthTarget = 0;
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    deals.forEach(d => {
+      totalPortfolio += d.amount || 0;
+      totalPaid += d.paidAmount || 0;
+
+      (d.installments || []).forEach(inst => {
+        const dt = new Date(inst.dueDate);
+        if (!inst.paid && dt < now) {
+          overdueCount++;
+          overdueAmount += inst.amount || 0;
+        }
+        if (dt.getFullYear() === currentYear && dt.getMonth() === currentMonth) {
+          currentMonthTarget += inst.amount || 0;
+        }
+      });
+    });
+
+    const totalRemaining = Math.max(0, totalPortfolio - totalPaid);
+
+    res.json({
+      totalPortfolio,
+      totalPaid,
+      totalRemaining,
+      overdueCount,
+      overdueAmount,
+      currentMonthTarget,
+      activeDealsCount: deals.length
+    });
+  } catch (error) {
+    console.error('Nasiya stats error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/nasiya/record-payment — Rapid 1-Click Payment Record
+router.post('/record-payment', async (req, res, next) => {
+  try {
+    const { installmentId, dealId, amount, paymentMethod = 'Naqd', notes = '' } = req.body;
+
+    let updatedInst = null;
+    let targetDealId = Number(dealId);
+
+    if (installmentId) {
+      updatedInst = await prisma.installment.update({
+        where: { id: Number(installmentId) },
+        data: { paid: true, notes: notes ? `${notes} (${paymentMethod})` : `To'landi (${paymentMethod})` }
+      });
+      targetDealId = updatedInst.dealId;
+    }
+
+    // Recalculate paidAmount of deal
+    const allInsts = await prisma.installment.findMany({ where: { dealId: targetDealId } });
+    const totalPaid = allInsts.filter(i => i.paid).reduce((s, i) => s + (i.amount || 0), 0);
+
+    const updatedDeal = await prisma.deal.update({
+      where: { id: targetDealId },
+      data: { paidAmount: totalPaid },
+      include: { client: true }
+    });
+
+    // Auto-complete matching task if any open
+    const clientName = updatedDeal.client ? updatedDeal.client.name : '';
+    const openTasks = await prisma.task.findMany({
+      where: {
+        completed: false,
+        title: { contains: clientName || 'Nasiya' }
+      }
+    });
+
+    for (const t of openTasks) {
+      await prisma.task.update({
+        where: { id: t.id },
+        data: { completed: true, status: 'done' }
+      });
+    }
+
+    // Log Activity
+    await prisma.activityLog.create({
+      data: {
+        action: 'nasiya_payment',
+        details: `Nasiya to'lovi qabul qilindi: ${Number(amount || (updatedInst ? updatedInst.amount : 0)).toLocaleString()} UZS (${paymentMethod}) — Mijoz: ${clientName}`,
+        dealId: targetDealId,
+        userId: req.userId
+      }
+    }).catch(() => {});
+
+    res.json({ success: true, deal: updatedDeal, installment: updatedInst });
+  } catch (error) {
+    console.error('Record payment error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/nasiya/auto-generate-tasks — Auto-Generate Reminders & Tasks
+router.post('/auto-generate-tasks', async (req, res, next) => {
+  try {
+    const stages = await prisma.pipelineStage.findMany({
+      where: { name: { contains: 'Nasiya', mode: 'insensitive' } },
+      select: { id: true }
+    });
+    const stageIds = stages.map(s => s.id);
+
+    const deals = await prisma.deal.findMany({
+      where: { stageId: { in: stageIds } },
+      include: { client: true, installments: true }
+    });
+
+    const now = new Date();
+    const upcomingLimit = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // within 7 days
+    let generatedCount = 0;
+
+    for (const deal of deals) {
+      const client = deal.client || {};
+      const unpaidInsts = (deal.installments || []).filter(i => !i.paid && new Date(i.dueDate) <= upcomingLimit);
+
+      for (const inst of unpaidInsts) {
+        const dt = new Date(inst.dueDate);
+        const dateStr = dt.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit' });
+        const titleText = `📞 Nasiya to'lovi: ${client.name || 'Mijoz'} (${client.phone || ''}) — ${(inst.amount || 0).toLocaleString()} UZS`;
+
+        // Check if task already exists
+        const existingTask = await prisma.task.findFirst({
+          where: {
+            title: { contains: client.name || 'Nasiya' },
+            completed: false
+          }
+        });
+
+        if (!existingTask) {
+          await prisma.task.create({
+            data: {
+              title: titleText,
+              description: `Nasiya to'lovi vaqti keldi (${dateStr}). Mahsulot: ${deal.productName || 'Nasiya'}. Summa: ${(inst.amount || 0).toLocaleString()} UZS.`,
+              dueDate: dt,
+              actionType: 'Связаться',
+              priority: dt < now ? 'high' : 'medium',
+              status: 'todo',
+              assignedToId: deal.managerId || req.userId,
+              createdById: req.userId,
+              clientId: deal.clientId,
+              dealId: deal.id
+            }
+          });
+          generatedCount++;
+        }
+      }
+    }
+
+    res.json({ success: true, generatedCount });
+  } catch (error) {
+    console.error('Auto generate tasks error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET /api/nasiya/list-deals?stage=...
 router.get('/list-deals', async (req, res, next) => {
   try {

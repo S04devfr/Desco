@@ -1,64 +1,322 @@
 <%- include('../layouts/header', {
   title: "Nasiya Bo'limi — DESCO CRM",
   activePage: 'nasiya-' + subPage,
-  user: user}) %>
+  user: user
+}) %>
+
+<style>
+  .nasiya-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .nasiya-stat-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .nasiya-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px -4px rgba(0,0,0,0.06);
+  }
+  .nasiya-stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .nasiya-filter-pill {
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 20px;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .nasiya-filter-pill.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  /* High-density Excel matrix table */
+  .nasiya-excel-wrap {
+    overflow-x: auto;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--bg-primary);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+  }
+  #nasiyaTable {
+    border-collapse: collapse !important;
+    width: 100%;
+    font-family: var(--font-text);
+  }
+  #nasiyaTable th {
+    border: 1px solid var(--border) !important;
+    padding: 10px 12px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    white-space: nowrap;
+  }
+  #nasiyaTable td {
+    border: 1px solid var(--border) !important;
+    padding: 10px 12px !important;
+    font-size: 12.5px !important;
+    color: var(--text-primary) !important;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  #nasiyaTable tbody tr:hover td {
+    background: rgba(0, 122, 255, 0.04) !important;
+  }
+
+  /* Month Payment Pill Badges */
+  .month-pill {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+    min-width: 80px;
+    text-align: center;
+  }
+  .month-pill:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+  .month-pill.paid {
+    background: rgba(16, 185, 129, 0.12);
+    color: #10b981;
+    border-color: rgba(16, 185, 129, 0.3);
+  }
+  .month-pill.overdue {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.3);
+    animation: pulseOverdue 2s infinite;
+  }
+  .month-pill.due-soon {
+    background: rgba(245, 158, 11, 0.15);
+    color: #d97706;
+    border-color: rgba(245, 158, 11, 0.3);
+  }
+  .month-pill.upcoming {
+    background: var(--bg-secondary);
+    color: var(--text-tertiary);
+    border-color: var(--border);
+  }
+
+  @keyframes pulseOverdue {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+    70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  }
+
+  .status-badge-nasiya {
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .st-active { background: rgba(16, 185, 129, 0.12); color: #10b981; }
+  .st-overdue { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
+  .st-closed { background: rgba(0, 122, 255, 0.12); color: #007AFF; }
+</style>
 
 <div class="page-header">
   <div>
-    <h1 id="nasiyaTitle">Nasiya</h1>
-    <p id="nasiyaSubtitle">Sdelka voronkasidan kelgan nasiya to'lovlari ro'yxati</p>
+    <h1 id="nasiyaTitle" style="display:flex; align-items:center; gap:10px;">
+      <i class="fas fa-file-invoice-dollar" style="color:var(--accent); font-size:24px;"></i> Nasiya Desco — Muddatli To'lov va Qarz Markazi
+    </h1>
+    <p id="nasiyaSubtitle">Google Sheet uslubidagi oylik to'lovlar matratsasi hamda aqlli eslatmalar (Task auto-generator)</p>
   </div>
-  <div class="page-header-actions" style="display:flex; gap:8px;">
-    <button class="btn btn-primary btn-sm" onclick="openNewNasiyaDealModal()">
-      <i class="fas fa-plus"></i> Yangi Qo'shish
+  <div class="page-header-actions" style="display:flex; gap:10px; align-items:center;">
+    <button class="btn btn-secondary btn-sm" onclick="autoGenerateTasks()" style="border-radius:20px; font-weight:700; background:rgba(0,122,255,0.08); color:#007AFF; border-color:rgba(0,122,255,0.2);">
+      <i class="fas fa-bell" style="color:#007AFF;"></i> ⚡ Vazifalarni Avto-Yaratish
     </button>
-    <button class="btn btn-secondary btn-sm" onclick="loadNasiyaDeals()">
-      <i class="fas fa-sync-alt"></i> Yangilash
+    <button class="btn btn-primary btn-sm" onclick="openNewNasiyaDealModal()" style="border-radius:20px; font-weight:700;">
+      <i class="fas fa-plus"></i> + Yangi Nasiya Shartnomasi
     </button>
   </div>
 </div>
 
-<div class="card">
-  <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
-    <h3 id="tableHeader" style="margin:0; font-size:15px; font-weight:600;"></h3>
-    <span id="dealCount" class="badge badge-blue">0</span>
+<!-- TOP KPI STATS CARDS -->
+<div class="nasiya-stats-grid">
+  <div class="nasiya-stat-card">
+    <div class="nasiya-stat-icon" style="background:rgba(0,122,255,0.1); color:#007AFF;">
+      <i class="fas fa-wallet"></i>
+    </div>
+    <div>
+      <div style="font-size:20px; font-weight:800; color:var(--text-primary);" id="statTotalPortfolio">0 UZS</div>
+      <div style="font-size:11px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase;">Jami Nasiya Portfeli</div>
+    </div>
   </div>
-  <div style="overflow-x:auto;">
-    <table class="deals-tbl" id="nasiyaTable" style="width:100%; border-collapse:collapse;">
-      <thead id="nasiyaThead"></thead>
-      <tbody id="nasiyaTableBody">
-        <tr><td colspan="8" style="text-align:center; padding:40px;">
-          <div class="spinner" style="margin:auto"></div>
-        </td></tr>
-      </tbody>
-    </table>
+
+  <div class="nasiya-stat-card">
+    <div class="nasiya-stat-icon" style="background:rgba(16,185,129,0.1); color:#10b981;">
+      <i class="fas fa-hand-holding-usd"></i>
+    </div>
+    <div>
+      <div style="font-size:20px; font-weight:800; color:#10b981;" id="statTotalPaid">0 UZS</div>
+      <div style="font-size:11px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase;">Jami To'langan Summa</div>
+    </div>
+  </div>
+
+  <div class="nasiya-stat-card">
+    <div class="nasiya-stat-icon" style="background:rgba(255,149,0,0.1); color:#FF9500;">
+      <i class="fas fa-coins"></i>
+    </div>
+    <div>
+      <div style="font-size:20px; font-weight:800; color:#FF9500;" id="statTotalRemaining">0 UZS</div>
+      <div style="font-size:11px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase;">Qolgan Qarzdorlik</div>
+    </div>
+  </div>
+
+  <div class="nasiya-stat-card">
+    <div class="nasiya-stat-icon" style="background:rgba(239,68,68,0.1); color:#ef4444;">
+      <i class="fas fa-exclamation-triangle"></i>
+    </div>
+    <div>
+      <div style="font-size:20px; font-weight:800; color:#ef4444;" id="statOverdue">0 ta</div>
+      <div style="font-size:11px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase;">Kechikayotgan To'lovlar</div>
+    </div>
+  </div>
+
+  <div class="nasiya-stat-card">
+    <div class="nasiya-stat-icon" style="background:rgba(147,51,234,0.1); color:#9333ea;">
+      <i class="fas fa-calendar-check"></i>
+    </div>
+    <div>
+      <div style="font-size:20px; font-weight:800; color:#9333ea;" id="statMonthTarget">0 UZS</div>
+      <div style="font-size:11px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase;">Shu Oy Kutilayotgan Target</div>
+    </div>
   </div>
 </div>
 
-<!-- ── Nasiya Desco: Muddatli to'lov modal ── -->
-<div id="nasiyaDescoModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeDescoModal()">
-  <div class="modal-dialog" style="max-width:620px;">
+<!-- ACTIONS & SEARCH BAR -->
+<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+  <div style="display:flex; gap:6px; flex-wrap:wrap;">
+    <button class="nasiya-filter-pill active" onclick="setNasiyaFilter('all', this)">Barchasi</button>
+    <button class="nasiya-filter-pill" onclick="setNasiyaFilter('active', this)">🟢 Faollar</button>
+    <button class="nasiya-filter-pill" onclick="setNasiyaFilter('overdue', this)">🔴 Kechikmoqda (Overdue)</button>
+    <button class="nasiya-filter-pill" onclick="setNasiyaFilter('closed', this)">🔵 Yopilgan shartnomalar</button>
+  </div>
+
+  <div style="display:flex; align-items:center; gap:10px;">
+    <input type="text" id="nasiyaSearch" class="form-control" style="width:260px; border-radius:20px; padding-left:14px; font-size:12.5px;" placeholder="🔍 Mijoz, telefon yoki shahar..." oninput="debounceNasiyaSearch()">
+    <span id="dealCount" class="badge" style="background:var(--bg-tertiary); color:var(--text-secondary); padding:6px 12px; border-radius:20px; font-weight:700;">0 ta shartnoma</span>
+  </div>
+</div>
+
+<!-- HIGH DENSITY EXCEL MATRIX TABLE -->
+<div class="nasiya-excel-wrap">
+  <table id="nasiyaTable">
+    <thead id="nasiyaThead"></thead>
+    <tbody id="nasiyaTableBody">
+      <tr><td colspan="12" style="text-align:center; padding:40px;"><div class="spinner" style="margin:auto"></div></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ── RAPID 1-CLICK PAYMENT RECORD MODAL ── -->
+<div id="rapidPayModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeRapidPayModal()">
+  <div class="modal-dialog" style="max-width:440px;">
     <div class="modal-header">
-      <h3 class="modal-title"><i class="fas fa-calendar-alt" style="color:var(--brand)"></i> Nasiya Desco — Muddatli to'lov</h3>
+      <h3 class="modal-title"><i class="fas fa-hand-holding-usd" style="color:#10b981;"></i> To'lovni Qabul Qilish</h3>
+      <button class="modal-close" onclick="closeRapidPayModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" style="padding:20px; display:flex; flex-direction:column; gap:14px;">
+      <input type="hidden" id="rpDealId">
+      <input type="hidden" id="rpInstallmentId">
+
+      <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.2); padding:12px; border-radius:10px; font-size:12.5px;">
+        <div style="font-weight:700; color:var(--text-primary);" id="rpClientName">—</div>
+        <div style="color:var(--text-secondary); margin-top:2px;" id="rpMonthLabel">—</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" style="font-size:12px; font-weight:700;">To'lov Summasi (UZS) *</label>
+        <input type="number" id="rpAmount" class="form-control" style="height:38px; font-size:15px; font-weight:800; color:#10b981;">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" style="font-size:12px; font-weight:700;">To'lov Usuli</label>
+        <select id="rpPaymentMethod" class="form-control" style="height:38px; font-size:13px;">
+          <option value="Naqd">💵 Naqd pul</option>
+          <option value="Karta (Uzcard/Humo)">💳 Karta (Uzcard / Humo)</option>
+          <option value="Bank O'tkazmasi">🏛️ Bank O'tkazmasi / Perevod</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" style="font-size:12px; font-weight:700;">Izoh / Kvitansiya no</label>
+        <input type="text" id="rpNotes" class="form-control" placeholder="Masalan: Chek #4092" style="height:36px; font-size:12.5px;">
+      </div>
+    </div>
+    <div class="modal-footer" style="padding:14px 20px; display:flex; justify-content:flex-end; gap:8px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeRapidPayModal()">Bekor qilish</button>
+      <button class="btn btn-success btn-sm" onclick="submitRapidPayment()" id="rpSubmitBtn" style="font-weight:700; background:#10b981; border-color:#10b981;">
+        <i class="fas fa-check"></i> To'lovni Qabul Qilish & Vazifani Yopish
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Nasiya Desco: Muddatli to'lov modal (Full Edit) ── -->
+<div id="nasiyaDescoModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeDescoModal()">
+  <div class="modal-dialog" style="max-width:640px;">
+    <div class="modal-header">
+      <h3 class="modal-title"><i class="fas fa-calendar-alt" style="color:var(--brand)"></i> Nasiya Desco — To'lov Plani Tahrirlash</h3>
       <button class="modal-close" onclick="closeDescoModal()"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body" style="padding:20px; display:flex; flex-direction:column; gap:14px;">
       <input type="hidden" id="descoModalDealId">
 
-      <!-- Mijoz info strip -->
       <div id="descoClientInfo" style="background:var(--surface-input); border:1px solid var(--border); border-radius:10px; padding:12px 16px; display:flex; flex-direction:column; gap:4px;">
-        <div style="font-weight:600; font-size:14px;" id="descoClientName">—</div>
-        <div style="font-size:12px; color:var(--text-500);" id="descoClientPhone">—</div>
-        <div style="font-size:12px; color:var(--text-500);">
-          Mahsulot: <span id="descoProduct" style="font-weight:500; color:var(--text-700)">—</span> &nbsp;|&nbsp;
-          Jami summa: <span id="descoTotal" style="font-weight:600; color:var(--brand)">—</span>
+        <div style="font-weight:700; font-size:14px;" id="descoClientName">—</div>
+        <div style="font-size:12px; color:var(--text-secondary);" id="descoClientPhone">—</div>
+        <div style="font-size:12px; color:var(--text-secondary);">
+          Mahsulot: <span id="descoProduct" style="font-weight:600; color:var(--text-primary)">—</span> &nbsp;|&nbsp;
+          Jami summa: <span id="descoTotal" style="font-weight:800; color:var(--brand)">—</span>
         </div>
       </div>
 
-      <!-- Quick action: auto-generate plan -->
       <div style="background:var(--bg-tertiary); padding:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
-        <span style="font-size:11.5px; color:var(--text-secondary); font-weight:500;">
-          <i class="fas fa-magic" style="color:var(--accent); margin-right:4px;"></i> Avto-Bo'lib to'lash plani
+        <span style="font-size:11.5px; color:var(--text-secondary); font-weight:600;">
+          <i class="fas fa-magic" style="color:var(--accent); margin-right:4px;"></i> Avto-Bo'lib to'lash plani:
         </span>
         <div style="display:flex; gap:6px;">
           <button class="btn btn-sm btn-ghost" onclick="autoGenerateDescoInstallments(3)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border)">3 oy</button>
@@ -67,13 +325,12 @@
         </div>
       </div>
 
-      <!-- Installments rows -->
       <div style="font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-tertiary); margin-bottom:2px; margin-top:8px;">To'lov jadvali</div>
-      <div id="descoInstRowsContainer" style="display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto; margin-bottom:12px; padding-right:4px;"></div>
+      <div id="descoInstRowsContainer" style="display:flex; flex-direction:column; gap:6px; max-height:240px; overflow-y:auto; padding-right:4px;"></div>
       
       <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border); padding-top:12px;">
         <button class="btn btn-sm btn-ghost" onclick="addDescoInstallmentRow()" style="border:1px dashed var(--border); font-size:12px;">
-          <i class="fas fa-plus"></i> To'lov qo'shish
+          <i class="fas fa-plus"></i> Qator qo'shish
         </button>
         <div style="display:flex; gap:8px;">
           <button class="btn btn-sm btn-danger" onclick="deleteDescoInstallmentPlan()" style="font-size:12px;">
@@ -92,56 +349,53 @@
 <div id="newNasiyaDealModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeNewNasiyaDealModal()">
   <div class="modal-dialog" style="max-width:580px;">
     <div class="modal-header">
-      <h3 class="modal-title"><i class="fas fa-plus-circle text-brand"></i> Yangi Nasiya Sdelka Yaratish</h3>
+      <h3 class="modal-title"><i class="fas fa-plus-circle text-brand"></i> Yangi Nasiya Shartnomasi Yaratish</h3>
       <button class="modal-close" onclick="closeNewNasiyaDealModal()"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body" style="padding:20px; display:flex; flex-direction:column; gap:14px; max-height: 80vh; overflow-y: auto;">
       
-      <!-- Client info -->
       <div style="background:var(--bg-secondary); padding:14px; border-radius:10px; border:1px solid var(--border)">
-        <div style="font-size:12px; font-weight:600; color:var(--text-tertiary); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px">Mijoz Ma'lumotlari</div>
+        <div style="font-size:12px; font-weight:700; color:var(--text-tertiary); margin-bottom:10px; text-transform:uppercase;">Mijoz Ma'lumotlari</div>
         <div class="form-group" style="margin-bottom:10px;">
-          <label class="form-label" style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Mijoz ismi <span style="color:var(--danger)">*</span></label>
-          <input type="text" id="newNasiyaClientName" class="form-control" placeholder="Mijozning ism-familiyasi" style="height:32px; font-size:12px;">
+          <label class="form-label" style="font-size:11px; font-weight:700; display:block; margin-bottom:4px;">Mijoz ismi *</label>
+          <input type="text" id="newNasiyaClientName" class="form-control" placeholder="Mijozning ism-familiyasi" style="height:34px; font-size:12.5px;">
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
           <div class="form-group" style="margin-bottom:0">
-            <label class="form-label" style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Telefon raqami <span style="color:var(--danger)">*</span></label>
-            <input type="text" id="newNasiyaClientPhone" class="form-control" placeholder="+998 90 123 45 67" style="height:32px; font-size:12px;">
+            <label class="form-label" style="font-size:11px; font-weight:700; display:block; margin-bottom:4px;">Telefon raqami *</label>
+            <input type="text" id="newNasiyaClientPhone" class="form-control" placeholder="+998 90 123 45 67" style="height:34px; font-size:12.5px;">
           </div>
           <div class="form-group" style="margin-bottom:0">
-            <label class="form-label" style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Shahri / Viloyat</label>
-            <input type="text" id="newNasiyaClientCity" class="form-control" placeholder="Masalan: Toshkent" style="height:32px; font-size:12px;">
+            <label class="form-label" style="font-size:11px; font-weight:700; display:block; margin-bottom:4px;">Shahri / Viloyat</label>
+            <input type="text" id="newNasiyaClientCity" class="form-control" placeholder="Toshkent" style="height:34px; font-size:12.5px;">
           </div>
         </div>
       </div>
 
-      <!-- Deal details -->
       <div style="background:var(--bg-secondary); padding:14px; border-radius:10px; border:1px solid var(--border)">
-        <div style="font-size:12px; font-weight:600; color:var(--text-tertiary); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px">Sdelka Tafsilotlari</div>
+        <div style="font-size:12px; font-weight:700; color:var(--text-tertiary); margin-bottom:10px; text-transform:uppercase;">Sdelka Tafsilotlari</div>
         <div class="form-group" style="margin-bottom:10px;">
-          <label class="form-label" style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Mahsulot nomi <span style="color:var(--danger)">*</span></label>
-          <select id="newNasiyaProductName" class="form-control" style="height:32px; font-size:12px;" onchange="onNewNasiyaProductSelect(this)">
+          <label class="form-label" style="font-size:11px; font-weight:700; display:block; margin-bottom:4px;">Mahsulot nomi *</label>
+          <select id="newNasiyaProductName" class="form-control" style="height:34px; font-size:12.5px;" onchange="onNewNasiyaProductSelect(this)">
             <option value="">— Mahsulot tanlang —</option>
           </select>
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
           <div class="form-group" style="margin-bottom:0">
-            <label class="form-label" style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Jami Summa (UZS) <span style="color:var(--danger)">*</span></label>
-            <input type="number" id="newNasiyaAmount" class="form-control" placeholder="0" min="0" style="height:32px; font-size:12px; font-weight:700;">
+            <label class="form-label" style="font-size:11px; font-weight:700; display:block; margin-bottom:4px;">Jami Summa (UZS) *</label>
+            <input type="number" id="newNasiyaAmount" class="form-control" placeholder="0" min="0" style="height:34px; font-size:13px; font-weight:800;">
           </div>
           <div class="form-group" style="margin-bottom:0">
-            <label class="form-label" style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Boshlang'ich To'lov (UZS)</label>
-            <input type="number" id="newNasiyaPaidAmount" class="form-control" value="0" min="0" style="height:32px; font-size:12px;">
+            <label class="form-label" style="font-size:11px; font-weight:700; display:block; margin-bottom:4px;">1-chi To'lov (Boshlang'ich)</label>
+            <input type="number" id="newNasiyaPaidAmount" class="form-control" value="0" min="0" style="height:34px; font-size:12.5px;">
           </div>
         </div>
       </div>
 
-      <!-- Installment generation -->
       <div style="background:var(--bg-secondary); padding:14px; border-radius:10px; border:1px solid var(--border)">
-        <div style="font-size:12px; font-weight:600; color:var(--text-tertiary); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px">Muddatli to'lov rejasi</div>
+        <div style="font-size:12px; font-weight:700; color:var(--text-tertiary); margin-bottom:10px; text-transform:uppercase;">Bo'lib To'lash Plani</div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-          <span style="font-size:11.5px; color:var(--text-secondary); font-weight:500;">Avto-Bo'lib to'lash plani:</span>
+          <span style="font-size:11.5px; color:var(--text-secondary); font-weight:500;">Oylar sonini tanlang:</span>
           <div style="display:flex; gap:6px;">
             <button type="button" class="btn btn-sm btn-ghost" onclick="newNasiyaAutoGenerateInstallments(3)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border)">3 oy</button>
             <button type="button" class="btn btn-sm btn-ghost" onclick="newNasiyaAutoGenerateInstallments(6)" style="padding:4px 8px; font-size:11px; border:1px solid var(--border)">6 oy</button>
@@ -149,9 +403,6 @@
           </div>
         </div>
         <div id="newNasiyaInstRowsContainer" style="display:flex; flex-direction:column; gap:6px; max-height:180px; overflow-y:auto; padding-right:4px;"></div>
-        <div style="margin-top:10px;">
-          <button type="button" class="btn btn-sm btn-ghost" onclick="newNasiyaAddInstallmentRow()" style="border:1px dashed var(--border); font-size:11px; width:100%"><i class="fas fa-plus"></i> Yana oy qo'shish</button>
-        </div>
       </div>
 
       <div style="display:flex; justify-content:flex-end; gap:8px; border-top:1px solid var(--border); padding-top:12px;">
@@ -162,583 +413,670 @@
   </div>
 </div>
 
-<style>
-#nasiyaTable {
-  border-collapse: collapse !important;
-  width: 100%;
-}
-#nasiyaTable th {
-  border: 1px solid var(--border-strong) !important;
-  padding: 11px 14px !important;
-  font-size: 11.5px !important;
-  font-weight: 700 !important;
-  text-transform: uppercase;
-  background: var(--bg-tertiary) !important;
-  color: var(--text-primary) !important;
-}
-#nasiyaTable td {
-  border: 1px solid var(--border) !important;
-  padding: 11px 14px !important;
-  font-size: 13.5px !important;
-  color: var(--text-800) !important;
-  vertical-align: middle;
-}
-#nasiyaTable tbody tr:hover {
-  background: var(--brand-soft) !important;
-}
-
-.nasiya-client-cell { display:flex; flex-direction:column; gap:2px; padding:2px 0; }
-.nasiya-client-name { font-weight:600; font-size:14.5px; color:var(--text-primary); }
-.nasiya-client-phone { font-size:12.5px; color:var(--brand); font-weight:500; }
-.nasiya-client-city  { font-size:12.5px; color:var(--text-500); }
-.inst-badge { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:4px; font-size:11.5px; font-weight:700; }
-.inst-badge.paid   { background:rgba(52,199,89,0.12); color:#34C759; }
-.inst-badge.unpaid { background:rgba(255,59,48,0.12);  color:#FF3B30; }
-.inst-progress { height:6px; border-radius:3px; background:var(--border-light); overflow:hidden; margin-top:6px; }
-.inst-progress-bar { height:100%; background:var(--brand); border-radius:3px; transition:width .3s; }
-</style>
-
 <script>
-const activeStageKey = '<%= subPage %>';
-const titlesMap = {
-  'desco':   'Nasiya Desco',
-  'ishonch': 'Nasiya Ishonch',
-  'baraka':  'Nasiya Baraka'
-};
+  const activeStageKey = '<%= subPage %>';
+  const isDescoStage = activeStageKey === 'desco';
+  let _allNasiyaDeals = [];
+  let _allNasiyaMonths = [];
+  let _filterState = 'all';
 
-const isDescoStage = activeStageKey === 'desco';
-
-document.getElementById('nasiyaTitle').textContent = titlesMap[activeStageKey] || 'Nasiya';
-document.getElementById('tableHeader').textContent = (titlesMap[activeStageKey] || 'Nasiya') + ' jadvali';
-document.getElementById('nasiyaSubtitle').textContent = isDescoStage
-  ? 'Muddatli to\'lov jadvali bilan boshqariladigan nasiyalar'
-  : 'Mijoz ma\'lumotlari va to\'lov holati';
-
-// Thead columns by stage
-function buildThead() {
-  const thead = document.getElementById('nasiyaThead');
-  if (isDescoStage) {
-    thead.innerHTML = `<tr style="background:var(--bg-secondary)">
-      <th style="width:20%">Mijoz</th>
-      <th style="width:16%">Mahsulot</th>
-      <th style="width:10%">Jami</th>
-      <th style="width:10%">Oylar</th>
-      <th style="width:12%">Oylik</th>
-      <th style="width:12%">To'langan</th>
-      <th style="width:10%">Holat</th>
-      <th style="width:10%; text-align:center">Amal</th>
-    </tr>`;
-  } else {
-    thead.innerHTML = `<tr style="background:var(--bg-secondary)">
-      <th style="width:22%">Mijoz</th>
-      <th style="width:18%">Mahsulot</th>
-      <th style="width:12%">Summa</th>
-      <th style="width:14%">Menejer</th>
-      <th style="width:10%">Sana</th>
-      <th style="width:14%">Izoh</th>
-      <th style="width:10%; text-align:center">Amal</th>
-    </tr>`;
+  function fmtMoney(n) {
+    if (!n) return '0 UZS';
+    return Number(n).toLocaleString('uz-UZ') + ' UZS';
   }
-}
-buildThead();
+  function fmtDate(d) {
+    if (!d) return '—';
+    const dt = new Date(d);
+    if (isNaN(dt)) return '—';
+    return dt.toLocaleDateString('uz-UZ', { day:'2-digit', month:'2-digit', year:'2-digit' });
+  }
+  function escHtml(s) {
+    if (s == null) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
 
-function fmtMoney(n) {
-  if (!n) return '0';
-  return Number(n).toLocaleString('uz-UZ') + ' so\'m';
-}
-function fmtDate(d) {
-  if (!d) return '—';
-  return new Date(d).toLocaleDateString('uz-UZ', { day:'2-digit', month:'2-digit', year:'2-digit' });
-}
-function escHtml(s) {
-  if (s == null) return '';
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+  async function loadNasiyaStats() {
+    try {
+      const res = await fetch('/api/nasiya/stats').then(r => r.json());
+      document.getElementById('statTotalPortfolio').textContent = fmtMoney(res.totalPortfolio || 0);
+      document.getElementById('statTotalPaid').textContent = fmtMoney(res.totalPaid || 0);
+      document.getElementById('statTotalRemaining').textContent = fmtMoney(res.totalRemaining || 0);
+      document.getElementById('statOverdue').textContent = (res.overdueCount || 0) + ' ta';
+      document.getElementById('statMonthTarget').textContent = fmtMoney(res.currentMonthTarget || 0);
+    } catch(e) {
+      console.error(e);
+    }
+  }
 
-async function loadNasiyaDeals() {
-  const tbody = document.getElementById('nasiyaTableBody');
-  const cols = isDescoStage ? 8 : 7;
-  tbody.innerHTML = `<tr><td colspan="${cols}" style="text-align:center;padding:40px;"><div class="spinner" style="margin:auto"></div></td></tr>`;
+  async function autoGenerateTasks() {
+    try {
+      const res = await fetch('/api/nasiya/auto-generate-tasks', { method: 'POST' }).then(r => r.json());
+      if (typeof showToast === 'function') {
+        showToast(`⚡ ${res.generatedCount || 0} ta yangi nasiya vazifasi yaratildi!`, 'success');
+      } else {
+        alert(`${res.generatedCount || 0} ta yangi vazifa yaratildi!`);
+      }
+    } catch(e) {
+      console.error(e);
+    }
+  }
 
-  try {
-    const r = await fetch('/api/nasiya/list-deals?stage=' + activeStageKey);
-    if (!r.ok) throw new Error();
-    const deals = await r.json();
+  function setNasiyaFilter(filter, btn) {
+    _filterState = filter;
+    document.querySelectorAll('.nasiya-filter-pill').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderNasiyaTable();
+  }
 
-    document.getElementById('dealCount').textContent = deals.length + ' ta';
+  let searchTimeout = null;
+  function debounceNasiyaSearch() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      renderNasiyaTable();
+    }, 300);
+  }
+
+  async function loadNasiyaDeals() {
+    loadNasiyaStats();
+    const tbody = document.getElementById('nasiyaTableBody');
+    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:40px;"><div class="spinner" style="margin:auto"></div></td></tr>`;
+
+    try {
+      const res = await fetch('/api/nasiya/excel-data').then(r => r.json());
+      _allNasiyaDeals = res.deals || [];
+      _allNasiyaMonths = res.months || [];
+
+      renderNasiyaTable();
+    } catch(e) {
+      tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:40px;color:#ef4444">Ma'lumotlarni yuklashda xatolik yuz berdi</td></tr>`;
+    }
+  }
+
+  function renderNasiyaTable() {
+    const tbody = document.getElementById('nasiyaTableBody');
+    const thead = document.getElementById('nasiyaThead');
+    const search = document.getElementById('nasiyaSearch').value.trim().toLowerCase();
+    const now = new Date();
+
+    // Filter deals
+    let deals = _allNasiyaDeals.filter(d => {
+      const clientName = (d.client?.name || '').toLowerCase();
+      const phone = (d.client?.phone || '').toLowerCase();
+      const city = (d.client?.city || '').toLowerCase();
+      const product = (d.productName || '').toLowerCase();
+
+      const matchesSearch = !search || clientName.includes(search) || phone.includes(search) || city.includes(search) || product.includes(search);
+      if (!matchesSearch) return false;
+
+      const insts = d.installments || [];
+      const hasOverdue = insts.some(i => !i.paid && new Date(i.dueDate) < now);
+      const isClosed = (d.amount > 0 && d.paidAmount >= d.amount) || (insts.length > 0 && insts.every(i => i.paid));
+
+      if (_filterState === 'active') return !isClosed;
+      if (_filterState === 'overdue') return hasOverdue;
+      if (_filterState === 'closed') return isClosed;
+      return true;
+    });
+
+    document.getElementById('dealCount').textContent = deals.length + ' ta shartnoma';
+
+    if (!isDescoStage) {
+      // Simple View for Ishonch / Baraka
+      thead.innerHTML = `<tr style="background:var(--bg-secondary)">
+        <th>№</th>
+        <th>Mijoz & Telefon</th>
+        <th>Shahar</th>
+        <th>Mahsulot</th>
+        <th>Summa</th>
+        <th>To'langan</th>
+        <th>Menejer</th>
+        <th style="text-align:center">Amallar</th>
+      </tr>`;
+
+      if (!deals.length) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-tertiary)">Ma'lumotlar topilmadi</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = deals.map((d, idx) => `
+        <tr>
+          <td style="font-weight:700; text-align:center;">#${idx + 1}</td>
+          <td>
+            <div style="font-weight:700;">${escHtml(d.client?.name || "Noma'lum")}</div>
+            <div style="font-size:11.5px; color:var(--accent); font-weight:600;">${escHtml(d.client?.phone || '—')}</div>
+          </td>
+          <td style="color:var(--text-secondary);">${escHtml(d.client?.city || '—')}</td>
+          <td style="font-weight:600;">${escHtml(d.productName)}</td>
+          <td style="font-weight:800; color:var(--text-primary);">${fmtMoney(d.amount)}</td>
+          <td style="font-weight:800; color:#10b981;">${fmtMoney(d.paidAmount)}</td>
+          <td style="font-size:12px; font-weight:600;">${escHtml(d.manager?.fullName || '—')}</td>
+          <td style="text-align:center;">
+            <button class="btn btn-sm btn-ghost text-danger" onclick="deleteNasiya(${d.id})" title="O'chirish"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>
+      `).join('');
+      return;
+    }
+
+    // Google Sheet Style Matrix View for Nasiya Desco
+    const monthHeadersHtml = _allNasiyaMonths.map(m => `
+      <th style="text-align:center; min-width:95px; background:rgba(0,122,255,0.06); border-color:var(--border) !important;">
+        ${escHtml(m.label)}
+      </th>
+    `).join('');
+
+    thead.innerHTML = `<tr>
+      <th style="width:30px; text-align:center;">№</th>
+      <th style="min-width:160px;">Mijoz & Telefon</th>
+      <th style="min-width:110px;">Shahar</th>
+      <th style="min-width:140px;">Mahsulot</th>
+      <th style="min-width:110px; text-align:right;">Kelishilgan Summa</th>
+      <th style="min-width:130px; text-align:center;">Oylik To'lov & Kun</th>
+      <th style="min-width:110px; text-align:right;">1-chi To'lov</th>
+      ${monthHeadersHtml}
+      <th style="min-width:110px; text-align:right;">Jami To'langan</th>
+      <th style="min-width:110px; text-align:right;">Qolgan Qarz</th>
+      <th style="min-width:95px; text-align:center;">Holati</th>
+      <th style="min-width:80px; text-align:center;">Amallar</th>
+    </tr>`;
 
     if (!deals.length) {
-      tbody.innerHTML = `<tr><td colspan="${cols}" style="text-align:center;padding:40px;color:var(--text-500)">
-        <i class="fas fa-wallet" style="font-size:28px;display:block;margin-bottom:8px;opacity:.3"></i>
-        Hozircha hech narsa yo'q</td></tr>`;
+      const colSpan = 11 + _allNasiyaMonths.length;
+      tbody.innerHTML = `<tr><td colspan="${colSpan}" style="text-align:center;padding:40px;color:var(--text-tertiary)">Ma'lumotlar topilmadi</td></tr>`;
       return;
     }
 
-    let html = '';
-    for (const d of deals) {
-      const client = d.client || {};
-      const clientCell = `<div class="nasiya-client-cell">
-        <div class="nasiya-client-name">${escHtml(client.name || "Noma'lum")}</div>
-        <div class="nasiya-client-phone">${escHtml(client.phone || '—')}</div>
-        <div class="nasiya-client-city">${escHtml(client.city || '')}</div>
-      </div>`;
+    tbody.innerHTML = deals.map((d, idx) => {
+      const insts = d.installments || [];
+      const firstInst = insts[0] || null;
+      const firstPaymentAmt = firstInst && firstInst.paid ? firstInst.amount : (d.paidAmount || 0);
 
-      if (isDescoStage) {
-        // Installment progress
-        const insts = d.installments || [];
-        const totalMonths = insts.length;
-        const paidCount = insts.filter(i => i.paid).length;
-        const paidAmt = insts.filter(i => i.paid).reduce((s, i) => s + (i.amount || 0), 0);
-        const monthly = insts[0]?.amount || 0;
-        const pct = totalMonths ? Math.round(paidCount / totalMonths * 100) : 0;
-        const badge = paidCount === totalMonths && totalMonths > 0
-          ? `<span class="inst-badge paid"><i class="fas fa-check"></i> Yopilgan</span>`
-          : `<span class="inst-badge unpaid">${paidCount}/${totalMonths} oy</span>`;
+      const remainingDebt = Math.max(0, d.amount - d.paidAmount);
+      const isClosed = (d.amount > 0 && d.paidAmount >= d.amount) || (insts.length > 0 && insts.every(i => i.paid));
+      const hasOverdue = insts.some(i => !i.paid && new Date(i.dueDate) < now);
 
-        html += `<tr>
-          <td>${clientCell}</td>
-          <td style="font-weight: 500;">${escHtml(d.productName)}</td>
-          <td style="font-weight:700; color:var(--brand);">${fmtMoney(d.amount)}</td>
-          <td style="text-align:center;">${totalMonths || '—'} oy</td>
-          <td style="font-weight:700; color:var(--text-900);">${fmtMoney(monthly)}</td>
-          <td>
-            <div style="font-weight:600; color:var(--text-600); margin-bottom: 2px;">${fmtMoney(paidAmt)}</div>
-            <div class="inst-progress"><div class="inst-progress-bar" style="width:${pct}%"></div></div>
-          </td>
-          <td style="text-align:center;">${badge}</td>
-          <td style="text-align:center;">
-            <div style="display:flex;justify-content:center;gap:6px;">
-              <button class="btn btn-sm btn-primary" onclick="openDescoEdit(${d.id})" title="Tahrirlash" style="padding: 4px 8px;"><i class="fas fa-edit"></i></button>
-              <button class="btn btn-sm btn-ghost text-danger" onclick="deleteNasiya(${d.id})" title="O'chirish" style="padding: 4px 8px;"><i class="fas fa-trash"></i></button>
+      const statusBadge = isClosed
+        ? `<span class="status-badge-nasiya st-closed">🔵 Yopilgan</span>`
+        : hasOverdue
+        ? `<span class="status-badge-nasiya st-overdue">🔴 Qarzda</span>`
+        : `<span class="status-badge-nasiya st-active">🟢 Faol</span>`;
+
+      // Monthly payment & due date day
+      const regularInst = insts.find(i => i.notes && i.notes.includes('oylik'));
+      const monthlyVal = regularInst ? regularInst.amount : (insts[1] ? insts[1].amount : Math.round((d.amount - firstPaymentAmt) / Math.max(1, insts.length - 1)));
+      const dueDayStr = firstInst ? new Date(firstInst.dueDate).getDate() + '-kuni' : '23-kuni';
+
+      // Build month cells
+      const monthCellsHtml = _allNasiyaMonths.map(m => {
+        const inst = insts.find(i => {
+          const dt = new Date(i.dueDate);
+          return dt.getFullYear() === m.year && dt.getMonth() === m.month;
+        });
+
+        if (!inst) {
+          return `<td style="text-align:center; color:var(--text-tertiary);">—</td>`;
+        }
+
+        const isPaid = inst.paid;
+        const dt = new Date(inst.dueDate);
+        const isOverdue = !isPaid && dt < now;
+        const isDueSoon = !isPaid && !isOverdue && (dt - now) <= 7 * 24 * 3600 * 1000;
+
+        const pillCls = isPaid ? 'paid' : isOverdue ? 'overdue' : isDueSoon ? 'due-soon' : 'upcoming';
+        const dateTag = dt.getDate() + '.' + String(dt.getMonth() + 1).padStart(2, '0');
+        const labelText = isPaid
+          ? `${(inst.amount || 0).toLocaleString()} ✔️`
+          : isOverdue
+          ? `🔴 ${dateTag} — ${(inst.amount || 0).toLocaleString()}`
+          : `${dateTag} — ${(inst.amount || 0).toLocaleString()}`;
+
+        return `
+          <td style="text-align:center; padding:4px !important;">
+            <div class="month-pill ${pillCls}" onclick="openRapidPayModal(${d.id}, ${inst.id}, '${escHtml(m.fullLabel)}', ${inst.amount}, '${escHtml(d.client?.name || '')}')" title="To'lovni kiritish uchun bosing">
+              <span>${labelText}</span>
             </div>
           </td>
-        </tr>`;
-      } else {
-        html += `<tr>
-          <td>${clientCell}</td>
-          <td style="font-weight: 500;">${escHtml(d.productName)}</td>
-          <td style="font-weight:700; color:var(--brand);">${fmtMoney(d.amount)}</td>
-          <td style="font-weight:500;">${escHtml(d.manager?.fullName || '—')}</td>
-          <td style="font-size:12px; color:var(--text-500);">${fmtDate(d.createdAt)}</td>
-          <td style="font-size:12px; color:var(--text-600); max-width: 200px; white-space: normal; word-wrap: break-word;">${escHtml(d.notes || '—')}</td>
-          <td style="text-align:center;">
-            <button class="btn btn-sm btn-ghost text-danger" onclick="deleteNasiya(${d.id})" title="O'chirish" style="padding: 4px 8px;"><i class="fas fa-trash"></i></button>
+        `;
+      }).join('');
+
+      return `
+        <tr>
+          <td style="font-weight:700; text-align:center; color:var(--text-tertiary);">${idx + 1}</td>
+          <td>
+            <div style="font-weight:700; font-size:13px;">${escHtml(d.client?.name || "Noma'lum")}</div>
+            <div style="font-size:11.5px; color:var(--accent); font-weight:600;">${escHtml(d.client?.phone || '—')}</div>
           </td>
-        </tr>`;
+          <td style="font-size:12px; color:var(--text-secondary);">${escHtml(d.client?.city || '—')}</td>
+          <td style="font-weight:600;">
+            ${escHtml(d.productName)}
+            ${d.productColor ? `<span style="font-size:10px; color:var(--text-tertiary); display:block;">${escHtml(d.productColor)}</span>` : ''}
+          </td>
+          <td style="font-weight:800; text-align:right; color:var(--text-primary);">${fmtMoney(d.amount)}</td>
+          <td style="text-align:center; font-size:12px;">
+            <strong style="color:var(--brand);">${fmtMoney(monthlyVal)}</strong>
+            <span style="font-size:10.5px; color:var(--text-tertiary); display:block; font-weight:600;">Har oyning ${dueDayStr}</span>
+          </td>
+          <td style="font-weight:700; text-align:right; color:#10b981;">${fmtMoney(firstPaymentAmt)}</td>
+          ${monthCellsHtml}
+          <td style="font-weight:800; text-align:right; color:#10b981;">${fmtMoney(d.paidAmount)}</td>
+          <td style="font-weight:800; text-align:right; color:${remainingDebt > 0 ? '#ef4444' : '#10b981'};">${fmtMoney(remainingDebt)}</td>
+          <td style="text-align:center;">${statusBadge}</td>
+          <td style="text-align:center;">
+            <div style="display:flex; justify-content:center; gap:4px;">
+              <button class="btn btn-sm btn-primary" onclick="openDescoEdit(${d.id})" title="To'lov planini tahrirlash" style="padding:4px 8px;"><i class="fas fa-edit"></i></button>
+              <button class="btn btn-sm btn-ghost text-danger" onclick="deleteNasiya(${d.id})" title="O'chirish" style="padding:4px 8px;"><i class="fas fa-trash"></i></button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // ── RAPID PAYMENT MODAL HANDLERS ──
+  function openRapidPayModal(dealId, instId, monthLabel, amount, clientName) {
+    document.getElementById('rpDealId').value = dealId;
+    document.getElementById('rpInstallmentId').value = instId || '';
+    document.getElementById('rpClientName').textContent = clientName || 'Mijoz';
+    document.getElementById('rpMonthLabel').textContent = monthLabel ? `To'lov oyi: ${monthLabel}` : '';
+    document.getElementById('rpAmount').value = amount || 0;
+    document.getElementById('rpNotes').value = '';
+    document.getElementById('rapidPayModal').style.display = 'flex';
+  }
+
+  function closeRapidPayModal() {
+    document.getElementById('rapidPayModal').style.display = 'none';
+  }
+
+  async function submitRapidPayment() {
+    const dealId = document.getElementById('rpDealId').value;
+    const installmentId = document.getElementById('rpInstallmentId').value;
+    const amount = Number(document.getElementById('rpAmount').value) || 0;
+    const paymentMethod = document.getElementById('rpPaymentMethod').value;
+    const notes = document.getElementById('rpNotes').value.trim();
+
+    if (!amount) return alert('Iltimos, to\'lov summasini kiriting!');
+
+    const btn = document.getElementById('rpSubmitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saqlanmoqda...';
+
+    try {
+      const res = await fetch('/api/nasiya/record-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dealId,
+          installmentId,
+          amount,
+          paymentMethod,
+          notes
+        })
+      }).then(r => r.json());
+
+      if (res.success) {
+        if (typeof showToast === 'function') showToast('To\'lov qabul qilindi va vazifa yopildi!', 'success');
+        closeRapidPayModal();
+        loadNasiyaDeals();
+      } else {
+        throw new Error(res.message || 'Xatolik');
       }
+    } catch(e) {
+      alert(e.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-check"></i> To\'lovni Qabul Qilish & Vazifani Yopish';
     }
-    tbody.innerHTML = html;
-  } catch(e) {
-    document.getElementById('dealCount').textContent = '0 ta';
-    tbody.innerHTML = `<tr><td colspan="${isDescoStage ? 8 : 7}" style="text-align:center;padding:40px;color:var(--text-500)">Yuklanishda xato</td></tr>`;
   }
-}
 
-async function deleteNasiya(dealId) {
-  if (!confirm("O'chirishni tasdiqlaysizmi?")) return;
-  try {
-    const r = await fetch('/api/deals/' + dealId, { method: 'DELETE' });
-    if (!r.ok) throw new Error();
-    if (typeof showToast === 'function') showToast("O'chirildi", 'success');
-    loadNasiyaDeals();
-  } catch(e) {
-    if (typeof showToast === 'function') showToast("O'chirishda xatolik", 'error');
+  // ── FULL EDIT MODAL LOGIC ──
+  let _descoCurrentDeal = null;
+
+  async function openDescoEdit(dealId) {
+    try {
+      const r = await fetch('/api/deals/' + dealId);
+      const d = await r.json();
+      openDescoModal(d);
+    } catch(e) {}
   }
-}
 
-// ── Nasiya Desco Modal ────────────────────────────────────────
-let _descoCurrentDeal = null;
+  async function openDescoModal(deal) {
+    _descoCurrentDeal = deal;
+    document.getElementById('descoModalDealId').value = deal.id;
+    document.getElementById('descoClientName').textContent = deal.client?.name || "Noma'lum mijoz";
+    document.getElementById('descoClientPhone').textContent = deal.client?.phone || '—';
+    document.getElementById('descoProduct').textContent = deal.productName || '—';
+    document.getElementById('descoTotal').textContent = fmtMoney(deal.amount);
 
-async function openDescoEdit(dealId) {
-  try {
-    const r = await fetch('/api/deals/' + dealId);
-    const d = await r.json();
-    openDescoModal(d);
-  } catch(e) {}
-}
+    const remainingDebt = deal.amount - deal.paidAmount;
+    const container = document.getElementById('descoInstRowsContainer');
+    container.innerHTML = '<div>Yuklanmoqda...</div>';
 
-async function openDescoModal(deal) {
-  _descoCurrentDeal = deal;
-  document.getElementById('descoModalDealId').value = deal.id;
-  document.getElementById('descoClientName').textContent = deal.client?.name || "Noma'lum mijoz";
-  document.getElementById('descoClientPhone').textContent = deal.client?.phone || '—';
-  document.getElementById('descoProduct').textContent = deal.productName || '—';
-  document.getElementById('descoTotal').textContent = fmtMoney(deal.amount);
-
-  const remainingDebt = deal.amount - deal.paidAmount;
-  const container = document.getElementById('descoInstRowsContainer');
-  container.innerHTML = '<div>Yuklanmoqda...</div>';
-
-  try {
-    const r = await fetch('/api/deals/' + deal.id + '/installments');
-    const list = await r.json();
-    if (list && list.length) {
-      container.innerHTML = list.map((inst, idx) => getDescoInstallmentRowHtml(idx, inst.dueDate.slice(0, 10), inst.amount, inst.paid, inst.productName, inst.month, inst.notes)).join('');
-    } else {
+    try {
+      const r = await fetch('/api/deals/' + deal.id + '/installments');
+      const list = await r.json();
+      if (list && list.length) {
+        container.innerHTML = list.map((inst, idx) => getDescoInstallmentRowHtml(idx, inst.dueDate.slice(0, 10), inst.amount, inst.paid, inst.productName, inst.month, inst.notes)).join('');
+      } else {
+        container.innerHTML = getDescoInstallmentRowHtml(0, new Date().toISOString().slice(0, 10), remainingDebt, false, deal.productName, '1-oy', '');
+      }
+    } catch(e) {
       container.innerHTML = getDescoInstallmentRowHtml(0, new Date().toISOString().slice(0, 10), remainingDebt, false, deal.productName, '1-oy', '');
     }
-  } catch(e) {
-    container.innerHTML = getDescoInstallmentRowHtml(0, new Date().toISOString().slice(0, 10), remainingDebt, false, deal.productName, '1-oy', '');
+
+    document.getElementById('nasiyaDescoModal').style.display = 'flex';
   }
 
-  document.getElementById('nasiyaDescoModal').style.display = 'flex';
-}
-
-function closeDescoModal() {
-  document.getElementById('nasiyaDescoModal').style.display = 'none';
-  _descoCurrentDeal = null;
-}
-
-function getDescoInstallmentRowHtml(index, dateVal, amountVal, paidVal, productVal, monthVal, notesVal) {
-  return `
-    <div class="installment-row" style="display:flex; align-items:center; gap:6px; background:var(--surface-input); border:1px solid var(--border); padding:6px 8px; border-radius:6px; margin-bottom:4px;">
-      <span style="font-size:12px; color:var(--text-500); width:16px; font-weight:600;">#${index + 1}</span>
-      <input type="text" class="form-control inst-product" value="${escHtml(productVal || '')}" style="width:120px; height:28px; font-size:12px; padding:0 6px;" placeholder="Mahsulot">
-      <input type="text" class="form-control inst-month" value="${escHtml(monthVal || '')}" style="width:65px; height:28px; font-size:12px; padding:0 6px;" placeholder="Oy">
-      <input type="date" class="form-control inst-date" value="${dateVal}" style="width:115px; height:28px; font-size:12px; padding:0 6px;">
-      <input type="number" class="form-control inst-amount" value="${amountVal}" style="width:85px; height:28px; font-size:12px; padding:0 6px; font-weight:600;" placeholder="Summa">
-      <input type="text" class="form-control inst-notes" value="${escHtml(notesVal || '')}" style="flex:1; height:28px; font-size:12px; padding:0 6px;" placeholder="Izoh">
-      
-      <label style="display:inline-flex; align-items:center; gap:4px; font-size:11.5px; color:var(--text-500); cursor:pointer; margin:0 4px; user-select:none; white-space:nowrap;">
-        <input type="checkbox" class="inst-paid" ${paidVal ? 'checked' : ''} style="cursor:pointer;"> To'landi
-      </label>
-      
-      <button class="btn btn-ghost btn-sm text-danger" onclick="this.parentElement.remove()" style="padding:2px 6px; font-size:11px;" title="Qatorni o'chirish">
-        <i class="fas fa-trash"></i>
-      </button>
-    </div>
-  `;
-}
-
-function addDescoInstallmentRow() {
-  const container = document.getElementById('descoInstRowsContainer');
-  const index = container.querySelectorAll('.installment-row').length;
-  
-  const lastRowDate = container.querySelector('.installment-row:last-child .inst-date');
-  const lastProduct = container.querySelector('.installment-row:last-child .inst-product');
-  let dateStr = new Date().toISOString().slice(0,10);
-  let pName = lastProduct ? lastProduct.value : (_descoCurrentDeal?.productName || '');
-  
-  if (lastRowDate && lastRowDate.value) {
-    const d = new Date(lastRowDate.value);
-    d.setMonth(d.getMonth() + 1);
-    dateStr = d.toISOString().slice(0,10);
+  function closeDescoModal() {
+    document.getElementById('nasiyaDescoModal').style.display = 'none';
+    _descoCurrentDeal = null;
   }
 
-  const div = document.createElement('div');
-  div.innerHTML = getDescoInstallmentRowHtml(index, dateStr, 0, false, pName, `${index+1}-oy`, '');
-  container.appendChild(div.firstElementChild);
-}
+  function getDescoInstallmentRowHtml(index, dateVal, amountVal, paidVal, productVal, monthVal, notesVal) {
+    return `
+      <div class="installment-row" style="display:flex; align-items:center; gap:6px; background:var(--surface-input); border:1px solid var(--border); padding:6px 8px; border-radius:6px; margin-bottom:4px;">
+        <span style="font-size:12px; color:var(--text-tertiary); width:16px; font-weight:700;">#${index + 1}</span>
+        <input type="text" class="form-control inst-product" value="${escHtml(productVal || '')}" style="width:120px; height:28px; font-size:12px; padding:0 6px;" placeholder="Mahsulot">
+        <input type="text" class="form-control inst-month" value="${escHtml(monthVal || '')}" style="width:65px; height:28px; font-size:12px; padding:0 6px;" placeholder="Oy">
+        <input type="date" class="form-control inst-date" value="${dateVal}" style="width:115px; height:28px; font-size:12px; padding:0 6px;">
+        <input type="number" class="form-control inst-amount" value="${amountVal}" style="width:85px; height:28px; font-size:12px; padding:0 6px; font-weight:700;" placeholder="Summa">
+        <input type="text" class="form-control inst-notes" value="${escHtml(notesVal || '')}" style="flex:1; height:28px; font-size:12px; padding:0 6px;" placeholder="Izoh">
+        
+        <label style="display:inline-flex; align-items:center; gap:4px; font-size:11.5px; color:var(--text-secondary); cursor:pointer; margin:0 4px; white-space:nowrap;">
+          <input type="checkbox" class="inst-paid" ${paidVal ? 'checked' : ''}> To'landi
+        </label>
+        
+        <button class="btn btn-ghost btn-sm text-danger" onclick="this.parentElement.remove()" style="padding:2px 6px; font-size:11px;" title="Qatorni o'chirish">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    `;
+  }
 
-function autoGenerateDescoInstallments(months) {
-  if (!_descoCurrentDeal) return;
-  const remaining = _descoCurrentDeal.amount - _descoCurrentDeal.paidAmount;
-  const eachVal = Math.round(remaining / months);
-
-  const container = document.getElementById('descoInstRowsContainer');
-  container.innerHTML = '';
-  
-  for (let i = 0; i < months; i++) {
-    const d = new Date();
-    d.setMonth(d.getMonth() + i);
-    const dateStr = d.toISOString().slice(0, 10);
-    const amount = (i === months - 1) ? (remaining - (eachVal * (months - 1))) : eachVal;
+  function addDescoInstallmentRow() {
+    const container = document.getElementById('descoInstRowsContainer');
+    const index = container.querySelectorAll('.installment-row').length;
+    const lastRowDate = container.querySelector('.installment-row:last-child .inst-date');
+    const lastProduct = container.querySelector('.installment-row:last-child .inst-product');
+    let dateStr = new Date().toISOString().slice(0,10);
+    let pName = lastProduct ? lastProduct.value : (_descoCurrentDeal?.productName || '');
     
-    container.innerHTML += getDescoInstallmentRowHtml(i, dateStr, amount, false, _descoCurrentDeal.productName, `${i+1}-oy`, '');
-  }
-}
-
-async function saveDescoInstallmentPlan() {
-  const btn = document.getElementById('descoSaveBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saqlanmoqda...';
-  
-  const container = document.getElementById('descoInstRowsContainer');
-  const rows = container.querySelectorAll('.installment-row');
-  const installments = [];
-  
-  for (const row of rows) {
-    const dueDate = row.querySelector('.inst-date').value;
-    const amount = Number(row.querySelector('.inst-amount').value) || 0;
-    const paid = row.querySelector('.inst-paid').checked;
-    const productName = row.querySelector('.inst-product').value;
-    const month = row.querySelector('.inst-month').value;
-    const notes = row.querySelector('.inst-notes').value;
-    
-    if (!dueDate) {
-      if (typeof showToast === 'function') showToast('Sana kiritilishi majburiy', 'error');
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fas fa-save"></i> Planni Saqlash';
-      return;
+    if (lastRowDate && lastRowDate.value) {
+      const d = new Date(lastRowDate.value);
+      d.setMonth(d.getMonth() + 1);
+      dateStr = d.toISOString().slice(0,10);
     }
-    installments.push({ dueDate, amount, paid, productName, month, notes });
+
+    const div = document.createElement('div');
+    div.innerHTML = getDescoInstallmentRowHtml(index, dateStr, 0, false, pName, `${index+1}-oy`, '');
+    container.appendChild(div.firstElementChild);
   }
 
-  try {
-    const r = await fetch('/api/deals/' + _descoCurrentDeal.id + '/installments', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ installments })
-    });
-    if (!r.ok) throw new Error();
-    
-    if (typeof showToast === 'function') showToast('To\'lov plani saqlandi', 'success');
-    closeDescoModal();
-    loadNasiyaDeals();
-  } catch(e) {
-    if (typeof showToast === 'function') showToast('Saqlashda xatolik', 'error');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fas fa-save"></i> Planni Saqlash';
-  }
-}
+  function autoGenerateDescoInstallments(months) {
+    if (!_descoCurrentDeal) return;
+    const remaining = _descoCurrentDeal.amount - _descoCurrentDeal.paidAmount;
+    const eachVal = Math.round(remaining / months);
 
-async function deleteDescoInstallmentPlan() {
-  if (!confirm("Haqiqatan ham ushbu nasiya to'lov rejasini o'chirmoqchimisiz? (Bu barcha rejalashtirilgan oylik to'lovlarni o'chiradi)")) return;
-  
-  try {
-    const r = await fetch('/api/deals/' + _descoCurrentDeal.id + '/installments', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ installments: [] })
-    });
-    if (!r.ok) throw new Error();
-    
-    if (typeof showToast === 'function') showToast('Nasiya rejasi o\'chirildi', 'success');
-    closeDescoModal();
-    loadNasiyaDeals();
-  } catch(e) {
-    if (typeof showToast === 'function') showToast('O\'chirishda xatolik', 'error');
-  }
-}
-
-// ── Yangi Nasiya Qo'shish funksiyalari ──
-let productsList = [];
-async function loadProductsCatalog() {
-  try {
-    const r = await fetch('/api/product-catalog');
-    productsList = await r.json();
-    const select = document.getElementById('newNasiyaProductName');
-    if (select) {
-      select.innerHTML = '<option value="">— Mahsulot tanlang —</option>' + 
-        productsList.map(p => `<option value="${escHtml(p.name)}" data-price="${p.price}">${escHtml(p.name)} (${fmtMoney(p.price)})</option>`).join('');
-    }
-  } catch(e) {
-    console.error('Katalog yuklashda xatolik:', e);
-  }
-}
-
-function onNewNasiyaProductSelect(el) {
-  const selectedOpt = el.options[el.selectedIndex];
-  const price = selectedOpt.getAttribute('data-price');
-  if (price) {
-    document.getElementById('newNasiyaAmount').value = price;
-  }
-}
-
-function openNewNasiyaDealModal() {
-  document.getElementById('newNasiyaClientName').value = '';
-  document.getElementById('newNasiyaClientPhone').value = '';
-  document.getElementById('newNasiyaClientCity').value = '';
-  document.getElementById('newNasiyaProductName').value = '';
-  document.getElementById('newNasiyaAmount').value = '';
-  document.getElementById('newNasiyaPaidAmount').value = '0';
-  document.getElementById('newNasiyaInstRowsContainer').innerHTML = '';
-  loadProductsCatalog();
-  document.getElementById('newNasiyaDealModal').style.display = 'flex';
-}
-
-function closeNewNasiyaDealModal() {
-  document.getElementById('newNasiyaDealModal').style.display = 'none';
-}
-
-function newNasiyaAutoGenerateInstallments(months) {
-  const container = document.getElementById('newNasiyaInstRowsContainer');
-  const amountInput = document.getElementById('newNasiyaAmount');
-  let totalAmount = Number(amountInput.value) || 0;
-  
-  if (totalAmount === 0) {
-    if (typeof showToast === 'function') showToast('Iltimos, avval umumiy summani kiriting', 'error');
-  }
-  
-  const paidInput = document.getElementById('newNasiyaPaidAmount');
-  const paidAmount = Number(paidInput.value) || 0;
-  let remainingDebt = totalAmount - paidAmount;
-  if (remainingDebt < 0) remainingDebt = 0;
-  
-  container.innerHTML = '';
-  
-  if (months > 0) {
-    const monthlyAmount = Math.round(remainingDebt / months);
-    let dateObj = new Date();
+    const container = document.getElementById('descoInstRowsContainer');
+    container.innerHTML = '';
     
     for (let i = 0; i < months; i++) {
-      dateObj.setMonth(dateObj.getMonth() + 1);
-      const dateStr = dateObj.toISOString().slice(0, 10);
-      const amount = (i === months - 1) ? (remainingDebt - (monthlyAmount * i)) : monthlyAmount;
-      const pName = document.getElementById('newNasiyaProductName').value || 'Nasiya';
+      const d = new Date();
+      d.setMonth(d.getMonth() + i);
+      const dateStr = d.toISOString().slice(0, 10);
+      const amount = (i === months - 1) ? (remaining - (eachVal * (months - 1))) : eachVal;
       
-      const div = document.createElement('div');
-      div.innerHTML = getNewNasiyaInstallmentRowHtml(i, dateStr, amount, false, pName, `${i+1}-oy`, '');
-      container.appendChild(div.firstElementChild);
+      container.innerHTML += getDescoInstallmentRowHtml(i, dateStr, amount, false, _descoCurrentDeal.productName, `${i+1}-oy`, '');
     }
   }
-}
 
-function newNasiyaAddInstallmentRow() {
-  const container = document.getElementById('newNasiyaInstRowsContainer');
-  const index = container.querySelectorAll('.installment-row').length;
-  const pName = document.getElementById('newNasiyaProductName').value || 'Nasiya';
-  
-  let dateStr = new Date().toISOString().slice(0, 10);
-  if (index > 0) {
-    const lastRow = container.lastElementChild;
-    const lastDate = lastRow.querySelector('.inst-date').value;
-    if (lastDate) {
-      const d = new Date(lastDate);
-      d.setMonth(d.getMonth() + 1);
-      dateStr = d.toISOString().slice(0, 10);
-    }
-  }
-  
-  const div = document.createElement('div');
-  div.innerHTML = getNewNasiyaInstallmentRowHtml(index, dateStr, 0, false, pName, `${index+1}-oy`, '');
-  container.appendChild(div.firstElementChild);
-}
-
-function getNewNasiyaInstallmentRowHtml(index, dateVal, amountVal, paidVal, productVal, monthVal, notesVal) {
-  return `
-    <div class="installment-row" style="display:grid; grid-template-columns:100px 1fr auto; gap:6px; background:var(--bg-primary); padding:6px; border-radius:6px; border:1px solid var(--border); align-items:center;">
-      <input type="date" class="form-control inst-date" style="font-size:11px; padding:4px; height:26px;" value="${dateVal}">
-      <div style="display:flex; flex-direction:column; gap:4px;">
-        <div style="display:flex; gap:4px;">
-          <input type="text" class="form-control inst-month" style="font-size:11px; padding:4px; height:24px; width:50px; text-align:center" value="${monthVal}" placeholder="Oy">
-          <input type="number" class="form-control inst-amount" style="font-size:11px; padding:4px; height:24px; font-weight:600; color:var(--brand)" value="${amountVal}" placeholder="Summa">
-        </div>
-        <div style="display:flex; gap:4px;">
-          <input type="text" class="form-control inst-product" style="font-size:10px; padding:4px; height:22px; flex:1;" value="${escHtml(productVal)}" placeholder="Mahsulot nomi">
-          <input type="text" class="form-control inst-notes" style="font-size:10px; padding:4px; height:22px; flex:1;" value="${escHtml(notesVal)}" placeholder="Izoh">
-        </div>
-      </div>
-      <div style="display:flex; align-items:center; gap:6px; padding:0 4px;">
-        <label style="display:flex; align-items:center; gap:4px; font-size:10px; cursor:pointer;">
-          <input type="checkbox" class="inst-paid" ${paidVal ? 'checked' : ''} style="width:14px; height:14px;"> To'langan
-        </label>
-        <button type="button" class="btn btn-sm btn-ghost text-danger" onclick="this.closest('.installment-row').remove()" style="padding:2px 6px;"><i class="fas fa-trash-alt"></i></button>
-      </div>
-    </div>
-  `;
-}
-
-async function getTargetStageAndPipeline() {
-  const r = await fetch('/api/pipelines');
-  const pipelines = await r.json();
-  const searchStr = activeStageKey === 'desco' ? 'desco' : (activeStageKey === 'ishonch' ? 'ishonch' : 'baraka');
-  
-  for (const p of pipelines) {
-    for (const s of p.stages) {
-      if (s.name.toLowerCase().includes('nasiya') && s.name.toLowerCase().includes(searchStr)) {
-        return { pipelineId: p.id, stageId: s.id };
-      }
-    }
-  }
-  for (const p of pipelines) {
-    for (const s of p.stages) {
-      if (s.name.toLowerCase().includes(searchStr)) {
-        return { pipelineId: p.id, stageId: s.id };
-      }
-    }
-  }
-  return null;
-}
-
-async function saveNewNasiyaDeal() {
-  const clientName = document.getElementById('newNasiyaClientName').value.trim();
-  const clientPhone = document.getElementById('newNasiyaClientPhone').value.trim();
-  const city = document.getElementById('newNasiyaClientCity').value.trim();
-  const productName = document.getElementById('newNasiyaProductName').value;
-  const amount = Number(document.getElementById('newNasiyaAmount').value) || 0;
-  const paidAmount = Number(document.getElementById('newNasiyaPaidAmount').value) || 0;
-
-  if (!clientName || !clientPhone || !productName || !amount) {
-    if (typeof showToast === 'function') showToast('Iltimos, yulduzcha (*) qo\'yilgan maydonlarni to\'ldiring', 'error');
-    else alert('Iltimos, yulduzcha (*) qo\'yilgan maydonlarni to\'ldiring');
-    return;
-  }
-
-  const btn = document.getElementById('newNasiyaSaveBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saqlanmoqda...';
-
-  try {
-    const target = await getTargetStageAndPipeline();
-    if (!target) {
-      throw new Error("Ushbu bosqich topilmadi. Pipeline sozlamalarini tekshiring.");
-    }
-
-    const body = {
-      productName,
-      contactName: clientName,
-      contactPhone: clientPhone,
-      city: city || null,
-      amount,
-      paidAmount,
-      pipelineId: target.pipelineId,
-      stageId: target.stageId,
-      status: 'new'
-    };
-
-    const r = await fetch('/api/deals', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-
-    if (!r.ok) {
-      const err = await r.json();
-      throw new Error(err.message || 'Sdelka yaratishda xato');
-    }
-
-    const newDeal = await r.json();
-
-    const container = document.getElementById('newNasiyaInstRowsContainer');
+  async function saveDescoInstallmentPlan() {
+    const btn = document.getElementById('descoSaveBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saqlanmoqda...';
+    
+    const container = document.getElementById('descoInstRowsContainer');
     const rows = container.querySelectorAll('.installment-row');
-    if (rows.length > 0 && newDeal.id) {
-      const installments = [];
-      for (const row of rows) {
-        const dueDate = row.querySelector('.inst-date').value;
-        const amt = Number(row.querySelector('.inst-amount').value) || 0;
-        const paid = row.querySelector('.inst-paid').checked;
-        const pName = row.querySelector('.inst-product').value;
-        const month = row.querySelector('.inst-month').value;
-        const rNotes = row.querySelector('.inst-notes').value;
-        if (dueDate) {
-          installments.push({ dueDate, amount: amt, paid, productName: pName, month, notes: rNotes });
+    const installments = [];
+    
+    for (const row of rows) {
+      const dueDate = row.querySelector('.inst-date').value;
+      const amount = Number(row.querySelector('.inst-amount').value) || 0;
+      const paid = row.querySelector('.inst-paid').checked;
+      const productName = row.querySelector('.inst-product').value;
+      const month = row.querySelector('.inst-month').value;
+      const notes = row.querySelector('.inst-notes').value;
+      
+      if (!dueDate) {
+        if (typeof showToast === 'function') showToast('Sana kiritilishi majburiy', 'error');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save"></i> Planni Saqlash';
+        return;
+      }
+      installments.push({ dueDate, amount, paid, productName, month, notes });
+    }
+
+    try {
+      const r = await fetch('/api/deals/' + _descoCurrentDeal.id + '/installments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ installments })
+      });
+      if (!r.ok) throw new Error();
+      
+      if (typeof showToast === 'function') showToast('To\'lov plani saqlandi', 'success');
+      closeDescoModal();
+      loadNasiyaDeals();
+    } catch(e) {
+      if (typeof showToast === 'function') showToast('Saqlashda xatolik', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-save"></i> Planni Saqlash';
+    }
+  }
+
+  async function deleteDescoInstallmentPlan() {
+    if (!confirm("Haqiqatan ham ushbu nasiya to'lov rejasini o'chirmoqchimisiz?")) return;
+    
+    try {
+      const r = await fetch('/api/deals/' + _descoCurrentDeal.id + '/installments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ installments: [] })
+      });
+      if (!r.ok) throw new Error();
+      
+      if (typeof showToast === 'function') showToast('Nasiya rejasi o\'chirildi', 'success');
+      closeDescoModal();
+      loadNasiyaDeals();
+    } catch(e) {
+      if (typeof showToast === 'function') showToast('O\'chirishda xatolik', 'error');
+    }
+  }
+
+  async function deleteNasiya(dealId) {
+    if (!confirm("Shartnomani o'chirishni tasdiqlaysizmi?")) return;
+    try {
+      const r = await fetch('/api/deals/' + dealId, { method: 'DELETE' });
+      if (!r.ok) throw new Error();
+      if (typeof showToast === 'function') showToast("O'chirildi", 'success');
+      loadNasiyaDeals();
+    } catch(e) {
+      if (typeof showToast === 'function') showToast("O'chirishda xatolik", 'error');
+    }
+  }
+
+  // ── YANGI NASIYA DEAL CREATE ──
+  let productsList = [];
+  async function loadProductsCatalog() {
+    try {
+      const r = await fetch('/api/product-catalog');
+      productsList = await r.json();
+      const select = document.getElementById('newNasiyaProductName');
+      if (select) {
+        select.innerHTML = '<option value="">— Mahsulot tanlang —</option>' + 
+          productsList.map(p => `<option value="${escHtml(p.name)}" data-price="${p.price}">${escHtml(p.name)} (${fmtMoney(p.price)})</option>`).join('');
+      }
+    } catch(e) {
+      console.error(e);
+    }
+  }
+
+  function onNewNasiyaProductSelect(el) {
+    const selectedOpt = el.options[el.selectedIndex];
+    const price = selectedOpt.getAttribute('data-price');
+    if (price) {
+      document.getElementById('newNasiyaAmount').value = price;
+    }
+  }
+
+  function openNewNasiyaDealModal() {
+    document.getElementById('newNasiyaClientName').value = '';
+    document.getElementById('newNasiyaClientPhone').value = '';
+    document.getElementById('newNasiyaClientCity').value = '';
+    document.getElementById('newNasiyaProductName').value = '';
+    document.getElementById('newNasiyaAmount').value = '';
+    document.getElementById('newNasiyaPaidAmount').value = '0';
+    document.getElementById('newNasiyaInstRowsContainer').innerHTML = '';
+    loadProductsCatalog();
+    document.getElementById('newNasiyaDealModal').style.display = 'flex';
+  }
+
+  function closeNewNasiyaDealModal() {
+    document.getElementById('newNasiyaDealModal').style.display = 'none';
+  }
+
+  function newNasiyaAutoGenerateInstallments(months) {
+    const container = document.getElementById('newNasiyaInstRowsContainer');
+    const amountInput = document.getElementById('newNasiyaAmount');
+    let totalAmount = Number(amountInput.value) || 0;
+    
+    const paidInput = document.getElementById('newNasiyaPaidAmount');
+    const paidAmount = Number(paidInput.value) || 0;
+    let remainingDebt = Math.max(0, totalAmount - paidAmount);
+    
+    container.innerHTML = '';
+    
+    if (months > 0) {
+      const monthlyAmount = Math.round(remainingDebt / months);
+      let dateObj = new Date();
+      
+      for (let i = 0; i < months; i++) {
+        dateObj.setMonth(dateObj.getMonth() + 1);
+        const dateStr = dateObj.toISOString().slice(0, 10);
+        const amount = (i === months - 1) ? (remainingDebt - (monthlyAmount * i)) : monthlyAmount;
+        const pName = document.getElementById('newNasiyaProductName').value || 'Nasiya';
+        
+        const div = document.createElement('div');
+        div.innerHTML = getNewNasiyaInstallmentRowHtml(i, dateStr, amount, false, pName, `${i+1}-oy`, '');
+        container.appendChild(div.firstElementChild);
+      }
+    }
+  }
+
+  function getNewNasiyaInstallmentRowHtml(index, dateVal, amountVal, paidVal, productVal, monthVal, notesVal) {
+    return `
+      <div class="installment-row" style="display:grid; grid-template-columns:100px 1fr auto; gap:6px; background:var(--bg-primary); padding:6px; border-radius:6px; border:1px solid var(--border); align-items:center;">
+        <input type="date" class="form-control inst-date" style="font-size:11px; padding:4px; height:26px;" value="${dateVal}">
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="display:flex; gap:4px;">
+            <input type="text" class="form-control inst-month" style="font-size:11px; padding:4px; height:24px; width:50px; text-align:center" value="${monthVal}" placeholder="Oy">
+            <input type="number" class="form-control inst-amount" style="font-size:11px; padding:4px; height:24px; font-weight:700; color:var(--brand)" value="${amountVal}" placeholder="Summa">
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px; padding:0 4px;">
+          <button type="button" class="btn btn-sm btn-ghost text-danger" onclick="this.closest('.installment-row').remove()" style="padding:2px 6px;"><i class="fas fa-trash-alt"></i></button>
+        </div>
+      </div>
+    `;
+  }
+
+  async function getTargetStageAndPipeline() {
+    const r = await fetch('/api/pipelines');
+    const pipelines = await r.json();
+    const searchStr = activeStageKey === 'desco' ? 'desco' : (activeStageKey === 'ishonch' ? 'ishonch' : 'baraka');
+    
+    for (const p of pipelines) {
+      for (const s of p.stages) {
+        if (s.name.toLowerCase().includes('nasiya') && s.name.toLowerCase().includes(searchStr)) {
+          return { pipelineId: p.id, stageId: s.id };
         }
       }
-      if (installments.length > 0) {
-        const instR = await fetch('/api/deals/' + newDeal.id + '/installments', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ installments })
-        });
-        if (!instR.ok) throw new Error("To'lov rejasini saqlashda xatolik yuz berdi");
-      }
+    }
+    return null;
+  }
+
+  async function saveNewNasiyaDeal() {
+    const clientName = document.getElementById('newNasiyaClientName').value.trim();
+    const clientPhone = document.getElementById('newNasiyaClientPhone').value.trim();
+    const city = document.getElementById('newNasiyaClientCity').value.trim();
+    const productName = document.getElementById('newNasiyaProductName').value;
+    const amount = Number(document.getElementById('newNasiyaAmount').value) || 0;
+    const paidAmount = Number(document.getElementById('newNasiyaPaidAmount').value) || 0;
+
+    if (!clientName || !clientPhone || !productName || !amount) {
+      return alert('Iltimos, yulduzcha (*) qo\'yilgan maydonlarni to\'ldiring');
     }
 
-    if (typeof showToast === 'function') showToast("Sdelka va nasiya rejasi muvaffaqiyatli saqlandi", 'success');
-    closeNewNasiyaDealModal();
-    loadNasiyaDeals();
-  } catch(e) {
-    if (typeof showToast === 'function') showToast(e.message, 'error');
-    else alert(e.message);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fas fa-check"></i> Saqlash';
-  }
-}
+    const btn = document.getElementById('newNasiyaSaveBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saqlanmoqda...';
 
-document.addEventListener('DOMContentLoaded', loadNasiyaDeals);
+    try {
+      const target = await getTargetStageAndPipeline();
+      const body = {
+        productName,
+        contactName: clientName,
+        contactPhone: clientPhone,
+        city: city || null,
+        amount,
+        paidAmount,
+        pipelineId: target ? target.pipelineId : undefined,
+        stageId: target ? target.stageId : undefined,
+        status: 'new'
+      };
+
+      const r = await fetch('/api/deals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!r.ok) throw new Error('Sdelka yaratishda xato');
+      const newDeal = await r.json();
+
+      const container = document.getElementById('newNasiyaInstRowsContainer');
+      const rows = container.querySelectorAll('.installment-row');
+      if (rows.length > 0 && newDeal.id) {
+        const installments = [];
+        for (const row of rows) {
+          const dueDate = row.querySelector('.inst-date').value;
+          const amt = Number(row.querySelector('.inst-amount').value) || 0;
+          const month = row.querySelector('.inst-month').value;
+          if (dueDate) {
+            installments.push({ dueDate, amount: amt, paid: false, productName, month, notes: `${month} to'lovi` });
+          }
+        }
+        if (installments.length > 0) {
+          await fetch('/api/deals/' + newDeal.id + '/installments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ installments })
+          });
+        }
+      }
+
+      if (typeof showToast === 'function') showToast("Sdelka va nasiya rejasi yaratildi", 'success');
+      closeNewNasiyaDealModal();
+      loadNasiyaDeals();
+    } catch(e) {
+      alert(e.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-check"></i> Saqlash';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadNasiyaDeals);
 </script>
 
 <%- include('../layouts/footer') %>
