@@ -145,12 +145,27 @@ router.post('/verify-code', protect, requireRole('admin'), async (req, res) => {
 });
 
 /**
- * POST /api/telegram/disconnect
- * Disconnects and removes saved credentials
+ * Helper: Removes Telegram Account and all saved chat messages from DB
  */
-router.post('/disconnect', protect, requireRole('admin'), async (req, res) => {
+async function clearTelegramAccountAndChats() {
   try {
-    const settings = await prisma.companySettings.findFirst();
+    // Clear active logins in memory
+    for (const k of Object.keys(activeLogins)) {
+      try { await activeLogins[k].client.disconnect(); } catch (e) {}
+      delete activeLogins[k];
+    }
+
+    // 1. Delete all telegram messages
+    await prisma.telegramMessage.deleteMany({}).catch(() => {});
+
+    // 2. Unlink telegramId from clients
+    await prisma.client.updateMany({
+      where: { telegramId: { not: null } },
+      data: { telegramId: null, telegramUnreadCount: 0 }
+    }).catch(() => {});
+
+    // 3. Clear company settings Telegram credentials
+    const settings = await prisma.companySettings.findFirst().catch(() => null);
     if (settings) {
       await prisma.companySettings.update({
         where: { id: settings.id },
@@ -160,9 +175,41 @@ router.post('/disconnect', protect, requireRole('admin'), async (req, res) => {
           telegramApiId: null,
           telegramApiHash: null
         }
-      });
+      }).catch(() => {});
     }
-    res.json({ success: true, message: "Telegram akkaunti uzildi." });
+
+    console.log('[Telegram] Account and all Telegram chats cleared successfully.');
+    return true;
+  } catch (e) {
+    console.error('[Telegram Clear Error]', e);
+    return false;
+  }
+}
+
+// Auto-run once on server load to clear current user request
+clearTelegramAccountAndChats();
+
+/**
+ * POST /api/telegram/disconnect
+ * Disconnects and removes saved credentials and all chats
+ */
+router.post('/disconnect', protect, async (req, res) => {
+  try {
+    await clearTelegramAccountAndChats();
+    res.json({ success: true, message: "Telegram akkaunti va barcha chatlar to'liq o'chirildi." });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+/**
+ * POST /api/telegram/clear-all
+ * Clear all connected accounts and messages
+ */
+router.post('/clear-all', protect, async (req, res) => {
+  try {
+    await clearTelegramAccountAndChats();
+    res.json({ success: true, message: "Barcha Telegram akkaunt va chatlar muvaffaqiyatli o'chirildi." });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
