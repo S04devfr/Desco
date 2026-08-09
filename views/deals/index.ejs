@@ -1207,6 +1207,14 @@
             </select>
           </div>
           <div class="form-group">
+            <label class="form-label">Ombor (Sklad) <span style="font-size:10px;font-weight:normal;color:#999">(Tovar chiqarish uchun)</span></label>
+            <select id="f-warehouse" class="form-control" onchange="updateStockVariantsForDeal()">
+              <option value="">— Omborni tanlang —</option>
+              <option value="Toshkent">Toshkent</option>
+              <option value="Qo'qon">Qo'qon</option>
+            </select>
+          </div>
+          <div class="form-group">
             <label class="form-label">Mahsulot rangi <span id="stockStatusBadge" style="font-size:11px; margin-left:6px;"></span></label>
             <div class="custom-select-wrapper" style="position: relative;">
               <input type="text" id="f-color" class="form-control" autocomplete="off" placeholder="Rangni yozing yoki tanlang" onfocus="updateStockVariantsForDeal(); document.getElementById('colorSelectDropdown').classList.remove('hidden')" onblur="setTimeout(() => { const el = document.getElementById('colorSelectDropdown'); if(el) el.classList.add('hidden'); }, 250)">
@@ -1233,18 +1241,11 @@
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div class="form-group">
-            <label class="form-label">Bosqich</label>
-            <select id="f-stageId" class="form-control" onchange="dealModalStageChanged()">
-              <option value="">— Bosqich —</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Mijoz oladigan vaqt <span
-                style="font-size:10px;font-weight:normal;color:#999">(Sana va vaqt)</span></label>
-            <input type="datetime-local" id="f-deadline" class="form-control">
-          </div>
+        <div class="form-group">
+          <label class="form-label">Bosqich</label>
+          <select id="f-stageId" class="form-control" onchange="dealModalStageChanged()">
+            <option value="">— Bosqich —</option>
+          </select>
         </div>
 
         <!-- Nasiya Rejasi section (Hidden by default) -->
@@ -1270,11 +1271,12 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">Ombor (Sklad) <span style="font-size:10px;font-weight:normal;color:#999">(Tovar chiqarish uchun)</span></label>
-          <select id="f-warehouse" class="form-control" onchange="updateStockVariantsForDeal()">
-            <option value="">— Omborni tanlang —</option>
-            <option value="Toshkent">Toshkent</option>
-            <option value="Qo'qon">Qo'qon</option>
+          <label class="form-label">Sdelka manbasi</label>
+          <select id="f-source" class="form-control">
+            <option value="oddiy">Qo'lda kiritilgan / Oddiy</option>
+            <option value="instagram">Instagram</option>
+            <option value="telegram">Telegram</option>
+            <option value="target">Target</option>
           </select>
         </div>
 
@@ -3042,7 +3044,7 @@ async function saveDeal() {
     city:        document.getElementById('f-city').value.trim() || null,
     amount:      Number(document.getElementById('f-amount').value) || 0,
     paidAmount:  Number(document.getElementById('f-paidAmount').value) || 0,
-    deadline:    document.getElementById('f-deadline').value ? new Date(document.getElementById('f-deadline').value).toISOString() : null,
+    deadline:    document.getElementById('f-deadline')?.value ? new Date(document.getElementById('f-deadline').value).toISOString() : null,
     createdAt:   document.getElementById('f-createdAt').value ? new Date(document.getElementById('f-createdAt').value).toISOString() : null,
     stageId:     rawStageId,
     pipelineId:  _activePid,
