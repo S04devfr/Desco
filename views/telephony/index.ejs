@@ -137,7 +137,7 @@
   /* Operator Card Grid */
   .operator-cards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 14px;
     margin-bottom: 20px;
   }
@@ -168,6 +168,7 @@
   }
   .op-online { background: rgba(16,185,129,0.12); color: #10b981; }
   .op-busy { background: rgba(255,149,0,0.12); color: #FF9500; }
+  .op-idle { background: rgba(255,204,0,0.18); color: #D97706; }
   .op-away { background: rgba(142,142,147,0.12); color: var(--text-tertiary); }
 
   /* Analytics section styles */
@@ -186,9 +187,9 @@
 <div class="page-header">
   <div>
     <h1 style="display:flex; align-items:center; gap:10px;">
-      <i class="fas fa-phone-alt" style="color:#10b981; font-size:24px;"></i> IP Telefoniya Markazi
+      <i class="fas fa-phone-alt" style="color:#10b981; font-size:24px;"></i> IP Telefoniya va Operatorlar Markazi
     </h1>
-    <p>Qo'ng'iroqlar tarixi, audio yozuvlar va Operatorlar tahlili</p>
+    <p>Qo'ng'iroqlar tarixi, audio yozuvlar hamda Operatorlar ish vaqti (amoCRM Tracking)</p>
   </div>
   <div class="page-header-actions" style="display:flex; gap:10px; align-items:center;">
     <button class="btn btn-secondary btn-sm" onclick="triggerIncomingCallSimulation()">
@@ -207,7 +208,7 @@
     <i class="fas fa-phone-volume"></i> 1-bo'lim: Qo'ng'iroqlar Tarixi
   </button>
   <button class="telephony-nav-tab" onclick="switchTelephonyTab('analytics', this)">
-    <i class="fas fa-chart-pie"></i> 2-bo'lim: Operatorlar Tahlili & Monitoring
+    <i class="fas fa-chart-pie"></i> 2-bo'lim: Operatorlar Ish Vaqti & Tahlil (amoCRM Tracker)
   </button>
 </div>
 
@@ -289,14 +290,14 @@
 
 </div>
 
-<!-- ==================== TAB 2: OPERATOR ANALYTICS & MONITORING ==================== -->
+<!-- ==================== TAB 2: OPERATOR ANALYTICS & WORKING HOURS ==================== -->
 <div id="tabContentAnalytics" style="display:none; flex-direction:column; gap:24px;">
 
   <!-- OPERATORS / AGENTS MONITORING CARDS -->
   <div>
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
       <h3 style="margin:0; font-size:15px; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:8px;">
-        <i class="fas fa-headset" style="color:var(--accent)"></i> Operatorlar va SIP Liniyalar Monitoringi
+        <i class="fas fa-user-clock" style="color:var(--accent)"></i> Operatorlar Online Ish Vaqti va Monitoring (10 min Idle Auto-Detect)
       </h3>
       <span style="font-size:11.5px; font-weight:600; color:var(--text-secondary);" id="opCountBadge">0 ta operator</span>
     </div>
@@ -314,7 +315,7 @@
       <button class="filter-pill-tel" onclick="setAnalyticsPeriod('week', this)">📅 Bu Hafta</button>
       <button class="filter-pill-tel" onclick="setAnalyticsPeriod('month', this)">📅 Bu Oy</button>
     </div>
-    <span style="font-size:12px; font-weight:600; color:var(--text-secondary);">⭐ Operatorlar KPI va Konversiya Tahlili</span>
+    <span style="font-size:12px; font-weight:600; color:var(--text-secondary);">⭐ amoCRM Uslubidagi Operatorlar Faollik Tahlili</span>
   </div>
 
   <!-- TOP PERFORMERS CARDS -->
@@ -346,20 +347,20 @@
   <!-- LEADERBOARD TABLE -->
   <div style="background:var(--bg-primary); border:1px solid var(--border); border-radius:16px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
     <div style="padding:16px 20px; border-bottom:1px solid var(--border); font-size:14px; font-weight:700; color:var(--text-primary); display:flex; align-items:center; justify-content:space-between;">
-      <span><i class="fas fa-trophy" style="color:#FF9500; margin-right:8px;"></i> Operatorlar Reytingi va Samaradorlik Ko'rsatkichlari</span>
+      <span><i class="fas fa-trophy" style="color:#FF9500; margin-right:8px;"></i> Operatorlar Ish Vaqti, Nofaol Vaqt va KPI Reytingi</span>
     </div>
     
     <table style="width:100%; border-collapse:collapse;">
       <thead>
         <tr style="background:var(--bg-secondary); border-bottom:1px solid var(--border);">
           <th style="padding:12px 18px; text-align:left; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Operator</th>
-          <th style="padding:12px 18px; text-align:center; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">SIP Liniya</th>
-          <th style="padding:12px 18px; text-align:center; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Jami Qo'ng'iroq</th>
-          <th style="padding:12px 18px; text-align:center; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Qabul Qilingan</th>
-          <th style="padding:12px 18px; text-align:center; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">O'tkazib Yuborilgan</th>
-          <th style="padding:12px 18px; text-align:center; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Umumiy Vaqt</th>
-          <th style="padding:12px 18px; text-align:center; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">O'rtacha Vaqt</th>
-          <th style="padding:12px 18px; text-align:left; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Samaradorlik (%)</th>
+          <th style="padding:12px 18px; text-align:center; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Liniya</th>
+          <th style="padding:12px 18px; text-align:center; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Status</th>
+          <th style="padding:12px 18px; text-align:center; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Ish Boshlanishi</th>
+          <th style="padding:12px 18px; text-align:center; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Aktiv Online Vaqt</th>
+          <th style="padding:12px 18px; text-align:center; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Tanaffus / Nofaol</th>
+          <th style="padding:12px 18px; text-align:center; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Qo'ng'iroqlar</th>
+          <th style="padding:12px 18px; text-align:left; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Aktivlik (%)</th>
         </tr>
       </thead>
       <tbody id="analyticsLeaderboardBody">
@@ -473,9 +474,18 @@
 
   function fmtDuration(sec) {
     if (!sec) return '0s';
-    const m = Math.floor(sec / 60);
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
     const s = sec % 60;
+    if (h > 0) return `${h}s ${m}m`;
     return m > 0 ? `${m}m ${s}s` : `${s}s`;
+  }
+
+  function fmtTime(d) {
+    if (!d) return '--:--';
+    const dt = new Date(d);
+    if (isNaN(dt)) return '--:--';
+    return dt.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
   }
 
   function playAudioRecording(url, btn) {
@@ -597,7 +607,7 @@
     }
   }
 
-  // TAB 2: OPERATOR ANALYTICS LOADER
+  // TAB 2: OPERATOR ANALYTICS & WORKING HOURS LOADER
   async function loadOperatorAnalytics() {
     const topContainer = document.getElementById('topPerformersContainer');
     const tbody = document.getElementById('analyticsLeaderboardBody');
@@ -608,13 +618,14 @@
       const operators = res.operators || [];
       const top = res.topPerformers || {};
 
-      // 1. Operator Live Status Cards
+      // 1. Operator Live Status & Work Time Cards
       document.getElementById('opCountBadge').textContent = `${operators.length} ta operator`;
       opContainer.innerHTML = operators.map(op => {
         const isOnline = op.status === 'online';
         const isBusy = op.status === 'busy';
-        const badgeCls = isBusy ? 'op-busy' : isOnline ? 'op-online' : 'op-away';
-        const badgeText = isBusy ? '🟡 Suhbatda' : isOnline ? '🟢 Online (Tayyor)' : '⚪ Offline';
+        const isIdle = op.status === 'idle';
+        const badgeCls = isBusy ? 'op-busy' : isIdle ? 'op-idle' : isOnline ? 'op-online' : 'op-away';
+        const badgeText = isBusy ? '🟡 Suhbatda' : isIdle ? '🟡 Nofaol (10+ min idle)' : isOnline ? '🟢 Online (Aktiv)' : '⚪ Offline';
 
         return `
           <div class="operator-card">
@@ -631,18 +642,18 @@
               <span class="op-status-badge ${badgeCls}">${badgeText}</span>
             </div>
 
-            <div style="display:flex; justify-content:space-between; border-top:1px solid var(--border); padding-top:8px; font-size:11.5px;">
-              <div>
-                <span style="color:var(--text-tertiary);">Bugun: </span>
-                <strong style="color:var(--text-primary);">${op.totalCalls || 0} ta</strong>
+            <div style="display:flex; flex-direction:column; gap:4px; border-top:1px solid var(--border); padding-top:8px; font-size:11px;">
+              <div style="display:flex; justify-content:space-between;">
+                <span style="color:var(--text-tertiary);">Ish boshlanishi:</span>
+                <strong style="color:var(--text-primary);">${fmtTime(op.shiftStart)}</strong>
               </div>
-              <div>
-                <span style="color:var(--text-tertiary);">Javob: </span>
-                <strong style="color:#10b981;">${op.answeredCalls || 0} ta</strong>
+              <div style="display:flex; justify-content:space-between;">
+                <span style="color:var(--text-tertiary);">Aktiv online vaqt:</span>
+                <strong style="color:#10b981;">${fmtDuration(op.onlineSec || 0)}</strong>
               </div>
-              <div>
-                <span style="color:var(--text-tertiary);">Vaqt: </span>
-                <strong style="color:#FF9500;">${fmtDuration(op.totalTalkTime || 0)}</strong>
+              <div style="display:flex; justify-content:space-between;">
+                <span style="color:var(--text-tertiary);">Tanaffus / Idle:</span>
+                <strong style="color:#FF9500;">${fmtDuration(op.idleSec || 0)}</strong>
               </div>
             </div>
 
@@ -675,15 +686,15 @@
 
         <div class="performer-card">
           <div style="width:40px; height:40px; border-radius:12px; background:rgba(16,185,129,0.12); color:#10b981; font-size:18px; display:flex; align-items:center; justify-content:center;">
-            🎯
+            ⏱️
           </div>
           <div>
-            <div style="font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Eng yuqori samaradorlik</div>
+            <div style="font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Eng uzoq aktiv ishlagan</div>
             <div style="font-size:15px; font-weight:800; color:var(--text-primary); margin-top:2px;">
-              ${_esc(top.topEfficiency?.name || 'Mavjud emas')}
+              ${_esc(top.topOnline?.name || 'Mavjud emas')}
             </div>
             <div style="font-size:11.5px; font-weight:700; color:#10b981;">
-              ${top.topEfficiency?.efficiencyRate || 0}% konversiya
+              ${fmtDuration(top.topOnline?.onlineSec || 0)} online
             </div>
           </div>
         </div>
@@ -693,7 +704,7 @@
             ⚡
           </div>
           <div>
-            <div style="font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Eng ko'p qo'ng'iroq qabul qilgan</div>
+            <div style="font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Eng ko'p qo'ng'iroq javobi</div>
             <div style="font-size:15px; font-weight:800; color:var(--text-primary); margin-top:2px;">
               ${_esc(top.topAnswered?.name || 'Mavjud emas')}
             </div>
@@ -710,6 +721,11 @@
       } else {
         tbody.innerHTML = operators.map((op, idx) => {
           const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
+          const isOnline = op.status === 'online';
+          const isBusy = op.status === 'busy';
+          const isIdle = op.status === 'idle';
+          const statusText = isBusy ? '🟡 Suhbatda' : isIdle ? '🟡 Nofaol (10m+)' : isOnline ? '🟢 Aktiv' : '⚪ Offline';
+
           return `
             <tr style="border-bottom:1px solid var(--border);">
               <td style="padding:12px 18px; font-size:13px; font-weight:700; color:var(--text-primary);">
@@ -725,17 +741,17 @@
                 </div>
               </td>
               <td style="padding:12px 18px; text-align:center; font-size:12px; font-weight:700; color:var(--text-secondary);">${op.ext}</td>
-              <td style="padding:12px 18px; text-align:center; font-size:13px; font-weight:800;">${op.totalCalls}</td>
-              <td style="padding:12px 18px; text-align:center; font-size:13px; font-weight:800; color:#10b981;">${op.answeredCalls}</td>
-              <td style="padding:12px 18px; text-align:center; font-size:13px; font-weight:800; color:#ef4444;">${op.missedCalls}</td>
-              <td style="padding:12px 18px; text-align:center; font-size:12px; font-weight:700; color:#FF9500;">${fmtDuration(op.totalTalkTime)}</td>
-              <td style="padding:12px 18px; text-align:center; font-size:12px; font-weight:700; color:var(--text-secondary);">${fmtDuration(op.avgTalkTime)}</td>
+              <td style="padding:12px 18px; text-align:center; font-size:11.5px; font-weight:700;">${statusText}</td>
+              <td style="padding:12px 18px; text-align:center; font-size:12px; font-weight:600; color:var(--text-secondary);">${fmtTime(op.shiftStart)}</td>
+              <td style="padding:12px 18px; text-align:center; font-size:13px; font-weight:800; color:#10b981;">${fmtDuration(op.onlineSec)}</td>
+              <td style="padding:12px 18px; text-align:center; font-size:12px; font-weight:700; color:#FF9500;">${fmtDuration(op.idleSec)}</td>
+              <td style="padding:12px 18px; text-align:center; font-size:13px; font-weight:800;">${op.answeredCalls} / ${op.totalCalls}</td>
               <td style="padding:12px 18px;">
                 <div style="display:flex; align-items:center; gap:8px;">
                   <div style="flex:1; height:6px; background:var(--bg-secondary); border-radius:3px; overflow:hidden;">
-                    <div style="width:${op.efficiencyRate}%; height:100%; background:${op.efficiencyRate >= 80 ? '#10b981' : op.efficiencyRate >= 50 ? '#FF9500' : '#ef4444'}; border-radius:3px;"></div>
+                    <div style="width:${op.activeWorkRatio}%; height:100%; background:${op.activeWorkRatio >= 80 ? '#10b981' : op.activeWorkRatio >= 50 ? '#FF9500' : '#ef4444'}; border-radius:3px;"></div>
                   </div>
-                  <span style="font-size:11.5px; font-weight:800; color:var(--text-primary);">${op.efficiencyRate}%</span>
+                  <span style="font-size:11.5px; font-weight:800; color:var(--text-primary);">${op.activeWorkRatio}%</span>
                 </div>
               </td>
             </tr>

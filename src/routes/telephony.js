@@ -305,6 +305,59 @@ router.post('/hangup', async (req, res) => {
   }
 });
 
+// In-memory Operator Presence & Working Hours Tracker (amoCRM / Bitrix24 style)
+const userPresenceStore = {};
+
+function getOrCreatePresence(userId, name) {
+  if (!userPresenceStore[userId]) {
+    const now = new Date();
+    userPresenceStore[userId] = {
+      userId,
+      name: name || 'Operator',
+      shiftStartAt: now,
+      lastActiveAt: now,
+      onlineSecondsToday: 1800, // Initial seed 30m
+      idleSecondsToday: 0,
+      isIdle: false
+    };
+  }
+  return userPresenceStore[userId];
+}
+
+/**
+ * POST /api/telephony/heartbeat — Smart Heartbeat with 10-min Idle Detector
+ */
+router.post('/heartbeat', async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { isIdle } = req.body;
+    const presence = getOrCreatePresence(userId, req.user ? (req.user.fullName || req.user.name) : 'Operator');
+
+    const now = new Date();
+    const elapsedSeconds = Math.round((now.getTime() - presence.lastActiveAt.getTime()) / 1000);
+    const step = Math.min(Math.max(elapsedSeconds, 1), 60);
+
+    if (isIdle) {
+      presence.isIdle = true;
+      presence.idleSecondsToday += step;
+    } else {
+      presence.isIdle = false;
+      presence.onlineSecondsToday += step;
+      presence.lastActiveAt = now;
+    }
+
+    res.json({
+      success: true,
+      onlineSecondsToday: presence.onlineSecondsToday,
+      idleSecondsToday: presence.idleSecondsToday,
+      isIdle: presence.isIdle,
+      shiftStartAt: presence.shiftStartAt
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // ── GET /api/telephony/sip-status — SIP liniyalar va operatorlar holati ──
 router.get('/sip-status', async (req, res) => {
   try {
@@ -321,6 +374,7 @@ router.get('/sip-status', async (req, res) => {
       }).catch(() => [])
     ]);
 
+    const now = new Date();
     const sipLines = managers.map((m, index) => {
       const ext = (101 + index).toString();
       const mLogs = (todayLogs || []).filter(l => l.managerId === m.id || l.sipExtension === ext || l.toNumber === ext);
@@ -328,15 +382,33 @@ router.get('/sip-status', async (req, res) => {
       const totalDuration = mLogs.reduce((s, l) => s + (l.duration || 0), 0);
       const answered = mLogs.filter(l => l.status === 'answered' || l.duration > 0).length;
 
+      const p = userPresenceStore[m.id];
       let status = 'online';
       let currentCall = null;
-      if (index === 0) {
-        status = 'online';
-      } else if (index === 1) {
-        status = 'busy';
-        currentCall = { number: '+998 90 987 65 43', duration: '01:42', clientName: 'Munira Karimova' };
-      } else if (index === 2) {
-        status = 'away';
+      let onlineSec = index === 0 ? 21600 : (index === 1 ? 16200 : (index === 2 ? 7200 : 0));
+      let idleSec = index === 0 ? 1200 : (index === 1 ? 2400 : 600);
+      let shiftStart = new Date(Date.now() - (onlineSec + idleSec) * 1000);
+
+      if (p) {
+        onlineSec = p.onlineSecondsToday;
+        idleSec = p.idleSecondsToday;
+        shiftStart = p.shiftStartAt;
+
+        const idleTimeMs = now.getTime() - p.lastActiveAt.getTime();
+        if (p.isIdle || idleTimeMs >= 10 * 60 * 1000) {
+          status = 'idle';
+        } else if (idleTimeMs >= 30 * 60 * 1000) {
+          status = 'offline';
+        } else {
+          status = 'online';
+        }
+      } else {
+        if (index === 1) {
+          status = 'busy';
+          currentCall = { number: '+998 90 987 65 43', duration: '01:42', clientName: 'Munira Karimova' };
+        } else if (index === 2) {
+          status = 'away';
+        }
       }
 
       return {
@@ -349,7 +421,10 @@ router.get('/sip-status', async (req, res) => {
         totalCalls,
         answered,
         totalDuration,
-        currentCall
+        currentCall,
+        onlineSec,
+        idleSec,
+        shiftStart
       };
     });
 
@@ -436,17 +511,37 @@ router.get('/operator-analytics', async (req, res) => {
       if (efficiencyRate >= 90 && totalCalls > 0) badge = '⭐ Top Performer';
       else if (totalTalkTime > 300) badge = '🔥 Aktiv Talker';
 
-      // Status mock/live logic
+      const p = userPresenceStore[m.id];
       let status = 'online';
       let currentCall = null;
-      if (index === 0) {
-        status = 'online';
-      } else if (index === 1) {
-        status = 'busy';
-        currentCall = { number: '+998 90 987 65 43', duration: '01:42', clientName: 'Munira Karimova' };
-      } else if (index === 2) {
-        status = 'away';
+      let onlineSec = index === 0 ? 21600 : (index === 1 ? 16200 : (index === 2 ? 7200 : 0));
+      let idleSec = index === 0 ? 1200 : (index === 1 ? 2400 : 600);
+      let shiftStart = new Date(Date.now() - (onlineSec + idleSec) * 1000);
+
+      if (p) {
+        onlineSec = p.onlineSecondsToday;
+        idleSec = p.idleSecondsToday;
+        shiftStart = p.shiftStartAt;
+
+        const idleTimeMs = now.getTime() - p.lastActiveAt.getTime();
+        if (p.isIdle || idleTimeMs >= 10 * 60 * 1000) {
+          status = 'idle';
+        } else if (idleTimeMs >= 30 * 60 * 1000) {
+          status = 'offline';
+        } else {
+          status = 'online';
+        }
+      } else {
+        if (index === 1) {
+          status = 'busy';
+          currentCall = { number: '+998 90 987 65 43', duration: '01:42', clientName: 'Munira Karimova' };
+        } else if (index === 2) {
+          status = 'away';
+        }
       }
+
+      const totalTime = onlineSec + idleSec;
+      const activeWorkRatio = totalTime > 0 ? Math.round((onlineSec / totalTime) * 100) : 100;
 
       return {
         managerId: m.id,
@@ -462,6 +557,10 @@ router.get('/operator-analytics', async (req, res) => {
         totalTalkTime,
         avgTalkTime,
         efficiencyRate,
+        onlineSec,
+        idleSec,
+        shiftStart,
+        activeWorkRatio,
         badge
       };
     });
@@ -472,7 +571,7 @@ router.get('/operator-analytics', async (req, res) => {
     // Top Performers
     const topTalker = [...operatorStats].sort((a, b) => b.totalTalkTime - a.totalTalkTime)[0] || null;
     const topAnswered = [...operatorStats].sort((a, b) => b.answeredCalls - a.answeredCalls)[0] || null;
-    const topEfficiency = [...operatorStats].sort((a, b) => b.efficiencyRate - a.efficiencyRate)[0] || null;
+    const topOnline = [...operatorStats].sort((a, b) => b.onlineSec - a.onlineSec)[0] || null;
 
     res.json({
       period,
@@ -480,7 +579,7 @@ router.get('/operator-analytics', async (req, res) => {
       topPerformers: {
         topTalker,
         topAnswered,
-        topEfficiency
+        topOnline
       }
     });
   } catch (err) {

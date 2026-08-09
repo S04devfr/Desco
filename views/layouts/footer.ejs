@@ -4,38 +4,47 @@
 <div id="toastContainer"></div>
 <script src="/js/main.js"></script>
 
-<!-- ── FAOLLIK KUZATUVI (Heartbeat) ── -->
+<!-- ── SMART OPERATOR PRESENCE & 10-MIN IDLE DETECTOR (amoCRM style) ── -->
 <script>
 (function() {
-  var PING_URL    = '/api/activity/ping';
-  var INTERVAL_MS = 2 * 60 * 1000;  // har 2 daqiqa
-  var _timer      = null;
-  var _paused     = false;
+  var PING_URL = '/api/telephony/heartbeat';
+  var INTERVAL_MS = 30 * 1000; // Har 30 soniyada ping
+  var IDLE_TIMEOUT_MS = 10 * 60 * 1000; // 10 daqiqa harakatsizlik
+  var lastUserActionTime = Date.now();
+  var _timer = null;
 
-  function ping() {
-    if (_paused) return;
+  function markActive() {
+    lastUserActionTime = Date.now();
+  }
+
+  // Global user activity event listeners
+  ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(function(evt) {
+    window.addEventListener(evt, markActive, { passive: true });
+  });
+
+  function sendHeartbeat() {
+    var idleTimeMs = Date.now() - lastUserActionTime;
+    var isDocumentHidden = document.hidden;
+    var isIdle = idleTimeMs >= IDLE_TIMEOUT_MS || isDocumentHidden;
+
     fetch(PING_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        isIdle: isIdle,
+        idleSeconds: Math.floor(idleTimeMs / 1000)
+      }),
       credentials: 'same-origin'
-    }).catch(function() {});  // xatolarni jim o'tkazamiz
+    }).catch(function() {});
   }
 
-  // Sahifa ko'rinmasa (boshqa tab) — pause
-  document.addEventListener('visibilitychange', function() {
-    _paused = document.hidden;
-    if (!_paused) ping();  // qaytganda darhol ping
-  });
-
-  // Birinchi ping — 5 soniyadan keyin (sahifa yuklansin)
   setTimeout(function() {
-    ping();
-    _timer = setInterval(ping, INTERVAL_MS);
-  }, 5000);
+    sendHeartbeat();
+    _timer = setInterval(sendHeartbeat, INTERVAL_MS);
+  }, 2000);
 
-  // Sahifa yopilganda to'xtatamiz
   window.addEventListener('beforeunload', function() {
-    clearInterval(_timer);
+    if (_timer) clearInterval(_timer);
   });
 })();
 </script>
