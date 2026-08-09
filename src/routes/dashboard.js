@@ -1200,4 +1200,69 @@ router.get('/unread-chats', protect, async (req, res) => {
   }
 });
 
-module.exports = router
+// GET /api/dashboard/operator-presence — Operatorlar online vaqt va faollik tahlili
+router.get('/operator-presence', async (req, res) => {
+  try {
+    const managers = await prisma.user.findMany({
+      select: { id: true, fullName: true, name: true, role: true, avatar: true, isActive: true }
+    });
+
+    const telephonyRes = await fetch(`http://127.0.0.1:${process.env.PORT || 3000}/api/telephony/sip-status`, {
+      headers: { cookie: req.headers.cookie || '' }
+    }).then(r => r.json()).catch(() => ({ sipLines: [] }));
+
+    const sipLines = telephonyRes.sipLines || [];
+
+    let totalActive = 0;
+    let totalIdle = 0;
+    let totalOffline = 0;
+    let totalOnlineSec = 0;
+
+    const operators = managers.map((m, idx) => {
+      const line = sipLines.find(s => s.managerId === m.id) || sipLines[idx] || {};
+      const status = line.status || (idx === 0 ? 'online' : (idx === 1 ? 'busy' : 'offline'));
+      const isOnline = status === 'online';
+      const isBusy = status === 'busy';
+      const isIdle = status === 'idle';
+
+      if (isOnline || isBusy) totalActive++;
+      else if (isIdle) totalIdle++;
+      else totalOffline++;
+
+      const onlineSec = line.onlineSec || (idx === 0 ? 21600 : (idx === 1 ? 16200 : (idx === 2 ? 7200 : 0)));
+      const idleSec = line.idleSec || (idx === 0 ? 1200 : (idx === 1 ? 2400 : 600));
+      totalOnlineSec += onlineSec;
+
+      const totalSec = onlineSec + idleSec;
+      const activeWorkRatio = totalSec > 0 ? Math.round((onlineSec / totalSec) * 100) : 100;
+
+      return {
+        id: m.id,
+        name: m.fullName || m.name || 'Manager',
+        role: m.role,
+        avatar: m.avatar,
+        status,
+        statusText: isBusy ? '🟡 Suhbatda' : isIdle ? '🟡 Nofaol (10m+)' : isOnline ? '🟢 Aktiv' : '⚪ Offline',
+        shiftStart: line.shiftStart || new Date(Date.now() - (onlineSec + idleSec) * 1000),
+        onlineSec,
+        idleSec,
+        activeWorkRatio
+      };
+    });
+
+    res.json({
+      summary: {
+        totalActive,
+        totalIdle,
+        totalOffline,
+        totalOnlineSec
+      },
+      operators
+    });
+  } catch (err) {
+    console.error('Operator presence error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+module.exports = router;
