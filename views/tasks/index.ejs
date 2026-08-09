@@ -4,69 +4,34 @@
   user: user}) %>
 <style>
   /* Task List Styles */
-  .tasks-container {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
   .task-card-row {
     display: grid;
-    grid-template-columns: 40px 2.5fr 1.5fr 1.5fr 1.2fr 1fr 1fr 100px;
-    gap: 16px;
+    grid-template-columns: 36px 2.5fr 1.5fr 1.2fr 1.2fr 0.8fr 0.8fr 80px;
+    gap: 12px;
     align-items: center;
-    padding: 14px 24px;
-    background: var(--surface-card);
+    padding: 12px 20px;
+    background: var(--bg-primary);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    transition: all 0.2s ease;
+    border-radius: 10px;
+    transition: all 0.18s ease;
     position: relative;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.01);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
   }
   .task-card-row:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 16px -4px rgba(0,0,0,0.04), 0 4px 6px -2px rgba(0,0,0,0.02);
-    border-color: var(--accent-light);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px -2px rgba(0,0,0,0.06);
+    border-color: var(--accent);
   }
   .task-card-row.completed-task {
-    opacity: 0.75;
-    background: rgba(142, 142, 147, 0.02);
-  }
-  .task-check-circle {
-    width: 20px;
-    height: 20px;
-    border: 2px solid var(--text-tertiary);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    background: transparent;
-    color: #fff;
-    margin: 0 auto;
-  }
-  .task-check-circle:hover {
-    border-color: var(--accent);
-    transform: scale(1.08);
-  }
-  .task-check-circle.done {
-    background: #10b981;
-    border-color: #10b981;
+    opacity: 0.55;
   }
   .task-action-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    width: 28px; height: 28px; border-radius: 50%; border: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.15s ease;
   }
-  .task-action-btn:hover {
-    transform: scale(1.1);
-  }
+  .task-action-btn:hover { transform: scale(1.1); }
+
   .view-toggle { display: flex; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
   .vtbtn {
     padding: 6px 14px; font-size: 12.5px; font-weight: 500; border: none;
@@ -77,18 +42,34 @@
   .vtbtn:hover:not(.active) { background: var(--bg-secondary); color: var(--text-primary); }
 
   .kanban-col-body .task-item {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    margin-bottom: 0;
-    transition: transform 0.2s, box-shadow 0.2s;
+    background: var(--bg-secondary); border: 1px solid var(--border);
+    border-radius: 8px; margin-bottom: 0; transition: transform 0.2s, box-shadow 0.2s;
   }
+
+  /* Stats mini cards */
+  .task-stat-card {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 14px 20px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--bg-primary); min-width: 120px; gap: 4px; transition: all 0.15s;
+  }
+  .task-stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.04); }
+  .task-stat-num { font-size: 22px; font-weight: 800; line-height: 1; }
+  .task-stat-label { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.3px; }
+
+  /* Filter pill buttons */
+  .filter-pill {
+    padding: 5px 14px; font-size: 12.5px; font-weight: 600; border: 1px solid var(--border);
+    background: transparent; color: var(--text-secondary); cursor: pointer;
+    border-radius: 20px; transition: all 0.14s; display: inline-flex; align-items: center; gap: 5px;
+  }
+  .filter-pill:hover { background: var(--bg-secondary); color: var(--text-primary); }
+  .filter-pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 </style>
 
 <div class="page-header">
   <div>
-    <h1>Vazifalar</h1>
-    <p>Barcha vazifalar va eslatmalar</p>
+    <h1 style="display:flex; align-items:center; gap:10px;"><i class="fas fa-bell" style="color:var(--accent); font-size:22px;"></i> Eslatmalar</h1>
+    <p>Sdelkalar bo'yicha eslatmalar va vazifalar</p>
   </div>
   <div class="page-header-actions" style="display: flex; align-items: center; gap: 12px;">
     <div class="view-toggle">
@@ -99,56 +80,56 @@
         <i class="fas fa-columns"></i> Kanban
       </button>
     </div>
-    <button class="btn btn-primary" onclick="openTaskModal()">
-      <i class="fas fa-plus"></i> Yangi vazifa
-    </button>
+  </div>
+</div>
+
+<!-- STATS CARDS -->
+<div id="taskStatsRow" style="display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap;">
+  <div class="task-stat-card" onclick="setDateFilter('day', document.getElementById('fDay'))" style="cursor:pointer; border-left:3px solid #007AFF;">
+    <div class="task-stat-num" id="statToday" style="color:#007AFF;">0</div>
+    <div class="task-stat-label">Bugungi</div>
+  </div>
+  <div class="task-stat-card" onclick="setDateFilter('overdue', document.getElementById('fOverdue'))" style="cursor:pointer; border-left:3px solid #FF3B30;">
+    <div class="task-stat-num" id="statOverdue" style="color:#FF3B30;">0</div>
+    <div class="task-stat-label">Muddati o'tgan</div>
+  </div>
+  <div class="task-stat-card" onclick="setDateFilter('week', document.getElementById('fWeek'))" style="cursor:pointer; border-left:3px solid #FF9500;">
+    <div class="task-stat-num" id="statWeek" style="color:#FF9500;">0</div>
+    <div class="task-stat-label">Bu hafta</div>
+  </div>
+  <div class="task-stat-card" onclick="setDateFilter('done', document.getElementById('fDone'))" style="cursor:pointer; border-left:3px solid #34C759;">
+    <div class="task-stat-num" id="statDone" style="color:#34C759;">0</div>
+    <div class="task-stat-label">Bajarilgan</div>
   </div>
 </div>
 
 <!-- FILTER BAR -->
 <div class="filter-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-  <div style="display:flex;gap:4px;background:var(--bg-primary);padding:3px;border-radius:var(--radius-sm)">
-    <button class="btn btn-ghost btn-sm" id="fAll" onclick="setDateFilter('all', this)">Barchasi</button>
-    <button class="btn btn-sm active" id="fDay" onclick="setDateFilter('day', this)" style="border:none; background:var(--bg-secondary); color:var(--text-primary)">Kun</button>
-    <button class="btn btn-ghost btn-sm" id="fWeek" onclick="setDateFilter('week', this)">Hafta</button>
-    <button class="btn btn-ghost btn-sm" id="fMonth" onclick="setDateFilter('month', this)">Oy</button>
-    <button class="btn btn-ghost btn-sm" id="fOverdue" onclick="setDateFilter('overdue', this)">Muddati o'tgan</button>
-    <button class="btn btn-ghost btn-sm" id="fDone" onclick="setDateFilter('done', this)">Bajarilgan</button>
+  <div style="display:flex; gap:6px; flex-wrap:wrap;">
+    <button class="filter-pill" id="fAll" onclick="setDateFilter('all', this)">Barchasi</button>
+    <button class="filter-pill active" id="fDay" onclick="setDateFilter('day', this)"><i class="fas fa-sun"></i> Bugun</button>
+    <button class="filter-pill" id="fWeek" onclick="setDateFilter('week', this)"><i class="fas fa-calendar-week"></i> Hafta</button>
+    <button class="filter-pill" id="fMonth" onclick="setDateFilter('month', this)"><i class="fas fa-calendar-alt"></i> Oy</button>
+    <button class="filter-pill" id="fOverdue" onclick="setDateFilter('overdue', this)"><i class="fas fa-exclamation-triangle"></i> Muddati o'tgan</button>
+    <button class="filter-pill" id="fDone" onclick="setDateFilter('done', this)"><i class="fas fa-check-circle"></i> Bajarilgan</button>
   </div>
   <div style="display:flex; gap:10px; align-items:center;">
-    <select id="filterPriority" class="form-control" style="width:140px">
-      <option value="">Barcha priority</option>
-      <option value="high">🔴 Yuqori</option>
-      <option value="medium">🟡 O'rta</option>
-      <option value="low">🟢 Past</option>
-    </select>
-    <input type="text" id="taskSearch" class="form-control" style="width:220px" placeholder="Qidirish...">
+    <input type="text" id="taskSearch" class="form-control" style="width:220px; border-radius:20px; padding-left:16px;" placeholder="🔍 Qidirish...">
   </div>
 </div>
 
 <!-- LIST VIEW CONTAINER -->
 <div id="taskListView" style="background: transparent; border: none; box-shadow: none;">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-    <h3 id="taskListTitle" style="margin:0; font-size:15px; font-weight:700; color: var(--text-primary);">Barcha vazifalar</h3>
+    <h3 id="taskListTitle" style="margin:0; font-size:15px; font-weight:700; color: var(--text-primary);">Bugungi vazifalar</h3>
     <span id="taskCount" class="badge badge-blue" style="font-weight: 700;">0</span>
   </div>
-  <div style="display: flex; flex-direction: column; gap: 16px; min-width: 900px; overflow-x: auto;">
-    <!-- Headers row -->
-    <div class="tasks-header-row" style="display: grid; grid-template-columns: 40px 2.5fr 1.5fr 1.5fr 1.2fr 1fr 1fr 100px; gap: 16px; padding: 10px 24px; font-size: 11.5px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
-      <div style="text-align: center;"></div>
-      <div>Vazifa</div>
-      <div>Mijoz</div>
-      <div>Sdelka & Bosqich</div>
-      <div>Muddati</div>
-      <div>Muhimlik</div>
-      <div>Mas'ul</div>
-      <div style="text-align: right; padding-right: 10px;"></div>
-    </div>
-    <div id="taskListBody" style="display: flex; flex-direction: column; gap: 16px;">
+  <div style="display: flex; flex-direction: column; gap: 12px; min-width: 900px; overflow-x: auto;">
+    <div id="taskListBody" style="display: flex; flex-direction: column; gap: 10px;">
       <div style="text-align:center;padding:40px"><div class="spinner"></div></div>
     </div>
   </div>
-</div>
+</div></div>
 
 <!-- KANBAN VIEW CONTAINER -->
 <div id="taskKanbanView" class="hidden" style="margin-top: 16px;">
@@ -339,29 +320,30 @@ function setFilter(f) {
 window._dateFilterMode = 'day';
 function setDateFilter(mode, btn) {
   window._dateFilterMode = mode;
-  const parent = btn.parentElement;
-  parent.querySelectorAll('button').forEach(b => {
+  document.querySelectorAll('.filter-pill').forEach(b => {
     b.classList.remove('active');
-    b.style.background = 'transparent';
-    b.style.color = 'var(--text-secondary)';
   });
-  btn.classList.add('active');
-  btn.style.background = 'var(--bg-secondary)';
-  btn.style.color = 'var(--text-primary)';
-  
+  if (btn) btn.classList.add('active');
   refreshView();
 }
 window.setDateFilter = setDateFilter;
 
+function isKotarmadiStage(task) {
+  if (!task.deal || !task.deal.stage) return false;
+  const name = (task.deal.stage.name || '').toLowerCase();
+  return name.includes("ko'tarmadi") || name.includes('kotarmadi') || name.includes('javob bermadi');
+}
+
 function getFilteredTasks() {
-  const priority = document.getElementById('filterPriority').value;
   const q = document.getElementById('taskSearch').value.toLowerCase();
   const today = new Date(); today.setHours(0,0,0,0);
   const tomorrowEnd = new Date(today); tomorrowEnd.setDate(today.getDate() + 1);
   tomorrowEnd.setHours(23,59,59,999);
 
   return allTasks.filter(t => {
-    if (priority && t.priority !== priority) return false;
+    // Ko'tarmadi bosqichidagi vazifalarni olib tashla
+    if (isKotarmadiStage(t) && !t.completed) return false;
+
     if (q && !(
       (t.title || '').toLowerCase().includes(q) ||
       (t.client && t.client.name && t.client.name.toLowerCase().includes(q)) ||
@@ -370,7 +352,7 @@ function getFilteredTasks() {
     )) return false;
 
     const due = t.dueDate ? new Date(t.dueDate) : null;
-    const filter = window._dateFilterMode || 'all';
+    const filter = window._dateFilterMode || 'day';
 
     if (filter === 'day') {
       return due && due <= tomorrowEnd && !t.completed;
@@ -393,8 +375,26 @@ function getFilteredTasks() {
     if (filter === 'done') {
       return t.completed;
     }
-    return true;
+    return !t.completed; // 'all' - faqat bajarilmagan
   });
+}
+
+function updateStats() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const tomorrowEnd = new Date(today); tomorrowEnd.setDate(today.getDate() + 1); tomorrowEnd.setHours(23,59,59,999);
+  const endOfWeek = new Date(today); endOfWeek.setDate(today.getDate() + 7); endOfWeek.setHours(23,59,59,999);
+
+  const active = allTasks.filter(t => !t.completed && !isKotarmadiStage(t));
+  const todayCount = active.filter(t => { const d = t.dueDate ? new Date(t.dueDate) : null; return d && d <= tomorrowEnd; }).length;
+  const overdueCount = active.filter(t => { const d = t.dueDate ? new Date(t.dueDate) : null; return d && d < today; }).length;
+  const weekCount = active.filter(t => { const d = t.dueDate ? new Date(t.dueDate) : null; return d && d <= endOfWeek; }).length;
+  const doneCount = allTasks.filter(t => t.completed).length;
+
+  const el = (id) => document.getElementById(id);
+  if (el('statToday')) el('statToday').textContent = todayCount;
+  if (el('statOverdue')) el('statOverdue').textContent = overdueCount;
+  if (el('statWeek')) el('statWeek').textContent = weekCount;
+  if (el('statDone')) el('statDone').textContent = doneCount;
 }
 
 function renderSingleTaskRowHtml(t) {
@@ -599,23 +599,23 @@ function renderTasks() {
   const el = document.getElementById('taskListBody');
   document.getElementById('taskCount').textContent = tasks.length;
 
-  const titles = { all: 'Barcha vazifalar', today: 'Bugungi vazifalar', overdue: "Muddati o'tgan", done: 'Bajarilgan vazifalar' };
+  const titles = { all: 'Barcha vazifalar', day: 'Bugungi vazifalar', week: 'Bu hafta vazifalari', month: 'Bu oy vazifalari', overdue: "Muddati o'tgan", done: 'Bajarilgan vazifalar' };
   document.getElementById('taskListTitle').textContent = titles[currentFilter] || 'Vazifalar';
 
   if (!tasks.length) {
     el.innerHTML = `
-      <div class="empty-state" style="border:none; text-align:center; padding:40px; background: var(--surface-card); border-radius: 12px; border: 1px solid var(--border);">
-        <div class="empty-state-icon" style="font-size:32px; color:var(--text-tertiary); margin-bottom:12px;"><i class="fas fa-check-circle"></i></div>
+      <div style="text-align:center; padding:48px; background: var(--bg-primary); border-radius: 12px; border: 1px solid var(--border);">
+        <div style="font-size:40px; margin-bottom:12px;">✅</div>
         <h3 style="font-size:16px; font-weight:700; color:var(--text-primary); margin-bottom:6px;">Vazifalar yo'q</h3>
-        <p style="font-size:13px; color:var(--text-secondary);">Yangi vazifa qo'shing</p>
+        <p style="font-size:13px; color:var(--text-secondary);">Hozircha bu filtrdagi vazifalar mavjud emas</p>
       </div>`;
+    updateStats();
     return;
   }
 
   const today = new Date(); today.setHours(0,0,0,0);
   const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
 
-  // Group tasks
   const overdueTasks = [];
   const todayTasks = [];
   const tomorrowTasks = [];
@@ -624,36 +624,27 @@ function renderTasks() {
   const doneTasks = [];
 
   tasks.forEach(t => {
-    if (t.completed) {
-      doneTasks.push(t);
-      return;
-    }
+    if (t.completed) { doneTasks.push(t); return; }
     const due = t.dueDate ? new Date(t.dueDate) : null;
-    if (!due) {
-      noDateTasks.push(t);
-    } else {
+    if (!due) { noDateTasks.push(t); }
+    else {
       const d = new Date(due); d.setHours(0,0,0,0);
-      if (d < today) {
-        overdueTasks.push(t);
-      } else if (d.getTime() === today.getTime()) {
-        todayTasks.push(t);
-      } else if (d.getTime() === tomorrow.getTime()) {
-        tomorrowTasks.push(t);
-      } else {
-        futureTasks.push(t);
-      }
+      if (d < today) overdueTasks.push(t);
+      else if (d.getTime() === today.getTime()) todayTasks.push(t);
+      else if (d.getTime() === tomorrow.getTime()) tomorrowTasks.push(t);
+      else futureTasks.push(t);
     }
   });
 
-  function renderTaskGroup(groupTasks, title, color) {
+  function renderTaskGroup(groupTasks, title, color, icon) {
     if (!groupTasks.length) return '';
     return `
-      <div class="task-group-section" style="margin-bottom: 8px;">
-        <div class="task-group-hdr" style="padding: 6px 12px; font-weight: 700; color: ${color}; font-size: 12.5px; display: inline-flex; align-items: center; gap: 8px; background: ${color}12; border-radius: 6px; margin-bottom: 12px; border: 1px solid ${color}20; width: fit-content;">
-          <span style="width: 8px; height: 8px; border-radius: 50%; background: ${color}"></span>
-          ${title} (${groupTasks.length} ta)
+      <div style="margin-bottom: 4px;">
+        <div style="padding: 5px 14px; font-weight: 700; color: ${color}; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; background: ${color}10; border-radius: 20px; margin-bottom: 10px; border: 1px solid ${color}20;">
+          <i class="fas fa-${icon}" style="font-size:10px;"></i>
+          ${title} <span style="font-weight:800;">${groupTasks.length}</span>
         </div>
-        <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;">
           ${groupTasks.map(t => renderSingleTaskRowHtml(t)).join('')}
         </div>
       </div>
@@ -661,14 +652,16 @@ function renderTasks() {
   }
 
   let html = '';
-  html += renderTaskGroup(overdueTasks, "Muddati o'tgan vazifalar", "#FF3B30");
-  html += renderTaskGroup(todayTasks, "Bugungi vazifalar", "#007AFF");
-  html += renderTaskGroup(tomorrowTasks, "Ertangi vazifalar", "#FF9500");
-  html += renderTaskGroup(futureTasks, "Keyingi kunlardagi vazifalar", "#5856D6");
-  html += renderTaskGroup(noDateTasks, "Sana belgilanmagan vazifalar", "#8E8E93");
-  html += renderTaskGroup(doneTasks, "Bajarilgan vazifalar", "#34C759");
+  // Bugungi birinchi
+  html += renderTaskGroup(todayTasks, "Bugungi", "#007AFF", "sun");
+  html += renderTaskGroup(overdueTasks, "Muddati o'tgan", "#FF3B30", "exclamation-triangle");
+  html += renderTaskGroup(tomorrowTasks, "Ertangi", "#FF9500", "clock");
+  html += renderTaskGroup(futureTasks, "Keyingi kunlar", "#5856D6", "calendar-alt");
+  html += renderTaskGroup(noDateTasks, "Sanasiz", "#8E8E93", "question-circle");
+  html += renderTaskGroup(doneTasks, "Bajarilgan", "#34C759", "check-circle");
 
   el.innerHTML = html;
+  updateStats();
 }
 
 let currentView = 'list';
@@ -1067,7 +1060,7 @@ function closeViewTaskModal() {
 // this code runs (DOMContentLoaded only fires after the whole document,
 // including earlier synchronous <script> tags, has been parsed).
 function init() {
-  document.getElementById('filterPriority').addEventListener('change', window.refreshView);
+  // Filters initialized
   const searchEl = document.getElementById('taskSearch');
   const debounceFn = (typeof debounce === 'function') ? debounce : (fn, delay) => {
     let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn.apply(null, args), delay); };
