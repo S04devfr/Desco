@@ -4,80 +4,69 @@
   user: user}) %>
 <style>
   /* Task List Styles */
-  .task-item {
+  .tasks-container {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .task-card-row {
+    display: grid;
+    grid-template-columns: 40px 2.5fr 1.5fr 1.5fr 1.2fr 1fr 1fr 100px;
     gap: 16px;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-    transition: background 0.2s;
+    align-items: center;
+    padding: 14px 24px;
+    background: var(--surface-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    position: relative;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.01);
   }
-  .task-item:last-child {
-    border-bottom: none;
+  .task-card-row:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px -4px rgba(0,0,0,0.04), 0 4px 6px -2px rgba(0,0,0,0.02);
+    border-color: var(--accent-light);
   }
-  .task-item:hover {
-    background: var(--bg-secondary);
+  .task-card-row.completed-task {
+    opacity: 0.75;
+    background: rgba(142, 142, 147, 0.02);
   }
-  .task-check {
+  .task-check-circle {
     width: 20px;
     height: 20px;
     border: 2px solid var(--text-tertiary);
-    border-radius: 6px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    flex-shrink: 0;
-    transition: all 0.2s;
-  }
-  .task-check:hover {
-    border-color: var(--accent);
-  }
-  .task-check.done {
-    background: var(--accent);
-    border-color: var(--accent);
+    transition: all 0.2s ease;
+    background: transparent;
     color: #fff;
+    margin: 0 auto;
   }
-  .task-info {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+  .task-check-circle:hover {
+    border-color: var(--accent);
+    transform: scale(1.08);
   }
-  .task-title {
-    font-size: 15px;
-    font-weight: 500;
-    color: var(--text-primary);
+  .task-check-circle.done {
+    background: #10b981;
+    border-color: #10b981;
   }
-  .task-title.done {
-    text-decoration: line-through;
-    color: var(--text-tertiary);
-  }
-  .task-meta {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-    font-size: 13px;
-  }
-  .priority-dot {
-    width: 8px;
-    height: 8px;
+  .task-action-btn {
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
-  }
-  .priority-dot.high { background: #ef4444; }
-  .priority-dot.medium { background: #eab308; }
-  .priority-dot.low { background: #22c55e; }
-  .task-due {
-    display: flex;
+    border: none;
+    display: inline-flex;
     align-items: center;
-    gap: 4px;
-    color: var(--text-secondary);
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
   }
-  .task-due.overdue { color: #ef4444; font-weight: 500; }
-  .task-due.today { color: #eab308; font-weight: 500; }
-
-  /* ── View Toggle & Kanban Styles ── */
+  .task-action-btn:hover {
+    transform: scale(1.1);
+  }
   .view-toggle { display: flex; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
   .vtbtn {
     padding: 6px 14px; font-size: 12.5px; font-weight: 500; border: none;
@@ -93,84 +82,6 @@
     border-radius: 8px;
     margin-bottom: 0;
     transition: transform 0.2s, box-shadow 0.2s;
-  }
-  .kanban-col-body .task-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  }
-
-  /* Task Action Buttons Styling */
-  .task-action-btn {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  .task-action-btn.btn-view {
-    background: rgba(99, 102, 241, 0.12);
-    color: #6366F1;
-  }
-  .task-action-btn.btn-view:hover {
-    background: rgba(99, 102, 241, 0.22);
-    transform: scale(1.08);
-  }
-  .task-action-btn.btn-edit {
-    background: rgba(255, 149, 0, 0.15);
-    color: #FF9500;
-  }
-  .task-action-btn.btn-edit:hover {
-    background: rgba(255, 149, 0, 0.28);
-    transform: scale(1.08);
-  }
-  .task-action-btn.btn-delete {
-    background: rgba(255, 59, 48, 0.15);
-    color: #FF3B30;
-  }
-  .task-action-btn.btn-delete:hover {
-    background: rgba(255, 59, 48, 0.28);
-    transform: scale(1.08);
-  }
-
-  /* Spreadsheet Styling override for list table */
-  #tasksTable {
-    border-collapse: collapse !important;
-    width: 100%;
-  }
-  #tasksTable th {
-    border: 1px solid var(--border-strong) !important;
-    padding: 10px 12px !important;
-    font-size: 11.5px !important;
-    font-weight: 700 !important;
-    text-transform: uppercase;
-    background: var(--bg-tertiary) !important;
-    color: var(--text-primary) !important;
-  }
-  #tasksTable td {
-    border: 1px solid var(--border) !important;
-    padding: 8px 12px !important;
-    font-size: 13.5px !important;
-    color: var(--text-800) !important;
-    vertical-align: middle;
-  }
-  #tasksTable tbody tr:hover:not(.group-header-row) {
-    background: var(--brand-soft) !important;
-  }
-  .group-header-row td {
-    background: var(--bg-secondary) !important;
-    font-weight: 700 !important;
-    border-top: 1px solid var(--border-strong) !important;
-    border-bottom: 1px solid var(--border-strong) !important;
-  }
-  .completed-task {
-    background: rgba(142, 142, 147, 0.04) !important;
-  }
-  .completed-task td {
-    color: var(--text-tertiary) !important;
   }
 </style>
 
@@ -216,28 +127,27 @@
 </div>
 
 <!-- LIST VIEW CONTAINER -->
-<div id="taskListView" class="card" style="overflow-x:auto;">
-  <div class="card-header" id="taskListHeader" style="display:flex; justify-content:space-between; align-items:center;">
-    <h3 id="taskListTitle" style="margin:0; font-size:15px; font-weight:600;">Barcha vazifalar</h3>
-    <span id="taskCount" class="badge badge-blue">0</span>
+<div id="taskListView" style="background: transparent; border: none; box-shadow: none;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+    <h3 id="taskListTitle" style="margin:0; font-size:15px; font-weight:700; color: var(--text-primary);">Barcha vazifalar</h3>
+    <span id="taskCount" class="badge badge-blue" style="font-weight: 700;">0</span>
   </div>
-  <table class="table" id="tasksTable" style="width:100%;">
-    <thead>
-      <tr>
-        <th style="width:4%; text-align:center;"></th>
-        <th style="width:28%;">Vazifa</th>
-        <th style="width:18%;">Mijoz</th>
-        <th style="width:18%;">Sdelka & Bosqich</th>
-        <th style="width:12%;">Muddati</th>
-        <th style="width:10%;">Muhimlik</th>
-        <th style="width:10%;">Mas'ul</th>
-        <th style="width:6%; text-align:center;">Amallar</th>
-      </tr>
-    </thead>
-    <tbody id="taskListBody">
-      <tr><td colspan="8" style="text-align:center;padding:40px"><div class="spinner"></div></td></tr>
-    </tbody>
-  </table>
+  <div style="display: flex; flex-direction: column; gap: 16px; min-width: 900px; overflow-x: auto;">
+    <!-- Headers row -->
+    <div class="tasks-header-row" style="display: grid; grid-template-columns: 40px 2.5fr 1.5fr 1.5fr 1.2fr 1fr 1fr 100px; gap: 16px; padding: 10px 24px; font-size: 11.5px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+      <div style="text-align: center;">Bajarildi</div>
+      <div>Vazifa</div>
+      <div>Mijoz</div>
+      <div>Sdelka & Bosqich</div>
+      <div>Muddati</div>
+      <div>Muhimlik</div>
+      <div>Mas'ul</div>
+      <div style="text-align: right; padding-right: 10px;">Amallar</div>
+    </div>
+    <div id="taskListBody" style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="text-align:center;padding:40px"><div class="spinner"></div></div>
+    </div>
+  </div>
 </div>
 
 <!-- KANBAN VIEW CONTAINER -->
@@ -494,8 +404,9 @@ function renderSingleTaskRowHtml(t) {
   const isOverdue = due && due < today && !t.completed;
   const isToday = due && due >= today && due < tomorrow;
   const dueClass = isOverdue ? 'overdue' : isToday ? 'today' : '';
-  const pLabel = { high: '🔴 Yuqori', medium: "🟡 O'ta", low: '🟢 Past' };
+  const pLabel = { high: '🔴 Yuqori', medium: "🟡 O'ta", low: 'Past' };
   const pColors = { high: '#ef4444', medium: '#eab308', low: '#22c55e' };
+  const pBg = { high: 'rgba(239, 68, 68, 0.08)', medium: 'rgba(234, 179, 8, 0.08)', low: 'rgba(34, 197, 94, 0.08)' };
 
   let actionTypeHtml = '';
   const isBron = t.actionType === 'Bron qilish';
@@ -503,24 +414,23 @@ function renderSingleTaskRowHtml(t) {
   const isPayment = t.actionType === 'To\'lov kutish' || t.actionType === 'To_lov kutish';
   
   if (isBron) {
-    actionTypeHtml = `<span style="background: rgba(16, 185, 129, 0.12); color: #10b981; font-weight: 700; font-size: 10.5px; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.25); display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;"><i class="fas fa-ticket-alt"></i> BRON</span>`;
+    actionTypeHtml = `<span style="background: rgba(16, 185, 129, 0.12); color: #10b981; font-weight: 700; font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.2); display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;"><i class="fas fa-ticket-alt"></i> BRON</span>`;
   } else if (isMeeting) {
-    actionTypeHtml = `<span style="background: rgba(99, 102, 241, 0.12); color: #6366f1; font-weight: 700; font-size: 10.5px; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(99, 102, 241, 0.25); display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;"><i class="fas fa-handshake"></i> UCHRASHUV</span>`;
+    actionTypeHtml = `<span style="background: rgba(99, 102, 241, 0.12); color: #6366f1; font-weight: 700; font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(99, 102, 241, 0.2); display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;"><i class="fas fa-handshake"></i> UCHRASHUV</span>`;
   } else if (isPayment) {
-    actionTypeHtml = `<span style="background: rgba(245, 158, 11, 0.12); color: #f59e0b; font-weight: 700; font-size: 10.5px; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.25); display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;"><i class="fas fa-credit-card"></i> TO'LOV</span>`;
+    actionTypeHtml = `<span style="background: rgba(245, 158, 11, 0.12); color: #f59e0b; font-weight: 700; font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.2); display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;"><i class="fas fa-credit-card"></i> TO'LOV</span>`;
   } else {
-    actionTypeHtml = `<span style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9; font-weight: 700; font-size: 10.5px; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(14, 165, 233, 0.2); display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;"><i class="fas fa-phone-alt"></i> ALOQA</span>`;
+    actionTypeHtml = `<span style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9; font-weight: 700; font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(14, 165, 233, 0.15); display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;"><i class="fas fa-phone-alt"></i> ALOQA</span>`;
   }
 
-  let dueHtml = '<span style="color:var(--text-tertiary); font-size:12.5px;"><i class="far fa-calendar-times"></i> Belgilanmagan</span>';
+  let dueHtml = '<span style="color:var(--text-tertiary); font-size:12px;"><i class="far fa-calendar-times"></i> Belgilanmagan</span>';
   if (t.completed && t.updatedAt) {
     const d = new Date(t.updatedAt);
     if (!isNaN(d.getTime())) {
       const dd = String(d.getDate()).padStart(2, '0');
       const mm = String(d.getMonth() + 1).padStart(2, '0');
       const yyyy = d.getFullYear();
-      const dateFormatted = `${dd}.${mm}.${yyyy}`;
-      dueHtml = `<span style="color:var(--success); font-size:12.5px; font-weight:600;"><i class="fas fa-check-circle"></i> Bajarildi: ${dateFormatted}</span>`;
+      dueHtml = `<span style="color:#10b981; font-size:12px; font-weight:600;"><i class="fas fa-check-circle"></i> Bajarildi: ${dd}.${mm}.${yyyy}</span>`;
     }
   } else if (t.dueDate) {
     const d = new Date(t.dueDate);
@@ -528,75 +438,85 @@ function renderSingleTaskRowHtml(t) {
       const dd = String(d.getDate()).padStart(2, '0');
       const mm = String(d.getMonth() + 1).padStart(2, '0');
       const yyyy = d.getFullYear();
-      const dateFormatted = `${dd}.${mm}.${yyyy}`;
-      dueHtml = `<span class="${dueClass}" style="font-size:12.5px; font-weight:600;"><i class="far fa-calendar-alt"></i> ${dateFormatted} ${t.dueTime || '10:00'}</span>`;
+      dueHtml = `<span class="${dueClass}" style="font-size:12px; font-weight:600;"><i class="far fa-calendar-alt"></i> ${dd}.${mm}.${yyyy} ${t.dueTime || '10:00'}</span>`;
     }
   }
 
   // Client column
-  let clientHtml = '—';
+  let clientHtml = '<span style="color:var(--text-tertiary);">—</span>';
   if (t.client) {
     clientHtml = `
-      <div style="font-weight:600; color:var(--text-primary); font-size:13.5px;">${_esc(t.client.name)}</div>
-      ${t.client.phone ? `<a href="tel:${_esc(t.client.phone)}" style="font-size:12px; color:var(--brand); font-weight:700; text-decoration:none;">${_esc(t.client.phone)}</a>` : ''}
+      <div style="font-weight:600; color:var(--text-primary); font-size:13px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${_esc(t.client.name)}</div>
+      ${t.client.phone ? `<a href="tel:${_esc(t.client.phone)}" style="font-size:11.5px; color:var(--brand); font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:4px; margin-top:2px;"><i class="fas fa-phone-alt" style="font-size:9.5px;"></i> ${_esc(t.client.phone)}</a>` : ''}
     `;
   }
 
   // Deal column (omit product name if already in title to avoid ugly repetition!)
-  let dealHtml = '—';
+  let dealHtml = '<span style="color:var(--text-tertiary);">—</span>';
   if (t.deal) {
     const stageName = (t.deal.stage && t.deal.stage.name) ? t.deal.stage.name : 'Bosqichsiz';
     const isRepetitive = (t.title || '').toLowerCase().includes((t.deal.productName || '').toLowerCase());
     dealHtml = `
-      ${isRepetitive ? '' : `<div style="font-weight:500; font-size:13px; color:var(--text-secondary); margin-bottom:2px;">${_esc(t.deal.productName)}</div>`}
-      <span class="badge badge-blue" style="font-size:10.5px; font-weight:700; padding:2px 6px; border-radius:4px;">${_esc(stageName)}</span>
+      ${isRepetitive ? '' : `<div style="font-weight:600; font-size:12.5px; color:var(--text-secondary); margin-bottom:2px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${_esc(t.deal.productName)}</div>`}
+      <span class="badge badge-blue" style="font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px;">${_esc(stageName)}</span>
     `;
   }
 
-  // Assignee
-  const assigneeHtml = t.assignedTo 
-    ? `<span class="badge badge-gray" style="font-size:11.5px; font-weight:500; padding:2px 6px;"><i class="fas fa-user-tie" style="margin-right:4px;"></i>${_esc(t.assignedTo.fullName || t.assignedTo.email)}</span>` 
-    : '—';
+  // Assignee initials avatar style
+  let assigneeHtml = '<span style="color:var(--text-tertiary);">—</span>';
+  if (t.assignedTo) {
+    const name = t.assignedTo.fullName || t.assignedTo.email;
+    const initials = name.substring(0, 2).toUpperCase();
+    assigneeHtml = `
+      <div style="display:flex; align-items:center; gap:6px;">
+        <div style="width:24px; height:24px; border-radius:50%; background:var(--accent-soft); color:var(--accent); font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${initials}</div>
+        <span style="font-size:12px; font-weight:500; color:var(--text-secondary); max-width: 80px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${_esc(name)}</span>
+      </div>
+    `;
+  }
 
-  // Task title (if completed, line-through)
   const titleStyle = t.completed ? 'text-decoration: line-through; color: var(--text-tertiary);' : 'font-weight:600; color: var(--text-primary);';
 
   return `
-    <tr class="task-row ${t.completed ? 'completed-task' : ''}" id="task-${t.id}">
-      <td style="text-align: center;">
-        <div class="task-check ${t.completed ? 'done' : ''}" onclick="onCheckboxClick(${t.id}, ${t.completed})" title="${t.completed ? 'Bajarilmagan' : 'Bajarildi'}" style="margin: 0 auto;">
+    <div class="task-card-row ${t.completed ? 'completed-task' : ''}" id="task-${t.id}">
+      <div style="position:absolute; left:0; top:12px; bottom:12px; width:4px; border-radius:0 4px 4px 0; background: ${isOverdue ? '#ef4444' : t.completed ? '#10b981' : 'var(--border)'}"></div>
+
+      <div style="display: flex; justify-content: center; align-items: center;">
+        <div class="task-check-circle ${t.completed ? 'done' : ''}" onclick="onCheckboxClick(${t.id}, ${t.completed})" title="${t.completed ? 'Bajarilmagan' : 'Bajarildi'}">
           ${t.completed ? '<i class="fas fa-check" style="font-size:9px"></i>' : ''}
         </div>
-      </td>
-      <td>
+      </div>
+      <div>
         <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;">
           ${actionTypeHtml}
           <div style="${titleStyle} font-size:13.5px; line-height:1.4;">${_esc(t.title)}</div>
         </div>
-        ${t.description ? `<div style="font-size:11.5px; color:var(--text-tertiary); margin-top:2px; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${_esc(t.description)}">${_esc(t.description)}</div>` : ''}
+        ${t.description ? `<div style="font-size:11.5px; color:var(--text-secondary); margin-top:2px; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${_esc(t.description)}">${_esc(t.description)}</div>` : ''}
         
-        <!-- Inline quick completion box (hidden by default) -->
-        <div id="quick-complete-${t.id}" style="display:none; margin-top:8px; padding:8px; background:var(--bg-secondary); border-radius:6px; border:1px solid var(--border); gap:6px; align-items:center; max-width: 320px;" onclick="event.stopPropagation();">
+        <!-- Inline quick completion box -->
+        <div id="quick-complete-${t.id}" style="display:none; margin-top:8px; padding:8px; background:var(--bg-secondary); border-radius:8px; border:1px solid var(--border); gap:6px; align-items:center; max-width: 320px;" onclick="event.stopPropagation();">
           <input type="text" id="quick-res-${t.id}" class="form-control" style="font-size:11.5px; height:26px; padding:2px 8px; flex:1; background:var(--bg-primary); color:var(--text-primary); border-color:var(--border);" placeholder="Natijani yozing...">
           <button class="btn btn-primary btn-sm" style="font-size:11px; padding:2px 10px; height:26px; background:var(--brand); border-color:var(--brand);" onclick="submitQuickComplete(${t.id})">Saqlash</button>
           <button class="btn btn-ghost btn-sm" style="font-size:11px; padding:2px 6px; height:26px; color:var(--text-secondary);" onclick="cancelQuickComplete(${t.id})">Bekor</button>
         </div>
-      </td>
-      <td>${clientHtml}</td>
-      <td>${dealHtml}</td>
-      <td>${dueHtml}</td>
-      <td>
-        <span style="font-size:11.5px; font-weight:700; color:${pColors[t.priority] || '#8E8E93'}">${pLabel[t.priority] || ''}</span>
-      </td>
-      <td>${assigneeHtml}</td>
-      <td style="text-align:center;">
-        <div style="display:flex; justify-content:center; gap:4px;">
-          <button class="task-action-btn btn-view" onclick="viewTaskDetails(${t.id})" title="Ko'rish" style="width:26px; height:26px;"><i class="fas fa-eye" style="font-size:11px;"></i></button>
-          <button class="task-action-btn btn-edit" onclick="openTaskModal(${t.id})" title="Tahrirlash" style="width:26px; height:26px;"><i class="fas fa-edit" style="font-size:11px;"></i></button>
-          <button class="task-action-btn btn-delete" onclick="deleteTask(${t.id})" title="O'chirish" style="width:26px; height:26px;"><i class="fas fa-trash" style="font-size:11px;"></i></button>
+      </div>
+      <div>${clientHtml}</div>
+      <div>${dealHtml}</div>
+      <div>${dueHtml}</div>
+      <div>
+        <span style="font-size:11px; font-weight:700; color:${pColors[t.priority] || '#8E8E93'}; background:${pBg[t.priority] || 'rgba(0,0,0,0.05)'}; padding:2px 8px; border-radius:6px; border:1px solid ${pColors[t.priority]}20;">
+          ${pLabel[t.priority] || 'Past'}
+        </span>
+      </div>
+      <div>${assigneeHtml}</div>
+      <div style="text-align:right;">
+        <div style="display:flex; justify-content:flex-end; gap:6px;">
+          <button class="task-action-btn" onclick="viewTaskDetails(${t.id})" title="Ko'rish" style="background:var(--accent-soft); color:var(--accent);"><i class="fas fa-eye" style="font-size:11.5px;"></i></button>
+          <button class="task-action-btn" onclick="openTaskModal(${t.id})" title="Tahrirlash" style="background:rgba(255, 149, 0, 0.1); color:#FF9500;"><i class="fas fa-edit" style="font-size:11.5px;"></i></button>
+          <button class="task-action-btn" onclick="deleteTask(${t.id})" title="O'chirish" style="background:rgba(255, 59, 48, 0.1); color:#FF3B30;"><i class="fas fa-trash" style="font-size:11.5px;"></i></button>
         </div>
-      </td>
-    </tr>
+      </div>
+    </div>
   `;
 }
 
@@ -700,11 +620,12 @@ function renderTasks() {
   document.getElementById('taskListTitle').textContent = titles[currentFilter] || 'Vazifalar';
 
   if (!tasks.length) {
-    el.innerHTML = `<tr><td colspan="8" class="empty-state" style="border:none; text-align:center; padding:40px;">
-      <div class="empty-state-icon"><i class="fas fa-check-circle"></i></div>
-      <h3>Vazifalar yo'q</h3>
-      <p>Yangi vazifa qo'shing</p>
-    </td></tr>`;
+    el.innerHTML = `
+      <div class="empty-state" style="border:none; text-align:center; padding:40px; background: var(--surface-card); border-radius: 12px; border: 1px solid var(--border);">
+        <div class="empty-state-icon" style="font-size:32px; color:var(--text-tertiary); margin-bottom:12px;"><i class="fas fa-check-circle"></i></div>
+        <h3 style="font-size:16px; font-weight:700; color:var(--text-primary); margin-bottom:6px;">Vazifalar yo'q</h3>
+        <p style="font-size:13px; color:var(--text-secondary);">Yangi vazifa qo'shing</p>
+      </div>`;
     return;
   }
 
@@ -744,15 +665,15 @@ function renderTasks() {
   function renderTaskGroup(groupTasks, title, color) {
     if (!groupTasks.length) return '';
     return `
-      <tr class="group-header-row">
-        <td colspan="8" style="padding: 10px 14px; font-weight: 700; color: ${color}; border: 1px solid var(--border-strong) !important;">
-          <span style="display:inline-flex; align-items:center; gap:8px;">
-            <span style="width:8px; height:8px; border-radius:50%; background:${color}"></span>
-            ${title} (${groupTasks.length} ta)
-          </span>
-        </td>
-      </tr>
-      ${groupTasks.map(t => renderSingleTaskRowHtml(t)).join('')}
+      <div class="task-group-section" style="margin-bottom: 8px;">
+        <div class="task-group-hdr" style="padding: 6px 12px; font-weight: 700; color: ${color}; font-size: 12.5px; display: inline-flex; align-items: center; gap: 8px; background: ${color}12; border-radius: 6px; margin-bottom: 12px; border: 1px solid ${color}20; width: fit-content;">
+          <span style="width: 8px; height: 8px; border-radius: 50%; background: ${color}"></span>
+          ${title} (${groupTasks.length} ta)
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+          ${groupTasks.map(t => renderSingleTaskRowHtml(t)).join('')}
+        </div>
+      </div>
     `;
   }
 
