@@ -138,6 +138,7 @@ app.use('/api/marketing',       require('./routes/marketing'));
 app.use('/api/delivery',        require('./routes/delivery'));
 app.use('/api/export',          require('./routes/export'));
 app.use('/api/activity',        require('./routes/activity'));
+app.use('/api/telephony',       require('./routes/telephony'));
 
 // ── PUBLIC LEGAL PAGES (no auth required — Meta App Review uchun) ──
 app.use('/', require('./routes/legal'));
@@ -164,6 +165,7 @@ app.get('/instagram', requireAuth, requireRole('admin', 'manager'), (req, res) =
   res.render('instagram/index', { user: req.session.user, activePage: 'instagram-' + filter });
 });
 app.get('/telegram',  requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('telegram/index',  { user: req.session.user, activePage: 'telegram' }));
+app.get('/telephony', requireAuth, requireRole('admin', 'manager', 'operator'), (req, res) => res.render('telephony/index', { user: req.session.user, activePage: 'telephony' }));
 app.get('/ai',        requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('ai/index',        { user: req.session.user, activePage: 'ai' }));
 app.get('/warehouse', requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('warehouse/index', { user: req.session.user, activePage: 'warehouse' }));
 app.get('/nasiya',   requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('deals/index',    { user: req.session.user, activePage: 'nasiya' }));

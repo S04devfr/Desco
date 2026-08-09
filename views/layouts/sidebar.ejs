@@ -80,22 +80,20 @@
       </div>
     </div>
 
-    <!-- Telegram Submenu -->
-    <div class="sidebar-submenu-container">
-      <div class="sidebar-submenu-header <%= activePage.startsWith('telegram') ? 'active' : '' %>" onclick="toggleSubmenu(this)">
+    <!-- Telegram (Direct Click) -->
+    <a href="/telegram" class="<%= activePage.startsWith('telegram') ? 'active' : '' %>" style="display:flex; justify-content:space-between; align-items:center;">
+      <div style="display:flex; align-items:center; gap:10px;">
         <span class="nav-icon"><i class="fab fa-telegram" style="color:#0088cc"></i></span>
         <span class="nav-label">Telegram</span>
-        <i class="fas fa-chevron-right arrow-icon"></i>
       </div>
-      <div class="sidebar-submenu-items">
-        <a href="/telegram" class="sub-item <%= activePage === 'telegram' ? 'active' : '' %>" style="display:flex; justify-content:space-between; align-items:center;">
-          <div>
-            <span class="sub-dot" style="background:#0088cc"></span> Direct
-          </div>
-          <span id="sidebar-telegram-badge" class="nav-badge hidden" style="margin-right:20px;">0</span>
-        </a>
-      </div>
-    </div>
+      <span id="sidebar-telegram-badge" class="nav-badge hidden">0</span>
+    </a>
+
+    <!-- IP Telefoniya -->
+    <a href="/telephony" class="<%= activePage === 'telephony' ? 'active' : '' %>">
+      <span class="nav-icon"><i class="fas fa-phone-alt" style="color:#34C759"></i></span>
+      <span class="nav-label">Telefoniya</span>
+    </a>
 
     <!-- Qo'shimcha Submenu (Mijozlar, Rejalar, Shopirlar, Ishonch filiallari) -->
     <div class="sidebar-submenu-container">

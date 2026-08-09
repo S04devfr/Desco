@@ -28,7 +28,6 @@ model User {
   managerSalary  ManagerSalary?
   managerFines   ManagerFine[]
   plans          Plan[]
-  callLogs       CallLog[]
 
   companiesCompanyOwner Company[] @relation("CompanyOwner")
   contactsContactOwner  Contact[] @relation("ContactOwner")
@@ -61,7 +60,6 @@ model Client {
 
   deals Deal[]
   tasks Task[]
-  callLogs CallLog[]
 
   instagramId       String? @unique
   instagramUsername String?
@@ -224,7 +222,6 @@ model Deal {
 
   driverPhone      String?
   stageHistory DealStageHistory[]
-  callLogs     CallLog[]
 
   @@index([stageId])
   @@index([managerId])
@@ -544,34 +541,4 @@ model Activity {
 
   @@map("activities")
 }
-
-model CallLog {
-  id           Int      @id @default(autoincrement())
-  callId       String?  @unique
-  type         String   @default("incoming") // incoming | outgoing | missed
-  fromNumber   String
-  toNumber     String
-  clientName   String?
-  duration     Int      @default(0) // seconds
-  status       String   @default("answered") // answered | missed | busy | failed
-  recordingUrl String?
-  notes        String?
-  sipExtension String?  @default("101")
-
-  managerId    Int?
-  manager      User?    @relation(fields: [managerId], references: [id])
-  clientId     Int?
-  client       Client?  @relation(fields: [clientId], references: [id])
-  dealId       Int?
-  deal         Deal?    @relation(fields: [dealId], references: [id])
-
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  @@index([fromNumber])
-  @@index([toNumber])
-  @@index([createdAt])
-  @@map("call_logs")
-}
-
 
