@@ -505,6 +505,26 @@ router.post('/', async (req, res, next) => {
     });
 
     await logActivity(deal.id, req.userId, 'Sdelka yaratildi', `"${deal.productName}" sdelkasi yaratildi`)
+
+    // Automation: Qayta aloqa yoki Vazifa (if created directly in a callback stage)
+    if (deal.stage && isCallbackStage(deal.stage.name)) {
+      const targetDate = deal.deadline ? new Date(deal.deadline) : new Date();
+      let taskDescription = deal.notes || "Avtomatik yaratilgan vazifa: Mijoz bilan kelishilgan ishlarni bajarish";
+      if (deal.stage.name.toLowerCase().includes('ko\'tarmadi') || deal.stage.name.toLowerCase().includes('kotarmadi') || deal.stage.name.toLowerCase().includes('javob')) {
+        taskDescription = deal.notes ? `${deal.notes}\n[Tizim] Telefon ko'tarmadi. Qayta aloqaga chiqish.` : "Telefon ko'tarmadi. Qayta aloqaga chiqish.";
+      }
+      await prisma.task.create({
+        data: {
+          title: (deal.productName || 'Sdelka') + " bo'yicha vazifa",
+          description: taskDescription,
+          dueDate: targetDate,
+          dueTime: '10:00',
+          dealId: deal.id,
+          clientId: deal.clientId,
+          assignedToId: req.userId
+        }
+      });
+    }
     
     const broadcast = req.app.get('broadcast');
     if (broadcast) broadcast({ type: 'deal_created', dealId: deal.id, deal });
@@ -632,6 +652,30 @@ router.patch('/bulk/stage', requireRole('admin', 'manager'), async (req, res, ne
         where: { id: { in: allowedIds } },
         data: updateData
       });
+
+      // Automatically complete all active tasks associated with these deals
+      await tx.task.updateMany({
+        where: { dealId: { in: allowedIds }, completed: false },
+        data: { completed: true, status: 'completed', result: 'Ommaviy ravishda bosqich o\'zgargani sababli avtomatik yopildi' }
+      });
+
+      // Create new callback tasks in bulk if target stage is a callback stage
+      if (targetStage && isCallbackStage(targetStage.name)) {
+        const targetDate = new Date();
+        for (const deal of allowedDeals) {
+          await tx.task.create({
+            data: {
+              title: (deal.productName || 'Sdelka') + " bo'yicha vazifa",
+              description: deal.notes ? `${deal.notes}\n[Tizim] Ommaviy bosqich o'zgartirildi.` : "Ommaviy bosqich o'zgartirildi. Qayta aloqaga chiqish.",
+              dueDate: targetDate,
+              dueTime: '10:00',
+              dealId: deal.id,
+              clientId: deal.clientId,
+              assignedToId: req.userId
+            }
+          });
+        }
+      }
 
       for (const deal of allowedDeals) {
         let details = '';
@@ -917,7 +961,7 @@ router.patch('/:id', async (req, res, next) => {
       // Boshqa bosqichga o'tkazilganda bajarilmagan vazifalarni yakunlash (qayta aloqa yopildi)
       await prisma.task.updateMany({
         where: { dealId: deal.id, completed: false },
-        data: { completed: true }
+        data: { completed: true, status: 'completed', result: "Avtomatik yopildi: Sdelka bosqichi o'zgardi" }
       });
     }
 
@@ -1179,10 +1223,9 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
           });
         }
       } else {
-        // Boshqa bosqichga o'tkazilganda bajarilmagan vazifalarni yakunlash (qayta aloqa yopildi)
         await tx.task.updateMany({
           where: { dealId: id, completed: false },
-          data: { completed: true }
+          data: { completed: true, status: 'completed', result: "Avtomatik yopildi: Sdelka bosqichi o'zgardi" }
         });
       }
 

@@ -52,6 +52,50 @@ router.get('/', async (req, res) => {
     if (priority) where.priority = priority
     if (dealId) where.dealId = Number(dealId)
 
+    // ── Obsolete Callback Tasks Auto-Cleanup (Bitrix24/amoCRM style) ──
+    try {
+      const activeTasksWithDeals = await prisma.task.findMany({
+        where: { completed: false, NOT: { dealId: null } },
+        include: { deal: { include: { stage: true } } }
+      });
+      
+      const isCallbackStage = (stageName) => {
+        if (!stageName) return false;
+        const name = stageName.toLowerCase();
+        return name.includes('qayta aloqa') || 
+               name.includes('vazifa') || 
+               name.includes('ko\'tarmadi') || 
+               name.includes('kotarmadi') || 
+               name.includes('javob') || 
+               name.includes('qayta');
+      };
+
+      const obsoleteTaskIds = activeTasksWithDeals
+        .filter(t => {
+          if (!t.deal) return false;
+          
+          const isCallbackTask = t.actionType === 'Связаться' || 
+                                 t.actionType === 'Aloqaga chiqish' || 
+                                 (t.title || '').toLowerCase().includes('qayta aloqa') ||
+                                 (t.title || '').toLowerCase().includes('vazifa');
+          if (!isCallbackTask) return false;
+
+          const stageName = t.deal.stage?.name || '';
+          return !isCallbackStage(stageName);
+        })
+        .map(t => t.id);
+
+      if (obsoleteTaskIds.length > 0) {
+        await prisma.task.updateMany({
+          where: { id: { in: obsoleteTaskIds } },
+          data: { completed: true, status: 'completed', result: "Avtomatik bajarildi: Sdelka bosqichi o'zgardi" }
+        });
+        console.log(`[Auto-Cleanup] ${obsoleteTaskIds.length} ta eskirgan vazifa yopildi.`);
+      }
+    } catch (cleanupErr) {
+      console.error('[Auto-Cleanup Error] Obsolete tasks cleanup failed:', cleanupErr.message);
+    }
+
     const tasks = await prisma.task.findMany({
       where,
       include: {
