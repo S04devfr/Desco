@@ -1218,9 +1218,9 @@ router.get('/operator-presence', async (req, res) => {
     let totalOffline = 0;
     let totalOnlineSec = 0;
 
-    const operators = managers.map((m, idx) => {
-      const line = sipLines.find(s => s.managerId === m.id) || sipLines[idx] || {};
-      const status = line.status || (idx === 0 ? 'online' : (idx === 1 ? 'busy' : 'offline'));
+    const operators = managers.map((m) => {
+      const line = sipLines.find(s => s.managerId === m.id) || {};
+      const status = line.status || 'offline';
       const isOnline = status === 'online';
       const isBusy = status === 'busy';
       const isIdle = status === 'idle';
@@ -1229,12 +1229,12 @@ router.get('/operator-presence', async (req, res) => {
       else if (isIdle) totalIdle++;
       else totalOffline++;
 
-      const onlineSec = line.onlineSec || (idx === 0 ? 21600 : (idx === 1 ? 16200 : (idx === 2 ? 7200 : 0)));
-      const idleSec = line.idleSec || (idx === 0 ? 1200 : (idx === 1 ? 2400 : 600));
+      const onlineSec = line.onlineSec || 0;
+      const idleSec = line.idleSec || 0;
       totalOnlineSec += onlineSec;
 
       const totalSec = onlineSec + idleSec;
-      const activeWorkRatio = totalSec > 0 ? Math.round((onlineSec / totalSec) * 100) : 100;
+      const activeWorkRatio = totalSec > 0 ? Math.round((onlineSec / totalSec) * 100) : 0;
 
       return {
         id: m.id,
@@ -1243,7 +1243,7 @@ router.get('/operator-presence', async (req, res) => {
         avatar: m.avatar,
         status,
         statusText: isBusy ? '🟡 Suhbatda' : isIdle ? '🟡 Nofaol (10m+)' : isOnline ? '🟢 Aktiv' : '⚪ Offline',
-        shiftStart: line.shiftStart || new Date(Date.now() - (onlineSec + idleSec) * 1000),
+        shiftStart: line.shiftStart || null,
         onlineSec,
         idleSec,
         activeWorkRatio

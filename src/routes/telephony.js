@@ -316,7 +316,7 @@ function getOrCreatePresence(userId, name) {
       name: name || 'Operator',
       shiftStartAt: now,
       lastActiveAt: now,
-      onlineSecondsToday: 1800, // Initial seed 30m
+      onlineSecondsToday: 0, // Real 0 seconds at shift start
       idleSecondsToday: 0,
       isIdle: false
     };
@@ -383,11 +383,11 @@ router.get('/sip-status', async (req, res) => {
       const answered = mLogs.filter(l => l.status === 'answered' || l.duration > 0).length;
 
       const p = userPresenceStore[m.id];
-      let status = 'online';
+      let status = 'offline';
       let currentCall = null;
-      let onlineSec = index === 0 ? 21600 : (index === 1 ? 16200 : (index === 2 ? 7200 : 0));
-      let idleSec = index === 0 ? 1200 : (index === 1 ? 2400 : 600);
-      let shiftStart = new Date(Date.now() - (onlineSec + idleSec) * 1000);
+      let onlineSec = 0;
+      let idleSec = 0;
+      let shiftStart = null;
 
       if (p) {
         onlineSec = p.onlineSecondsToday;
@@ -401,13 +401,6 @@ router.get('/sip-status', async (req, res) => {
           status = 'offline';
         } else {
           status = 'online';
-        }
-      } else {
-        if (index === 1) {
-          status = 'busy';
-          currentCall = { number: '+998 90 987 65 43', duration: '01:42', clientName: 'Munira Karimova' };
-        } else if (index === 2) {
-          status = 'away';
         }
       }
 
@@ -505,18 +498,18 @@ router.get('/operator-analytics', async (req, res) => {
       const missedCalls = mLogs.filter(l => l.status === 'missed' || l.duration === 0).length;
       const totalTalkTime = mLogs.reduce((s, l) => s + (l.duration || 0), 0);
       const avgTalkTime = answeredCalls > 0 ? Math.round(totalTalkTime / answeredCalls) : 0;
-      const efficiencyRate = totalCalls > 0 ? Math.round((answeredCalls / totalCalls) * 100) : 100;
+      const efficiencyRate = totalCalls > 0 ? Math.round((answeredCalls / totalCalls) * 100) : 0;
 
-      let badge = '⚡ Professional';
+      let badge = '⚡ Operator';
       if (efficiencyRate >= 90 && totalCalls > 0) badge = '⭐ Top Performer';
       else if (totalTalkTime > 300) badge = '🔥 Aktiv Talker';
 
       const p = userPresenceStore[m.id];
-      let status = 'online';
+      let status = 'offline';
       let currentCall = null;
-      let onlineSec = index === 0 ? 21600 : (index === 1 ? 16200 : (index === 2 ? 7200 : 0));
-      let idleSec = index === 0 ? 1200 : (index === 1 ? 2400 : 600);
-      let shiftStart = new Date(Date.now() - (onlineSec + idleSec) * 1000);
+      let onlineSec = 0;
+      let idleSec = 0;
+      let shiftStart = null;
 
       if (p) {
         onlineSec = p.onlineSecondsToday;
@@ -531,17 +524,10 @@ router.get('/operator-analytics', async (req, res) => {
         } else {
           status = 'online';
         }
-      } else {
-        if (index === 1) {
-          status = 'busy';
-          currentCall = { number: '+998 90 987 65 43', duration: '01:42', clientName: 'Munira Karimova' };
-        } else if (index === 2) {
-          status = 'away';
-        }
       }
 
       const totalTime = onlineSec + idleSec;
-      const activeWorkRatio = totalTime > 0 ? Math.round((onlineSec / totalTime) * 100) : 100;
+      const activeWorkRatio = totalTime > 0 ? Math.round((onlineSec / totalTime) * 100) : 0;
 
       return {
         managerId: m.id,
