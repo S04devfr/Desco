@@ -1528,12 +1528,61 @@
           </div>
         </div>
 
-        <div class="timeline-footer">
-          <div style="display:flex; gap:10px; align-items:center;">
+        <div class="timeline-footer" style="padding: 12px 24px; border-top: 1px solid var(--border); background: var(--bg-secondary);">
+          <div style="display:flex; gap:12px; margin-bottom:8px; border-bottom:1px solid var(--border); padding-bottom:6px;">
+            <button id="tab-btn-comment" class="btn btn-sm" onclick="setTimelineInputTab('comment')" style="padding:2px 8px; font-size:12px; font-weight:700; background:var(--accent); color:#fff; border:none; border-radius:4px; cursor:pointer; display:flex; align-items:center; gap:4px;">
+              <i class="far fa-comment-alt"></i> Izoh
+            </button>
+            <button id="tab-btn-task" class="btn btn-ghost btn-sm" onclick="setTimelineInputTab('task')" style="padding:2px 8px; font-size:12px; font-weight:700; color:var(--text-secondary); border:none; border-radius:4px; cursor:pointer; display:flex; align-items:center; gap:4px;">
+              <i class="far fa-calendar-check"></i> Vazifa
+            </button>
+          </div>
+
+          <div id="timeline-panel-comment" style="display:flex; gap:10px; align-items:center;">
             <textarea id="dw-newComment" style="flex:1; height:42px; resize:none; padding:10px 14px; font-size:13px; border-radius:8px; border:1px solid var(--border); background:var(--bg-primary); color:var(--text-primary); outline:none; transition:border-color 0.15s;" placeholder="Izoh yoki eslatma yozing..." onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); submitDrawerComment(); }" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"></textarea>
             <button class="btn btn-primary" onclick="submitDrawerComment()" style="align-self:center; height:42px; width:42px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:var(--brand); border-color:var(--brand); border-radius:8px; cursor:pointer; flex-shrink:0;">
               <i class="fas fa-paper-plane" style="font-size:13px;"></i>
             </button>
+          </div>
+
+          <div id="timeline-panel-task" style="display:none; flex-direction:column; gap:8px; padding:4px 0;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+              <div>
+                <label style="font-size:10.5px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:3px;">Sarlavha *</label>
+                <input type="text" id="tl-task-title" class="form-control" style="font-size:12px; height:28px; padding:4px 8px;" placeholder="Masalan: Qayta qo'ng'iroq qilish">
+              </div>
+              <div>
+                <label style="font-size:10.5px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:3px;">Vazifa turi</label>
+                <select id="tl-task-type" class="form-control" style="font-size:12px; height:28px; padding:2px 6px;">
+                  <option value="Aloqaga chiqish" selected>📞 Aloqaga chiqish</option>
+                  <option value="Bron qilish">📅 Bron qilish</option>
+                  <option value="Uchrashuv">🤝 Uchrashuv</option>
+                  <option value="To'lov kutish">💳 To'lov kutish</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:10.5px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:3px;">Sana *</label>
+                <input type="date" id="tl-task-date" class="form-control" style="font-size:12px; height:28px; padding:4px 8px;">
+              </div>
+              <div>
+                <label style="font-size:10.5px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:3px;">Vaqt</label>
+                <input type="time" id="tl-task-time" class="form-control" style="font-size:12px; height:28px; padding:4px 8px;" value="10:00">
+              </div>
+              <div style="grid-column: span 2;">
+                <label style="font-size:10.5px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:3px;">Mas'ul</label>
+                <select id="tl-task-assignee" class="form-control" style="font-size:12px; height:28px; padding:2px 6px;">
+                  <option value="">— O'zim —</option>
+                </select>
+              </div>
+              <div style="grid-column: span 2;">
+                <label style="font-size:10.5px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:3px;">Vazifa tavsifi / eslatma</label>
+                <textarea id="tl-task-desc" class="form-control" style="font-size:12px; height:42px; resize:none; padding:4px 8px;" placeholder="Qo'shimcha tafsilotlar..."></textarea>
+              </div>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:4px;">
+              <button class="btn btn-ghost btn-sm" onclick="setTimelineInputTab('comment')" style="font-size:12px; padding:4px 10px;">Bekor qilish</button>
+              <button class="btn btn-primary btn-sm" onclick="submitTimelineTask()" style="background:var(--brand); border-color:var(--brand); font-size:12px; padding:4px 12px;"><i class="fas fa-calendar-plus" style="margin-right:4px;"></i> Rejalashtirish</button>
+            </div>
           </div>
         </div>
       </div>
@@ -3814,6 +3863,93 @@ async function submitDrawerComment() {
     _toast(e.message, "error");
   }
 }
+
+window.setTimelineInputTab = function(tab) {
+  const btnComment = document.getElementById('tab-btn-comment');
+  const btnTask = document.getElementById('tab-btn-task');
+  const panelComment = document.getElementById('timeline-panel-comment');
+  const panelTask = document.getElementById('timeline-panel-task');
+
+  if (tab === 'comment') {
+    btnComment.style.background = 'var(--accent)';
+    btnComment.style.color = '#fff';
+    btnComment.classList.remove('btn-ghost');
+
+    btnTask.style.background = 'transparent';
+    btnTask.style.color = 'var(--text-secondary)';
+    btnTask.classList.add('btn-ghost');
+
+    panelComment.style.display = 'flex';
+    panelTask.style.display = 'none';
+  } else {
+    btnTask.style.background = 'var(--accent)';
+    btnTask.style.color = '#fff';
+    btnTask.classList.remove('btn-ghost');
+
+    btnComment.style.background = 'transparent';
+    btnComment.style.color = 'var(--text-secondary)';
+    btnComment.classList.add('btn-ghost');
+
+    panelComment.style.display = 'none';
+    panelTask.style.display = 'flex';
+    
+    // Set default date to today
+    const today = new Date();
+    const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().slice(0, 10);
+    document.getElementById('tl-task-date').value = localDate;
+    
+    // Populate assignee list
+    const assigneeSelect = document.getElementById('tl-task-assignee');
+    if (assigneeSelect && window._managers) {
+      assigneeSelect.innerHTML = '<option value="">— O\'zim —</option>' +
+        window._managers.map(u => `<option value="${u.id}">${_esc(u.fullName||u.email)}</option>`).join('');
+    }
+  }
+};
+
+window.submitTimelineTask = async function() {
+  const title = document.getElementById('tl-task-title').value.trim();
+  const type = document.getElementById('tl-task-type').value;
+  const date = document.getElementById('tl-task-date').value;
+  const time = document.getElementById('tl-task-time').value || '10:00';
+  const desc = document.getElementById('tl-task-desc').value.trim();
+  const assignedToId = document.getElementById('tl-task-assignee').value || null;
+
+  if (!title) {
+    _toast("Vazifa sarlavhasi majburiy", "error");
+    return;
+  }
+  if (!date) {
+    _toast("Sana majburiy", "error");
+    return;
+  }
+
+  try {
+    await apiFetch('/api/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title,
+        actionType: type,
+        dueDate: date,
+        dueTime: time,
+        description: desc || null,
+        dealId: Number(_detailId),
+        clientId: window._currentDeal?.clientId || null,
+        assignedToId: assignedToId ? Number(assignedToId) : null
+      })
+    });
+
+    _toast("Vazifa rejalashtirildi", "success");
+    setTimelineInputTab('comment');
+    document.getElementById('tl-task-title').value = '';
+    document.getElementById('tl-task-desc').value = '';
+    
+    openDetail(_detailId); // Refresh timeline
+  } catch (err) {
+    _toast(err.message, "error");
+  }
+};
 
 function dialNumber(num) {
   if (num) window.location.href = 'tel:' + num;
