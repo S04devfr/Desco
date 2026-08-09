@@ -849,7 +849,7 @@ async function loadDashboard() {
     const shopirAmount = safeKpis.shopir?.amount || 0;
     const totalNasiyaAmount = ndAmount + niAmount + nbAmount;
     const totalNasiyaCount = ndCount + niCount + nbCount;
-    const totalWonAmount = (safeKpis.zakaz100?.amount || 0) + nbAmount + ndAmount + niAmount + shopirAmount;
+    const totalWonAmount = safeKpis.totalRevenue || 0;
 
     let row1Html = `
       <div class="stat-card clickable" onclick="toggleLeadBreakdown(event)" style="display: flex; align-items: flex-start; gap: 16px; height: 100%; position: relative; overflow: visible !important;">

@@ -4,84 +4,6 @@ const { protect } = require('../middleware/auth')
 
 const router = express.Router()
 
-// Diagnostics route to inspect database dates and counts (public)
-router.get('/diagnostics', async (req, res) => {
-  try {
-    const totalContacts = await prisma.contact.count();
-    const contacts = await prisma.contact.findMany({
-      select: { createdAt: true }
-    });
-    
-    const monthlyDistribution = {};
-    contacts.forEach(c => {
-      if (c.createdAt) {
-        const key = c.createdAt.toISOString().substring(0, 7); // YYYY-MM
-        monthlyDistribution[key] = (monthlyDistribution[key] || 0) + 1;
-      }
-    });
-
-    const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-
-    const monthCount = await prisma.contact.count({
-      where: {
-        createdAt: { gte: start, lte: end }
-      }
-    });
-
-    const noPhoneAll = await prisma.contact.count({
-      where: {
-        OR: [
-          { phone: null },
-          { phone: "" },
-          { phone: "undefined" },
-          { phone: "noma'lum" }
-        ]
-      }
-    });
-
-    const noPhoneMonth = await prisma.contact.count({
-      where: {
-        createdAt: { gte: start, lte: end },
-        OR: [
-          { phone: null },
-          { phone: "" },
-          { phone: "undefined" },
-          { phone: "noma'lum" }
-        ]
-      }
-    });
-
-    const deals = await prisma.deal.findMany({
-      select: { createdAt: true, status: true, amount: true }
-    });
-
-    const dealsMonthlyDistribution = {};
-    deals.forEach(d => {
-      if (d.createdAt) {
-        const key = d.createdAt.toISOString().substring(0, 7); // YYYY-MM
-        dealsMonthlyDistribution[key] = (dealsMonthlyDistribution[key] || 0) + 1;
-      }
-    });
-
-    res.json({
-      serverTime: now.toISOString(),
-      computedStart: start.toISOString(),
-      computedEnd: end.toISOString(),
-      totalContacts,
-      contactsInCurrentMonthFilter: monthCount,
-      noPhoneAll,
-      noPhoneMonth,
-      monthlyDistribution,
-      totalDeals: deals.length,
-      dealsMonthlyDistribution
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 // Protect routes - require authentication
 router.use(protect)
 
@@ -125,10 +47,7 @@ function buildWhere(filter, req) {
   }
 
   return {
-    OR: [
-      { createdAt: { gte: start, lte: end } },
-      { updatedAt: { gte: start, lte: end } }
-    ]
+    createdAt: { gte: start, lte: end }
   };
 }
 
@@ -176,9 +95,10 @@ router.get('/kpis', async (req, res, next) => {
     startOfMonth.setDate(1);
     startOfMonth.setHours(0,0,0,0);
 
-    const dateRangeWhere = where.OR ? {
-      createdAt: { gte: where.OR[0].createdAt.gte, lte: where.OR[0].createdAt.lte }
-    } : {};
+    const dateRangeWhere = where.createdAt ? { createdAt: where.createdAt } : {};
+    if (!isAdmin) {
+      dateRangeWhere.ownerId = req.userId;
+    }
 
     const [totalContacts, noPhoneContacts, totalCompanies, openDealsCount, wonDealsThisMonth, pendingTasksCount] = await Promise.all([
       prisma.contact.count({
@@ -226,7 +146,7 @@ router.get('/kpis', async (req, res, next) => {
     const monthlyRevenue = wonDealsThisMonth.reduce((sum, d) => sum + (d.amount || 0), 0);
 
     // Expenses only use createdAt
-    const expenseWhere = where.OR ? { createdAt: { gte: where.OR[0].createdAt.gte, lte: where.OR[0].createdAt.lte } } : {};
+    const expenseWhere = where.createdAt ? { createdAt: where.createdAt } : {};
     const expenses = await prisma.expense.findMany({ where: expenseWhere });
 
     const isWonDeal = (d) => {
@@ -373,9 +293,8 @@ router.get('/kpis', async (req, res, next) => {
     // ── 1. Marketing Ads Spent, CPL, ROI ──
     // CPL uchun to'g'ri denominator: marketing log'laridan leads summasi
     const mktLeadsWhere = {}
-    if (where.OR && where.OR.length) {
-      const dr = where.OR[0]?.updatedAt || where.OR[0]?.createdAt
-      if (dr) mktLeadsWhere.date = dr
+    if (where.createdAt) {
+      mktLeadsWhere.date = where.createdAt
     }
     let totalLeadsCreated = deals.length;
     try {
@@ -833,20 +752,14 @@ router.get('/instagram-stats', async (req, res) => {
     const where = buildWhere(req.query.filter, req);
     const msgWhere = {};
     let mktWhere = { channel: 'instagram' };
-    if (where.OR && where.OR.length) {
-      const dateRange = where.OR[0]?.updatedAt || where.OR[0]?.createdAt;
-      if (dateRange) {
-        msgWhere.timestamp = dateRange;
-        mktWhere.date = dateRange;
-      }
+    if (where.createdAt) {
+      msgWhere.timestamp = where.createdAt;
+      mktWhere.date = where.createdAt;
     }
 
     const clientWhere = { instagramId: { not: null } };
-    if (where.OR && where.OR.length) {
-      const dateRange = where.OR[0]?.updatedAt || where.OR[0]?.createdAt;
-      if (dateRange) {
-        clientWhere.createdAt = dateRange;
-      }
+    if (where.createdAt) {
+      clientWhere.createdAt = where.createdAt;
     }
 
     const [totalMessages, incomingMessages, linkedClients, mktLogs, messages, clientsWithDeals, newClients] = await Promise.all([
