@@ -11,6 +11,10 @@ const { WebSocketServer } = require('ws');
 
 dotenv.config();
 
+// ── DIGITALOCEAN / CLOUD POSTGRESQL SSL FIX ──
+// DigitalOcean Managed Postgres self-signed certificate chain qo'llab-quvvatlash uchun
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 const app = express();
 
 app.use(compression());

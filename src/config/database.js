@@ -1,3 +1,4 @@
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 const { PrismaClient } = require('@prisma/client');
 
 // Model delegates the app expects to exist on the generated Prisma Client.
