@@ -6,7 +6,7 @@
   /* Task List Styles */
   .task-card-row {
     display: grid;
-    grid-template-columns: 36px 2.5fr 1.5fr 1.2fr 1.2fr 0.8fr 0.8fr 80px;
+    grid-template-columns: 32px 2.2fr 1.3fr 1.1fr 1.1fr 0.7fr 0.8fr 175px;
     gap: 12px;
     align-items: center;
     padding: 12px 20px;
@@ -95,7 +95,10 @@
     <button class="filter-pill" id="fDone" onclick="setDateFilter('done', this)"><i class="fas fa-check-circle"></i> Bajarilgan</button>
   </div>
   <div style="display:flex; gap:10px; align-items:center;">
-    <input type="text" id="taskSearch" class="form-control" style="width:220px; border-radius:20px; padding-left:16px;" placeholder="🔍 Qidirish...">
+    <button type="button" class="btn btn-ghost btn-sm" onclick="autoCleanupDoneDealTasks()" style="font-size:12px; border:1px solid var(--border); color:var(--text-secondary); border-radius:20px; padding:4px 12px;" title="Yutilgan yoki yo'qotilgan sdelkalar eslatmalarini avtomatik yopish">
+      <i class="fas fa-magic" style="color:var(--brand); margin-right:4px;"></i> Eskirganlarni tozalash
+    </button>
+    <input type="text" id="taskSearch" class="form-control" style="width:200px; border-radius:20px; padding-left:16px;" placeholder="🔍 Qidirish...">
   </div>
 </div>
 
@@ -312,6 +315,30 @@ async function deleteTaskRow(id) {
   }
 }
 window.deleteTaskRow = deleteTaskRow;
+
+async function autoCleanupDoneDealTasks() {
+  const stale = allTasks.filter(t => !t.completed && t.deal && (t.deal.status === 'won' || t.deal.status === 'lost' || (t.deal.stage && (t.deal.stage.name.toLowerCase().includes('yutil') || t.deal.stage.name.toLowerCase().includes('100%')))));
+  if (!stale.length) {
+    _safeToast("Yopilgan sdelka eslatmalari topilmadi. Barcha eslatmalar dolzarb! ✨", 'info');
+    return;
+  }
+  if (!confirm(`${stale.length} ta yopilgan sdelkaga tegishli eslatmalarni bajarildi deb belgilamoqchimisiz?`)) return;
+
+  for (const task of stale) {
+    try {
+      await fetch(`/api/tasks/${task.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed: true })
+      });
+      task.completed = true;
+    } catch(e) {}
+  }
+  _safeToast(`${stale.length} ta eslatma muvaffaqiyatli tozalandi! ✅`, 'success');
+  if (typeof updateSidebarTaskBadge === 'function') updateSidebarTaskBadge();
+  refreshView();
+}
+window.autoCleanupDoneDealTasks = autoCleanupDoneDealTasks;
 
 async function loadUsers() {
   try {

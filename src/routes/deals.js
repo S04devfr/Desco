@@ -931,6 +931,13 @@ router.patch('/:id', async (req, res, next) => {
     if (productColor !== undefined) data.productColor = productColor
     if (driverPhone !== undefined) data.driverPhone = driverPhone || null
 
+    if (data.status === 'won' || data.status === 'lost') {
+      await prisma.task.updateMany({
+        where: { dealId: Number(req.params.id), completed: false },
+        data: { completed: true }
+      }).catch(() => {});
+    }
+
     const deal = await prisma.deal.update({
       where: { id: Number(req.params.id) },
       data,
