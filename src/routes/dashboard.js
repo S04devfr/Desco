@@ -374,6 +374,14 @@ router.get('/kpis', async (req, res, next) => {
     const allUsers = await prisma.user.findMany({
       where: {
         role: { in: ['manager', 'operator'] }
+      },
+      select: {
+        id: true,
+        fullName: true,
+        name: true,
+        email: true,
+        role: true,
+        isActive: true
       }
     });
 

@@ -91,6 +91,15 @@ async function runMigrations(prisma) {
     }
   } catch (e) { console.log('ℹ️  CompanySettings:', e.message?.slice(0, 80)) }
 
+  // Auto-migrate mustChangePassword column on PostgreSQL/SQLite User table
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "mustChangePassword" BOOLEAN DEFAULT false;`);
+  } catch (_) {
+    try {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "User" ADD COLUMN "mustChangePassword" BOOLEAN DEFAULT false;`);
+    } catch (_) {}
+  }
+
   // Ensure Telegram/Instagram columns exist (SQLite fallback auto-migration)
   const isSQLite = process.env.DATABASE_URL && (process.env.DATABASE_URL.includes('.db') || process.env.DATABASE_URL.startsWith('file:'));
   if (isSQLite) {
