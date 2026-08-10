@@ -1046,6 +1046,20 @@ async function loadDashboard() {
           <div class="stat-sub">To'lanmagan qoldiq</div>
         </div>
       </div>
+
+      <div class="stat-card clickable" onclick="window.location.href='/nasiya/list?stage=desco'" style="display: flex; align-items: flex-start; gap: 16px; height: 100%; overflow: visible !important;">
+        <div class="stat-icon purple" style="margin-top: 4px; flex-shrink: 0; background: rgba(139, 92, 246, 0.12); color: #8B5CF6;"><i class="fas fa-wallet"></i></div>
+        <div class="stat-info" style="flex: 1; min-width: 0;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="stat-label">Nasiya To'lovlari</div>
+            <a href="/nasiya/list?stage=desco" class="btn btn-ghost btn-sm" style="padding: 2px 6px; font-size: 11px; color: #8B5CF6;" onclick="event.stopPropagation();">
+              <i class="fas fa-external-link-alt"></i> Ko'rish
+            </a>
+          </div>
+          <div class="stat-value" style="color: #8B5CF6;">${renderCardMoney((safeKpis.nasiyaDesco?.amount || 0) + (safeKpis.nasiyaIshonch?.amount || 0) + (safeKpis.nasiyaBaraka?.amount || 0))}</div>
+          <div class="stat-sub">Desco: ${fmtMoney(safeKpis.nasiyaDesco?.amount || 0)} · Ishonch: ${fmtMoney(safeKpis.nasiyaIshonch?.amount || 0)}</div>
+        </div>
+      </div>
     `;
 
     document.getElementById('kpiRow1').innerHTML = row1Html;
