@@ -3212,10 +3212,21 @@ window.deleteMktLog = async function(id) {
 
 // Start & Real-Time Live Auto-Refresh
 loadDashboard();
+
+// Full Dashboard Refresh every 5 minutes (300,000 ms) so charts never flicker or jump
 if (!window._dashRealtimeTimer) {
   window._dashRealtimeTimer = setInterval(() => {
     if (!document.hidden) loadDashboard();
-  }, 12000);
+  }, 5 * 60 * 1000);
+}
+
+// Silent Operator Presence Update every 30 seconds (30,000 ms)
+if (!window._presenceRealtimeTimer) {
+  window._presenceRealtimeTimer = setInterval(() => {
+    if (!document.hidden && typeof loadOperatorPresence === 'function') {
+      loadOperatorPresence();
+    }
+  }, 30 * 1000);
 }
 </script>
 
