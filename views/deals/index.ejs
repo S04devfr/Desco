@@ -1468,8 +1468,9 @@
 
             <div class="drawer-inline-row" style="background: rgba(16, 185, 129, 0.08); border-radius: 6px; padding: 6px 10px; margin: 6px 0;">
               <span class="drawer-inline-label" style="font-weight: 700; color: #10b981;">Oylik To'lov Summasi</span>
-              <div class="drawer-inline-value" style="text-align: right; justify-content:flex-end;">
-                <strong id="dw-nasiyaMonthlyCalc" style="font-size: 13.5px; font-weight: 800; color: #10b981;">0 so'm / oy</strong>
+              <div class="drawer-inline-value" style="display:flex; align-items:center; gap:4px; justify-content:flex-end;">
+                <input type="number" id="dw-nasiyaMonthlyVal" class="drawer-inline-input" placeholder="Avto hisoblanadi..." style="text-align:right; font-weight:800; color:#10b981; font-size:13.5px;">
+                <span style="font-size:11px; color:#10b981; font-weight:700;">so'm / oy</span>
               </div>
             </div>
 
@@ -3567,9 +3568,9 @@ function recalculateDrawerNasiyaPlan() {
   const remaining = Math.max(0, totalAmount - downPayment);
   const monthly = Math.round(remaining / months);
 
-  const calcEl = document.getElementById('dw-nasiyaMonthlyCalc');
-  if (calcEl) {
-    calcEl.textContent = `${monthly.toLocaleString('uz-UZ')} so'm / oy`;
+  const calcInput = document.getElementById('dw-nasiyaMonthlyVal');
+  if (calcInput) {
+    calcInput.value = monthly;
   }
 }
 
@@ -3582,8 +3583,9 @@ async function saveDrawerNasiyaPlan(e) {
   const downPayment = Number(document.getElementById('dw-nasiyaDownPayment')?.value) || 0;
   const dueDay = Number(document.getElementById('dw-nasiyaDueDay')?.value) || 23;
 
+  const userCustomMonthly = Number(document.getElementById('dw-nasiyaMonthlyVal')?.value);
   const remaining = Math.max(0, totalAmount - downPayment);
-  const monthly = Math.round(remaining / months);
+  const monthly = (userCustomMonthly && userCustomMonthly > 0) ? userCustomMonthly : Math.round(remaining / months);
 
   const btn = document.getElementById('dwSaveNasiyaPlanBtn');
   if (btn) {
@@ -3609,7 +3611,7 @@ async function saveDrawerNasiyaPlan(e) {
 
     for (let i = 0; i < months; i++) {
       const dueDateObj = new Date(dateObj.getFullYear(), dateObj.getMonth() + i + 1, dueDay);
-      const amount = (i === months - 1) ? (remaining - (monthly * (months - 1))) : monthly;
+      const amount = (i === months - 1 && !userCustomMonthly) ? (remaining - (monthly * (months - 1))) : monthly;
 
       installments.push({
         dueDate: dueDateObj.toISOString(),
