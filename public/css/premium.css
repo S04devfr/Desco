@@ -34,40 +34,44 @@
 }
 
 :root {
-  /* Fon va sirt - Soft premium slate colors */
-  --bg-app: #F8FAFC;
+  /* Fon va sirt - Rich off-white & Glassmorphism Surfaces */
+  --bg-app: #F6F8FC;
   --bg-surface: #FFFFFF;
   --bg-surface-hover: #F1F5F9;
   --bg-sidebar: #FFFFFF;
-  --bg-sidebar-hover: #F1F5F9;
-  --bg-sidebar-active: rgba(14, 165, 233, 0.08);
+  --bg-sidebar-hover: #F8FAFC;
+  --bg-sidebar-active: rgba(37, 99, 235, 0.08);
 
-  /* Asosiy brend rang */
-  --primary: #0EA5E9;             /* sky-500 */
-  --primary-hover: #0284C7;
-  --primary-light: rgba(14, 165, 233, 0.08);
+  /* Primary Accent: Cobalt Blue & Emerald */
+  --primary: #2563EB;             /* Cobalt blue */
+  --primary-hover: #1D4ED8;
+  --primary-light: rgba(37, 99, 235, 0.08);
+  --cobalt: #2563EB;
+  --emerald: #10B981;
 
   /* Matn */
   --text-primary: #0F172A;
-  --text-secondary: #334155;
+  --text-secondary: #475569;
   --text-inverse: #FFFFFF;
-  --text-muted-sidebar: #334155;
-  --sidebar-text-active: #0EA5E9;
+  --text-muted-sidebar: #475569;
+  --sidebar-text-active: #2563EB;
 
-  /* Chegaralar - Clean borders */
-  --border-subtle: rgba(0, 0, 0, 0.08);
-  --border-strong: rgba(0, 0, 0, 0.16);
+  /* Chegaralar - Inset glass & crisp borders */
+  --border-subtle: rgba(226, 232, 240, 0.8);
+  --border-strong: rgba(203, 213, 225, 1);
+  --glass-border: rgba(255, 255, 255, 0.7);
 
   /* Semantik */
   --success: #10B981;
   --warning: #F59E0B;
   --danger: #EF4444;
-  --info: #3B82F6;
+  --info: #2563EB;
 
-  /* Soyalar - Soft shadows */
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+  /* Soyalar - Multi-layered soft realism shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.03), 0 1px 3px 0 rgba(15, 23, 42, 0.02);
+  --shadow-md: 0 4px 12px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+  --shadow-lg: 0 12px 24px -4px rgba(15, 23, 42, 0.06), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
 
   /* Radius */
   --radius-sm: 8px;
@@ -77,13 +81,13 @@
 
   /* Layout dimension properties */
   --sidebar-w: 248px;
-  --topbar-h:  60px;
+  --topbar-h: 60px;
 
   /* Legacy compatibility mapping */
   --brand: var(--primary);
   --brand-hover: var(--primary-hover);
   --brand-soft: var(--primary-light);
-  --brand-glow: rgba(79, 70, 229, 0.12);
+  --brand-glow: rgba(37, 99, 235, 0.15);
   --surface-base: var(--bg-app);
   --surface-card: var(--bg-surface);
   --surface-input: var(--bg-surface-hover);

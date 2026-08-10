@@ -134,19 +134,23 @@
 
   <!-- Bottom user section -->
   <div class="sidebar-bottom">
-    <div class="sidebar-user" onclick="window.location.href='/settings'">
-      <div class="sidebar-user-avatar">
-        <%= user && user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U' %>
+    <div class="sidebar-user-card" style="display:flex; align-items:center; justify-content:space-between; width:100%; padding:10px 12px; background:var(--bg-surface-hover); border:1px solid var(--border); border-radius:12px; transition:all 0.2s ease;">
+      <div class="sidebar-user" onclick="window.location.href='/settings'" style="display:flex; align-items:center; gap:10px; cursor:pointer; flex:1; min-width:0;">
+        <div class="sidebar-user-avatar" style="width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg, #2563EB, #4F46E5); color:#fff; font-weight:800; font-size:13px; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 2px 8px rgba(37,99,235,0.25);">
+          <%= user && user.fullName ? user.fullName.charAt(0).toUpperCase() : 'M' %>
+        </div>
+        <div class="sidebar-user-info" style="min-width:0; flex:1;">
+          <div class="greeting" style="font-size:10px; font-weight:700; color:var(--primary); text-transform:uppercase; letter-spacing:0.5px;">Hello, <%= user && user.fullName ? (user.fullName.split(' ')[0] || 'Mike') : 'Mike' %></div>
+          <div class="name" style="font-size:12.5px; font-weight:700; color:var(--text-primary); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;"><%= user ? user.fullName : 'Mike' %></div>
+        </div>
       </div>
-      <div class="sidebar-user-info">
-        <div class="name"><%= user ? user.fullName : '' %></div>
-        <div class="role"><%= user && user.role === 'admin' ? 'Administrator' : 'Manager' %></div>
-      </div>
+      <button class="sidebar-gear-btn" onclick="window.location.href='/settings'" title="Sozlamalar" style="width:30px; height:30px; border-radius:8px; border:1px solid var(--border); background:var(--bg-surface); color:var(--text-secondary); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.color='var(--primary)'; this.style.transform='rotate(30deg)'" onmouseout="this.style.color='var(--text-secondary)'; this.style.transform='none'">
+        <i class="fas fa-cog" style="font-size:13px;"></i>
+      </button>
+      <button class="sidebar-logout-btn" onclick="logout()" title="Chiqish" style="width:30px; height:30px; border-radius:8px; border:1px solid var(--border); background:rgba(239,68,68,0.08); color:var(--danger); display:flex; align-items:center; justify-content:center; cursor:pointer; margin-left:4px; transition:all 0.2s ease;">
+        <i class="fas fa-sign-out-alt" style="font-size:12px;"></i>
+      </button>
     </div>
-    <button class="sidebar-logout-btn" onclick="logout()">
-      <span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span>
-      <span>Chiqish</span>
-    </button>
   </div>
 
 </aside>
