@@ -252,17 +252,28 @@ async function loadData() {
 
 function processDebts() {
   consolidatedDebts = [];
+  const pad = n => String(n).padStart(2, '0');
   
   // 1. Manual client debts
   allClients.forEach(c => {
     if (c.debt && c.debt > 0) {
+      const contactDt = c.debtDate ? new Date(c.debtDate) : (c.updatedAt ? new Date(c.updatedAt) : null);
+      const lastContactAtFormatted = contactDt && !isNaN(contactDt)
+        ? `${pad(contactDt.getDate())}.${pad(contactDt.getMonth()+1)}.${contactDt.getFullYear()} ${pad(contactDt.getHours())}:${pad(contactDt.getMinutes())}`
+        : 'Kiritilmagan';
+      const lastContactAtIso = contactDt && !isNaN(contactDt)
+        ? `${contactDt.getFullYear()}-${pad(contactDt.getMonth()+1)}-${pad(contactDt.getDate())}T${pad(contactDt.getHours())}:${pad(contactDt.getMinutes())}`
+        : '';
+
       consolidatedDebts.push({
         type: 'manual',
         id: c.id,
         name: c.name,
         phone: c.phone || '',
         city: c.city || '',
-        date: c.debtDate ? c.debtDate.slice(0, 10) : '',
+        date: c.debtDate ? String(c.debtDate).slice(0, 10) : '',
+        lastContactAtFormatted,
+        lastContactAtIso,
         amount: c.debt || 0,
         notes: c.debtNotes || 'Manual kiritilgan qarz',
         managerName: c.owner ? c.owner.fullName : 'Admin',
@@ -275,13 +286,23 @@ function processDebts() {
   allDeals.forEach(d => {
     const remainingDebt = (d.amount || 0) - (d.paidAmount || 0);
     if (remainingDebt > 0) {
+      const contactDt = d.stageUpdatedAt ? new Date(d.stageUpdatedAt) : (d.updatedAt ? new Date(d.updatedAt) : (d.createdAt ? new Date(d.createdAt) : null));
+      const lastContactAtFormatted = contactDt && !isNaN(contactDt)
+        ? `${pad(contactDt.getDate())}.${pad(contactDt.getMonth()+1)}.${contactDt.getFullYear()} ${pad(contactDt.getHours())}:${pad(contactDt.getMinutes())}`
+        : 'Kiritilmagan';
+      const lastContactAtIso = contactDt && !isNaN(contactDt)
+        ? `${contactDt.getFullYear()}-${pad(contactDt.getMonth()+1)}-${pad(contactDt.getDate())}T${pad(contactDt.getHours())}:${pad(contactDt.getMinutes())}`
+        : '';
+
       consolidatedDebts.push({
         type: 'nasiya',
         id: d.id,
         name: d.client ? d.client.name : 'Noma\'lum',
         phone: d.client ? d.client.phone : '',
         city: d.client ? d.client.city : '',
-        date: d.createdAt ? d.createdAt.slice(0, 10) : '',
+        date: d.createdAt ? String(d.createdAt).slice(0, 10) : '',
+        lastContactAtFormatted,
+        lastContactAtIso,
         amount: remainingDebt,
         notes: `${d.productName || 'Sdelka'} qarzi`,
         managerName: d.manager ? d.manager.fullName : '—',
@@ -395,10 +416,27 @@ function renderDebtorsGrid(items) {
 
         ${alertHtml}
 
+        <!-- 📞 OXIRGI ALOQA KUNI VA VAQTI (QO'LDA SOZLANADIGAN) -->
+        <div style="margin-top: 10px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;">
+          <div style="font-size: 11px; color: var(--text-secondary);">
+            <i class="far fa-clock" style="color: var(--accent); margin-right: 4px;"></i>
+            <span>Oxirgi aloqa:</span>
+            <strong style="color: var(--text-primary); font-weight: 700; margin-left: 3px;" id="lastContactTxt-${d.id}-${d.type}">${d.lastContactAtFormatted}</strong>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="toggleEditLastContact(${d.id}, '${d.type}')" style="padding: 2px 6px; font-size: 10.5px; color: var(--brand); font-weight: 700;" title="Vaqtni o'zgartirish">
+            <i class="fas fa-edit"></i> O'zgartirish
+          </button>
+        </div>
+
+        <div id="edit-last-contact-${d.id}-${d.type}" class="schedule-container" style="display: none; background: var(--bg-secondary); margin-top: 6px; padding: 8px; border-radius: 6px;">
+          <div style="font-size: 11px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">Oxirgi aloqa kuni va vaqtini kiriting:</div>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <input type="datetime-local" id="last-contact-input-${d.id}-${d.type}" class="form-control form-control-sm" style="flex: 1; height: 30px; font-size: 11.5px;" value="${d.lastContactAtIso}">
+            <button class="btn btn-primary btn-sm" onclick="saveLastContactDate(${d.id}, '${d.type}')" style="height: 30px; font-size: 11px; padding: 0 10px; font-weight: 700;">Saqlash</button>
+          </div>
+        </div>
+
         <div class="action-panel-row">
-          <a class="debt-action-btn" href="tel:${d.phone}" style="text-decoration:none;">
-            <i class="fas fa-phone-alt"></i> Qong'iroq
-          </a>
           <button class="debt-action-btn" onclick="showScheduleCallPanel(${d.id}, '${d.type}', this)">
             <i class="fas fa-calendar-plus"></i> Sana belgilash
           </button>
@@ -418,6 +456,42 @@ function renderDebtorsGrid(items) {
       </div>
     `;
   }).join('');
+}
+
+function toggleEditLastContact(id, type) {
+  const panel = document.getElementById(`edit-last-contact-${id}-${type}`);
+  if (!panel) return;
+  panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+}
+
+async function saveLastContactDate(id, type) {
+  const input = document.getElementById(`last-contact-input-${id}-${type}`);
+  if (!input || !input.value) {
+    alert("Iltimos, kun va vaqtni kiritishingiz shart!");
+    return;
+  }
+
+  const dtVal = input.value;
+  try {
+    if (type === 'manual') {
+      await fetch('/api/clients/' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ debtDate: dtVal })
+      });
+    } else {
+      await fetch('/api/deals/' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stageUpdatedAt: new Date(dtVal).toISOString() })
+      });
+    }
+
+    if (typeof showToast === 'function') showToast("Oxirgi aloqa kuni va vaqti saqlandi!", "success");
+    loadData();
+  } catch(e) {
+    alert("Saqlashda xatolik: " + e.message);
+  }
 }
 
 function escHtml(str) {
