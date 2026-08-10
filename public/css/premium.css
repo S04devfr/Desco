@@ -1989,3 +1989,125 @@ a.quick-nav-card .card:hover {
     font-size: 13.5px !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════
+   ENTERPRISE UI/UX ULTRA PREMIUM SYSTEM (Linear & Stripe Style)
+   ════════════════════════════════════════════════════════ */
+
+/* Stat Cards & Key Metrics */
+.stat-card, .card {
+  background: var(--surface-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-md, 14px) !important;
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02) !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.stat-card:hover, .card:hover {
+  box-shadow: 0 10px 24px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.04) !important;
+  border-color: rgba(99, 102, 241, 0.3) !important;
+  transform: translateY(-2px);
+}
+[data-theme="dark"] .stat-card, [data-theme="dark"] .card {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+[data-theme="dark"] .stat-card:hover, [data-theme="dark"] .card:hover {
+  border-color: rgba(129, 140, 248, 0.35) !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Stat Icons Gradient Glow */
+.stat-icon {
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease;
+}
+.stat-card:hover .stat-icon {
+  transform: scale(1.06);
+}
+
+/* Premium Buttons */
+.btn-primary {
+  background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%) !important;
+  border: none !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+  border-radius: 9px !important;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.32) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, #4F46E5 0%, #4338CA 100%) !important;
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45) !important;
+  transform: translateY(-1px);
+}
+.btn-secondary {
+  background: var(--surface-input) !important;
+  border: 1px solid var(--border-strong) !important;
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+  border-radius: 9px !important;
+  transition: all 0.2s ease !important;
+}
+.btn-secondary:hover {
+  background: var(--bg-surface-hover) !important;
+  border-color: var(--brand) !important;
+  color: var(--brand) !important;
+}
+
+/* Refined Form Inputs */
+.form-control, input[type="text"], input[type="number"], select, textarea {
+  border-radius: 9px !important;
+  border: 1px solid var(--border-strong) !important;
+  background: var(--surface-card) !important;
+  color: var(--text-primary) !important;
+  transition: all 0.18s ease !important;
+}
+.form-control:focus, input:focus, select:focus, textarea:focus {
+  border-color: var(--brand) !important;
+  box-shadow: 0 0 0 3px var(--brand-glow) !important;
+  outline: none !important;
+}
+
+/* Refined Glass Tables */
+table.deals-tbl, table.data-table, table.table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+}
+table.deals-tbl th, table.data-table th {
+  background: var(--bg-secondary) !important;
+  backdrop-filter: blur(10px) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.6px !important;
+  color: var(--text-tertiary) !important;
+  padding: 11px 14px !important;
+}
+table.deals-tbl td, table.data-table td {
+  padding: 12px 14px !important;
+  transition: background 0.15s ease !important;
+}
+table.deals-tbl tr:hover td, table.data-table tr:hover td {
+  background: var(--bg-surface-hover) !important;
+}
+
+/* Badges & Chips */
+.badge, .dcard-badge, .debtor-badge {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.4px !important;
+  text-transform: uppercase !important;
+  padding: 4px 9px !important;
+  border-radius: 6px !important;
+}
+.badge-brand, .badge-nasiya {
+  background: rgba(99, 102, 241, 0.12) !important;
+  color: #6366F1 !important;
+  border: 1px solid rgba(99, 102, 241, 0.25) !important;
+}
+[data-theme="dark"] .badge-brand, [data-theme="dark"] .badge-nasiya {
+  color: #818CF8 !important;
+}
