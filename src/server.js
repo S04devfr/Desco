@@ -139,7 +139,7 @@ async function autoMigrateAndSeedIfNeeded() {
   }
 }
 
-autoMigrateAndSeedIfNeeded();
+// autoMigrateAndSeedIfNeeded is executed asynchronously after server.listen(PORT)
 
 
 app.use('/api/auth',            require('./routes/auth'));
@@ -310,24 +310,24 @@ async function cleanupDuplicateTasks() {
   }
 }
 
-// DB Push is now handled by package.json "prestart" script during deployment.
-
-runMigrations(prisma).then(async () => {
-  await ensureAuditTable();
-  await cleanupDuplicateTasks();
-  server.listen(PORT, () => {
-    console.log(`
+// Start HTTP server INSTANTLY so Railway/DigitalOcean health check succeeds in < 1 second!
+server.listen(PORT, () => {
+  console.log(`
    ╔══════════════════════════════════════╗
    ║   DESCO CRM — Running on :${PORT}     ║
    ╚══════════════════════════════════════╝`);
-  });
-}).catch(async (err) => {
-  console.error('Migration xatosi:', err);
-  await cleanupDuplicateTasks();
-  // Migratsiya muvaffaqiyatsiz bo'lsa ham server'ni ishga tushiramiz
-  server.listen(PORT, () => {
-    console.log(`DESCO CRM — Running on :${PORT} (migration errors ignored)`);
-  });
+
+  // Run background initialization asynchronously
+  (async () => {
+    try {
+      await runMigrations(prisma);
+      await ensureAuditTable();
+      await cleanupDuplicateTasks();
+      await autoMigrateAndSeedIfNeeded();
+    } catch (err) {
+      console.error('[Background Init Warning]', err);
+    }
+  })();
 });
 
 // Global xatoliklarni ushlab qolish (Crash larning oldini olish)
