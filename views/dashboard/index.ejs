@@ -304,14 +304,15 @@
         <thead>
           <tr>
             <th>Operator / Menejer</th>
-            <th class="tc" style="width:140px;">Holati</th>
-            <th class="tc" style="width:160px;">Aktiv Online Vaqti</th>
-            <th class="tc" style="width:160px;">Tanaffus / Idle</th>
-            <th style="width:180px;">Aktivlik Indeksi (%)</th>
+            <th class="tc" style="width:120px;">Holati</th>
+            <th class="tc" style="width:140px;">Ishga Kirgan Vaqti</th>
+            <th class="tc" style="width:160px;">Bugungi Jami Online</th>
+            <th class="tc" style="width:140px;">Tanaffus / Idle</th>
+            <th style="width:170px;">Aktivlik Indeksi (%)</th>
           </tr>
         </thead>
         <tbody id="operatorPresenceTableBody">
-          <tr><td colspan="5" class="tc" style="padding:30px;"><div class="spinner" style="margin:auto;"></div></td></tr>
+          <tr><td colspan="6" class="tc" style="padding:30px;"><div class="spinner" style="margin:auto;"></div></td></tr>
         </tbody>
       </table>
     </div>
@@ -3210,8 +3211,93 @@ window.deleteMktLog = async function(id) {
   }
 };
 
+async function loadOperatorPresence() {
+  const tbody = document.getElementById('operatorPresenceTableBody');
+  if (!tbody) return;
+
+  try {
+    const res = await fetch('/api/dashboard/operator-presence');
+    if (!res.ok) return;
+    const data = await res.json();
+    const ops = data.operators || [];
+    const sum = data.summary || {};
+
+    const activeBadge = document.getElementById('presenceBadgeActive');
+    const idleBadge = document.getElementById('presenceBadgeIdle');
+    const offlineBadge = document.getElementById('presenceBadgeOffline');
+
+    if (activeBadge) activeBadge.textContent = `🟢 ${sum.totalActive || 0} Aktiv`;
+    if (idleBadge) idleBadge.textContent = `🟡 ${sum.totalIdle || 0} Tanaffusda`;
+    if (offlineBadge) offlineBadge.textContent = `⚪ ${sum.totalOffline || 0} Offline`;
+
+    if (ops.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="tc" style="padding:24px; color:var(--text-tertiary);">Hozircha operatorlar ma\'lumotlari yo\'q</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = ops.map(op => {
+      const isOnline = op.status === 'online';
+      const isIdle = op.status === 'idle';
+
+      const statusBadge = isOnline
+        ? '<span style="color:#10B981; font-weight:700; display:inline-flex; align-items:center; gap:5px;"><span style="width:8px; height:8px; border-radius:50%; background:#10B981; display:inline-block; box-shadow:0 0 6px rgba(16,185,129,0.5);"></span> Aktiv</span>'
+        : isIdle
+        ? '<span style="color:#D97706; font-weight:700; display:inline-flex; align-items:center; gap:5px;"><span style="width:8px; height:8px; border-radius:50%; background:#D97706; display:inline-block;"></span> Tanaffusda</span>'
+        : '<span style="color:var(--text-tertiary); display:inline-flex; align-items:center; gap:5px;"><span style="width:8px; height:8px; border-radius:50%; background:var(--text-tertiary); opacity:0.5; display:inline-block;"></span> Offline</span>';
+
+      const onlineHours = Math.floor(op.onlineSec / 3600);
+      const onlineMins = Math.floor((op.onlineSec % 3600) / 60);
+      const onlineTimeStr = op.onlineSec > 0
+        ? (onlineHours > 0 ? `${onlineHours}s ${onlineMins}m` : `${onlineMins}m`)
+        : '0m';
+
+      const idleHours = Math.floor(op.idleSec / 3600);
+      const idleMins = Math.floor((op.idleSec % 3600) / 60);
+      const idleTimeStr = op.idleSec > 0
+        ? (idleHours > 0 ? `${idleHours}s ${idleMins}m` : `${idleMins}m`)
+        : '0m';
+
+      const avatarHtml = op.avatar
+        ? `<img src="${op.avatar}" style="width:28px; height:28px; border-radius:50%; object-fit:cover;">`
+        : `<div style="width:28px; height:28px; border-radius:50%; background:var(--brand); color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center;">${(op.name||'U').charAt(0).toUpperCase()}</div>`;
+
+      const ratioColor = op.activeWorkRatio >= 75 ? '#10B981' : op.activeWorkRatio >= 45 ? '#F59E0B' : '#EF4444';
+
+      return `
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:10px 14px; font-size:13px; font-weight:700; color:var(--text-primary);">
+            <div style="display:flex; align-items:center; gap:10px;">
+              ${avatarHtml}
+              <div>
+                <div>${escHtml(op.name)}</div>
+                <div style="font-size:10.5px; color:var(--text-tertiary); font-weight:normal;">Sotuv menejeri</div>
+              </div>
+            </div>
+          </td>
+          <td class="tc" style="padding:10px 14px;">${statusBadge}</td>
+          <td class="tc" style="padding:10px 14px; font-size:13px; font-weight:800; color:var(--brand);">${op.firstLoginTime || '—'}</td>
+          <td class="tc" style="padding:10px 14px; font-size:13px; font-weight:800; color:#10B981;">${onlineTimeStr}</td>
+          <td class="tc" style="padding:10px 14px; font-size:12px; font-weight:600; color:#D97706;">${idleTimeStr}</td>
+          <td style="padding:10px 14px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:1; height:6px; background:var(--border); border-radius:3px; overflow:hidden;">
+                <div style="height:100%; width:${op.activeWorkRatio}%; background:${ratioColor}; border-radius:3px; transition:width 0.3s;"></div>
+              </div>
+              <span style="font-size:12px; font-weight:800; color:${ratioColor}; width:36px; text-align:right;">${op.activeWorkRatio}%</span>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch(e) {
+    console.error('[Presence Error]', e);
+  }
+}
+window.loadOperatorPresence = loadOperatorPresence;
+
 // Start & Real-Time Live Auto-Refresh
 loadDashboard();
+loadOperatorPresence();
 
 // Full Dashboard Refresh every 5 minutes (300,000 ms) so charts never flicker or jump
 if (!window._dashRealtimeTimer) {
