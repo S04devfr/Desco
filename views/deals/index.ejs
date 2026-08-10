@@ -1440,6 +1440,61 @@
             <input type="hidden" id="dw-notes">
           </div>
 
+          <!-- ── NASIYA DESCO CALCULATOR & PLAN GENERATOR IN DEAL DRAWER ── -->
+          <div id="drawerNasiyaDescoBlock" style="margin-top: 18px; border-top: 1px solid var(--border); padding-top: 14px; background: rgba(0, 122, 255, 0.04); border-radius: 10px; padding: 14px; border: 1px solid rgba(0, 122, 255, 0.18);">
+            <div style="font-size: 11.5px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+              <span><i class="fas fa-calculator" style="margin-right: 6px;"></i> Nasiya Desco — Muddatli To'lov Kalkulyatori</span>
+              <span class="badge" style="background: rgba(0, 122, 255, 0.12); color: #007AFF; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight:700;">Smart Calculator</span>
+            </div>
+
+            <div class="drawer-inline-row">
+              <span class="drawer-inline-label">Nasiya Muddati</span>
+              <div class="drawer-inline-value">
+                <select id="dw-nasiyaMonths" class="drawer-inline-select" onchange="recalculateDrawerNasiyaPlan()">
+                  <option value="3">3 oy (Choraklik)</option>
+                  <option value="6" selected>6 oy (Yarim yillik)</option>
+                  <option value="12">12 oy (Yillik)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="drawer-inline-row">
+              <span class="drawer-inline-label">Boshlang'ich To'lov</span>
+              <div class="drawer-inline-value" style="display:flex; align-items:center; gap:4px; justify-content:flex-end;">
+                <input type="number" id="dw-nasiyaDownPayment" class="drawer-inline-input" value="0" placeholder="0" oninput="recalculateDrawerNasiyaPlan()" style="text-align:right;">
+                <span style="font-size:11px; color:var(--text-tertiary); font-weight:600;">so'm</span>
+              </div>
+            </div>
+
+            <div class="drawer-inline-row" style="background: rgba(16, 185, 129, 0.08); border-radius: 6px; padding: 6px 10px; margin: 6px 0;">
+              <span class="drawer-inline-label" style="font-weight: 700; color: #10b981;">Oylik To'lov Summasi</span>
+              <div class="drawer-inline-value" style="text-align: right; justify-content:flex-end;">
+                <strong id="dw-nasiyaMonthlyCalc" style="font-size: 13.5px; font-weight: 800; color: #10b981;">0 so'm / oy</strong>
+              </div>
+            </div>
+
+            <div class="drawer-inline-row">
+              <span class="drawer-inline-label">Har oyning to'lov kuni</span>
+              <div class="drawer-inline-value">
+                <select id="dw-nasiyaDueDay" class="drawer-inline-select">
+                  <option value="5">Har oyning 5-kuni</option>
+                  <option value="10">Har oyning 10-kuni</option>
+                  <option value="15">Har oyning 15-kuni</option>
+                  <option value="20">Har oyning 20-kuni</option>
+                  <option value="23" selected>Har oyning 23-kuni</option>
+                  <option value="25">Har oyning 25-kuni</option>
+                  <option value="30">Har oyning 30-kuni</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="margin-top: 10px;">
+              <button type="button" class="btn btn-sm btn-primary" onclick="saveDrawerNasiyaPlan(event)" id="dwSaveNasiyaPlanBtn" style="width: 100%; border-radius: 6px; font-weight: 700; background: var(--accent); border-color: var(--accent); font-size: 12px; height: 32px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <i class="fas fa-save"></i> Nasiya Plani Saqlash & Oylarga Bo'lish
+              </button>
+            </div>
+          </div>
+
           <!-- Collapsible secondary details for compatibility -->
           <div style="margin-top: 20px; border-top: 1px dashed var(--border); padding-top: 12px;">
             <details style="cursor: pointer;">
@@ -3502,6 +3557,85 @@ function switchDrawerTab(tabName, tabEl) {
   const contents = document.querySelectorAll('.drawer-tab-content');
   contents.forEach(c => c.classList.remove('active'));
   document.getElementById('tab-' + tabName).classList.add('active');
+}
+
+function recalculateDrawerNasiyaPlan() {
+  const months = Number(document.getElementById('dw-nasiyaMonths')?.value) || 6;
+  const totalAmount = Number(document.getElementById('dw-amount')?.value) || 0;
+  const downPayment = Number(document.getElementById('dw-nasiyaDownPayment')?.value) || 0;
+
+  const remaining = Math.max(0, totalAmount - downPayment);
+  const monthly = Math.round(remaining / months);
+
+  const calcEl = document.getElementById('dw-nasiyaMonthlyCalc');
+  if (calcEl) {
+    calcEl.textContent = `${monthly.toLocaleString('uz-UZ')} so'm / oy`;
+  }
+}
+
+async function saveDrawerNasiyaPlan(e) {
+  if (e) e.stopPropagation();
+  if (!_detailId) return;
+
+  const months = Number(document.getElementById('dw-nasiyaMonths')?.value) || 6;
+  const totalAmount = Number(document.getElementById('dw-amount')?.value) || 0;
+  const downPayment = Number(document.getElementById('dw-nasiyaDownPayment')?.value) || 0;
+  const dueDay = Number(document.getElementById('dw-nasiyaDueDay')?.value) || 23;
+
+  const remaining = Math.max(0, totalAmount - downPayment);
+  const monthly = Math.round(remaining / months);
+
+  const btn = document.getElementById('dwSaveNasiyaPlanBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saqlanmoqda...';
+  }
+
+  try {
+    const installments = [];
+    let dateObj = new Date();
+
+    if (downPayment > 0) {
+      installments.push({
+        dueDate: dateObj.toISOString(),
+        amount: downPayment,
+        paid: true,
+        month: '1-chi To\'lov (Boshlang\'ich)',
+        notes: 'Boshlang\'ich to\'lov'
+      });
+    }
+
+    const monthNames = ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"];
+
+    for (let i = 0; i < months; i++) {
+      const dueDateObj = new Date(dateObj.getFullYear(), dateObj.getMonth() + i + 1, dueDay);
+      const amount = (i === months - 1) ? (remaining - (monthly * (months - 1))) : monthly;
+
+      installments.push({
+        dueDate: dueDateObj.toISOString(),
+        amount: Math.max(0, amount),
+        paid: false,
+        month: monthNames[dueDateObj.getMonth()],
+        notes: `${i + 1}-oylik to'lov (${dueDay}-kuni)`
+      });
+    }
+
+    await apiFetch('/api/deals/' + _detailId + '/installments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ installments })
+    });
+
+    _toast(`Nasiya Desco rejasi saqlandi! (${months} oy x ${monthly.toLocaleString()} so'm)`, 'success');
+    await loadDeals();
+  } catch (err) {
+    _toast('Saqlashda xatolik: ' + err.message, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-save"></i> Nasiya Plani Saqlash & Oylarga Bo\'lish';
+    }
+  }
 }
 
 async function updateDrawerDealTitle(newTitle) {
