@@ -6,7 +6,7 @@
   /* Task List Styles */
   .task-card-row {
     display: grid;
-    grid-template-columns: 32px 2.2fr 1.3fr 1.1fr 1.1fr 0.7fr 0.8fr 175px;
+    grid-template-columns: 32px 2.5fr 1.5fr 1.3fr 1.3fr 1.1fr 165px;
     gap: 12px;
     align-items: center;
     padding: 12px 20px;
@@ -541,11 +541,6 @@ function renderSingleTaskRowHtml(t) {
       <div>${clientHtml}</div>
       <div>${dealHtml}</div>
       <div>${dueHtml}</div>
-      <div>
-        <span style="font-size:11px; font-weight:700; color:${pColors[t.priority] || '#8E8E93'}; background:${pBg[t.priority] || 'rgba(0,0,0,0.05)'}; padding:2px 8px; border-radius:6px; border:1px solid ${pColors[t.priority]}20;">
-          ${pLabel[t.priority] || 'Past'}
-        </span>
-      </div>
       <div>${assigneeHtml}</div>
       <div style="text-align:right;">
         <div style="display:flex; justify-content:flex-end; gap:6px; align-items:center;">
