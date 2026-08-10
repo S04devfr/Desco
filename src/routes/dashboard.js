@@ -1284,19 +1284,17 @@ router.get('/operator-presence', async (req, res) => {
 
       // Determine First Login / Clock-in Time
       if (!pStore.firstLoginTime) {
+        const todayStartTs = today.getTime();
         const allTimestamps = [
           ...mCalls.map(c => new Date(c.createdAt).getTime()),
           ...mTasks.map(t => new Date(t.updatedAt).getTime()),
           ...mDeals.map(d => new Date(d.updatedAt).getTime()),
           ...mActs.map(a => new Date(a.createdAt).getTime())
-        ].filter(t => !isNaN(t));
+        ].filter(t => !isNaN(t) && t >= todayStartTs);
 
         if (req.userId === m.id || allTimestamps.length > 0) {
           const earliestTs = allTimestamps.length > 0 ? Math.min(...allTimestamps, now.getTime()) : now.getTime();
-          const d = new Date(earliestTs);
-          const hh = String(d.getHours()).padStart(2, '0');
-          const mmStr = String(d.getMinutes()).padStart(2, '0');
-          pStore.firstLoginTime = `${hh}:${mmStr}`;
+          pStore.firstLoginTime = new Date(earliestTs).toLocaleTimeString('uz-UZ', { timeZone: 'Asia/Tashkent', hour: '2-digit', minute: '2-digit', hour12: false });
         }
       }
 

@@ -141,8 +141,6 @@ router.get('/', async (req, res, next) => {
 
       const searchConditions = [
         { productName: { contains: searchLower, mode } },
-        { clientName: { contains: searchLower, mode } },
-        { clientPhone: { contains: searchLower, mode } },
         { city: { contains: searchLower, mode } },
         { notes: { contains: searchLower, mode } },
         { client: { name: { contains: searchLower, mode } } },
@@ -156,7 +154,6 @@ router.get('/', async (req, res, next) => {
       }
 
       if (cleanDigits.length >= 3) {
-        searchConditions.push({ clientPhone: { contains: cleanDigits, mode } });
         searchConditions.push({ client: { phone: { contains: cleanDigits, mode } } });
       }
 
