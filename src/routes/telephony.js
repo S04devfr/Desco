@@ -329,7 +329,9 @@ function getOrCreatePresence(userId, name) {
  */
 router.post('/heartbeat', async (req, res) => {
   try {
-    const userId = req.userId;
+    const userId = req.userId || (req.user ? req.user.id : null);
+    if (!userId) return res.json({ success: false });
+
     const { isIdle } = req.body;
     const presence = getOrCreatePresence(userId, req.user ? (req.user.fullName || req.user.name) : 'Operator');
 
@@ -337,13 +339,14 @@ router.post('/heartbeat', async (req, res) => {
     const elapsedSeconds = Math.round((now.getTime() - presence.lastActiveAt.getTime()) / 1000);
     const step = Math.min(Math.max(elapsedSeconds, 1), 60);
 
+    presence.lastActiveAt = now; // Always update last active timestamp on heartbeat!
+
     if (isIdle) {
       presence.isIdle = true;
       presence.idleSecondsToday += step;
     } else {
       presence.isIdle = false;
       presence.onlineSecondsToday += step;
-      presence.lastActiveAt = now;
     }
 
     res.json({
@@ -388,17 +391,19 @@ router.get('/sip-status', async (req, res) => {
       let onlineSec = 0;
       let idleSec = 0;
       let shiftStart = null;
+      let lastActiveAt = null;
 
       if (p) {
         onlineSec = p.onlineSecondsToday;
         idleSec = p.idleSecondsToday;
         shiftStart = p.shiftStartAt;
+        lastActiveAt = p.lastActiveAt;
 
         const idleTimeMs = now.getTime() - p.lastActiveAt.getTime();
         if (p.isIdle || idleTimeMs >= 10 * 60 * 1000) {
           status = 'idle';
-        } else if (idleTimeMs >= 30 * 60 * 1000) {
-          status = 'offline';
+        } else if (idleTimeMs >= 5 * 60 * 1000) { // Active in last 5 minutes = online!
+          status = 'idle';
         } else {
           status = 'online';
         }
@@ -411,6 +416,7 @@ router.get('/sip-status', async (req, res) => {
         role: m.role,
         avatar: m.avatar,
         status,
+        lastActiveAt,
         totalCalls,
         answered,
         totalDuration,

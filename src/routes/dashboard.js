@@ -1257,10 +1257,10 @@ router.get('/operator-presence', async (req, res) => {
       const secondsSinceActive = lastActiveDate ? Math.round((now.getTime() - lastActiveDate.getTime()) / 1000) : 999999;
 
       let status = 'offline';
-      if (secondsSinceActive <= 300) { // Active in last 5 minutes
+      if (req.userId === m.id || line.status === 'online' || secondsSinceActive <= 300) { // Current requesting user or active in last 5 minutes
         status = 'online';
-      } else if (secondsSinceActive <= 900 || dbActivityCount > 0) { // Active in last 15 minutes or worked today
-        status = secondsSinceActive <= 900 ? 'idle' : 'offline';
+      } else if (secondsSinceActive <= 900) { // Active in last 15 minutes
+        status = 'idle';
       }
 
       const isOnline = status === 'online';

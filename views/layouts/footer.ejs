@@ -33,7 +33,7 @@
 <script>
 (function() {
   var PING_URL = '/api/telephony/heartbeat';
-  var INTERVAL_MS = 30 * 1000; // Har 30 soniyada ping
+  var INTERVAL_MS = 15 * 1000; // Har 15 soniyada ping
   var IDLE_TIMEOUT_MS = 10 * 60 * 1000; // 10 daqiqa harakatsizlik
   var lastUserActionTime = Date.now();
   var _timer = null;
@@ -63,10 +63,9 @@
     }).catch(function() {});
   }
 
-  setTimeout(function() {
-    sendHeartbeat();
-    _timer = setInterval(sendHeartbeat, INTERVAL_MS);
-  }, 2000);
+  // Send heartbeat IMMEDIATELY on load so user is marked online straight away
+  sendHeartbeat();
+  _timer = setInterval(sendHeartbeat, INTERVAL_MS);
 
   window.addEventListener('beforeunload', function() {
     if (_timer) clearInterval(_timer);
