@@ -18,7 +18,8 @@ const protect = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const secretKey = process.env.JWT_SECRET || 'desco-jwt-default-secret-key-2026';
+    const decoded = jwt.verify(token, secretKey);
     req.userId = decoded.id;
     req.user = decoded;
     next();

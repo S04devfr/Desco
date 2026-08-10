@@ -192,7 +192,8 @@ router.post('/login', rateLimiter(20, 60000), async (req, res, next) => {
     req.session.userId = user.id
     req.session.user = payload
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+    const secretKey = process.env.JWT_SECRET || 'desco-jwt-default-secret-key-2026';
+    const token = jwt.sign(payload, secretKey, {
       expiresIn: process.env.JWT_EXPIRY || '7d'
     })
 
