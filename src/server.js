@@ -27,11 +27,12 @@ app.use(helmet({
 
 // ── CORS — faqat ruxsat etilgan domenlar ──
 app.use(cors({
-  origin: [
-    'https://desco.up.railway.app',
-    'https://desco-production.up.railway.app',
-    'http://localhost:3000'
-  ],
+  origin: (origin, callback) => {
+    if (!origin || origin.includes('ondigitalocean.app') || origin.includes('digitalocean.app') || origin.includes('railway.app') || origin.includes('localhost')) {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
   credentials: true
 }));
 app.use(express.json({
@@ -108,9 +109,33 @@ app.use('/api', sanitizeResponse);          // Barcha API javoblardan sensitive 
 app.use('/api', rateLimiter(200, 60000));    // API uchun global rate limit: 200 req/min
 
 // ── API ROUTES ──
-app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+// ── AUTOMATIC DB MIGRATION & SEED GUARD FOR NEW DEPLOYMENTS (DigitalOcean / Railway) ──
+const { execSync } = require('child_process');
+const { PrismaClient } = require('@prisma/client');
+const prismaInit = new PrismaClient();
 
-// ── ONE-TIME: Seed data ──
+async function autoMigrateAndSeedIfNeeded() {
+  try {
+    await prismaInit.user.findFirst();
+    console.log('✅ Database schema verified and active.');
+  } catch (err) {
+    if (err.message && (err.message.includes('does not exist') || err.code === 'P2021')) {
+      console.log('⚡ New database detected! Auto-pushing Prisma schema and seeding initial data...');
+      try {
+        execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
+        console.log('✅ Database schema pushed successfully.');
+        execSync('node prisma/seed.js', { stdio: 'inherit' });
+        console.log('✅ Database seeded successfully.');
+      } catch (e) {
+        console.error('⚠️ Auto db push / seed error:', e.message);
+      }
+    }
+  } finally {
+    await prismaInit.$disconnect().catch(() => {});
+  }
+}
+
+autoMigrateAndSeedIfNeeded();
 
 
 app.use('/api/auth',            require('./routes/auth'));
