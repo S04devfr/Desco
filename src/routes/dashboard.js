@@ -436,7 +436,7 @@ router.get('/kpis', async (req, res, next) => {
       };
     });
 
-    // ── 7. Funnel conversion stages (HubSpot / Salesforce Style) ──
+    // ── 7. Funnel conversion stages (Real-Time Pipeline Tracking) ──
     const funnelStages = {
       yangi: dealsCreatedInPeriod.filter(d => {
         const name = (d.stage?.name || '').toLowerCase();
@@ -450,9 +450,9 @@ router.get('/kpis', async (req, res, next) => {
         const name = (d.stage?.name || '').toLowerCase();
         return name.includes('ko\'tarilmadi') || name.includes('kotarilmadi') || name.includes('otvet') || name.includes('javob ber');
       }).length,
-      muzokara: dealsCreatedInPeriod.filter(d => {
+      peregavor: dealsCreatedInPeriod.filter(d => {
         const name = (d.stage?.name || '').toLowerCase();
-        return name.includes('muzokara') || name.includes('peregovor') || name.includes('taklif');
+        return name.includes('peregavor') || name.includes('peregovor') || name.includes('muzokara') || name.includes('taklif');
       }).length,
       won: dealsCreatedInPeriod.filter(isWonDeal).length,
       lost: dealsCreatedInPeriod.filter(isDealCanceled).length,

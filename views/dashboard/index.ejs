@@ -1250,45 +1250,46 @@ async function loadDashboard() {
       }
     }
 
-    // ── Render Funnel (Compact Enterprise Design) ──
-    const funnel = safeKpis.funnelStages || { yangi: 0, qaytaAloqa: 0, kotarilmadi: 0, muzokara: 0, won: 0, lost: 0, total: 0 };
+    // ── Render Funnel (Ultra-Sleek Real-Time Peregavor Design) ──
+    const funnel = safeKpis.funnelStages || { yangi: 0, qaytaAloqa: 0, kotarilmadi: 0, peregavor: 0, muzokara: 0, won: 0, lost: 0, total: 0 };
     const total = Math.max(funnel.total || 1, 1);
+    const peregavorCount = (funnel.peregavor !== undefined ? funnel.peregavor : funnel.muzokara) || 0;
 
     const pctYangi       = Math.round(((funnel.yangi || 0) / total) * 100);
-    const pctQaytaAloqa  = Math.round(((funnel.qaytaAloqa || 0) / total) * 100);
+    const pctPeregavor   = Math.round((peregavorCount / total) * 100);
     const pctKotarilmadi = Math.round(((funnel.kotarilmadi || 0) / total) * 100);
-    const pctMuzokara    = Math.round(((funnel.muzokara || 0) / total) * 100);
+    const pctQaytaAloqa  = Math.round(((funnel.qaytaAloqa || 0) / total) * 100);
     const pctWon         = Math.round(((funnel.won || 0) / total) * 100);
     const pctLost        = Math.round(((funnel.lost || 0) / total) * 100);
 
     const funnelSteps = [
-      { label: 'Yangi Lidlar',   icon: 'fa-user-plus',       count: funnel.yangi || 0,       pct: pctYangi,       color: '#6366F1' },
-      { label: 'Qayta Aloqa',    icon: 'fa-phone-alt',       count: funnel.qaytaAloqa || 0,  pct: pctQaytaAloqa,  color: '#0EA5E9' },
-      { label: 'Ko\'tarilmadi',  icon: 'fa-phone-slash',     count: funnel.kotarilmadi || 0, pct: pctKotarilmadi, color: '#F59E0B' },
-      { label: 'Muzokaralar',    icon: 'fa-comments',        count: funnel.muzokara || 0,    pct: pctMuzokara,    color: '#8B5CF6' },
-      { label: 'Yutilgan',       icon: 'fa-check-circle',    count: funnel.won || 0,         pct: pctWon,         color: '#10B981' },
-      { label: 'Otmen Zakazlar', icon: 'fa-times-circle',    count: funnel.lost || 0,        pct: pctLost,        color: '#EF4444' }
+      { label: 'Yangi Lidlar',   icon: 'fa-user-plus',       count: funnel.yangi || 0,       pct: pctYangi,       color: '#6366F1', bg: 'rgba(99, 102, 241, 0.08)' },
+      { label: 'Peregavor',      icon: 'fa-comments',        count: peregavorCount,          pct: pctPeregavor,   color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.08)' },
+      { label: 'Ko\'tarilmadi',  icon: 'fa-phone-slash',     count: funnel.kotarilmadi || 0, pct: pctKotarilmadi, color: '#EF4444', bg: 'rgba(239, 68, 68, 0.08)' },
+      { label: 'Qayta Aloqa',    icon: 'fa-phone-alt',       count: funnel.qaytaAloqa || 0,  pct: pctQaytaAloqa,  color: '#0EA5E9', bg: 'rgba(14, 165, 233, 0.08)' },
+      { label: 'Yutilgan',       icon: 'fa-check-circle',    count: funnel.won || 0,         pct: pctWon,         color: '#10B981', bg: 'rgba(16, 185, 129, 0.08)' },
+      { label: 'Otmen Zakazlar', icon: 'fa-times-circle',    count: funnel.lost || 0,        pct: pctLost,        color: '#8E8E93', bg: 'rgba(142, 142, 147, 0.08)' }
     ];
 
     const funnelContainer = document.getElementById('funnelContainer');
     if (funnelContainer) {
       funnelContainer.innerHTML = `
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; padding: 4px 0;">
-          ${funnelSteps.map((s, i) => `
-            <div style="background: var(--surface-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; box-shadow: var(--shadow-xs); transition: all 0.2s ease;" onmouseover="this.style.borderColor='${s.color}'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; padding: 4px 0;">
+          ${funnelSteps.map((s) => `
+            <div style="background: var(--surface-card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; box-shadow: var(--shadow-xs); transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);" onmouseover="this.style.borderColor='${s.color}'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--border)'; this.style.transform='none'">
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <div style="width: 28px; height: 28px; border-radius: 6px; background: rgba(0,0,0,0.04); color: ${s.color}; display: flex; align-items: center; justify-content: center; font-size: 12px;">
+                  <div style="width: 28px; height: 28px; border-radius: 8px; background: ${s.bg}; color: ${s.color}; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0;">
                     <i class="fas ${s.icon}"></i>
                   </div>
-                  <span style="font-size: 12px; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 95px;">${s.label}</span>
+                  <span style="font-size: 12.5px; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 95px;">${s.label}</span>
                 </div>
-                <span style="font-size: 10.5px; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: rgba(0,0,0,0.05); color: ${s.color};">${s.pct}%</span>
+                <span style="font-size: 10.5px; font-weight: 800; padding: 2px 6px; border-radius: 6px; background: ${s.bg}; color: ${s.color};">${s.pct}%</span>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                <div style="font-size: 17px; font-weight: 800; color: var(--text-primary);">${s.count} <span style="font-size: 11px; font-weight: 600; color: var(--text-tertiary);">ta</span></div>
-                <div style="width: 75px; height: 6px; background: var(--surface-input); border-radius: 3px; overflow: hidden;">
-                  <div style="width: ${Math.max(s.pct, 4)}%; height: 100%; background: ${s.color}; border-radius: 3px;"></div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 2px;">
+                <div style="font-size: 18px; font-weight: 800; color: var(--text-primary);">${s.count} <span style="font-size: 11px; font-weight: 600; color: var(--text-tertiary);">ta</span></div>
+                <div style="width: 70px; height: 5px; background: var(--surface-input); border-radius: 99px; overflow: hidden;">
+                  <div style="width: ${Math.max(s.pct, 4)}%; height: 100%; background: ${s.color}; border-radius: 99px;"></div>
                 </div>
               </div>
             </div>
@@ -3195,8 +3196,13 @@ window.deleteMktLog = async function(id) {
   }
 };
 
-// Start
+// Start & Real-Time Live Auto-Refresh
 loadDashboard();
+if (!window._dashRealtimeTimer) {
+  window._dashRealtimeTimer = setInterval(() => {
+    if (!document.hidden) loadDashboard();
+  }, 12000);
+}
 </script>
 
 <!-- Marketing Add Modal -->
