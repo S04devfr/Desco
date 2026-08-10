@@ -84,7 +84,13 @@ async function main() {
   const mgr3 = await prisma.user.create({
     data: { fullName: 'Bekzod', email: 'bekzod@desco.com', password: managerPassword, role: 'manager' }
   })
-  console.log('✅ Users seeded')
+  const mgr4 = await prisma.user.create({
+    data: { fullName: 'Ruxshona', email: 'ruxshona@desco.com', password: managerPassword, role: 'manager' }
+  })
+  const mgr5 = await prisma.user.create({
+    data: { fullName: 'Parvina', email: 'parvina@desco.com', password: managerPassword, role: 'manager' }
+  })
+  console.log('✅ All 7 Users seeded')
 
   // 5. Create Clients
   const cities = ['Toshkent', 'Qo\'qon', 'Farg\'ona', 'Andijon', 'Namangan', 'Buxoro', 'Samarqand']
