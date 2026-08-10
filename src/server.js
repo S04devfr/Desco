@@ -113,29 +113,43 @@ app.use('/api', sanitizeResponse);          // Barcha API javoblardan sensitive 
 app.use('/api', rateLimiter(200, 60000));    // API uchun global rate limit: 200 req/min
 
 // ── API ROUTES ──
-// ── AUTOMATIC DB MIGRATION & SEED GUARD FOR NEW DEPLOYMENTS (DigitalOcean / Railway) ──
-const { execSync } = require('child_process');
-const { PrismaClient } = require('@prisma/client');
-const prismaInit = new PrismaClient();
-
-async function autoMigrateAndSeedIfNeeded() {
+async function ensureDefaultSeed() {
   try {
-    await prismaInit.user.findFirst();
-    console.log('✅ Database schema verified and active.');
-  } catch (err) {
-    if (err.message && (err.message.includes('does not exist') || err.code === 'P2021')) {
-      console.log('⚡ New database detected! Auto-pushing Prisma schema and seeding initial data...');
-      try {
-        execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
-        console.log('✅ Database schema pushed successfully.');
-        execSync('node prisma/seed.js', { stdio: 'inherit' });
-        console.log('✅ Database seeded successfully.');
-      } catch (e) {
-        console.error('⚠️ Auto db push / seed error:', e.message);
+    const prisma = require('./config/database');
+    const existingAdmin = await prisma.user.findFirst({
+      where: { email: 'shokirovsharifjon04@gmail.com' }
+    });
+
+    if (!existingAdmin) {
+      console.log('⚡ Seeding default admin & pipeline into database...');
+      const bcrypt = require('bcryptjs');
+      const sharifPass = await bcrypt.hash('Sharifjon@2026!', 10);
+      const adminPass  = await bcrypt.hash('Admin@Desco2026!', 10);
+      const mgrPass    = await bcrypt.hash('Manager@123', 10);
+
+      await prisma.user.createMany({
+        data: [
+          { fullName: 'Sharifjon', email: 'shokirovsharifjon04@gmail.com', password: sharifPass, role: 'admin' },
+          { fullName: 'Administrator', email: 'admin@desco.com', password: adminPass, role: 'admin' },
+          { fullName: 'Abdumalik', email: 'abdumalik@desco.com', password: mgrPass, role: 'manager' },
+          { fullName: 'Qodirjon', email: 'qodirjon@desco.com', password: mgrPass, role: 'manager' },
+          { fullName: 'Bekzod', email: 'bekzod@desco.com', password: mgrPass, role: 'manager' },
+          { fullName: 'Ruxshona', email: 'ruxshona@desco.com', password: mgrPass, role: 'manager' },
+          { fullName: 'Parvina', email: 'parvina@desco.com', password: mgrPass, role: 'manager' }
+        ],
+        skipDuplicates: true
+      }).catch(() => {});
+
+      let pipeline = await prisma.pipeline.findFirst({ where: { isDefault: true } });
+      if (!pipeline) {
+        pipeline = await prisma.pipeline.create({
+          data: { name: 'Asosiy voronka', isDefault: true, color: '#007AFF', order: 1 }
+        }).catch(() => null);
       }
+      console.log('✅ Default admin & pipeline verified.');
     }
-  } finally {
-    await prismaInit.$disconnect().catch(() => {});
+  } catch (err) {
+    console.warn('[Seed Check Notice]', err.message || err);
   }
 }
 
@@ -323,7 +337,7 @@ server.listen(PORT, () => {
       await runMigrations(prisma);
       await ensureAuditTable();
       await cleanupDuplicateTasks();
-      await autoMigrateAndSeedIfNeeded();
+      await ensureDefaultSeed();
     } catch (err) {
       console.error('[Background Init Warning]', err);
     }
