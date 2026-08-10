@@ -1204,8 +1204,24 @@ router.get('/unread-chats', protect, async (req, res) => {
 router.get('/operator-presence', async (req, res) => {
   try {
     const managers = await prisma.user.findMany({
-      select: { id: true, fullName: true, name: true, role: true, avatar: true, isActive: true }
+      select: { id: true, fullName: true, name: true, role: true, avatar: true, isActive: true, updatedAt: true }
     });
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [todayCalls, todayTasks, todayDeals, todayActivities] = await Promise.all([
+      prisma.callLog.findMany({ where: { createdAt: { gte: today } } }).catch(() => []),
+      prisma.task.findMany({ where: { updatedAt: { gte: today } } }).catch(() => []),
+      prisma.deal.findMany({ where: { updatedAt: { gte: today } } }).catch(() => []),
+      prisma.activityLog.findMany({ where: { createdAt: { gte: today } } }).catch(() => [])
+    ]);
+
+    const now = new Date();
+    let totalActive = 0;
+    let totalIdle = 0;
+    let totalOffline = 0;
+    let totalOnlineSec = 0;
 
     const telephonyRes = await fetch(`http://127.0.0.1:${process.env.PORT || 3000}/api/telephony/sip-status`, {
       headers: { cookie: req.headers.cookie || '' }
@@ -1213,28 +1229,47 @@ router.get('/operator-presence', async (req, res) => {
 
     const sipLines = telephonyRes.sipLines || [];
 
-    let totalActive = 0;
-    let totalIdle = 0;
-    let totalOffline = 0;
-    let totalOnlineSec = 0;
-
     const operators = managers.map((m) => {
       const line = sipLines.find(s => s.managerId === m.id) || {};
-      const status = line.status || 'offline';
+      
+      // Calculate today's activities count from DB
+      const mCalls = todayCalls.filter(l => l.managerId === m.id);
+      const mTasks = todayTasks.filter(t => t.assignedToId === m.id);
+      const mDeals = todayDeals.filter(d => d.managerId === m.id);
+      const mActs = todayActivities.filter(a => a.userId === m.id);
+
+      const dbActivityCount = mCalls.length + mTasks.length + mDeals.length + mActs.length;
+      const callDuration = mCalls.reduce((sum, c) => sum + (c.duration || 0), 0);
+
+      const lastActiveDate = line.lastActiveAt ? new Date(line.lastActiveAt) : (m.updatedAt ? new Date(m.updatedAt) : null);
+      const secondsSinceActive = lastActiveDate ? Math.round((now.getTime() - lastActiveDate.getTime()) / 1000) : 999999;
+
+      let status = 'offline';
+      if (secondsSinceActive <= 300) { // Active in last 5 minutes
+        status = 'online';
+      } else if (secondsSinceActive <= 900 || dbActivityCount > 0) { // Active in last 15 minutes or worked today
+        status = secondsSinceActive <= 900 ? 'idle' : 'offline';
+      }
+
       const isOnline = status === 'online';
-      const isBusy = status === 'busy';
       const isIdle = status === 'idle';
 
-      if (isOnline || isBusy) totalActive++;
+      if (isOnline) totalActive++;
       else if (isIdle) totalIdle++;
       else totalOffline++;
 
-      const onlineSec = line.onlineSec || 0;
-      const idleSec = line.idleSec || 0;
+      // Combine heartbeat seconds with real DB activity time
+      let onlineSec = (line.onlineSec || 0);
+      if (onlineSec === 0 && dbActivityCount > 0) {
+        // Fallback estimate for working time if server restarted or logged in from another PC
+        onlineSec = (dbActivityCount * 180) + callDuration;
+      }
+
+      let idleSec = (line.idleSec || 0);
       totalOnlineSec += onlineSec;
 
       const totalSec = onlineSec + idleSec;
-      const activeWorkRatio = totalSec > 0 ? Math.round((onlineSec / totalSec) * 100) : 0;
+      const activeWorkRatio = totalSec > 0 ? Math.min(100, Math.round((onlineSec / totalSec) * 100)) : (dbActivityCount > 0 ? 85 : 0);
 
       return {
         id: m.id,
@@ -1242,8 +1277,7 @@ router.get('/operator-presence', async (req, res) => {
         role: m.role,
         avatar: m.avatar,
         status,
-        statusText: isBusy ? '🟡 Suhbatda' : isIdle ? '🟡 Nofaol (10m+)' : isOnline ? '🟢 Aktiv' : '⚪ Offline',
-        shiftStart: line.shiftStart || null,
+        statusText: isIdle ? '🟡 Tanaffusda (10m+)' : isOnline ? '🟢 Aktiv' : '⚪ Offline',
         onlineSec,
         idleSec,
         activeWorkRatio

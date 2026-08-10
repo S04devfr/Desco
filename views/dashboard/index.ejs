@@ -305,14 +305,13 @@
           <tr>
             <th>Operator / Menejer</th>
             <th class="tc" style="width:140px;">Holati</th>
-            <th class="tc" style="width:130px;">Ish Boshlanishi</th>
-            <th class="tc" style="width:140px;">Aktiv Online Vaqti</th>
-            <th class="tc" style="width:140px;">Tanaffus / Idle</th>
+            <th class="tc" style="width:160px;">Aktiv Online Vaqti</th>
+            <th class="tc" style="width:160px;">Tanaffus / Idle</th>
             <th style="width:180px;">Aktivlik Indeksi (%)</th>
           </tr>
         </thead>
         <tbody id="operatorPresenceTableBody">
-          <tr><td colspan="6" class="tc" style="padding:30px;"><div class="spinner" style="margin:auto;"></div></td></tr>
+          <tr><td colspan="5" class="tc" style="padding:30px;"><div class="spinner" style="margin:auto;"></div></td></tr>
         </tbody>
       </table>
     </div>
@@ -869,7 +868,7 @@ async function loadOperatorPresenceStats() {
     if (bOff) bOff.textContent = `⚪ ${summary.totalOffline || 0} Offline`;
 
     if (!operators.length) {
-      tbody.innerHTML = '<tr><td colspan="6" class="tc" style="padding:20px; color:var(--text-tertiary);">Ma\'lumotlar mavjud emas</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" class="tc" style="padding:20px; color:var(--text-tertiary);">Ma\'lumotlar mavjud emas</td></tr>';
       return;
     }
 
@@ -894,9 +893,6 @@ async function loadOperatorPresenceStats() {
           </td>
           <td class="tc" style="font-size:12px; font-weight:700; color:${badgeCls};">
             ${escHtml(op.statusText)}
-          </td>
-          <td class="tc" style="font-size:12px; font-weight:600; color:var(--text-secondary);">
-            ${op.shiftStart ? new Date(op.shiftStart).toLocaleTimeString('uz-UZ', { hour:'2-digit', minute:'2-digit' }) : '--:--'}
           </td>
           <td class="tc" style="font-size:13px; font-weight:800; color:#10b981;">
             ${fmtDuration(op.onlineSec)}
