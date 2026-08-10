@@ -3328,6 +3328,10 @@ async function openDetail(id) {
     // Populate timeline and active tasks
     renderTimelineAndTasks(deal);
 
+    // Dynamic Nasiya Desco Section (Only visible on Nasiya Desco stage)
+    window._drawerNasiyaForceEdit = false;
+    renderDrawerNasiyaSection(deal);
+
     // Trigger pending stage change from Drag & Drop if any
     if (window._pendingStageChangeAfterOpen) {
       const pendingStageId = window._pendingStageChangeAfterOpen;
@@ -3345,14 +3349,149 @@ async function openDetail(id) {
   }
 }
 
+function renderDrawerNasiyaSection(deal) {
+  const block = document.getElementById('drawerNasiyaDescoBlock');
+  if (!block) return;
+
+  const activeStage = _stages.find(s => s.id === deal.stageId);
+  const stageName = activeStage ? (activeStage.name || '').toLowerCase() : '';
+  const isNasiyaStage = stageName.includes('nasiya') || stageName.includes('desco');
+
+  if (!isNasiyaStage) {
+    block.style.display = 'none';
+    return;
+  }
+
+  block.style.display = 'block';
+
+  const insts = deal.installments || [];
+  const hasPlan = insts.length > 0;
+  const isForceEdit = window._drawerNasiyaForceEdit === true;
+
+  if (hasPlan && !isForceEdit) {
+    const paidInsts = insts.filter(i => i.paid);
+    const paidAmount = paidInsts.reduce((sum, i) => sum + (i.amount || 0), 0);
+    const remainingDebt = Math.max(0, deal.amount - paidAmount);
+    const progressPct = deal.amount > 0 ? Math.min(100, Math.round((paidAmount / deal.amount) * 100)) : 0;
+    
+    const now = new Date();
+    const nextUnpaid = insts.find(i => !i.paid);
+    const isOverdue = nextUnpaid && new Date(nextUnpaid.dueDate) < now;
+
+    const firstRegInst = insts.find(i => i.notes && i.notes.includes('oylik')) || insts[1] || insts[0];
+    const monthlyAmt = firstRegInst ? firstRegInst.amount : Math.round(remainingDebt / Math.max(1, insts.length));
+    const monthsCount = insts.filter(i => !i.notes || !i.notes.includes('Boshlang\'ich')).length || insts.length;
+
+    block.innerHTML = `
+      <div style="font-size: 11.5px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+        <span><i class="fas fa-file-invoice-dollar" style="margin-right: 6px;"></i> Nasiya Desco — To'lov Qismi</span>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="window._drawerNasiyaForceEdit=true; renderDrawerNasiyaSection(window._currentDeal);" style="font-size:11px; padding:2px 8px; color:var(--text-secondary); font-weight:600;"><i class="fas fa-edit"></i> Planni Tahrirlash</button>
+      </div>
+
+      <div style="background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; padding:10px 12px; margin-bottom:10px;">
+        <div style="font-size:12.5px; font-weight:800; color:var(--text-primary); display:flex; justify-content:space-between; align-items:center;">
+          <span>📅 ${monthsCount} oylik muddatli to'lov</span>
+          <span style="color:var(--brand); font-size:13px;">${monthlyAmt.toLocaleString('uz-UZ')} so'm / oy</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:11.5px; font-weight:700; margin-top:8px; margin-bottom:4px;">
+          <span style="color:#10b981;">To'langan: ${paidAmount.toLocaleString('uz-UZ')} so'm</span>
+          <span style="color:${remainingDebt > 0 ? '#ef4444' : '#10b981'};">Qolgan: ${remainingDebt.toLocaleString('uz-UZ')} so'm</span>
+        </div>
+        <div style="height:6px; background:var(--bg-secondary); border-radius:3px; overflow:hidden;">
+          <div style="width:${progressPct}%; height:100%; background:${remainingDebt === 0 ? '#007AFF' : isOverdue ? '#ef4444' : '#10b981'}; border-radius:3px; transition:width 0.3s;"></div>
+        </div>
+      </div>
+
+      ${nextUnpaid ? `
+        <div style="background:${isOverdue ? 'rgba(239,68,68,0.08)' : 'rgba(0,122,255,0.08)'}; border:1px solid ${isOverdue ? 'rgba(239,68,68,0.25)' : 'rgba(0,122,255,0.2)'}; border-radius:8px; padding:10px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-size:10.5px; font-weight:800; text-transform:uppercase; color:${isOverdue ? '#ef4444' : '#007AFF'};">
+              ${isOverdue ? '🔴 Kechikayotgan To\'lov' : '🔵 Navbatdagi To\'lov'}
+            </div>
+            <div style="font-size:12.5px; font-weight:700; color:var(--text-primary); margin-top:2px;">
+              ${nextUnpaid.month || 'To\'lov'} — ${(nextUnpaid.amount||0).toLocaleString('uz-UZ')} so'm
+            </div>
+          </div>
+          <button type="button" class="btn btn-sm btn-success" onclick="openRapidPayModal(${deal.id}, ${nextUnpaid.id}, '${nextUnpaid.month||''}', ${nextUnpaid.amount||0}, '${_esc(deal.client?.name||'')}')" style="padding:4px 12px; font-size:11.5px; font-weight:700; background:#10b981; border-color:#10b981; border-radius:6px;">
+            💳 To'lov Qabul Qilish
+          </button>
+        </div>
+      ` : `
+        <div style="text-align:center; padding:8px; font-size:12px; font-weight:700; color:#10b981;">
+          ✔️ Barcha nasiya to'lovlari to'liq yopilgan!
+        </div>
+      `}
+    `;
+    return;
+  }
+
+  // Otherwise render setup form
+  block.innerHTML = `
+    <div style="font-size: 11.5px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+      <span><i class="fas fa-calculator" style="margin-right: 6px;"></i> Nasiya Desco — Muddatli To'lov Kalkulyatori</span>
+      ${hasPlan ? `<button type="button" class="btn btn-ghost btn-sm" onclick="window._drawerNasiyaForceEdit=false; renderDrawerNasiyaSection(window._currentDeal);" style="font-size:11px; padding:2px 8px; color:var(--text-secondary);"><i class="fas fa-arrow-left"></i> Bekor qilish</button>` : `<span class="badge" style="background: rgba(0, 122, 255, 0.12); color: #007AFF; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight:700;">Smart Calculator</span>`}
+    </div>
+
+    <div class="drawer-inline-row">
+      <span class="drawer-inline-label">Nasiya Muddati</span>
+      <div class="drawer-inline-value">
+        <select id="dw-nasiyaMonths" class="drawer-inline-select" onchange="recalculateDrawerNasiyaPlan()">
+          <option value="3">3 oy (Choraklik)</option>
+          <option value="6" selected>6 oy (Yarim yillik)</option>
+          <option value="12">12 oy (Yillik)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="drawer-inline-row">
+      <span class="drawer-inline-label">Boshlang'ich To'lov</span>
+      <div class="drawer-inline-value" style="display:flex; align-items:center; gap:4px; justify-content:flex-end;">
+        <input type="number" id="dw-nasiyaDownPayment" class="drawer-inline-input" value="0" placeholder="0" oninput="recalculateDrawerNasiyaPlan()" style="text-align:right;">
+        <span style="font-size:11px; color:var(--text-tertiary); font-weight:600;">so'm</span>
+      </div>
+    </div>
+
+    <div class="drawer-inline-row" style="background: rgba(16, 185, 129, 0.08); border-radius: 6px; padding: 6px 10px; margin: 6px 0;">
+      <span class="drawer-inline-label" style="font-weight: 700; color: #10b981;">Oylik To'lov Summasi</span>
+      <div class="drawer-inline-value" style="display:flex; align-items:center; gap:4px; justify-content:flex-end;">
+        <input type="number" id="dw-nasiyaMonthlyVal" class="drawer-inline-input" placeholder="Avto hisoblanadi..." style="text-align:right; font-weight:800; color:#10b981; font-size:13.5px;">
+        <span style="font-size:11px; color:#10b981; font-weight:700;">so'm / oy</span>
+      </div>
+    </div>
+
+    <div class="drawer-inline-row">
+      <span class="drawer-inline-label">Har oyning to'lov kuni</span>
+      <div class="drawer-inline-value">
+        <select id="dw-nasiyaDueDay" class="drawer-inline-select">
+          <option value="5">Har oyning 5-kuni</option>
+          <option value="10">Har oyning 10-kuni</option>
+          <option value="15">Har oyning 15-kuni</option>
+          <option value="20">Har oyning 20-kuni</option>
+          <option value="23" selected>Har oyning 23-kuni</option>
+          <option value="25">Har oyning 25-kuni</option>
+          <option value="30">Har oyning 30-kuni</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="margin-top: 10px;">
+      <button type="button" class="btn btn-sm btn-primary" onclick="saveDrawerNasiyaPlan(event)" id="dwSaveNasiyaPlanBtn" style="width: 100%; border-radius: 6px; font-weight: 700; background: var(--accent); border-color: var(--accent); font-size: 12px; height: 32px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+        <i class="fas fa-save"></i> Nasiya Plani Saqlash & Oylarga Bo'lish
+      </button>
+    </div>
+  `;
+  recalculateDrawerNasiyaPlan();
+}
+
 function renderTimelineAndTasks(deal) {
   const timelineBody = document.getElementById('drawerTimelineBody');
   timelineBody.innerHTML = '';
-  
+  window._currentDeal = deal;
+
   const comments = [];
-  const otherItems = [];
-  
-  // 1. Group manual comments (store ID for deletion)
+  const pendingTasks = [];
+  const completedItems = [];
+
   if (deal.activities) {
     deal.activities.forEach(a => {
       const isComment = a.action === "Izoh qoldirildi" || 
@@ -3369,10 +3508,10 @@ function renderTimelineAndTasks(deal) {
       }
     });
   }
-  
+
   if (deal.tasks) {
     deal.tasks.forEach(t => {
-      otherItems.push({
+      const item = {
         type: 'task',
         date: new Date(t.dueDate || t.createdAt),
         completed: t.completed,
@@ -3382,164 +3521,134 @@ function renderTimelineAndTasks(deal) {
         description: t.description || '',
         result: t.result || '',
         id: t.id
-      });
+      };
+      if (t.completed) {
+        completedItems.push(item);
+      } else {
+        pendingTasks.push(item);
+      }
     });
   }
-  
-  // Sort comments oldest first (Word document style)
+
   comments.sort((a, b) => a.date - b.date);
-  
-  // Sort tasks newest first
-  otherItems.sort((a, b) => b.date - a.date);
-  
+
+  // Sort pending tasks: NEAREST / OVERDUE FIRST (most urgent at top!)
+  pendingTasks.sort((a, b) => a.date - b.date);
+
+  // Sort completed items newest first
+  completedItems.sort((a, b) => b.date - a.date);
+
   let html = '';
-  
-  // 1. Single continuous Word-like paper card for comments
+
+  // 1. Comments notebook
   html += `
-    <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 24px;">
-      <div style="font-size: 12px; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+    <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 18px; box-shadow: 0 2px 5px rgba(0,0,0,0.04); margin-bottom: 20px;">
+      <div style="font-size: 11.5px; font-weight: 800; color: #1e293b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
         <i class="fas fa-file-alt" style="color: #6366f1;"></i> Izohlar Daftari
       </div>
-      <div id="comments-document-flow" style="display: flex; flex-direction: column; gap: 12px; max-height: 400px; overflow-y: auto; padding-right: 4px;">
+      <div id="comments-document-flow" style="display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto; padding-right: 4px;">
   `;
-  
+
   if (comments.length > 0) {
     comments.forEach((c, idx) => {
       const isLast = idx === comments.length - 1;
-      const borderStyle = isLast ? '' : 'border-bottom: 1px dashed #e2e8f0; padding-bottom: 12px;';
+      const borderStyle = isLast ? '' : 'border-bottom: 1px dashed #e2e8f0; padding-bottom: 10px;';
       html += `
         <div style="${borderStyle}">
-          <div style="display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; margin-bottom: 4px;">
+          <div style="display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; margin-bottom: 3px;">
             <span style="font-weight: 700; color: #6366f1;">✍️ ${c.author}</span>
             <div style="display: flex; align-items: center; gap: 8px;">
               <span>${c.date.toLocaleString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-              <button onclick="deleteDealComment(${c.id})" style="background:none; border:none; color:#cbd5e1; cursor:pointer; font-size:11px; padding:0; display:inline-flex; align-items:center; transition:color 0.15s;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='#cbd5e1'" title="Izohni o'chirish"><i class="fas fa-trash-alt"></i></button>
+              <button onclick="deleteDealComment(${c.id})" style="background:none; border:none; color:#cbd5e1; cursor:pointer; font-size:11px; padding:0;" title="Izohni o'chirish"><i class="fas fa-trash-alt"></i></button>
             </div>
           </div>
-          <div style="white-space: pre-wrap; font-size: 13px; color: #334155; line-height: 1.5; font-family: inherit;">${_esc(c.details)}</div>
+          <div style="white-space: pre-wrap; font-size: 12.5px; color: #334155; line-height: 1.4;">${_esc(c.details)}</div>
         </div>
       `;
     });
   } else {
-    html += `
-      <div style="text-align: center; padding: 30px 10px; color: #94a3b8; font-size: 12.5px; font-style: italic;">
-        Hozircha izohlar yozilmagan. Pastdagi maydon orqali izoh yozishingiz mumkin.
-      </div>
-    `;
+    html += `<div style="text-align: center; padding: 20px 10px; color: #94a3b8; font-size: 12px; font-style: italic;">Hozircha izohlar yozilmagan.</div>`;
   }
-  
-  html += `
-      </div>
-    </div>
-  `;
-  
-  // 2. Render other timeline items (tasks, history) below
-  if (otherItems.length > 0) {
+  html += `</div></div>`;
+
+  // 2. ACTIVE PENDING TASKS AT THE VERY TOP
+  if (pendingTasks.length > 0) {
     html += `
-      <div style="font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
-        Vazifalar
+      <div style="font-size: 11.5px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display:flex; align-items:center; gap:6px;">
+        <i class="fas fa-clock" style="color:var(--accent);"></i> Bajarilishi kerak bo'lgan vazifa
       </div>
     `;
-    
-    const groups = {};
-    otherItems.forEach(item => {
-      const dateStr = item.date.toLocaleDateString('ru-RU');
-      if (!groups[dateStr]) groups[dateStr] = [];
-      groups[dateStr].push(item);
-    });
-    
-    const dateKeys = Object.keys(groups);
-    dateKeys.forEach(dateStr => {
+
+    pendingTasks.forEach(item => {
+      const today = new Date().setHours(0,0,0,0);
+      const taskTime = new Date(item.date).setHours(0,0,0,0);
+      const diffDays = Math.round((taskTime - today) / (1000 * 60 * 60 * 24));
+      const dayText = diffDays === 0 ? 'Bugun' : diffDays === 1 ? 'Ertaga' : diffDays === -1 ? 'Kecha' : diffDays < 0 ? `${Math.abs(diffDays)} KUN MUDDAT O'TDI` : `${diffDays} kun qoldi`;
+      const isOverdue = diffDays < 0;
+      const colorClass = isOverdue ? 'color:#ef4444; font-weight:800;' : 'color:#a78bfa; font-weight:800;';
+
+      const isoDate = item.date.getFullYear() + '-' + String(item.date.getMonth() + 1).padStart(2, '0') + '-' + String(item.date.getDate()).padStart(2, '0');
+      const isoTime = String(item.date.getHours()).padStart(2, '0') + ':' + String(item.date.getMinutes()).padStart(2, '0');
+
       html += `
-        <div class="timeline-group-hdr">
-          <span class="timeline-group-title">${dateStr}</span>
+        <div class="timeline-task-card" style="border-color:${isOverdue ? '#ef4444' : 'rgba(88,86,214,0.3)'}; margin-bottom:16px;" id="task-${item.id}">
+          <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 6px;">
+            <div class="timeline-task-header" style="margin-bottom:0">
+              <i class="far fa-clock" style="${colorClass}"></i>
+              <span style="${colorClass}"> KEYINGI VAZIFA: ${dayText} (${isoTime})</span>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="toggleRescheduleForm(${item.id})" style="font-size:11px; padding:2px 6px; height:22px; color:var(--text-secondary); cursor:pointer;">
+              <i class="fas fa-calendar-alt"></i> O'zgartirish
+            </button>
+          </div>
+          
+          <div id="reschedule-form-${item.id}" class="hidden" style="display:none; margin: 8px 0; padding: 10px; background: var(--bg-tertiary); border-radius: 6px; border: 1px solid var(--border); flex-direction: column; gap: 8px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-secondary);">Vazifa vaqtini tahrirlash:</div>
+            <div style="display: flex; gap: 6px;">
+              <input type="date" id="reschedule-date-${item.id}" class="form-control" style="font-size:12px; padding:4px 8px; height:28px; flex:1;" value="${isoDate}">
+              <input type="time" id="reschedule-time-${item.id}" class="form-control" style="font-size:12px; padding:4px 8px; height:28px; width:75px;" value="${isoTime}">
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 6px;">
+              <button class="btn btn-ghost btn-sm" style="font-size:11px; padding:2px 8px;" onclick="toggleRescheduleForm(${item.id})">Bekor qilish</button>
+              <button class="btn btn-primary btn-sm" style="font-size:11px; padding:2px 10px; background:var(--brand);" onclick="saveRescheduledTask(${item.id})">Saqlash</button>
+            </div>
+          </div>
+
+          <div class="timeline-task-title" style="margin-top:4px; font-size:13.5px;">${_esc(item.actionType)}: ${_esc(item.title)}</div>
+          ${item.description ? `<div style="font-size:12px; color:var(--text-secondary); margin-bottom:6px;">${_esc(item.description)}</div>` : ''}
+          <div class="timeline-task-result-box">
+            <input type="text" id="task-res-${item.id}" class="timeline-task-input" placeholder="Natijani yozing...">
+            <button class="btn btn-primary btn-sm" style="padding:2px 12px; font-size:12px; height:32px; font-weight:700;" onclick="completeTimelineTask(${item.id})">Bajarildi</button>
+          </div>
         </div>
       `;
-      
-      groups[dateStr].forEach(item => {
-        if (item.type === 'task') {
-          if (item.completed) {
-            html += `
-              <div class="timeline-entry" style="border-left: 3px solid #10b981;" id="task-${item.id}">
-                <div class="timeline-entry-meta">
-                  <span class="timeline-entry-author" style="color:#10b981;">${_esc(item.assignedTo)}</span>
-                  <span>Vazifa bajarildi · ${item.date.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}</span>
-                </div>
-                <div><strong>${_esc(item.actionType)}</strong>: ${_esc(item.title)}</div>
-                ${item.result ? `<div style="margin-top:6px; font-size:11px; padding:4px 8px; background:rgba(16,185,129,0.06); border-radius:4px; color:#10b981;"><b>Natija:</b> ${_esc(item.result)}</div>` : ''}
-              </div>
-            `;
-          } else {
-            // Calculate remaining/overdue days
-            const today = new Date().setHours(0,0,0,0);
-            const taskTime = new Date(item.date).setHours(0,0,0,0);
-            const diffDays = Math.round((taskTime - today) / (1000 * 60 * 60 * 24));
-            const dayText = diffDays === 0 ? 'Bugun' : diffDays === 1 ? 'Ertaga' : diffDays === -1 ? 'Kecha' : diffDays < 0 ? `${Math.abs(diffDays)} kun muddat o'tdi` : `${diffDays} kun qoldi`;
-            const isOverdue = diffDays < 0;
-            const colorClass = isOverdue ? 'color:#ef4444;' : 'color:#a78bfa;';
-
-            const isoDate = item.date.getFullYear() + '-' + String(item.date.getMonth() + 1).padStart(2, '0') + '-' + String(item.date.getDate()).padStart(2, '0');
-            const isoTime = String(item.date.getHours()).padStart(2, '0') + ':' + String(item.date.getMinutes()).padStart(2, '0');
-
-            html += `
-              <div class="timeline-task-card" style="border-color:${isOverdue ? '#ef4444' : 'rgba(88,86,214,0.25)'}" id="task-${item.id}">
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 6px;">
-                  <div class="timeline-task-header" style="margin-bottom:0">
-                    <i class="far fa-clock" style="${colorClass}"></i>
-                    <span style="${colorClass}"> Keyingi vazifa: ${dayText} (${isoTime})</span>
-                  </div>
-                  <button class="btn btn-ghost btn-sm" onclick="toggleRescheduleForm(${item.id})" style="font-size:11px; padding:2px 6px; height:22px; color:var(--text-secondary); cursor:pointer; display:inline-flex; align-items:center; gap:3px;">
-                    <i class="fas fa-calendar-alt"></i> O'zgartirish
-                  </button>
-                </div>
-                
-                <!-- Inline reschedule form -->
-                <div id="reschedule-form-${item.id}" class="hidden" style="display:none; margin: 8px 0; padding: 10px; background: var(--bg-tertiary); border-radius: 6px; border: 1px solid var(--border); flex-direction: column; gap: 8px;">
-                  <div style="font-size: 11px; font-weight: 700; color: var(--text-secondary);">Vazifa vaqtini tahrirlash:</div>
-                  <div style="display: flex; gap: 6px;">
-                    <input type="date" id="reschedule-date-${item.id}" class="form-control" style="font-size:12px; padding:4px 8px; height:28px; flex:1; background:var(--bg-primary); color:var(--text-primary); border-color:var(--border);" value="${isoDate}">
-                    <input type="time" id="reschedule-time-${item.id}" class="form-control" style="font-size:12px; padding:4px 8px; height:28px; width:75px; background:var(--bg-primary); color:var(--text-primary); border-color:var(--border);" value="${isoTime}">
-                  </div>
-                  <div style="display: flex; justify-content: flex-end; gap: 6px;">
-                    <button class="btn btn-ghost btn-sm" style="font-size:11px; padding:2px 8px; height:24px; color:var(--text-secondary);" onclick="toggleRescheduleForm(${item.id})">Bekor qilish</button>
-                    <button class="btn btn-primary btn-sm" style="font-size:11px; padding:2px 10px; height:24px; background:var(--brand); border-color:var(--brand);" onclick="saveRescheduledTask(${item.id})">Saqlash</button>
-                  </div>
-                </div>
-
-                <div class="timeline-task-title" style="margin-top:4px;">${_esc(item.actionType)}: ${_esc(item.title)}</div>
-                ${(() => {
-                  const desc = item.description || '';
-                  if (!desc) return '';
-                  const isMakeLead = desc.includes('Lead ID:') || desc.includes('Manba:') || desc.length > 120;
-                  if (isMakeLead) {
-                    return `
-                      <details style="font-size:11.5px; color:var(--text-secondary); margin-bottom:8px; border:1px solid var(--border); border-radius:6px; padding:6px; background:var(--bg-tertiary);">
-                        <summary style="cursor:pointer; font-weight:700; color:var(--brand); outline:none; font-size:11px; list-style:none; display:flex; align-items:center; gap:4px;">
-                          <i class="fas fa-info-circle" style="color:var(--brand);"></i> <span>Tafsilotlarni ko'rish</span>
-                        </summary>
-                        <div style="margin-top:6px; white-space:pre-wrap; word-break:break-word; line-height:1.4;">${_esc(desc)}</div>
-                      </details>
-                    `;
-                  }
-                  return `<div style="font-size:12px; color:var(--text-secondary); margin-bottom:6px;">${_esc(desc)}</div>`;
-                })()}
-                <div class="timeline-task-result-box">
-                  <input type="text" id="task-res-${item.id}" class="timeline-task-input" placeholder="Natijani yozing...">
-                  <button class="btn btn-primary btn-sm" style="padding:2px 10px; font-size:12px; height:32px;" onclick="completeTimelineTask(${item.id})">Bajarildi</button>
-                </div>
-              </div>
-            `;
-          }
-        }
-      });
     });
   }
-  
+
+  // 3. COMPLETED HISTORY LOGS
+  if (completedItems.length > 0) {
+    html += `
+      <div style="font-size: 11.5px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 14px; margin-bottom: 10px;">
+        📜 Bajarilgan Vazifalar va Tarix
+      </div>
+    `;
+
+    completedItems.forEach(item => {
+      html += `
+        <div class="timeline-entry" style="border-left: 3px solid #10b981; margin-bottom:8px;" id="task-${item.id}">
+          <div class="timeline-entry-meta">
+            <span class="timeline-entry-author" style="color:#10b981;">${_esc(item.assignedTo)}</span>
+            <span>Vazifa bajarildi · ${item.date.toLocaleDateString('uz-UZ')} ${item.date.toLocaleTimeString('uz-UZ', {hour: '2-digit', minute:'2-digit'})}</span>
+          </div>
+          <div><strong>${_esc(item.actionType)}</strong>: ${_esc(item.title)}</div>
+          ${item.result ? `<div style="margin-top:4px; font-size:11px; padding:3px 8px; background:rgba(16,185,129,0.06); border-radius:4px; color:#10b981;"><b>Natija:</b> ${_esc(item.result)}</div>` : ''}
+        </div>
+      `;
+    });
+  }
+
   timelineBody.innerHTML = html || '<div style="text-align:center; padding:40px; color:var(--text-tertiary);">Tarix bo\'sh</div>';
-  
-  // Set participants count
-  const activeTasks = (deal.tasks || []).filter(t => !t.completed).length;
-  document.getElementById('dw-participants-count').textContent = `Vazifalar: ${activeTasks}`;
+  document.getElementById('dw-participants-count').textContent = `Vazifalar: ${pendingTasks.length}`;
 }
 
 function closeDetail() {
