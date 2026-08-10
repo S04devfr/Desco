@@ -277,6 +277,42 @@ function _safeToast(msg, type) {
   else console.warn('[Tasks]', msg);
 }
 
+async function toggleTaskStatus(id) {
+  const task = allTasks.find(t => t.id === id);
+  if (!task) return;
+  const newCompleted = !task.completed;
+  try {
+    const res = await fetch(`/api/tasks/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ completed: newCompleted })
+    });
+    if (!res.ok) throw new Error();
+    task.completed = newCompleted;
+    _safeToast(newCompleted ? "Vazifa bajarildi deb belgilandi! ✅" : "Vazifa qayta tiklandi", 'success');
+    if (typeof updateSidebarTaskBadge === 'function') updateSidebarTaskBadge();
+    refreshView();
+  } catch (e) {
+    _safeToast("Vazifa holatini o'zgartirishda xatolik", 'error');
+  }
+}
+window.toggleTaskStatus = toggleTaskStatus;
+
+async function deleteTaskRow(id) {
+  if (!confirm("Ushbu vazifani o'chirishni tasdiqlaysizmi?")) return;
+  try {
+    const res = await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error();
+    allTasks = allTasks.filter(t => t.id !== id);
+    _safeToast("Vazifa o'chirildi", 'info');
+    if (typeof updateSidebarTaskBadge === 'function') updateSidebarTaskBadge();
+    refreshView();
+  } catch (e) {
+    _safeToast("O'chirishda xatolik", 'error');
+  }
+}
+window.deleteTaskRow = deleteTaskRow;
+
 async function loadUsers() {
   try {
     const users = await fetch('/api/settings/users').then(r => r.json()).catch(() => []);
@@ -463,9 +499,9 @@ function renderSingleTaskRowHtml(t) {
       <div style="position:absolute; left:0; top:12px; bottom:12px; width:4px; border-radius:0 4px 4px 0; background: ${isOverdue ? '#ef4444' : t.completed ? '#10b981' : 'var(--accent)'}"></div>
 
       <div style="display: flex; justify-content: center; align-items: center;">
-        <div style="width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; ${t.completed ? 'background:#10b981; color:#fff;' : isOverdue ? 'background:rgba(239,68,68,0.12); color:#ef4444; border:2px solid #ef4444;' : 'background:rgba(14,165,233,0.1); color:#0ea5e9; border:2px solid #0ea5e9;'}">
-          ${t.completed ? '<i class="fas fa-check" style="font-size:9px"></i>' : isOverdue ? '<i class="fas fa-exclamation" style="font-size:9px"></i>' : '<i class="fas fa-bell" style="font-size:8px"></i>'}
-        </div>
+        <button onclick="event.stopPropagation(); toggleTaskStatus(${t.id})" title="${t.completed ? 'Bajarilmagan qilish' : 'Bajarildi deb belgilash'}" style="width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer; transition:all 0.15s; ${t.completed ? 'background:#10b981; color:#fff; border:none;' : isOverdue ? 'background:rgba(239,68,68,0.12); color:#ef4444; border:2px solid #ef4444;' : 'background:rgba(14,165,233,0.1); color:#0ea5e9; border:2px solid #0ea5e9;'}">
+          ${t.completed ? '<i class="fas fa-check" style="font-size:10px"></i>' : isOverdue ? '<i class="fas fa-exclamation" style="font-size:10px"></i>' : '<i class="fas fa-check" style="font-size:9px; opacity:0.3;"></i>'}
+        </button>
       </div>
       <div>
         <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;">
@@ -485,9 +521,13 @@ function renderSingleTaskRowHtml(t) {
       </div>
       <div>${assigneeHtml}</div>
       <div style="text-align:right;">
-        <div style="display:flex; justify-content:flex-end; gap:6px;">
+        <div style="display:flex; justify-content:flex-end; gap:6px; align-items:center;">
+          <button class="task-action-btn" onclick="event.stopPropagation(); toggleTaskStatus(${t.id})" title="${t.completed ? 'Qaytarish' : 'Bajarildi deb belgilash'}" style="background:${t.completed ? 'rgba(245,158,11,0.12)' : 'rgba(16,185,129,0.15)'}; color:${t.completed ? '#f59e0b' : '#10b981'}; width:auto; padding:0 10px; border-radius:6px; font-size:11.5px; font-weight:700; height:28px;">
+            <i class="fas fa-${t.completed ? 'undo' : 'check'}" style="margin-right:4px;"></i> ${t.completed ? 'Qaytarish' : 'Bajarildi'}
+          </button>
           <button class="task-action-btn" onclick="event.stopPropagation(); viewTaskDetails(${t.id})" title="Ko'rish" style="background:var(--accent-soft); color:var(--accent);"><i class="fas fa-eye" style="font-size:11.5px;"></i></button>
-          ${t.dealId ? `<button class="task-action-btn" onclick="event.stopPropagation(); window.location.href='/deals?openDealId=${t.dealId}'" title="Sdelkaga o'tish" style="background:rgba(16, 185, 129, 0.1); color:#10b981;"><i class="fas fa-arrow-right" style="font-size:11.5px;"></i></button>` : ''}
+          ${t.dealId ? `<button class="task-action-btn" onclick="event.stopPropagation(); window.location.href='/deals?openDealId=${t.dealId}'" title="Sdelkaga o'tish" style="background:rgba(14,165,233,0.1); color:#0ea5e9;"><i class="fas fa-arrow-right" style="font-size:11.5px;"></i></button>` : ''}
+          <button class="task-action-btn" onclick="event.stopPropagation(); deleteTaskRow(${t.id})" title="O'chirish" style="background:rgba(239,68,68,0.1); color:#ef4444;"><i class="fas fa-trash-alt" style="font-size:11px;"></i></button>
         </div>
       </div>
     </div>
