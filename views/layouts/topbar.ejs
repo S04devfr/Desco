@@ -43,20 +43,28 @@
 
     <!-- Profile -->
     <div style="position:relative;" id="profileWrap">
-      <div class="topbar-avatar" id="profileBtn" onclick="toggleProfileMenu()" title="<%= user.fullName %>">
-        <%= user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U' %>
+      <div class="topbar-avatar" id="profileBtn" onclick="toggleProfileMenu()" title="<%= user.fullName %>" style="cursor:pointer; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+        <% if (typeof user !== 'undefined' && user.avatar) { %>
+          <img src="<%= user.avatar %>" alt="Avatar" style="width:100%; height:100%; object-fit:cover;">
+        <% } else { %>
+          <%= user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U' %>
+        <% } %>
       </div>
 
-      <div class="profile-dropdown hidden" id="profileMenu">
-        <div class="dropdown-profile-header">
-          <div class="topbar-avatar" style="width:36px;height:36px;font-size:14px;flex-shrink:0;">
-            <%= user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U' %>
+      <div class="profile-dropdown hidden" id="profileMenu" style="width:240px;">
+        <div class="dropdown-profile-header" onclick="openUserProfileModal()" style="cursor:pointer; padding:12px 14px;">
+          <div class="topbar-avatar" style="width:40px;height:40px;font-size:15px;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+            <% if (typeof user !== 'undefined' && user.avatar) { %>
+              <img src="<%= user.avatar %>" alt="Avatar" style="width:100%; height:100%; object-fit:cover;">
+            <% } else { %>
+              <%= user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U' %>
+            <% } %>
           </div>
-          <div>
-            <div style="font-size:13px;font-weight:600;color:var(--text-900);">
+          <div style="overflow:hidden;">
+            <div style="font-size:13px;font-weight:700;color:var(--text-900);text-overflow:ellipsis;overflow:hidden;white-space:nowrap;">
               <%= user.fullName || 'Foydalanuvchi' %>
             </div>
-            <div style="font-size:11.5px;color:var(--text-500);">
+            <div style="font-size:11px;color:var(--text-500);text-overflow:ellipsis;overflow:hidden;white-space:nowrap;">
               <%= user.email %>
             </div>
           </div>
@@ -65,11 +73,11 @@
         <div class="dropdown-divider"></div>
 
         <div class="dropdown-section">
-          <a href="/settings#profile" class="dropdown-item">
-            <i class="fas fa-user dropdown-item-icon"></i> Profil sozlamalari
-          </a>
+          <button class="dropdown-item" onclick="openUserProfileModal()">
+            <i class="fas fa-user-circle dropdown-item-icon" style="color:var(--brand);"></i> Mening profilim
+          </button>
           <button class="dropdown-item" onclick="openPasswordModal()">
-            <i class="fas fa-lock dropdown-item-icon"></i> Parol o'zgartirish
+            <i class="fas fa-key dropdown-item-icon" style="color:#F59E0B;"></i> Parol o'zgartirish
           </button>
         </div>
 
@@ -85,6 +93,91 @@
 
   </div>
 </header>
+
+<!-- Enterprise Profile Modal (amoCRM / Bitrix24 Style) -->
+<div class="modal-overlay hidden" id="userProfileModal" onclick="if(event.target===this)closeUserProfileModal()" style="z-index:1050; align-items:center; justify-content:center;">
+  <div class="modal-dialog" style="max-width:520px; border-radius:16px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.3); background:var(--bg-primary); border:1px solid var(--border);">
+    <div class="modal-header" style="background:var(--bg-secondary); padding:16px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+      <h3 style="margin:0; font-size:16px; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:8px;">
+        <i class="fas fa-id-card text-brand"></i> Foydalanuvchi Profili
+      </h3>
+      <button class="modal-close" onclick="closeUserProfileModal()" style="border:none; background:transparent; font-size:18px; color:var(--text-tertiary); cursor:pointer;">&times;</button>
+    </div>
+    
+    <div class="modal-body" style="padding:24px; display:flex; flex-direction:column; gap:20px;">
+      
+      <!-- Avatar Upload & Photo Header -->
+      <div style="display:flex; align-items:center; gap:20px; padding:16px; background:var(--bg-secondary); border-radius:12px; border:1px solid var(--border);">
+        <div style="position:relative; flex-shrink:0;">
+          <div id="profileAvatarPreview" style="width:72px; height:72px; border-radius:50%; background:var(--brand); color:#fff; font-size:28px; font-weight:800; display:flex; align-items:center; justify-content:center; overflow:hidden; border:3px solid var(--bg-primary); box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+            <% if (typeof user !== 'undefined' && user.avatar) { %>
+              <img src="<%= user.avatar %>" id="profileAvatarImg" alt="Avatar" style="width:100%; height:100%; object-fit:cover;">
+            <% } else { %>
+              <span id="profileAvatarInitial"><%= user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U' %></span>
+            <% } %>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px; flex:1;">
+          <div style="font-size:14px; font-weight:700; color:var(--text-primary);">Profil Rasmi (Avatar)</div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <label class="btn btn-sm btn-primary" style="cursor:pointer; font-size:12px; margin:0; display:inline-flex; align-items:center; gap:6px;">
+              <i class="fas fa-camera"></i> Rasm yuklash
+              <input type="file" id="avatarFileInput" accept="image/*" style="display:none;" onchange="handleAvatarFileSelect(this)">
+            </label>
+            <button type="button" class="btn btn-sm btn-ghost" onclick="resetProfileAvatar()" style="font-size:12px; border:1px solid var(--border);">
+              <i class="fas fa-trash-alt" style="color:var(--danger);"></i> O'chirish
+            </button>
+          </div>
+          <span style="font-size:11px; color:var(--text-tertiary);">JPG, PNG yoki WEBP formatdagi rasmlar</span>
+        </div>
+      </div>
+
+      <!-- User Information Form -->
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" style="font-weight:600; font-size:12.5px;">Ism va Familiya <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="profileFullNameInput" class="form-control" value="<%= user.fullName || '' %>" placeholder="Ism Familiya">
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="form-group" style="margin:0;">
+            <label class="form-label" style="font-weight:600; font-size:12.5px;">Email (Login)</label>
+            <input type="text" class="form-control" value="<%= user.email %>" readonly style="background:var(--bg-secondary); cursor:not-allowed; opacity:0.8;">
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label" style="font-weight:600; font-size:12.5px;">Lavozim / Role</label>
+            <div style="height:38px; display:flex; align-items:center; padding:0 12px; background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; font-weight:700; font-size:12px;">
+              <% if (user.role === 'admin') { %>
+                <span style="color:#10B981;">🛡️ Administrator</span>
+              <% } else { %>
+                <span style="color:#007AFF;">💼 Menejer / Operator</span>
+              <% } %>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:var(--bg-secondary); border-radius:8px; border:1px solid var(--border); font-size:12px;">
+          <span style="color:var(--text-secondary);">Akkount holati:</span>
+          <span style="font-weight:700; color:#10B981; display:flex; align-items:center; gap:5px;">
+            <span style="width:8px; height:8px; border-radius:50%; background:#10B981; display:inline-block;"></span> Faol / Aktiv
+          </span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="modal-footer" style="padding:14px 20px; background:var(--bg-secondary); border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+      <button class="btn btn-ghost btn-sm" onclick="openPasswordModal(); closeUserProfileModal();" style="color:#F59E0B; font-weight:600;">
+        <i class="fas fa-lock" style="margin-right:4px;"></i> Parolni o'zgartirish
+      </button>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-secondary btn-sm" onclick="closeUserProfileModal()">Bekor qilish</button>
+        <button class="btn btn-primary btn-sm" onclick="submitUserProfileSave()"><i class="fas fa-save"></i> Saqlash</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Password change modal -->
 <div class="modal-overlay hidden" id="passwordModal">
@@ -227,6 +320,72 @@ async function submitPasswordChange() {
 // ── Mobile menu ──
 function toggleMobileMenu() {
   document.querySelector('.sidebar').classList.toggle('mobile-open');
+}
+
+// ── Profile Modal Handlers ──
+let currentAvatarBase64 = null;
+
+function openUserProfileModal() {
+  document.getElementById('profileMenu').classList.add('hidden');
+  document.getElementById('userProfileModal').classList.remove('hidden');
+}
+
+function closeUserProfileModal() {
+  document.getElementById('userProfileModal').classList.add('hidden');
+}
+
+function handleAvatarFileSelect(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  if (file.size > 5 * 1024 * 1024) {
+    if (typeof showToast === 'function') showToast("Rasm hajmi 5MB dan kichik bo'lishi kerak", 'error');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    currentAvatarBase64 = e.target.result;
+    const preview = document.getElementById('profileAvatarPreview');
+    preview.innerHTML = `<img src="${currentAvatarBase64}" style="width:100%; height:100%; object-fit:cover;">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetProfileAvatar() {
+  currentAvatarBase64 = '';
+  const preview = document.getElementById('profileAvatarPreview');
+  const initial = (document.getElementById('profileFullNameInput')?.value || 'U').charAt(0).toUpperCase();
+  preview.innerHTML = `<span>${initial}</span>`;
+}
+
+async function submitUserProfileSave() {
+  const fullName = document.getElementById('profileFullNameInput')?.value.trim();
+  if (!fullName) {
+    if (typeof showToast === 'function') showToast("Ism va familiya majburiy", 'error');
+    return;
+  }
+
+  const payload = { fullName };
+  if (currentAvatarBase64 !== null) {
+    payload.avatar = currentAvatarBase64;
+  }
+
+  try {
+    const res = await fetch('/api/auth/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      if (typeof showToast === 'function') showToast(data.message || 'Xatolik', 'error');
+      return;
+    }
+    if (typeof showToast === 'function') showToast("Profil muvaffaqiyatli saqlandi", 'success');
+    closeUserProfileModal();
+    setTimeout(() => window.location.reload(), 500);
+  } catch(e) {
+    if (typeof showToast === 'function') showToast("Server bilan ulanishda xatolik", 'error');
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

@@ -246,6 +246,48 @@ router.post('/change-password', protect, async (req, res, next) => {
   } catch (error) { next(error) }
 })
 
+// Current user profile info
+router.get('/profile', protect, async (req, res, next) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.userId },
+      select: { id: true, fullName: true, email: true, role: true, avatar: true, isActive: true, createdAt: true }
+    });
+    if (!user) {
+      return res.status(404).json({ message: 'Foydalanuvchi topilmadi' });
+    }
+    res.json({ user });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Update profile info (fullName, avatar)
+router.patch('/profile', protect, async (req, res, next) => {
+  try {
+    const { fullName, avatar } = req.body;
+    const data = {};
+    if (fullName !== undefined) data.fullName = String(fullName).trim();
+    if (avatar !== undefined) data.avatar = String(avatar).trim();
+
+    const updatedUser = await prisma.user.update({
+      where: { id: req.userId },
+      data,
+      select: { id: true, fullName: true, email: true, role: true, avatar: true, isActive: true, createdAt: true }
+    });
+
+    if (req.session && req.session.user) {
+      req.session.user.fullName = updatedUser.fullName;
+      req.session.user.avatar = updatedUser.avatar;
+    }
+
+    logAudit('PROFILE_UPDATE', `Profil yangilandi: ${updatedUser.fullName}`, updatedUser.id, updatedUser.email, req.ip);
+    res.json({ message: 'Profil muvaffaqiyatli yangilandi', user: updatedUser });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Current user
 router.get('/me', protect, async (req, res, next) => {
   try {
