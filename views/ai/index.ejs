@@ -252,9 +252,31 @@ Sizning CRM tizimingizdagi joriy faol sdelkalar va mijozlar ma'lumotlarini tahli
     </div>
   </div>
 
+  <!-- Quick Action Chips Bar (Bitrix24 CoPilot Style) -->
+  <div style="padding: 10px 16px; background: var(--bg-secondary); border-top: 1px solid var(--border); display: flex; gap: 8px; overflow-x: auto; flex-shrink: 0; scrollbar-width: none;">
+    <button type="button" class="btn btn-ghost btn-sm" onclick="sendPrompt('Mijoz qimmat ekan dedi. Shunga e\'tirozni yengish uchun 3 ta zo\'r skript va javob tayyorlab ber')" style="white-space:nowrap; border:1px solid var(--border); font-size:12px; border-radius:20px; color:var(--brand); font-weight:600;">
+      🚀 E'tiroz: "Qimmat ekan"
+    </button>
+    <button type="button" class="btn btn-ghost btn-sm" onclick="sendPrompt('Mijoz o\'ylab ko\'raman dedi. Bunga qanday professional javob qaytaray?')" style="white-space:nowrap; border:1px solid var(--border); font-size:12px; border-radius:20px; color:var(--text-primary);">
+      🤔 E'tiroz: "O'ylab ko'raman"
+    </button>
+    <button type="button" class="btn btn-ghost btn-sm" onclick="sendPrompt('Bugungi sotuvlar va sdelkalar tahlili haqida ma\'lumot ber')" style="white-space:nowrap; border:1px solid var(--border); font-size:12px; border-radius:20px; color:var(--text-primary);">
+      📈 Bugungi sotuv tahlili
+    </button>
+    <button type="button" class="btn btn-ghost btn-sm" onclick="sendPrompt('Mijoz uchun massajor va hadyalar bo\'yicha rasmiy tijorat taklifi (Offer) va kafolat matnini yozib ber')" style="white-space:nowrap; border:1px solid var(--border); font-size:12px; border-radius:20px; color:var(--text-primary);">
+      ✍️ Tijorat taklifi (Offer)
+    </button>
+    <button type="button" class="btn btn-ghost btn-sm" onclick="sendPrompt('Ombordagi zaxiralar va mahsulot variantlari haqida ma\'lumot ber')" style="white-space:nowrap; border:1px solid var(--border); font-size:12px; border-radius:20px; color:var(--text-primary);">
+      📦 Ombor zaxiralari
+    </button>
+    <button type="button" class="btn btn-ghost btn-sm" onclick="sendPrompt('Samarqandga Damas shopir topib ber')" style="white-space:nowrap; border:1px solid var(--border); font-size:12px; border-radius:20px; color:var(--text-primary);">
+      🚕 Shopir qidirish
+    </button>
+  </div>
+
   <div class="chat-input-area">
     <div class="chat-input-wrapper">
-      <textarea id="chatInput" class="chat-input" placeholder="Xabar yozing (masalan, 'Mening faol sdelkalarim haqida qisqacha ma\'lumot ber')" rows="1" oninput="autoResize(this)" onkeydown="handleEnter(event)"></textarea>
+      <textarea id="chatInput" class="chat-input" placeholder="Xabar yozing (masalan, 'Mijoz qimmat ekan dedi, nima deb javob qilay?')" rows="1" oninput="autoResize(this)" onkeydown="handleEnter(event)"></textarea>
       <button class="chat-send-btn" id="sendBtn" onclick="sendMessage()">
         <i class="fas fa-paper-plane" style="margin-left:-2px; margin-top: 2px;"></i>
       </button>
@@ -282,6 +304,13 @@ function handleEnter(e) {
     sendMessage();
   }
 }
+
+window.sendPrompt = function(promptText) {
+  if (!chatInput) return;
+  chatInput.value = promptText;
+  autoResize(chatInput);
+  sendMessage();
+};
 
 function getTimeString() {
   const now = new Date();
