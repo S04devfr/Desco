@@ -2,6 +2,31 @@
   </div>
 </div>
 <div id="toastContainer"></div>
+
+<!-- ── MOBILE BOTTOM NAVIGATION BAR (iOS / Android SaaS Style) ── -->
+<nav class="mobile-bottom-bar">
+  <a href="/" class="mobile-nav-item <%= (typeof activePage !== 'undefined' && activePage === 'dashboard') ? 'active' : '' %>">
+    <i class="fas fa-chart-line"></i>
+    <span>Tahlil</span>
+  </a>
+  <a href="/deals" class="mobile-nav-item <%= (typeof activePage !== 'undefined' && activePage === 'deals') ? 'active' : '' %>">
+    <i class="fas fa-handshake"></i>
+    <span>Sdelkalar</span>
+  </a>
+  <a href="/nasiya/list?stage=desco" class="mobile-nav-item <%= (typeof activePage !== 'undefined' && activePage && activePage.startsWith('nasiya')) ? 'active' : '' %>">
+    <i class="fas fa-wallet"></i>
+    <span>Nasiya</span>
+  </a>
+  <a href="/tasks" class="mobile-nav-item <%= (typeof activePage !== 'undefined' && activePage === 'tasks') ? 'active' : '' %>">
+    <i class="fas fa-check-circle"></i>
+    <span>Vazifalar</span>
+  </a>
+  <button class="mobile-nav-item" onclick="toggleMobileMenu()" type="button">
+    <i class="fas fa-bars"></i>
+    <span>Menu</span>
+  </button>
+</nav>
+
 <script src="/js/main.js"></script>
 
 <!-- ── SMART OPERATOR PRESENCE & 10-MIN IDLE DETECTOR (amoCRM style) ── -->

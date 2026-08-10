@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ── MOBILE MENU TOGGLE ──
 function toggleMobileMenu() {
   const sidebar = document.querySelector('.sidebar');
-  const overlay = document.getElementById('sidebarOverlay');
+  const overlay = document.getElementById('mobileOverlay') || document.getElementById('sidebarOverlay');
   if (sidebar) {
     sidebar.classList.toggle('mobile-open');
   }
