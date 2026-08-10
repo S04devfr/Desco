@@ -51,16 +51,21 @@ async function main() {
   }
   console.log('✅ Pipeline stages created')
 
-  // Hash passwords
-  const adminPassword = await bcrypt.hash('Admin@123', 10)
-  const managerPassword = await bcrypt.hash('Manager@123', 10)
+  // Hash distinct secure passwords for each manager
+  const sharifPass = await bcrypt.hash('Sharifjon@2026!', 10)
+  const adminPass  = await bcrypt.hash('Admin@Desco2026!', 10)
+  const abdumalikPass = await bcrypt.hash('Abdumalik#2026', 10)
+  const qodirjonPass  = await bcrypt.hash('Qodirjon#2026', 10)
+  const bekzodPass    = await bcrypt.hash('Bekzod#2026', 10)
+  const ruxshonaPass  = await bcrypt.hash('Ruxshona#2026', 10)
+  const parvinaPass   = await bcrypt.hash('Parvina#2026', 10)
 
   // 3. Create Admin Users
   const admin = await prisma.user.create({
     data: {
       fullName: 'Administrator',
       email: 'admin@desco.com',
-      password: adminPassword,
+      password: adminPass,
       role: 'admin'
     }
   })
@@ -69,28 +74,28 @@ async function main() {
     data: {
       fullName: 'Sharifjon',
       email: 'shokirovsharifjon04@gmail.com',
-      password: adminPassword,
+      password: sharifPass,
       role: 'admin'
     }
   })
 
-  // 4. Create Manager Users
+  // 4. Create Manager Users (Unique Logins & Passwords)
   const mgr1 = await prisma.user.create({
-    data: { fullName: 'Abdumalik', email: 'abdumalik@desco.com', password: managerPassword, role: 'manager' }
+    data: { fullName: 'Abdumalik', email: 'abdumalik@desco.com', password: abdumalikPass, role: 'manager' }
   })
   const mgr2 = await prisma.user.create({
-    data: { fullName: 'Qodirjon', email: 'qodirjon@desco.com', password: managerPassword, role: 'manager' }
+    data: { fullName: 'Qodirjon', email: 'qodirjon@desco.com', password: qodirjonPass, role: 'manager' }
   })
   const mgr3 = await prisma.user.create({
-    data: { fullName: 'Bekzod', email: 'bekzod@desco.com', password: managerPassword, role: 'manager' }
+    data: { fullName: 'Bekzod', email: 'bekzod@desco.com', password: bekzodPass, role: 'manager' }
   })
   const mgr4 = await prisma.user.create({
-    data: { fullName: 'Ruxshona', email: 'ruxshona@desco.com', password: managerPassword, role: 'manager' }
+    data: { fullName: 'Ruxshona', email: 'ruxshona@desco.com', password: ruxshonaPass, role: 'manager' }
   })
   const mgr5 = await prisma.user.create({
-    data: { fullName: 'Parvina', email: 'parvina@desco.com', password: managerPassword, role: 'manager' }
+    data: { fullName: 'Parvina', email: 'parvina@desco.com', password: parvinaPass, role: 'manager' }
   })
-  console.log('✅ All 7 Users seeded')
+  console.log('✅ All 7 Users seeded with distinct secure credentials')
 
   // 5. Create Clients
   const cities = ['Toshkent', 'Qo\'qon', 'Farg\'ona', 'Andijon', 'Namangan', 'Buxoro', 'Samarqand']
