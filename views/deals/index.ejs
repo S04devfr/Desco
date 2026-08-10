@@ -1099,12 +1099,12 @@
     <div class="deals-filter">
       <div class="filter-search-wrap">
         <i class="fas fa-search"></i>
-        <input type="text" id="filterSearch" placeholder="Qidirish…" style="width:220px">
+        <input type="text" id="filterSearch" placeholder="Mijoz, sdelka, telefon..." style="width:240px" oninput="loadDeals()" autocomplete="off">
       </div>
-      <select id="filterStage" class="filter-select" style="width:160px">
+      <select id="filterStage" class="filter-select" style="width:160px" onchange="loadDeals()">
         <option value="">Barcha bosqich</option>
       </select>
-      <select id="filterManager" class="filter-select" style="width:160px">
+      <select id="filterManager" class="filter-select" style="width:160px" onchange="loadDeals()">
         <option value="">Barcha manager</option>
       </select>
       <button class="filter-clear-btn" onclick="clearFilters()" title="Filtrni tozalash">
@@ -2128,9 +2128,9 @@ function selectDealColor(color, close) {
 async function loadDeals() {
   _selectedDeals = [];
   updateBulkActionBar();
-  const q    = (document.getElementById('filterSearch').value||'').trim();
-  const sid  = document.getElementById('filterStage').value;
-  const mid  = document.getElementById('filterManager').value;
+  const q    = (document.getElementById('filterSearch')?.value||'').trim();
+  const sid  = document.getElementById('filterStage')?.value || '';
+  const mid  = document.getElementById('filterManager')?.value || '';
   const params = new URLSearchParams();
   if (q)   params.set('q', q);
   if (sid)  params.set('stageId', sid);

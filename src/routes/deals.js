@@ -131,7 +131,9 @@ router.get('/', async (req, res, next) => {
     }
 
     if (q) {
-      const searchLower = q.toLowerCase().trim();
+      const rawSearch = q.trim();
+      const searchLower = rawSearch.toLowerCase();
+      const cleanDigits = rawSearch.replace(/\D/g, ''); // Extract digits for phone search (e.g. 901234567)
       const cleanId = searchLower.startsWith('#') ? searchLower.substring(1) : searchLower;
       const idNum = Number(cleanId);
       const isPostgres = process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith('postgres://') || process.env.DATABASE_URL.startsWith('postgresql://'));
@@ -139,15 +141,23 @@ router.get('/', async (req, res, next) => {
 
       const searchConditions = [
         { productName: { contains: searchLower, mode } },
+        { clientName: { contains: searchLower, mode } },
+        { clientPhone: { contains: searchLower, mode } },
+        { city: { contains: searchLower, mode } },
+        { notes: { contains: searchLower, mode } },
         { client: { name: { contains: searchLower, mode } } },
         { client: { phone: { contains: searchLower, mode } } },
         { client: { city: { contains: searchLower, mode } } },
-        { manager: { fullName: { contains: searchLower, mode } } },
-        { manager: { email: { contains: searchLower, mode } } }
+        { manager: { fullName: { contains: searchLower, mode } } }
       ];
 
-      if (!isNaN(idNum)) {
+      if (!isNaN(idNum) && idNum > 0) {
         searchConditions.push({ id: idNum });
+      }
+
+      if (cleanDigits.length >= 3) {
+        searchConditions.push({ clientPhone: { contains: cleanDigits, mode } });
+        searchConditions.push({ client: { phone: { contains: cleanDigits, mode } } });
       }
 
       if (where.OR) {

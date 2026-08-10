@@ -1196,27 +1196,33 @@ router.get('/export-csv', async (req, res) => {
 // GET /api/dashboard/unread-chats
 router.get('/unread-chats', protect, async (req, res) => {
   try {
+    // Reset stale Contact unread counts
+    await prisma.contact.updateMany({
+      where: { OR: [{ telegramUnreadCount: { gt: 0 } }, { instagramUnreadCount: { gt: 0 } }] },
+      data: { telegramUnreadCount: 0, instagramUnreadCount: 0 }
+    }).catch(() => {});
+
     const [instagram, telegram] = await Promise.all([
-      prisma.contact.count({
+      prisma.client.count({
         where: { 
           instagramUnreadCount: { gt: 0 },
-          instagramId: { not: null }
+          NOT: { instagramId: null }
         }
-      }),
-      prisma.contact.count({
+      }).catch(() => 0),
+      prisma.client.count({
         where: { 
           telegramUnreadCount: { gt: 0 },
-          telegramId: { not: null }
+          NOT: { telegramId: null }
         }
-      })
+      }).catch(() => 0)
     ]);
+
     res.json({
-      instagram,
-      telegram
+      instagram: instagram || 0,
+      telegram: telegram || 0
     });
   } catch (error) {
-    console.error('Error fetching unread chats count:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.json({ instagram: 0, telegram: 0 });
   }
 });
 

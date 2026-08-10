@@ -154,22 +154,112 @@ async function toggleTask(id, el) {
   }
 }
 
-// ── GLOBAL SEARCH (topbar) ──
+// ── GLOBAL SEARCH (topbar dropdown engine) ──
 const globalSearchEl = document.getElementById('globalSearch');
-if (globalSearchEl) {
-  globalSearchEl.addEventListener('input', debounce(async function () {
-    const q = this.value.trim();
-    if (q.length < 2) return;
+const globalResultsEl = document.getElementById('globalSearchResults');
+
+if (globalSearchEl && globalResultsEl) {
+  const performSearch = debounce(async function () {
+    const q = globalSearchEl.value.trim();
+    if (q.length < 2) {
+      globalResultsEl.style.display = 'none';
+      globalResultsEl.innerHTML = '';
+      return;
+    }
+
     try {
+      globalResultsEl.innerHTML = `
+        <div style="padding:16px; text-align:center; color:var(--text-secondary); font-size:12.5px;">
+          <i class="fas fa-spinner fa-spin" style="margin-right:6px; color:var(--brand)"></i> Qidirilmoqda...
+        </div>
+      `;
+      globalResultsEl.style.display = 'block';
+
       const r = await fetch('/api/search?q=' + encodeURIComponent(q));
-      if (r.ok) {
-        const data = await r.json();
-        // Simple: navigate to relevant page
-        if (data.deals && data.deals.length) window._searchHint = 'deals';
+      if (!r.ok) throw new Error();
+      const data = await r.json();
+
+      const deals = data.deals || [];
+      const clients = data.clients || [];
+
+      if (!deals.length && !clients.length) {
+        globalResultsEl.innerHTML = `
+          <div style="padding:16px; text-align:center; color:var(--text-tertiary); font-size:12.5px;">
+            <i class="fas fa-search" style="font-size:18px; margin-bottom:6px; display:block; opacity:0.5;"></i>
+            Natija topilmadi
+          </div>
+        `;
+        return;
       }
-    } catch (e) {}
-  }, 400));
+
+      let html = '';
+
+      if (deals.length) {
+        html += `<div style="padding:6px 14px 4px 14px; font-size:10.5px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px; border-bottom:1px solid var(--border);">SDELKALAR (${deals.length})</div>`;
+        deals.forEach(d => {
+          const formattedAmount = d.amount ? Number(d.amount).toLocaleString('uz-UZ') + ' so\'m' : '—';
+          html += `
+            <div onclick="openSearchDeal(${d.id})" style="padding:8px 14px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); transition:background 0.12s;" onmouseenter="this.style.background='var(--bg-secondary)'" onmouseleave="this.style.background='transparent'">
+              <div style="display:flex; flex-direction:column; gap:2px; overflow:hidden; padding-right:8px;">
+                <div style="font-size:13px; font-weight:700; color:var(--text-primary); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">
+                  <span style="color:var(--brand); font-weight:800; margin-right:4px;">${escHtml(d.dealNumber)}</span> ${escHtml(d.title)}
+                </div>
+                <div style="font-size:11px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
+                  <span><i class="fas fa-user" style="font-size:9.5px; margin-right:3px;"></i>${escHtml(d.clientName)}</span>
+                  ${d.clientPhone ? `<span style="font-weight:600;"><i class="fas fa-phone-alt" style="font-size:9px; margin-right:2px;"></i>${escHtml(d.clientPhone)}</span>` : ''}
+                </div>
+              </div>
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:3px; flex-shrink:0;">
+                <span class="badge" style="font-size:9px; padding:2px 6px; border-radius:4px; font-weight:700; color:#fff; background:${d.stageColor || '#007AFF'};">${escHtml(d.stageName)}</span>
+                <span style="font-size:11px; font-weight:700; color:var(--text-primary);">${formattedAmount}</span>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      if (clients.length) {
+        html += `<div style="padding:8px 14px 4px 14px; font-size:10.5px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px; border-bottom:1px solid var(--border); margin-top:4px;">MIJOZLAR (${clients.length})</div>`;
+        clients.forEach(c => {
+          html += `
+            <div onclick="window.location.href='/deals?q=' + encodeURIComponent('${escHtml(c.phone || c.name)}')" style="padding:8px 14px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); transition:background 0.12s;" onmouseenter="this.style.background='var(--bg-secondary)'" onmouseleave="this.style.background='transparent'">
+              <div>
+                <div style="font-size:12.5px; font-weight:700; color:var(--text-primary);">${escHtml(c.name)}</div>
+                <div style="font-size:11px; color:var(--text-secondary);"><i class="fas fa-phone-alt" style="font-size:9.5px; margin-right:3px;"></i>${escHtml(c.phone || '—')}</div>
+              </div>
+              <span style="font-size:10px; font-weight:600; color:var(--brand); background:var(--brand-soft); padding:2px 6px; border-radius:4px;">${c.dealCount} ta sdelka</span>
+            </div>
+          `;
+        });
+      }
+
+      globalResultsEl.innerHTML = html;
+      globalResultsEl.style.display = 'block';
+    } catch (e) {
+      globalResultsEl.innerHTML = `<div style="padding:12px; color:var(--danger); font-size:11.5px; text-align:center;">Qidiruvda xatolik yuz berdi</div>`;
+    }
+  }, 250);
+
+  globalSearchEl.addEventListener('input', performSearch);
+  globalSearchEl.addEventListener('focus', () => {
+    if (globalSearchEl.value.trim().length >= 2) performSearch();
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!globalSearchEl.contains(e.target) && !globalResultsEl.contains(e.target)) {
+      globalResultsEl.style.display = 'none';
+    }
+  });
 }
+
+window.openSearchDeal = function (dealId) {
+  if (globalResultsEl) globalResultsEl.style.display = 'none';
+  if (typeof openDealModal === 'function') {
+    openDealModal(dealId);
+  } else {
+    window.location.href = '/deals?dealId=' + dealId;
+  }
+};
 
 // ── MODAL BACKDROP CLOSE ──
 document.addEventListener('click', function (e) {
