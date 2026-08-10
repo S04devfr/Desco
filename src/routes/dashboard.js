@@ -436,13 +436,25 @@ router.get('/kpis', async (req, res, next) => {
       };
     });
 
-    // ── 7. Funnel conversion stages (HubSpot Funnel) ──
+    // ── 7. Funnel conversion stages (HubSpot / Salesforce Style) ──
     const funnelStages = {
-      yangi: dealsCreatedInPeriod.filter(d => d.stage?.name.toLowerCase().includes('yangi')).length,
+      yangi: dealsCreatedInPeriod.filter(d => {
+        const name = (d.stage?.name || '').toLowerCase();
+        return name.includes('yangi') || name.includes('new');
+      }).length,
+      qaytaAloqa: dealsCreatedInPeriod.filter(d => {
+        const name = (d.stage?.name || '').toLowerCase();
+        return name.includes('qayta') || name.includes('aloqa') || name.includes('перезвон');
+      }).length,
+      kotarilmadi: dealsCreatedInPeriod.filter(d => {
+        const name = (d.stage?.name || '').toLowerCase();
+        return name.includes('ko\'tarilmadi') || name.includes('kotarilmadi') || name.includes('otvet') || name.includes('javob ber');
+      }).length,
       muzokara: dealsCreatedInPeriod.filter(d => {
         const name = (d.stage?.name || '').toLowerCase();
-        return name.includes('muzokara') || name.includes('peregovor') || name.includes('pereg');
+        return name.includes('muzokara') || name.includes('peregovor') || name.includes('taklif');
       }).length,
+      won: dealsCreatedInPeriod.filter(isWonDeal).length,
       lost: dealsCreatedInPeriod.filter(isDealCanceled).length,
       total: dealsCreatedInPeriod.length
     };
