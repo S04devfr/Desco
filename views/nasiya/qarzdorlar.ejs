@@ -257,15 +257,12 @@ let allDeals = [];
 let consolidatedDebts = [];
 let currentViewMode = localStorage.getItem('desco_debtor_view_mode') || 'grid';
 
-function setDebtorViewMode(mode) {
-  currentViewMode = mode;
-  localStorage.setItem('desco_debtor_view_mode', mode);
-
+function updateViewButtonsUI() {
   const btnGrid = document.getElementById('btnViewGrid');
   const btnTable = document.getElementById('btnViewTable');
   const container = document.getElementById('debtorsContainer');
 
-  if (mode === 'table') {
+  if (currentViewMode === 'table') {
     if (container) container.className = 'debtor-table-wrapper';
     if (btnTable) {
       btnTable.style.background = 'var(--surface-card)';
@@ -290,7 +287,12 @@ function setDebtorViewMode(mode) {
       btnTable.style.border = 'none';
     }
   }
+}
 
+function setDebtorViewMode(mode) {
+  currentViewMode = mode;
+  localStorage.setItem('desco_debtor_view_mode', mode);
+  updateViewButtonsUI();
   filterDebtors();
 }
 
@@ -304,8 +306,8 @@ async function loadData() {
     allClients = Array.isArray(clientsRes) ? clientsRes : [];
     allDeals = Array.isArray(dealsRes) ? dealsRes : [];
     
-    // Set initial button active state from localStorage
-    setDebtorViewMode(currentViewMode);
+    updateViewButtonsUI();
+    processDebts();
   } catch(e) {
     console.error('Qarzdorlar yuklashda xato:', e);
   }
