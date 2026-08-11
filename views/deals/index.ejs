@@ -1983,10 +1983,28 @@ function closePipelineDropdown() {
   document.getElementById('pipelineDropdown').classList.remove('open');
 }
 
-// Close dropdown when clicking outside
+function toggleSalesSummaryPopover(e) {
+  if (e) e.stopPropagation();
+  const pop = document.getElementById('salesSummaryPopover');
+  if (!pop) return;
+  if (pop.style.display === 'none' || pop.classList.contains('hidden')) {
+    pop.classList.remove('hidden');
+    pop.style.display = 'flex';
+  } else {
+    pop.style.display = 'none';
+    pop.classList.add('hidden');
+  }
+}
+
+// Close dropdowns when clicking outside
 document.addEventListener('click', e => {
   if (!e.target.closest('#pipelineNameBtn') && !e.target.closest('#pipelineDropdown')) {
     closePipelineDropdown();
+  }
+  const salesPop = document.getElementById('salesSummaryPopover');
+  if (salesPop && !e.target.closest('#salesSummaryPopover') && !e.target.closest('button[onclick*="toggleSalesSummaryPopover"]')) {
+    salesPop.style.display = 'none';
+    salesPop.classList.add('hidden');
   }
 });
 
@@ -2192,32 +2210,59 @@ async function loadDeals() {
     };
 
     totalsEl.innerHTML = `
-      <div style="display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap; margin-right:12px;">
-        <span style="font-size:13px; font-weight:800; color:var(--text-primary); background:rgba(255,255,255,0.06); padding:4px 10px; border-radius:8px; border:1px solid var(--border);">
-          Jami sotilgan: <span style="color:#10B981;">${totalWonCount} ta</span> (${fmt(totalWonAmount)})
-        </span>
-        <span style="font-size:11.5px; font-weight:700; color:${cats.z100.color}; background:${cats.z100.bg}; border:1px solid ${cats.z100.color}33; padding:3px 8px; border-radius:6px;" title="100% Zakaz">
-          100% Zakaz: ${cats.z100.count} ta (${fmt(cats.z100.amount)})
-        </span>
-        <span style="font-size:11.5px; font-weight:700; color:${cats.desco.color}; background:${cats.desco.bg}; border:1px solid ${cats.desco.color}33; padding:3px 8px; border-radius:6px;" title="Nasiya Desco">
-          Nasiya Desco: ${cats.desco.count} ta (${fmt(cats.desco.amount)})
-        </span>
-        <span style="font-size:11.5px; font-weight:700; color:${cats.ishonch.color}; background:${cats.ishonch.bg}; border:1px solid ${cats.ishonch.color}33; padding:3px 8px; border-radius:6px;" title="Nasiya Ishonch">
-          Nasiya Ishonch: ${cats.ishonch.count} ta (${fmt(cats.ishonch.amount)})
-        </span>
-        <span style="font-size:11.5px; font-weight:700; color:${cats.baraka.color}; background:${cats.baraka.bg}; border:1px solid ${cats.baraka.color}33; padding:3px 8px; border-radius:6px;" title="Nasiya Baraka">
-          Nasiya Baraka: ${cats.baraka.count} ta (${fmt(cats.baraka.amount)})
-        </span>
-        <span style="font-size:11.5px; font-weight:700; color:${cats.shopir.color}; background:${cats.shopir.bg}; border:1px solid ${cats.shopir.color}33; padding:3px 8px; border-radius:6px;" title="Shopirda">
-          Shopirda: ${cats.shopir.count} ta (${fmt(cats.shopir.amount)})
-        </span>
-        ${cats.klientda.count > 0 ? `
-          <span style="font-size:11.5px; font-weight:700; color:${cats.klientda.color}; background:${cats.klientda.bg}; border:1px solid ${cats.klientda.color}33; padding:3px 8px; border-radius:6px;" title="Pul Klientda">
-            Pul Klientda: ${cats.klientda.count} ta (${fmt(cats.klientda.amount)})
+      <div style="position:relative; display:inline-block; margin-right:12px;">
+        <button type="button" onclick="toggleSalesSummaryPopover(event)" class="btn btn-secondary btn-sm" style="display:inline-flex; align-items:center; gap:8px; font-weight:800; font-size:13px; border-radius:10px; padding:6px 14px; background:var(--bg-surface); border:1px solid var(--border); box-shadow:0 2px 8px rgba(0,0,0,0.04); cursor:pointer; color:var(--text-primary);">
+          <span style="display:inline-flex; align-items:center; gap:6px;">
+            <span style="width:8px; height:8px; border-radius:50%; background:#10B981; display:inline-block;"></span>
+            Jami sotilgan: <span style="color:#10B981;">${totalWonCount} ta</span> (${fmt(totalWonAmount)})
           </span>
-        ` : ''}
+          <i class="fas fa-chevron-down" style="font-size:11px; color:var(--text-tertiary); transition:transform 0.2s ease;"></i>
+        </button>
+
+        <div id="salesSummaryPopover" class="hidden" style="position:absolute; top:calc(100% + 8px); left:0; z-index:9999; min-width:300px; background:var(--bg-surface); border:1px solid var(--border); border-radius:14px; box-shadow:0 20px 40px -10px rgba(0,0,0,0.35); padding:12px; display:none; flex-direction:column; gap:8px; backdrop-filter:blur(16px);">
+          <div style="font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px; border-bottom:1px solid var(--border); padding-bottom:6px; margin-bottom:4px;">
+            Sotilgan zakazlar turlari
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:8px; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.2);">
+            <span style="font-size:12.5px; font-weight:700; color:#10B981; display:flex; align-items:center; gap:6px;">
+              <span style="width:7px; height:7px; border-radius:50%; background:#10B981;"></span> 100% Zakaz
+            </span>
+            <span style="font-size:12.5px; font-weight:800; color:var(--text-primary);">${cats.z100.count} ta <span style="font-size:11px; color:var(--text-secondary); font-weight:600;">(${fmt(cats.z100.amount)})</span></span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:8px; background:rgba(129,140,248,0.08); border:1px solid rgba(129,140,248,0.2);">
+            <span style="font-size:12.5px; font-weight:700; color:#818CF8; display:flex; align-items:center; gap:6px;">
+              <span style="width:7px; height:7px; border-radius:50%; background:#818CF8;"></span> Nasiya Desco
+            </span>
+            <span style="font-size:12.5px; font-weight:800; color:var(--text-primary);">${cats.desco.count} ta <span style="font-size:11px; color:var(--text-secondary); font-weight:600;">(${fmt(cats.desco.amount)})</span></span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:8px; background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.2);">
+            <span style="font-size:12.5px; font-weight:700; color:#3B82F6; display:flex; align-items:center; gap:6px;">
+              <span style="width:7px; height:7px; border-radius:50%; background:#3B82F6;"></span> Nasiya Ishonch
+            </span>
+            <span style="font-size:12.5px; font-weight:800; color:var(--text-primary);">${cats.ishonch.count} ta <span style="font-size:11px; color:var(--text-secondary); font-weight:600;">(${fmt(cats.ishonch.amount)})</span></span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:8px; background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.2);">
+            <span style="font-size:12.5px; font-weight:700; color:#F59E0B; display:flex; align-items:center; gap:6px;">
+              <span style="width:7px; height:7px; border-radius:50%; background:#F59E0B;"></span> Nasiya Baraka
+            </span>
+            <span style="font-size:12.5px; font-weight:800; color:var(--text-primary);">${cats.baraka.count} ta <span style="font-size:11px; color:var(--text-secondary); font-weight:600;">(${fmt(cats.baraka.amount)})</span></span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:8px; background:rgba(236,72,153,0.08); border:1px solid rgba(236,72,153,0.2);">
+            <span style="font-size:12.5px; font-weight:700; color:#EC4899; display:flex; align-items:center; gap:6px;">
+              <span style="width:7px; height:7px; border-radius:50%; background:#EC4899;"></span> Shopirda
+            </span>
+            <span style="font-size:12.5px; font-weight:800; color:var(--text-primary);">${cats.shopir.count} ta <span style="font-size:11px; color:var(--text-secondary); font-weight:600;">(${fmt(cats.shopir.amount)})</span></span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:8px; background:rgba(139,92,246,0.08); border:1px solid rgba(139,92,246,0.2);">
+            <span style="font-size:12.5px; font-weight:700; color:#8B5CF6; display:flex; align-items:center; gap:6px;">
+              <span style="width:7px; height:7px; border-radius:50%; background:#8B5CF6;"></span> Pul Klientda
+            </span>
+            <span style="font-size:12.5px; font-weight:800; color:var(--text-primary);">${cats.klientda.count} ta <span style="font-size:11px; color:var(--text-secondary); font-weight:600;">(${fmt(cats.klientda.amount)})</span></span>
+          </div>
+        </div>
       </div>
     `;
+  }
   }
 
   if (_view === 'kanban') renderKanban();
