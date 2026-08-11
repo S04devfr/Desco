@@ -34,19 +34,22 @@
 }
 
 :root {
+  /* Font Family - Enterprise Inter SaaS standard */
+  --font-text: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
   /* Fon va sirt - Rich off-white & Glassmorphism Surfaces */
   --bg-app: #F6F8FC;
   --bg-surface: #FFFFFF;
   --bg-surface-hover: #F1F5F9;
   --bg-sidebar: #FFFFFF;
   --bg-sidebar-hover: #F8FAFC;
-  --bg-sidebar-active: rgba(37, 99, 235, 0.08);
+  --bg-sidebar-active: rgba(0, 82, 255, 0.08);
 
-  /* Primary Accent: Cobalt Blue & Emerald */
-  --primary: #2563EB;             /* Cobalt blue */
-  --primary-hover: #1D4ED8;
-  --primary-light: rgba(37, 99, 235, 0.08);
-  --cobalt: #2563EB;
+  /* Primary Accent: Stripe/Linear Cobalt Blue #0052FF & Emerald */
+  --primary: #0052FF;             /* Cobalt blue */
+  --primary-hover: #0043D6;
+  --primary-light: rgba(0, 82, 255, 0.08);
+  --cobalt: #0052FF;
   --emerald: #10B981;
 
   /* Matn */
@@ -54,7 +57,7 @@
   --text-secondary: #475569;
   --text-inverse: #FFFFFF;
   --text-muted-sidebar: #475569;
-  --sidebar-text-active: #2563EB;
+  --sidebar-text-active: #0052FF;
 
   /* Chegaralar - Inset glass & crisp borders */
   --border-subtle: rgba(226, 232, 240, 0.8);
@@ -65,7 +68,7 @@
   --success: #10B981;
   --warning: #F59E0B;
   --danger: #EF4444;
-  --info: #2563EB;
+  --info: #0052FF;
 
   /* Soyalar - Multi-layered soft realism shadows */
   --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.03), 0 1px 3px 0 rgba(15, 23, 42, 0.02);
@@ -73,10 +76,10 @@
   --shadow-lg: 0 12px 24px -4px rgba(15, 23, 42, 0.06), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
   --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
 
-  /* Radius */
+  /* Radius - Standardized 8px for Enterprise Senior Look */
   --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  --radius-md: 8px;
+  --radius-lg: 8px;
   --radius-full: 999px;
 
   /* Layout dimension properties */
@@ -105,11 +108,11 @@
   --text-500: var(--text-secondary);
   --text-300: var(--text-secondary);
   --surface-elevated: #FFFFFF;
-  --r-xs: var(--radius-sm);
-  --r-sm: var(--radius-md);
-  --r-md: var(--radius-md);
-  --r-lg: var(--radius-lg);
-  --r-xl: var(--radius-lg);
+  --r-xs: 8px;
+  --r-sm: 8px;
+  --r-md: 8px;
+  --r-lg: 8px;
+  --r-xl: 8px;
   --r-full: var(--radius-full);
 
   /* Sidebar styling maps */
@@ -680,7 +683,7 @@ body::after {
   backdrop-filter: blur(20px) saturate(190%);
   -webkit-backdrop-filter: blur(20px) saturate(190%);
   border: 1px solid var(--border) !important;
-  border-radius: 20px !important;
+  border-radius: 8px !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04) !important;
   transition: all 300ms cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
