@@ -271,11 +271,19 @@ router.post('/', async (req, res, next) => {
       }
     })
 
-    if (stageId && task.dealId) {
-      await prisma.deal.update({
-        where: { id: task.dealId },
-        data: { stageId: Number(stageId) }
-      });
+    if (task.dealId) {
+      const dealUpdate = {};
+      if (stageId) dealUpdate.stageId = Number(stageId);
+      const targetDeal = await prisma.deal.findUnique({ where: { id: task.dealId } });
+      if (targetDeal && targetDeal.managerId === null && req.userId) {
+        dealUpdate.managerId = req.userId;
+      }
+      if (Object.keys(dealUpdate).length > 0) {
+        await prisma.deal.update({
+          where: { id: task.dealId },
+          data: dealUpdate
+        }).catch(() => {});
+      }
     }
 
     res.status(201).json(formatTaskClient(task))

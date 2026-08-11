@@ -81,9 +81,19 @@ router.get('/', async (req, res, next) => {
     const { status, managerId, clientId, stageId, pipelineId, q } = req.query
     const where = {}
     if (status) where.status = status
-    if (managerId) where.managerId = Number(managerId)
     if (clientId) where.clientId = Number(clientId)
     if (stageId) where.stageId = Number(stageId)
+
+    if (managerId) {
+      const mNum = Number(managerId);
+      const managerCond = [
+        { managerId: mNum },
+        { ownerId: mNum },
+        { tasks: { some: { assignedToId: mNum } } }
+      ];
+      if (!where.AND) where.AND = [];
+      where.AND.push({ OR: managerCond });
+    }
 
     // pipelineId filter: find stageIds belonging to that pipeline
     if (pipelineId) {
@@ -124,10 +134,14 @@ router.get('/', async (req, res, next) => {
 
     // Admin barcha sdelkalarni ko'ra oladi. Manager va Operator faqat o'ziga tegishli yoki unassigned(bo'sh) sdelkalarni.
     if (req.user?.role !== 'admin') {
-      where.OR = [
+      const userCond = [
         { managerId: null },
-        { managerId: req.userId }
-      ]
+        { managerId: req.userId },
+        { ownerId: req.userId },
+        { tasks: { some: { assignedToId: req.userId } } }
+      ];
+      if (!where.AND) where.AND = [];
+      where.AND.push({ OR: userCond });
     }
 
     if (q) {
@@ -895,8 +909,8 @@ router.patch('/:id', async (req, res, next) => {
     if (tags !== undefined) data.tags = tags;
     if (managerId !== undefined) {
       data.managerId = managerId ? Number(managerId) : null
-    } else if (existing.managerId === null && req.user?.role !== 'admin') {
-      // Boshqa tahrirlash jarayonida ham bo'sh sdelka o'zlashtiriladi
+    } else if (existing.managerId === null && req.userId) {
+      // Unassigned deal auto-claimed by operator performing the action
       data.managerId = req.userId
     }
     if (stageId !== undefined) {
