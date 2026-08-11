@@ -544,6 +544,7 @@ router.post('/', async (req, res, next) => {
     
     // ── WAREHOUSE STOCK DECREMENT (On Creation) ──
     try {
+      const skipStockDeduct = req.body.skipStockDeduct === true || req.body.skipStockDeduct === 'true';
       const NON_SHIP_KEYWORDS = ['yangi', 'muzokara', 'peregovor', 'pereg', 'taklif', 'kutish', 'qayta aloqa', 'negativ', 'rad', 'otkaz', 'lost', 'fail', "yo'qotilgan"];
       function isShippingStage(name) {
         if (!name) return false;
@@ -553,7 +554,7 @@ router.post('/', async (req, res, next) => {
       const newStageName = deal.stage?.name || '';
       const isShipping = isShippingStage(newStageName);
       
-      if (isShipping && deal.warehouse && !deal.stockDecremented) {
+      if (!skipStockDeduct && isShipping && deal.warehouse && !deal.stockDecremented) {
         const itemColor = deal.productColor || 'oddiy';
         // Decrement stock
         await prisma.warehouseStock.upsert({
@@ -564,6 +565,10 @@ router.post('/', async (req, res, next) => {
         await prisma.warehouseLog.create({
           data: { warehouse: deal.warehouse, productName: deal.productName, color: itemColor, changeQty: -1, action: 'ship', dealId: deal.id, notes: 'Sdelka #' + deal.id + ' — sotuv (yaratilganda)', userName: req.user?.fullName || req.session?.user?.fullName || null }
         });
+        await prisma.deal.update({ where: { id: deal.id }, data: { stockDecremented: true } });
+        deal.stockDecremented = true;
+      } else if (skipStockDeduct) {
+        // Mark stockDecremented as true so future moves will not retroactively deduct stock
         await prisma.deal.update({ where: { id: deal.id }, data: { stockDecremented: true } });
         deal.stockDecremented = true;
       }

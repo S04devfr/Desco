@@ -1248,6 +1248,13 @@
           </select>
         </div>
 
+        <div class="form-group" style="margin-top: 10px; margin-bottom: 14px; background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; gap: 10px;">
+          <input type="checkbox" id="f-skipStockDeduct" style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;">
+          <label for="f-skipStockDeduct" style="font-size: 13px; font-weight: 700; color: var(--text-primary); cursor: pointer; margin-bottom: 0; user-select: none;">
+            📦 Omborga tegmasin <span style="font-size:11px; font-weight:normal; color:var(--text-secondary);">(Eski zakaz — ombordan ayirilmasin)</span>
+          </label>
+        </div>
+
         <!-- Nasiya Rejasi section (Hidden by default) -->
         <div id="dealModalNasiyaBlock" class="hidden" style="background:var(--bg-secondary); padding:16px; border-radius:10px; margin-bottom:16px; border:1px solid var(--border)">
           <div style="font-size:12px; font-weight:600; color:var(--text-tertiary); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px">Nasiya Rejasi (Bo'lib to'lash)</div>
@@ -2145,21 +2152,78 @@ async function loadDeals() {
     _deals = [];
   }
 
-  // Update Topbar Totals
-  const totalCount = _deals.length;
-  const totalAmount = _deals.reduce((sum, d) => {
-    const sName = (d.stage?.name || '').toLowerCase();
-    const isTargetStage = sName.includes('100%') || 
-                          sName.includes('100') ||
-                          sName.includes('baraka') || 
-                          sName.includes('desco') || 
-                          sName.includes('ishonch') || 
-                          sName.includes('shopir');
-    return sum + (isTargetStage ? (d.amount || 0) : 0);
-  }, 0);
+  // Update Topbar Totals Breakdown (Sotilgan zakazlar turlari bo'yicha)
   const totalsEl = document.getElementById('dealsTotalsBadge');
   if (totalsEl) {
-    totalsEl.textContent = `${totalCount} ta sdelka: ${totalAmount.toLocaleString('uz-UZ')} so'm`;
+    const cats = {
+      z100: { name: '100% Zakaz', count: 0, amount: 0, color: '#10B981', bg: 'rgba(16,185,129,0.12)' },
+      desco: { name: 'Nasiya Desco', count: 0, amount: 0, color: '#818CF8', bg: 'rgba(129,140,248,0.12)' },
+      ishonch: { name: 'Nasiya Ishonch', count: 0, amount: 0, color: '#3B82F6', bg: 'rgba(59,130,246,0.12)' },
+      baraka: { name: 'Nasiya Baraka', count: 0, amount: 0, color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' },
+      shopir: { name: 'Shopirda', count: 0, amount: 0, color: '#EC4899', bg: 'rgba(236,72,153,0.12)' },
+      klientda: { name: 'Pul Klientda', count: 0, amount: 0, color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)' }
+    };
+
+    let totalWonCount = 0;
+    let totalWonAmount = 0;
+
+    (_deals || []).forEach(d => {
+      const sName = (d.stage?.name || '').toLowerCase();
+      const amt = Number(d.amount) || 0;
+
+      let isWon = false;
+      if (sName.includes('100%') || sName.includes('100 zakaz')) {
+        cats.z100.count++; cats.z100.amount += amt; isWon = true;
+      } else if (sName.includes('desco')) {
+        cats.desco.count++; cats.desco.amount += amt; isWon = true;
+      } else if (sName.includes('ishonch')) {
+        cats.ishonch.count++; cats.ishonch.amount += amt; isWon = true;
+      } else if (sName.includes('baraka')) {
+        cats.baraka.count++; cats.baraka.amount += amt; isWon = true;
+      } else if (sName.includes('shopir')) {
+        cats.shopir.count++; cats.shopir.amount += amt; isWon = true;
+      } else if (sName.includes('klient') || sName.includes('qarz')) {
+        cats.klientda.count++; cats.klientda.amount += amt; isWon = true;
+      }
+
+      if (isWon) {
+        totalWonCount++;
+        totalWonAmount += amt;
+      }
+    });
+
+    const fmt = (num) => {
+      if (!num) return "0 so'm";
+      return num.toLocaleString('uz-UZ') + " so'm";
+    };
+
+    totalsEl.innerHTML = `
+      <div style="display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap; margin-right:12px;">
+        <span style="font-size:13px; font-weight:800; color:var(--text-primary); background:rgba(255,255,255,0.06); padding:4px 10px; border-radius:8px; border:1px solid var(--border);">
+          Jami sotilgan: <span style="color:#10B981;">${totalWonCount} ta</span> (${fmt(totalWonAmount)})
+        </span>
+        <span style="font-size:11.5px; font-weight:700; color:${cats.z100.color}; background:${cats.z100.bg}; border:1px solid ${cats.z100.color}33; padding:3px 8px; border-radius:6px;" title="100% Zakaz">
+          100% Zakaz: ${cats.z100.count} ta (${fmt(cats.z100.amount)})
+        </span>
+        <span style="font-size:11.5px; font-weight:700; color:${cats.desco.color}; background:${cats.desco.bg}; border:1px solid ${cats.desco.color}33; padding:3px 8px; border-radius:6px;" title="Nasiya Desco">
+          Nasiya Desco: ${cats.desco.count} ta (${fmt(cats.desco.amount)})
+        </span>
+        <span style="font-size:11.5px; font-weight:700; color:${cats.ishonch.color}; background:${cats.ishonch.bg}; border:1px solid ${cats.ishonch.color}33; padding:3px 8px; border-radius:6px;" title="Nasiya Ishonch">
+          Nasiya Ishonch: ${cats.ishonch.count} ta (${fmt(cats.ishonch.amount)})
+        </span>
+        <span style="font-size:11.5px; font-weight:700; color:${cats.baraka.color}; background:${cats.baraka.bg}; border:1px solid ${cats.baraka.color}33; padding:3px 8px; border-radius:6px;" title="Nasiya Baraka">
+          Nasiya Baraka: ${cats.baraka.count} ta (${fmt(cats.baraka.amount)})
+        </span>
+        <span style="font-size:11.5px; font-weight:700; color:${cats.shopir.color}; background:${cats.shopir.bg}; border:1px solid ${cats.shopir.color}33; padding:3px 8px; border-radius:6px;" title="Shopirda">
+          Shopirda: ${cats.shopir.count} ta (${fmt(cats.shopir.amount)})
+        </span>
+        ${cats.klientda.count > 0 ? `
+          <span style="font-size:11.5px; font-weight:700; color:${cats.klientda.color}; background:${cats.klientda.bg}; border:1px solid ${cats.klientda.color}33; padding:3px 8px; border-radius:6px;" title="Pul Klientda">
+            Pul Klientda: ${cats.klientda.count} ta (${fmt(cats.klientda.amount)})
+          </span>
+        ` : ''}
+      </div>
+    `;
   }
 
   if (_view === 'kanban') renderKanban();
@@ -3013,6 +3077,8 @@ function openDealModal(defaultStageId, editId) {
   setVal('f-color', 'oddiy');
   setVal('f-driverPhone', '');
   setVal('f-source', 'oddiy');
+  const skipCheck = document.getElementById('f-skipStockDeduct');
+  if (skipCheck) skipCheck.checked = false;
   
   const titleEl = document.getElementById('dealModalTitle');
   if (titleEl) titleEl.textContent = editId ? 'Sdelkani tahrirlash' : 'Yangi sdelka';
@@ -3109,6 +3175,7 @@ async function saveDeal() {
     productColor: document.getElementById('f-color').value || 'oddiy',
     driverPhone:  document.getElementById('f-driverPhone').value.trim() || null,
     source:       document.getElementById('f-source').value || 'oddiy',
+    skipStockDeduct: document.getElementById('f-skipStockDeduct')?.checked || false
   };
 
   const btn = document.getElementById('dealSaveBtn');
