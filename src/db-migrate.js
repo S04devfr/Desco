@@ -330,24 +330,38 @@ async function runMigrations(prisma) {
       { name: "Самарканд Шофёр (588)", phone: "+99899-588-90-09", date: "2026-07-29", amount: 1150000, city: "Самарканд", manager: "Кодир", notes: "Бугун ташаб беради | Qayta aloqa: 08.08.2026 (Menejer: Кодир)" }
     ];
 
-    // Clear old test dummy client debts
+    // 1. Clear old test dummy client debts
     await prisma.client.updateMany({
       where: { debt: { gt: 0 } },
       data: { debt: 0, debtDate: null, debtNotes: null }
     });
 
-    for (const rd of realDebtors) {
-      let client = await prisma.client.findFirst({
-        where: { phone: rd.phone }
-      });
+    // 2. Clear dummy sample deal debts by matching paidAmount = amount for non-real deals
+    const allDeals = await prisma.deal.findMany({ select: { id: true, amount: true } });
+    for (const d of allDeals) {
+      if (d.amount) {
+        await prisma.deal.update({
+          where: { id: d.id },
+          data: { paidAmount: d.amount }
+        });
+      }
+    }
 
+    // 3. Seed exactly 32 real debtors
+    for (let i = 0; i < realDebtors.length; i++) {
+      const rd = realDebtors[i];
       const dDate = new Date(rd.date);
+
+      let client = await prisma.client.findFirst({
+        where: { name: rd.name, city: rd.city }
+      });
 
       if (client) {
         await prisma.client.update({
           where: { id: client.id },
           data: {
             name: rd.name,
+            phone: rd.phone,
             city: rd.city,
             debt: rd.amount,
             debtDate: dDate,
