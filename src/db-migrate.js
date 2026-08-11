@@ -365,12 +365,6 @@ async function runMigrations(prisma) {
       }
     }
 
-    // Restore deal paidAmount to 0 for active non-won deals so deal cards display properly
-    await prisma.deal.updateMany({
-      where: { paidAmount: { gt: 0 } },
-      data: { paidAmount: 0 }
-    });
-
     console.log('✅ 32 ta haqiqiy qarzdorlar DBga saqlandi');
   } catch (err) {
     console.log('⚠️ Real debtors migration:', err.message?.slice(0, 100));

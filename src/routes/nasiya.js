@@ -676,11 +676,6 @@ router.post('/seed-real-debtors', async (req, res, next) => {
       inserted.push(client);
     }
 
-    await prisma.deal.updateMany({
-      where: { paidAmount: { gt: 0 } },
-      data: { paidAmount: 0 }
-    });
-
     res.json({ success: true, count: inserted.length, message: "32 ta haqiqiy qarzdorlar kiritildi" });
   } catch (error) {
     console.error("Seed real debtors error:", error);
