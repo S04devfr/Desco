@@ -266,13 +266,13 @@ async function loadData() {
 function processDebts() {
   consolidatedDebts = [];
   const pad = n => String(n).padStart(2, '0');
-  const seenKeys = new Set();
+  const seenClientIds = new Set();
+  const seenDealIds = new Set();
   
-  // 1. Client debts (Real Debtors)
+  // 1. All Client Debts (Real Debtors - include each client by ID)
   allClients.forEach(c => {
-    if (c.debt && c.debt > 0) {
-      const key = `${(c.name || '').trim().toLowerCase()}_${(c.phone || '').trim()}`;
-      seenKeys.add(key);
+    if (c.debt && c.debt > 0 && !seenClientIds.has(c.id)) {
+      seenClientIds.add(c.id);
 
       const contactDt = c.debtDate ? new Date(c.debtDate) : (c.updatedAt ? new Date(c.updatedAt) : null);
       const lastContactAtFormatted = contactDt && !isNaN(contactDt)
@@ -307,44 +307,53 @@ function processDebts() {
     }
   });
 
-  // 2. Deal debts (Only if not already in seenKeys)
+  // 2. Deal debts (Include active deal debts if not duplicate of client debt)
   allDeals.forEach(d => {
     const remainingDebt = (d.amount || 0) - (d.paidAmount || 0);
-    const key = `${(d.client?.name || '').trim().toLowerCase()}_${(d.client?.phone || '').trim()}`;
 
-    if (remainingDebt > 0 && !seenKeys.has(key)) {
-      seenKeys.add(key);
+    if (remainingDebt > 0 && !seenDealIds.has(d.id)) {
+      seenDealIds.add(d.id);
 
-      const contactDt = d.stageUpdatedAt ? new Date(d.stageUpdatedAt) : (d.updatedAt ? new Date(d.updatedAt) : (d.createdAt ? new Date(d.createdAt) : null));
-      const lastContactAtFormatted = contactDt && !isNaN(contactDt)
-        ? `${pad(contactDt.getDate())}.${pad(contactDt.getMonth()+1)}.${contactDt.getFullYear()} ${pad(contactDt.getHours())}:${pad(contactDt.getMinutes())}`
-        : 'Kiritilmagan';
-      const lastContactAtIso = contactDt && !isNaN(contactDt)
-        ? `${contactDt.getFullYear()}-${pad(contactDt.getMonth()+1)}-${pad(contactDt.getDate())}T${pad(contactDt.getHours())}:${pad(contactDt.getMinutes())}`
-        : '';
+      // Check if client debt already contains this exact client and amount to prevent twin cards
+      const dPhoneClean = (d.client?.phone || '').replace(/\D/g, '');
+      const isDuplicate = dPhoneClean && consolidatedDebts.some(m => 
+        m.type === 'manual' && 
+        m.phone.replace(/\D/g, '') === dPhoneClean && 
+        m.amount === remainingDebt
+      );
 
-      let mgrName = 'Ko\'rsatilmadi';
-      if (d.manager && d.manager.fullName) {
-        mgrName = d.manager.fullName;
-      } else if (d.notes && d.notes.includes('Menejer:')) {
-        const match = d.notes.match(/Menejer:\s*([^)\n|]+)/);
-        if (match && match[1]) mgrName = match[1].trim();
+      if (!isDuplicate) {
+        const contactDt = d.stageUpdatedAt ? new Date(d.stageUpdatedAt) : (d.updatedAt ? new Date(d.updatedAt) : (d.createdAt ? new Date(d.createdAt) : null));
+        const lastContactAtFormatted = contactDt && !isNaN(contactDt)
+          ? `${pad(contactDt.getDate())}.${pad(contactDt.getMonth()+1)}.${contactDt.getFullYear()} ${pad(contactDt.getHours())}:${pad(contactDt.getMinutes())}`
+          : 'Kiritilmagan';
+        const lastContactAtIso = contactDt && !isNaN(contactDt)
+          ? `${contactDt.getFullYear()}-${pad(contactDt.getMonth()+1)}-${pad(contactDt.getDate())}T${pad(contactDt.getHours())}:${pad(contactDt.getMinutes())}`
+          : '';
+
+        let mgrName = 'Ko\'rsatilmadi';
+        if (d.manager && d.manager.fullName) {
+          mgrName = d.manager.fullName;
+        } else if (d.notes && d.notes.includes('Menejer:')) {
+          const match = d.notes.match(/Menejer:\s*([^)\n|]+)/);
+          if (match && match[1]) mgrName = match[1].trim();
+        }
+
+        consolidatedDebts.push({
+          type: 'nasiya',
+          id: d.id,
+          name: d.client ? d.client.name : 'Noma\'lum',
+          phone: d.client ? d.client.phone : '',
+          city: d.client ? d.client.city : '',
+          date: d.createdAt ? String(d.createdAt).slice(0, 10) : '',
+          lastContactAtFormatted,
+          lastContactAtIso,
+          amount: remainingDebt,
+          notes: `${d.productName || 'Sdelka'} qarzi`,
+          managerName: mgrName,
+          isEditable: false
+        });
       }
-
-      consolidatedDebts.push({
-        type: 'nasiya',
-        id: d.id,
-        name: d.client ? d.client.name : 'Noma\'lum',
-        phone: d.client ? d.client.phone : '',
-        city: d.client ? d.client.city : '',
-        date: d.createdAt ? String(d.createdAt).slice(0, 10) : '',
-        lastContactAtFormatted,
-        lastContactAtIso,
-        amount: remainingDebt,
-        notes: `${d.productName || 'Sdelka'} qarzi`,
-        managerName: mgrName,
-        isEditable: false
-      });
     }
   });
 

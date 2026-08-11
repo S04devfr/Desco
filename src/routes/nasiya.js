@@ -640,23 +640,6 @@ router.post('/seed-real-debtors', async (req, res, next) => {
       { name: "Самарканд Шофёр (588)", phone: "+99899-588-90-09", date: "2026-07-29", amount: 1150000, city: "Самарканд", manager: "Кодир", notes: "Бугун ташаб беради | Qayta aloqa: 08.08.2026 (Menejer: Кодир)" }
     ];
 
-    // 1. Clear old test dummy client debts
-    await prisma.client.updateMany({
-      where: { debt: { gt: 0 } },
-      data: { debt: 0, debtDate: null, debtNotes: null }
-    });
-
-    // 2. Clear dummy sample deal debts
-    const allDeals = await prisma.deal.findMany({ select: { id: true, amount: true } });
-    for (const d of allDeals) {
-      if (d.amount) {
-        await prisma.deal.update({
-          where: { id: d.id },
-          data: { paidAmount: d.amount }
-        });
-      }
-    }
-
     const inserted = [];
     for (let i = 0; i < realDebtors.length; i++) {
       const rd = realDebtors[i];
@@ -692,6 +675,11 @@ router.post('/seed-real-debtors', async (req, res, next) => {
       }
       inserted.push(client);
     }
+
+    await prisma.deal.updateMany({
+      where: { paidAmount: { gt: 0 } },
+      data: { paidAmount: 0 }
+    });
 
     res.json({ success: true, count: inserted.length, message: "32 ta haqiqiy qarzdorlar kiritildi" });
   } catch (error) {
