@@ -1248,12 +1248,6 @@
           </select>
         </div>
 
-        <div class="form-group" style="margin-top: 10px; margin-bottom: 14px; background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; gap: 10px;">
-          <input type="checkbox" id="f-skipStockDeduct" style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;">
-          <label for="f-skipStockDeduct" style="font-size: 13px; font-weight: 700; color: var(--text-primary); cursor: pointer; margin-bottom: 0; user-select: none;">
-            📦 Omborga tegmasin <span style="font-size:11px; font-weight:normal; color:var(--text-secondary);">(Eski zakaz — ombordan ayirilmasin)</span>
-          </label>
-        </div>
 
         <!-- Nasiya Rejasi section (Hidden by default) -->
         <div id="dealModalNasiyaBlock" class="hidden" style="background:var(--bg-secondary); padding:16px; border-radius:10px; margin-bottom:16px; border:1px solid var(--border)">
@@ -3077,8 +3071,6 @@ function openDealModal(defaultStageId, editId) {
   setVal('f-color', 'oddiy');
   setVal('f-driverPhone', '');
   setVal('f-source', 'oddiy');
-  const skipCheck = document.getElementById('f-skipStockDeduct');
-  if (skipCheck) skipCheck.checked = false;
   
   const titleEl = document.getElementById('dealModalTitle');
   if (titleEl) titleEl.textContent = editId ? 'Sdelkani tahrirlash' : 'Yangi sdelka';
@@ -3174,8 +3166,7 @@ async function saveDeal() {
     warehouse:   document.getElementById('f-warehouse').value || null,
     productColor: document.getElementById('f-color').value || 'oddiy',
     driverPhone:  document.getElementById('f-driverPhone').value.trim() || null,
-    source:       document.getElementById('f-source').value || 'oddiy',
-    skipStockDeduct: document.getElementById('f-skipStockDeduct')?.checked || false
+    source:       document.getElementById('f-source').value || 'oddiy'
   };
 
   const btn = document.getElementById('dealSaveBtn');
