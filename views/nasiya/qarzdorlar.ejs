@@ -63,6 +63,40 @@
     color: #6C8AFF;
     border: 1px solid rgba(108, 138, 255, 0.3);
   }
+  .badge-cat-taxi {
+    background: rgba(245, 158, 11, 0.1);
+    color: #D97706;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  [data-theme="dark"] .badge-cat-taxi {
+    background: rgba(245, 158, 11, 0.2);
+    color: #FBBF24;
+    border-color: rgba(245, 158, 11, 0.4);
+  }
+  .badge-cat-client {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  [data-theme="dark"] .badge-cat-client {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34D399;
+    border-color: rgba(16, 185, 129, 0.4);
+  }
   .overdue-alert {
     background: rgba(239, 68, 68, 0.08);
     color: #EF4444;
@@ -195,6 +229,19 @@
   </div>
 </div>
 
+<!-- 📦 / 🚖 Category Tabs (Klient Qo'lida vs Taksilarda Naqd) -->
+<div style="display: flex; gap: 10px; margin-top: 20px; border-bottom: 1px solid var(--border); padding-bottom: 12px; flex-wrap: wrap;">
+  <button id="tabCatAll" onclick="setDebtorCategory('all')" class="btn btn-sm" style="height: 36px; padding: 0 16px; font-weight: 700; border-radius: 8px; font-size: 12.5px; background: var(--brand); color: #fff; border: none;">
+    <i class="fas fa-list-ul" style="margin-right: 6px;"></i> Barchasi (<span id="cntCatAll">32</span>)
+  </button>
+  <button id="tabCatClient" onclick="setDebtorCategory('client')" class="btn btn-sm" style="height: 36px; padding: 0 16px; font-weight: 700; border-radius: 8px; font-size: 12.5px; background: var(--surface-card); color: var(--text-secondary); border: 1px solid var(--border);">
+    <i class="fas fa-box" style="margin-right: 6px; color: #10B981;"></i> Mahsulot klient qo'lida (<span id="cntCatClient">25</span>)
+  </button>
+  <button id="tabCatTaxi" onclick="setDebtorCategory('taxi')" class="btn btn-sm" style="height: 36px; padding: 0 16px; font-weight: 700; border-radius: 8px; font-size: 12.5px; background: var(--surface-card); color: var(--text-secondary); border: 1px solid var(--border);">
+    <i class="fas fa-taxi" style="margin-right: 6px; color: #F59E0B;"></i> Taksilarda naqd (<span id="cntCatTaxi">7</span>)
+  </button>
+</div>
+
 <!-- Debtors Grid Container -->
 <div id="debtorsContainer" class="debtor-grid">
   <!-- Loading state -->
@@ -256,6 +303,39 @@ let allClients = [];
 let allDeals = [];
 let consolidatedDebts = [];
 let currentViewMode = localStorage.getItem('desco_debtor_view_mode') || 'grid';
+let currentCategory = 'all';
+
+function setDebtorCategory(cat) {
+  currentCategory = cat;
+
+  const btnAll = document.getElementById('tabCatAll');
+  const btnClient = document.getElementById('tabCatClient');
+  const btnTaxi = document.getElementById('tabCatTaxi');
+
+  [btnAll, btnClient, btnTaxi].forEach(b => {
+    if (b) {
+      b.style.background = 'var(--surface-card)';
+      b.style.color = 'var(--text-secondary)';
+      b.style.border = '1px solid var(--border)';
+    }
+  });
+
+  if (cat === 'client' && btnClient) {
+    btnClient.style.background = '#10B981';
+    btnClient.style.color = '#fff';
+    btnClient.style.border = 'none';
+  } else if (cat === 'taxi' && btnTaxi) {
+    btnTaxi.style.background = '#F59E0B';
+    btnTaxi.style.color = '#fff';
+    btnTaxi.style.border = 'none';
+  } else if (btnAll) {
+    btnAll.style.background = 'var(--brand)';
+    btnAll.style.color = '#fff';
+    btnAll.style.border = 'none';
+  }
+
+  filterDebtors();
+}
 
 function updateViewButtonsUI() {
   const btnGrid = document.getElementById('btnViewGrid');
@@ -340,6 +420,10 @@ function processDebts() {
         if (match && match[1]) mgrName = match[1].trim();
       }
 
+      const nameLow = (c.name || '').toLowerCase();
+      const notesLow = (c.debtNotes || '').toLowerCase();
+      const isTaxi = nameLow.includes('taksi') || nameLow.includes('такси') || nameLow.includes('shofyor') || nameLow.includes('шофёр') || nameLow.includes('sho\'pir') || nameLow.includes('шопир') || notesLow.includes('taksi') || notesLow.includes('такси');
+
       consolidatedDebts.push({
         type: 'manual',
         id: c.id,
@@ -352,6 +436,8 @@ function processDebts() {
         amount: c.debt || 0,
         notes: c.debtNotes || 'Qarzdorlik',
         managerName: mgrName,
+        category: isTaxi ? 'taxi' : 'client',
+        categoryLabel: isTaxi ? 'Taksida naqd' : 'Klient qo\'lida',
         isEditable: true
       });
     }
@@ -389,6 +475,10 @@ function processDebts() {
           if (match && match[1]) mgrName = match[1].trim();
         }
 
+        const dNameLow = (d.client?.name || '').toLowerCase();
+        const dNotesLow = (d.notes || '').toLowerCase();
+        const isTaxi = dNameLow.includes('taksi') || dNameLow.includes('такси') || dNameLow.includes('shofyor') || dNameLow.includes('шофёр') || dNameLow.includes('sho\'pir') || dNameLow.includes('шопир') || dNotesLow.includes('taksi') || dNotesLow.includes('такси');
+
         consolidatedDebts.push({
           type: 'nasiya',
           id: d.id,
@@ -401,6 +491,8 @@ function processDebts() {
           amount: remainingDebt,
           notes: `${d.productName || 'Sdelka'} qarzi`,
           managerName: mgrName,
+          category: isTaxi ? 'taxi' : 'client',
+          categoryLabel: isTaxi ? 'Taksida naqd' : 'Klient qo\'lida',
           isEditable: false
         });
       }
@@ -414,9 +506,26 @@ function filterDebtors() {
   const query = document.getElementById('debtorSearch').value.toLowerCase().trim();
   const sort = document.getElementById('debtorSort').value;
   
+  // Update category counters
+  const allCnt = consolidatedDebts.length;
+  const clientCnt = consolidatedDebts.filter(d => d.category === 'client').length;
+  const taxiCnt = consolidatedDebts.filter(d => d.category === 'taxi').length;
+
+  const cntAllEl = document.getElementById('cntCatAll');
+  const cntClientEl = document.getElementById('cntCatClient');
+  const cntTaxiEl = document.getElementById('cntCatTaxi');
+  if (cntAllEl) cntAllEl.textContent = allCnt;
+  if (cntClientEl) cntClientEl.textContent = clientCnt;
+  if (cntTaxiEl) cntTaxiEl.textContent = taxiCnt;
+
   let filtered = [...consolidatedDebts];
   
-  // Filter
+  // Category Filter
+  if (currentCategory !== 'all') {
+    filtered = filtered.filter(d => d.category === currentCategory);
+  }
+
+  // Search Filter
   if (query) {
     filtered = filtered.filter(d => 
       d.name.toLowerCase().includes(query) ||
@@ -480,6 +589,7 @@ function renderDebtorsGrid(items) {
           <thead>
             <tr style="background: var(--bg-tertiary); border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; color: var(--text-tertiary);">
               <th style="padding: 10px 14px;">#</th>
+              <th style="padding: 10px 14px;">Tur / Kategoriya</th>
               <th style="padding: 10px 14px;">Mijoz Ismi & Telefoni</th>
               <th style="padding: 10px 14px;">Shahar</th>
               <th style="padding: 10px 14px;">Qarz Summasi</th>
@@ -493,6 +603,11 @@ function renderDebtorsGrid(items) {
             ${items.map((d, idx) => `
               <tr style="border-bottom: 1px solid var(--border); transition: background 0.15s ease;">
                 <td style="padding: 12px 14px; color: var(--text-tertiary); font-weight: 600;">${idx + 1}</td>
+                <td style="padding: 12px 14px; white-space: nowrap;">
+                  <span class="${d.category === 'taxi' ? 'badge-cat-taxi' : 'badge-cat-client'}">
+                    ${d.category === 'taxi' ? '<i class="fas fa-taxi"></i> Taksida naqd' : '<i class="fas fa-box"></i> Klient qo\'lida'}
+                  </span>
+                </td>
                 <td style="padding: 12px 14px;">
                   <div style="font-weight: 700; color: var(--text-primary); font-size: 13.5px;">${escHtml(d.name)}</div>
                   <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 2px;">
@@ -549,9 +664,14 @@ function renderDebtorsGrid(items) {
 
     return `
       <div class="debtor-card">
-        <span class="debtor-badge badge-manager" title="Menejer"><i class="fas fa-user-tie" style="margin-right: 4px;"></i>${escHtml(d.managerName)}</span>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+          <span class="${d.category === 'taxi' ? 'badge-cat-taxi' : 'badge-cat-client'}">
+            ${d.category === 'taxi' ? '<i class="fas fa-taxi"></i> Taksida naqd' : '<i class="fas fa-box"></i> Klient qo\'lida'}
+          </span>
+          <span class="debtor-badge badge-manager" title="Menejer"><i class="fas fa-user-tie" style="margin-right: 4px;"></i>${escHtml(d.managerName)}</span>
+        </div>
         
-        <div style="padding-right: 110px;">
+        <div>
           <h4 style="margin: 0; font-size: 14.5px; font-weight: 700; color: var(--text-primary);">${escHtml(d.name)}</h4>
           <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 3px;">
             <i class="fas fa-phone-alt" style="margin-right: 4px;"></i>${escHtml(d.phone || 'Telefon kiritilmagan')}
