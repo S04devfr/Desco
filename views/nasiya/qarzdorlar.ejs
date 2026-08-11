@@ -50,6 +50,19 @@
     color: #3B82F6;
     border: 1px solid rgba(59, 130, 246, 0.2);
   }
+  .badge-manager {
+    background: rgba(0, 82, 255, 0.08);
+    color: #0052FF;
+    border: 1px solid rgba(0, 82, 255, 0.2);
+    text-transform: none;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  [data-theme="dark"] .badge-manager {
+    background: rgba(108, 138, 255, 0.15);
+    color: #6C8AFF;
+    border: 1px solid rgba(108, 138, 255, 0.3);
+  }
   .overdue-alert {
     background: rgba(239, 68, 68, 0.08);
     color: #EF4444;
@@ -265,6 +278,14 @@ function processDebts() {
         ? `${contactDt.getFullYear()}-${pad(contactDt.getMonth()+1)}-${pad(contactDt.getDate())}T${pad(contactDt.getHours())}:${pad(contactDt.getMinutes())}`
         : '';
 
+      let mgrName = 'Ko\'rsatilmadi';
+      if (c.owner && c.owner.fullName) {
+        mgrName = c.owner.fullName;
+      } else if (c.debtNotes && c.debtNotes.includes('Menejer:')) {
+        const match = c.debtNotes.match(/Menejer:\s*([^)\n|]+)/);
+        if (match && match[1]) mgrName = match[1].trim();
+      }
+
       consolidatedDebts.push({
         type: 'manual',
         id: c.id,
@@ -276,7 +297,7 @@ function processDebts() {
         lastContactAtIso,
         amount: c.debt || 0,
         notes: c.debtNotes || 'Manual kiritilgan qarz',
-        managerName: c.owner ? c.owner.fullName : 'Admin',
+        managerName: mgrName,
         isEditable: true
       });
     }
@@ -294,6 +315,14 @@ function processDebts() {
         ? `${contactDt.getFullYear()}-${pad(contactDt.getMonth()+1)}-${pad(contactDt.getDate())}T${pad(contactDt.getHours())}:${pad(contactDt.getMinutes())}`
         : '';
 
+      let mgrName = 'Ko\'rsatilmadi';
+      if (d.manager && d.manager.fullName) {
+        mgrName = d.manager.fullName;
+      } else if (d.notes && d.notes.includes('Menejer:')) {
+        const match = d.notes.match(/Menejer:\s*([^)\n|]+)/);
+        if (match && match[1]) mgrName = match[1].trim();
+      }
+
       consolidatedDebts.push({
         type: 'nasiya',
         id: d.id,
@@ -305,7 +334,7 @@ function processDebts() {
         lastContactAtIso,
         amount: remainingDebt,
         notes: `${d.productName || 'Sdelka'} qarzi`,
-        managerName: d.manager ? d.manager.fullName : '—',
+        managerName: mgrName,
         isEditable: false
       });
     }
@@ -325,7 +354,8 @@ function filterDebtors() {
     filtered = filtered.filter(d => 
       d.name.toLowerCase().includes(query) ||
       d.phone.includes(query) ||
-      d.city.toLowerCase().includes(query)
+      d.city.toLowerCase().includes(query) ||
+      d.managerName.toLowerCase().includes(query)
     );
   }
   
@@ -377,15 +407,6 @@ function renderDebtorsGrid(items) {
   }
 
   container.innerHTML = items.map(d => {
-    const overdueDays = getOverdueDays(d.date);
-    let alertHtml = '';
-    
-    if (overdueDays > 0) {
-      alertHtml = `<div class="overdue-alert"><i class="fas fa-exclamation-circle"></i> <span>Muddati ${overdueDays} kundan beri o'tgan</span></div>`;
-    } else if (d.date) {
-      alertHtml = `<div class="future-alert"><i class="fas fa-check-circle"></i> <span>Muddati kelmagan (berilgan: ${d.date})</span></div>`;
-    }
-
     const editBtn = d.isEditable ? `
       <button class="debt-action-btn" onclick="openEditClientDebt(${d.id})">
         <i class="fas fa-edit"></i> Tahrirlash
@@ -394,9 +415,9 @@ function renderDebtorsGrid(items) {
 
     return `
       <div class="debtor-card">
-        <span class="debtor-badge ${d.type === 'manual' ? 'badge-manual' : 'badge-nasiya'}">${d.type === 'manual' ? 'Manual qarz' : 'Sdelka qarzi'}</span>
+        <span class="debtor-badge badge-manager" title="Menejer"><i class="fas fa-user-tie" style="margin-right: 4px;"></i>${escHtml(d.managerName)}</span>
         
-        <div style="padding-right: 80px;">
+        <div style="padding-right: 110px;">
           <h4 style="margin: 0; font-size: 14.5px; font-weight: 700; color: var(--text-primary);">${escHtml(d.name)}</h4>
           <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 3px;">
             <i class="fas fa-phone-alt" style="margin-right: 4px;"></i>${escHtml(d.phone || 'Telefon kiritilmagan')}
@@ -413,8 +434,6 @@ function renderDebtorsGrid(items) {
             <i class="fas fa-quote-left" style="font-size: 8px; margin-right: 4px; opacity: 0.5;"></i>${escHtml(d.notes)}
           </div>
         </div>
-
-        ${alertHtml}
 
         <!-- 📞 OXIRGI ALOQA KUNI VA VAQTI (QO'LDA SOZLANADIGAN) -->
         <div style="margin-top: 10px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;">
