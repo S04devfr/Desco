@@ -365,6 +365,18 @@ async function runMigrations(prisma) {
       }
     }
 
+    // Clear sample test deals ('hadiya qarzi') so they don't add 11M dummy debt
+    const sampleDeals = await prisma.deal.findMany({ select: { id: true, amount: true, productName: true, notes: true } });
+    for (const sd of sampleDeals) {
+      const txt = `${sd.productName || ''} ${sd.notes || ''}`.toLowerCase();
+      if ((txt.includes('hadiya') || txt.includes('test')) && sd.amount) {
+        await prisma.deal.update({
+          where: { id: sd.id },
+          data: { paidAmount: sd.amount }
+        });
+      }
+    }
+
     console.log('✅ 32 ta haqiqiy qarzdorlar DBga saqlandi');
   } catch (err) {
     console.log('⚠️ Real debtors migration:', err.message?.slice(0, 100));

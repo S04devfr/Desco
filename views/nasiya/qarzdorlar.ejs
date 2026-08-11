@@ -357,18 +357,19 @@ function processDebts() {
     }
   });
 
-  // 2. Only Nasiya Stage Deals (Faqat Nasiya bosqichidagi sdelka qarzlari)
+  // 2. Only Nasiya Stage Deals (Excluding sample test deals like 'hadiya qarzi')
   allDeals.forEach(d => {
     const isNasiyaStage = d.stage && d.stage.name && d.stage.name.toLowerCase().includes('nasiya');
     const remainingDebt = (d.amount || 0) - (d.paidAmount || 0);
+    const notesTxt = `${d.productName || ''} ${d.notes || ''}`.toLowerCase();
+    const isSampleTestDeal = notesTxt.includes('hadiya') || notesTxt.includes('test');
 
-    if (isNasiyaStage && remainingDebt > 0 && !seenDealIds.has(d.id)) {
+    if (isNasiyaStage && remainingDebt > 0 && !isSampleTestDeal && !seenDealIds.has(d.id)) {
       seenDealIds.add(d.id);
 
       const dPhoneClean = (d.client?.phone || '').replace(/\D/g, '');
       const isDuplicate = dPhoneClean && consolidatedDebts.some(m => 
-        m.phone.replace(/\D/g, '') === dPhoneClean && 
-        m.amount === remainingDebt
+        m.phone.replace(/\D/g, '') === dPhoneClean
       );
 
       if (!isDuplicate) {

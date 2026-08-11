@@ -676,6 +676,18 @@ router.post('/seed-real-debtors', async (req, res, next) => {
       inserted.push(client);
     }
 
+    // Clear sample test deals ('hadiya qarzi') so they don't add 11M dummy debt
+    const sampleDeals = await prisma.deal.findMany({ select: { id: true, amount: true, productName: true, notes: true } });
+    for (const sd of sampleDeals) {
+      const txt = `${sd.productName || ''} ${sd.notes || ''}`.toLowerCase();
+      if ((txt.includes('hadiya') || txt.includes('test')) && sd.amount) {
+        await prisma.deal.update({
+          where: { id: sd.id },
+          data: { paidAmount: sd.amount }
+        });
+      }
+    }
+
     res.json({ success: true, count: inserted.length, message: "32 ta haqiqiy qarzdorlar kiritildi" });
   } catch (error) {
     console.error("Seed real debtors error:", error);
