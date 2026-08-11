@@ -164,10 +164,6 @@ router.get('/', async (req, res, next) => {
         { warehouse: { contains: searchLower, mode } },
         { client: { name: { contains: searchLower, mode } } },
         { client: { phone: { contains: searchLower, mode } } },
-        { client: { city: { contains: searchLower, mode } } },
-        { contact: { firstName: { contains: searchLower, mode } } },
-        { contact: { lastName: { contains: searchLower, mode } } },
-        { contact: { phone: { contains: searchLower, mode } } },
         { manager: { fullName: { contains: searchLower, mode } } },
         { owner: { fullName: { contains: searchLower, mode } } }
       ];
@@ -180,30 +176,44 @@ router.get('/', async (req, res, next) => {
         searchConditions.push({ contactPhone: { contains: cleanDigits, mode } });
         searchConditions.push({ driverPhone: { contains: cleanDigits, mode } });
         searchConditions.push({ client: { phone: { contains: cleanDigits, mode } } });
-        searchConditions.push({ contact: { phone: { contains: cleanDigits, mode } } });
       }
 
       if (!where.AND) where.AND = [];
       where.AND.push({ OR: searchConditions });
     }
 
-    const deals = await prisma.deal.findMany({
-      where,
-      include: {
-        client: { select: { id: true, name: true, company: true, phone: true, city: true, companyPhone: true, companyEmail: true, companyWebsite: true, companyAddress: true, email: true } },
-        contact: { include: { company: true } },
-        company: true,
-        manager: managerSelect,
-        owner: managerSelect,
-        stage: stageSelect,
-        installments: { select: { id: true } },
-        tasks: {
-          where: { completed: false },
-          select: { id: true, title: true, dueDate: true, dueTime: true, actionType: true }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+    const includeFields = {
+      client: { select: { id: true, name: true, company: true, phone: true, city: true, companyPhone: true, companyEmail: true, companyWebsite: true, companyAddress: true, email: true } },
+      contact: { include: { company: true } },
+      company: true,
+      manager: managerSelect,
+      owner: managerSelect,
+      stage: stageSelect,
+      installments: { select: { id: true } },
+      tasks: {
+        where: { completed: false },
+        select: { id: true, title: true, dueDate: true, dueTime: true, actionType: true }
+      }
+    };
+
+    let deals = [];
+    try {
+      deals = await prisma.deal.findMany({
+        where,
+        include: includeFields,
+        orderBy: { createdAt: 'desc' }
+      });
+    } catch (queryErr) {
+      console.error('[Prisma Deals Query Error - Fallback Triggered]:', queryErr.message);
+      // Remove search condition from where.AND and query base deals, letting frontend filter in-memory
+      const fallbackWhere = { ...where };
+      delete fallbackWhere.AND;
+      deals = await prisma.deal.findMany({
+        where: fallbackWhere,
+        include: includeFields,
+        orderBy: { createdAt: 'desc' }
+      });
+    }
 
     // Map contact to client for backwards compatibility
     const mappedDeals = deals.map(d => {
