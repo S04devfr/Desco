@@ -157,10 +157,19 @@ router.get('/', async (req, res, next) => {
         { productName: { contains: searchLower, mode } },
         { city: { contains: searchLower, mode } },
         { notes: { contains: searchLower, mode } },
-        { client: { name: { contains: searchLower, mode } } },
-        { client: { phone: { contains: searchLower, mode } } },
-        { client: { city: { contains: searchLower, mode } } },
-        { manager: { fullName: { contains: searchLower, mode } } }
+        { contactName: { contains: searchLower, mode } },
+        { contactPhone: { contains: searchLower, mode } },
+        { driverPhone: { contains: searchLower, mode } },
+        { tags: { contains: searchLower, mode } },
+        { warehouse: { contains: searchLower, mode } },
+        { client: { is: { name: { contains: searchLower, mode } } } },
+        { client: { is: { phone: { contains: searchLower, mode } } } },
+        { client: { is: { city: { contains: searchLower, mode } } } },
+        { contact: { is: { firstName: { contains: searchLower, mode } } } },
+        { contact: { is: { lastName: { contains: searchLower, mode } } } },
+        { contact: { is: { phone: { contains: searchLower, mode } } } },
+        { manager: { is: { fullName: { contains: searchLower, mode } } } },
+        { owner: { is: { fullName: { contains: searchLower, mode } } } }
       ];
 
       if (!isNaN(idNum) && idNum > 0) {
@@ -168,21 +177,14 @@ router.get('/', async (req, res, next) => {
       }
 
       if (cleanDigits.length >= 3) {
-        searchConditions.push({ client: { phone: { contains: cleanDigits, mode } } });
+        searchConditions.push({ contactPhone: { contains: cleanDigits, mode } });
+        searchConditions.push({ driverPhone: { contains: cleanDigits, mode } });
+        searchConditions.push({ client: { is: { phone: { contains: cleanDigits, mode } } } });
+        searchConditions.push({ contact: { is: { phone: { contains: cleanDigits, mode } } } });
       }
 
-      if (where.OR) {
-        if (!where.AND) where.AND = [];
-        where.AND.push({ OR: where.OR });
-        where.AND.push({ OR: searchConditions });
-        delete where.OR;
-      } else {
-        if (where.AND) {
-          where.AND.push({ OR: searchConditions });
-        } else {
-          where.OR = searchConditions;
-        }
-      }
+      if (!where.AND) where.AND = [];
+      where.AND.push({ OR: searchConditions });
     }
 
     const deals = await prisma.deal.findMany({

@@ -2159,6 +2159,30 @@ async function loadDeals() {
   try {
     _deals = await apiFetch('/api/deals?' + params);
     if (!Array.isArray(_deals)) _deals = [];
+
+    if (q) {
+      const qLower = q.toLowerCase().trim();
+      const qDigits = qLower.replace(/\D/g, '');
+      _deals = _deals.filter(d => {
+        const idStr = String(d.id || '');
+        const pName = String(d.productName || '').toLowerCase();
+        const cName = String(d.client?.name || d.contactName || (d.contact ? `${d.contact.firstName} ${d.contact.lastName||''}` : '')).toLowerCase();
+        const cPhone = String(d.client?.phone || d.contactPhone || d.contact?.phone || '').replace(/\D/g, '');
+        const city = String(d.city || d.client?.city || '').toLowerCase();
+        const notes = String(d.notes || '').toLowerCase();
+        const manager = String(d.manager?.fullName || d.owner?.fullName || '').toLowerCase();
+        const tags = String(d.tags || '').toLowerCase();
+
+        return idStr.includes(qLower) ||
+               pName.includes(qLower) ||
+               cName.includes(qLower) ||
+               city.includes(qLower) ||
+               notes.includes(qLower) ||
+               manager.includes(qLower) ||
+               tags.includes(qLower) ||
+               (qDigits.length >= 3 && cPhone.includes(qDigits));
+      });
+    }
   } catch(e) {
     _toast('Sdelkalar yuklanmadi: ' + e.message, 'error');
     _deals = [];
