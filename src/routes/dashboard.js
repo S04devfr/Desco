@@ -385,6 +385,9 @@ router.get('/kpis', async (req, res, next) => {
       }
     });
 
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
     const managerPerformance = {};
     allUsers.forEach(u => {
       managerPerformance[u.id] = {
@@ -396,7 +399,10 @@ router.get('/kpis', async (req, res, next) => {
         totalCount: 0,
         wonCount: 0,
         wonValue: 0,
-        canceledCount: 0
+        canceledCount: 0,
+        todayCount: 0,
+        todayWonCount: 0,
+        todayWonValue: 0
       };
     });
 
@@ -407,10 +413,20 @@ router.get('/kpis', async (req, res, next) => {
         m.totalCount += 1;
         if (isWonDeal(d)) {
           m.wonCount += 1;
-          m.wonValue += d.amount;
+          m.wonValue += (d.amount || 0);
         }
         if (isDealCanceled(d)) {
           m.canceledCount += 1;
+        }
+
+        // Calculate today's orders/deals count
+        const dealDate = d.createdAt ? new Date(d.createdAt) : null;
+        if (dealDate && dealDate >= todayStart) {
+          m.todayCount += 1;
+          if (isWonDeal(d)) {
+            m.todayWonCount += 1;
+            m.todayWonValue += (d.amount || 0);
+          }
         }
       }
     });

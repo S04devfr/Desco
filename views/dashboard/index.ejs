@@ -1420,16 +1420,11 @@ async function loadDashboard() {
           const finesDetail = (m.fines && m.fines.length)
             ? m.fines.map(f => '<div class="kpi-fine-item">−'+fmtMoney(f.amount)+(f.reason ? ' · '+escHtml(f.reason) : '')+'</div>').join('')
             : '';
-          // Activity
-          const act       = actMap[m.id] || {};
-          const isOnline  = act.online === true;
-          const todayMin  = act.todayMin || 0;
-          const todayH    = Math.floor(todayMin / 60);
-          const todayM    = todayMin % 60;
-          const todayStr  = todayMin > 0 ? (todayH > 0 ? todayH+'s ' : '') + todayM+'d' : '—';
-          const onlineDot = isOnline
-            ? '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:#34C759;font-weight:600;"><span style="width:8px;height:8px;border-radius:50%;background:#34C759;display:inline-block;box-shadow:0 0 6px #34C75966;animation:pulse-green 2s infinite;"></span>Online</span>'
-            : '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--text-muted);"><span style="width:8px;height:8px;border-radius:50%;background:var(--text-muted);display:inline-block;opacity:0.5;"></span>Offline</span>';
+          const tCount = m.todayCount || 0;
+          const tWon   = m.todayWonCount || 0;
+          const todayCell = tCount > 0
+            ? '<div class="kpi-won" style="color:#10b981; font-weight:800;">'+tCount+' ta</div><div class="kpi-total-deals" style="color:var(--text-secondary);">'+(tWon > 0 ? tWon + ' sotuv' : 'buyurtma')+'</div>'
+            : '<span style="font-size:11px; font-weight:600; color:var(--text-muted);">—</span>';
           const editBtn = USER_ROLE === 'admin'
             ? `<button class="btn btn-ghost btn-icon btn-sm text-brand" onclick="openEditManagerModal(${m.id}, '${escHtml(m.name)}', '${escHtml(m.email || '')}', '${m.role || 'manager'}', ${m.isActive !== false})" style="padding: 2px; margin-left: auto; display: inline-flex; border: none; background: transparent; cursor: pointer;" title="Tahrirlash"><i class="fas fa-edit" style="font-size: 11px;"></i></button>`
             : '';
@@ -1439,7 +1434,7 @@ async function loadDashboard() {
             +   '<span class="kpi-mgr-name" style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">'+escHtml(m.name)+'</span>'
             +   editBtn
             + '</td>'
-            + '<td class="tc" style="font-size:11px;font-weight:600;color:'+(todayMin>0?'var(--text-primary)':'var(--text-muted)')+';white-space:nowrap;">'+todayStr+'</td>'
+            + '<td class="tc">' + todayCell + '</td>'
             + '<td class="tc">'
             +   '<div class="kpi-won">'+m.wonCount+'</div>'
             +   '<div class="kpi-total-deals">/ '+m.totalCount+' jami</div>'
