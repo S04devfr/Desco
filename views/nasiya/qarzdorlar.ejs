@@ -147,6 +147,15 @@
       <option value="date-desc">Sana (Yangi)</option>
     </select>
 
+    <div class="view-switch-btn-group" style="display: flex; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 6px; padding: 2px; gap: 2px;">
+      <button id="btnViewGrid" onclick="setDebtorViewMode('grid')" class="btn btn-xs" style="height: 32px; padding: 0 10px; font-weight: 700; border-radius: 4px; font-size: 11.5px; background: var(--surface-card); color: var(--primary); border: 1px solid var(--border);">
+        <i class="fas fa-th-large"></i> Kartochka
+      </button>
+      <button id="btnViewTable" onclick="setDebtorViewMode('table')" class="btn btn-xs" style="height: 32px; padding: 0 10px; font-weight: 700; border-radius: 4px; font-size: 11.5px; background: transparent; color: var(--text-secondary); border: none;">
+        <i class="fas fa-table"></i> Jadval
+      </button>
+    </div>
+
     <button class="btn btn-primary btn-sm" onclick="openQuickClientCreate()" style="height: 36px; display: flex; align-items: center; gap: 6px;">
       <i class="fas fa-user-plus"></i> Yangi Qarzdor
     </button>
@@ -246,6 +255,44 @@
 let allClients = [];
 let allDeals = [];
 let consolidatedDebts = [];
+let currentViewMode = localStorage.getItem('desco_debtor_view_mode') || 'grid';
+
+function setDebtorViewMode(mode) {
+  currentViewMode = mode;
+  localStorage.setItem('desco_debtor_view_mode', mode);
+
+  const btnGrid = document.getElementById('btnViewGrid');
+  const btnTable = document.getElementById('btnViewTable');
+  const container = document.getElementById('debtorsContainer');
+
+  if (mode === 'table') {
+    if (container) container.className = 'debtor-table-wrapper';
+    if (btnTable) {
+      btnTable.style.background = 'var(--surface-card)';
+      btnTable.style.color = 'var(--primary)';
+      btnTable.style.border = '1px solid var(--border)';
+    }
+    if (btnGrid) {
+      btnGrid.style.background = 'transparent';
+      btnGrid.style.color = 'var(--text-secondary)';
+      btnGrid.style.border = 'none';
+    }
+  } else {
+    if (container) container.className = 'debtor-grid';
+    if (btnGrid) {
+      btnGrid.style.background = 'var(--surface-card)';
+      btnGrid.style.color = 'var(--primary)';
+      btnGrid.style.border = '1px solid var(--border)';
+    }
+    if (btnTable) {
+      btnTable.style.background = 'transparent';
+      btnTable.style.color = 'var(--text-secondary)';
+      btnTable.style.border = 'none';
+    }
+  }
+
+  filterDebtors();
+}
 
 async function loadData() {
   try {
@@ -257,7 +304,8 @@ async function loadData() {
     allClients = Array.isArray(clientsRes) ? clientsRes : [];
     allDeals = Array.isArray(dealsRes) ? dealsRes : [];
     
-    processDebts();
+    // Set initial button active state from localStorage
+    setDebtorViewMode(currentViewMode);
   } catch(e) {
     console.error('Qarzdorlar yuklashda xato:', e);
   }
@@ -420,6 +468,73 @@ function renderDebtorsGrid(items) {
   const container = document.getElementById('debtorsContainer');
   if (items.length === 0) {
     container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-tertiary);"><i class="fas fa-user-slash" style="font-size:32px; opacity:0.3; margin-bottom:10px;"></i><br>Qarzdorlar topilmadi</div>';
+    return;
+  }
+
+  if (currentViewMode === 'table') {
+    container.innerHTML = `
+      <div class="card" style="overflow-x: auto; border-radius: 8px; box-shadow: var(--shadow-sm); width: 100%; margin-top: 10px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+          <thead>
+            <tr style="background: var(--bg-tertiary); border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; color: var(--text-tertiary);">
+              <th style="padding: 10px 14px;">#</th>
+              <th style="padding: 10px 14px;">Mijoz Ismi & Telefoni</th>
+              <th style="padding: 10px 14px;">Shahar</th>
+              <th style="padding: 10px 14px;">Qarz Summasi</th>
+              <th style="padding: 10px 14px;">Izoh / Tafsilot</th>
+              <th style="padding: 10px 14px;">Mas'ul Menejer</th>
+              <th style="padding: 10px 14px;">Oxirgi Aloqa</th>
+              <th style="padding: 10px 14px; text-align: right;">Harakatlar</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${items.map((d, idx) => `
+              <tr style="border-bottom: 1px solid var(--border); transition: background 0.15s ease;">
+                <td style="padding: 12px 14px; color: var(--text-tertiary); font-weight: 600;">${idx + 1}</td>
+                <td style="padding: 12px 14px;">
+                  <div style="font-weight: 700; color: var(--text-primary); font-size: 13.5px;">${escHtml(d.name)}</div>
+                  <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 2px;">
+                    <i class="fas fa-phone-alt" style="margin-right: 4px;"></i>${escHtml(d.phone || '—')}
+                  </div>
+                </td>
+                <td style="padding: 12px 14px; color: var(--text-secondary); font-size: 12.5px;">
+                  <i class="fas fa-map-marker-alt" style="margin-right: 4px; color: var(--text-tertiary);"></i>${escHtml(d.city || '—')}
+                </td>
+                <td style="padding: 12px 14px; font-weight: 800; color: var(--danger); font-size: 14px; white-space: nowrap;">
+                  ${d.amount.toLocaleString('uz-UZ')} so'm
+                </td>
+                <td style="padding: 12px 14px; color: var(--text-secondary); font-size: 11.5px; max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escHtml(d.notes)}">
+                  ${escHtml(d.notes)}
+                </td>
+                <td style="padding: 12px 14px;">
+                  <span class="badge-manager" style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 4px;">
+                    <i class="fas fa-user-tie"></i>${escHtml(d.managerName)}
+                  </span>
+                </td>
+                <td style="padding: 12px 14px; font-size: 11.5px; color: var(--text-secondary); white-space: nowrap;">
+                  <i class="far fa-clock" style="margin-right: 4px; color: var(--accent);"></i>${d.lastContactAtFormatted}
+                </td>
+                <td style="padding: 12px 14px; text-align: right; white-space: nowrap;">
+                  <div style="display: inline-flex; gap: 6px; justify-content: flex-end;">
+                    <button class="debt-action-btn" onclick="showScheduleCallPanel(${d.id}, '${d.type}', this)" title="Sana belgilash">
+                      <i class="fas fa-calendar-plus"></i> Sana
+                    </button>
+                    <button class="debt-action-btn" style="border-color: #34c759; color: #34c759;" onclick="closeDebtDirectly(${d.id}, '${d.type}', ${d.amount})" title="Yopish">
+                      <i class="fas fa-check"></i> Yopish
+                    </button>
+                    ${d.isEditable ? `
+                      <button class="debt-action-btn" onclick="openEditClientDebt(${d.id})" title="Tahrirlash">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                    ` : ''}
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
     return;
   }
 
