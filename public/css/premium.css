@@ -125,45 +125,45 @@
 }
 
 [data-theme="dark"] {
-  /* Deep dark base — NOT pure black */
-  --bg-app: #0B0F1A;
-  --bg-surface: #131825;
-  --bg-surface-hover: #1C2333;
-  --bg-sidebar: #0B0F1A;
-  --bg-sidebar-hover: #131825;
+  /* Neutral gray base — warm, professional, like Linear/Notion */
+  --bg-app: #1A1A1A;
+  --bg-surface: #222222;
+  --bg-surface-hover: #2C2C2C;
+  --bg-sidebar: #1A1A1A;
+  --bg-sidebar-hover: #262626;
   --bg-sidebar-active: rgba(79, 106, 255, 0.12);
 
-  /* Cobalt / Soft Blue Primary Accent */
+  /* Cobalt Blue Accent */
   --primary: #6C8AFF;
-  --primary-hover: #4F6AFF;
+  --primary-hover: #5471E8;
   --primary-light: rgba(79, 106, 255, 0.12);
   --cobalt: #6C8AFF;
   --emerald: #34D399;
   --amber: #FBBF24;
 
-  /* Typography: Off-White Primary & Soft Gray Secondary */
-  --text-primary: #E2E8F0;
-  --text-secondary: #8B9AB5;
+  /* Typography */
+  --text-primary: #ECECEC;
+  --text-secondary: #999999;
   --text-inverse: #FFFFFF;
-  --text-muted-sidebar: #8B9AB5;
+  --text-muted-sidebar: #999999;
   --sidebar-text-active: #6C8AFF;
 
-  /* Borders */
-  --border-subtle: rgba(255, 255, 255, 0.07);
-  --border-strong: rgba(255, 255, 255, 0.12);
+  /* Borders — subtle white lines */
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
   --glass-border: rgba(255, 255, 255, 0.06);
 
-  /* Soft Pastel Semantics */
+  /* Semantics */
   --success: #34D399;
   --warning: #FBBF24;
   --danger: #F87171;
   --info: #6C8AFF;
 
   /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
-  --glass-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.7);
+  --glass-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
 
   /* Map old variables */
   --brand: var(--primary);
@@ -178,17 +178,17 @@
   --bg-primary: var(--bg-app);
   --bg-secondary: var(--bg-surface-hover);
   --bg-tertiary: rgba(255, 255, 255, 0.05);
-  --text-tertiary: #8B9AB5;
-  --text-400: #8B9AB5;
-  --text-muted: #8B9AB5;
+  --text-tertiary: #999999;
+  --text-400: #999999;
+  --text-muted: #999999;
   --text-900: var(--text-primary);
   --text-800: var(--text-primary);
   --text-700: var(--text-primary);
   --text-500: var(--text-secondary);
   --text-300: var(--text-secondary);
-  --surface-elevated: #1C2333;
+  --surface-elevated: #2C2C2C;
 
-  /* Sidebar styling maps */
+  /* Sidebar maps */
   --sidebar-bg: var(--bg-sidebar);
   --sidebar-hover: var(--bg-sidebar-hover);
   --sidebar-active: var(--bg-sidebar-active);
@@ -211,8 +211,8 @@ body {
 }
 
 [data-theme="dark"] body {
-  background: #0B0F1A !important;
-  color: #E2E8F0;
+  background: #1A1A1A !important;
+  color: #ECECEC;
 }
 
 /* No decorative blobs — clean enterprise look */
@@ -234,7 +234,7 @@ body::before, body::after {
 }
 
 [data-theme="dark"] .app-wrapper {
-  background: #0B0F1A !important;
+  background: #1A1A1A !important;
   border: none !important;
   box-shadow: none;
 }
@@ -257,7 +257,7 @@ body::before, body::after {
 }
 
 [data-theme="dark"] .sidebar {
-  background: #0B0F1A !important;
+  background: #1A1A1A !important;
   border-right: 1px solid rgba(255,255,255,0.07) !important;
 }
 
@@ -450,7 +450,7 @@ body::before, body::after {
 }
 
 [data-theme="dark"] .topbar {
-  background: #0B0F1A !important;
+  background: #1A1A1A !important;
   border-bottom: 1px solid rgba(255,255,255,0.07) !important;
   box-shadow: none !important;
 }
@@ -676,7 +676,7 @@ body::before, body::after {
 }
 
 [data-theme="dark"] .card {
-  background: #131825 !important;
+  background: #222222 !important;
   border-color: rgba(255,255,255,0.07) !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
 }
@@ -727,7 +727,7 @@ body::before, body::after {
 }
 
 [data-theme="dark"] .stat-card {
-  background: #131825 !important;
+  background: #222222 !important;
   border-color: rgba(255,255,255,0.07) !important;
 }
 
@@ -908,7 +908,7 @@ body::before, body::after {
 }
 
 [data-theme="dark"] .modal-box {
-  background: #131825;
+  background: #222222;
   border-color: rgba(255,255,255,0.07);
   box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4);
 }
@@ -953,7 +953,7 @@ body::before, body::after {
   box-shadow: 0 1px 2px rgba(0,0,0,0.03);
 }
 [data-theme="dark"] .kanban-col {
-  background: #131825;
+  background: #222222;
   border-color: rgba(255,255,255,0.07);
 }
 
