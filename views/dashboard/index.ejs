@@ -345,7 +345,6 @@
           <thead>
             <tr>
               <th>Menejer</th>
-              <th class="tc" style="width:100px;">Holat</th>
               <th class="tc" style="width:100px;">Bugun</th>
               <th class="tc" style="width:100px;">Won</th>
               <th class="tc" style="width:100px;">Win%</th>
@@ -356,7 +355,7 @@
             </tr>
           </thead>
           <tbody id="managerKpiTableBody">
-            <tr><td colspan="9" class="tc kpi-empty"><div class="spinner" style="margin:auto;"></div></td></tr>
+            <tr><td colspan="8" class="tc kpi-empty"><div class="spinner" style="margin:auto;"></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -1440,7 +1439,6 @@ async function loadDashboard() {
             +   '<span class="kpi-mgr-name" style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">'+escHtml(m.name)+'</span>'
             +   editBtn
             + '</td>'
-            + '<td class="tc" style="white-space:nowrap;">'+onlineDot+'</td>'
             + '<td class="tc" style="font-size:11px;font-weight:600;color:'+(todayMin>0?'var(--text-primary)':'var(--text-muted)')+';white-space:nowrap;">'+todayStr+'</td>'
             + '<td class="tc">'
             +   '<div class="kpi-won">'+m.wonCount+'</div>'
@@ -1470,7 +1468,7 @@ async function loadDashboard() {
           return s + base + kpi - fine;
         }, 0);
         const totalRow = '<tr class="kpi-total-row">'
-          + '<td colspan="5" class="kpi-total-label"><i class="fas fa-wallet" style="margin-right:5px;color:var(--brand);"></i>Jami maosh byudjeti</td>'
+          + '<td colspan="4" class="kpi-total-label"><i class="fas fa-wallet" style="margin-right:5px;color:var(--brand);"></i>Jami maosh byudjeti</td>'
           + '<td colspan="3"></td>'
           + '<td class="tr"><span class="kpi-payout">'+fmtMoney(grandTotal)+'</span></td>'
           + '</tr>';
