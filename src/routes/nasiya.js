@@ -602,4 +602,89 @@ router.post('/excel-add', async (req, res, next) => {
   }
 });
 
+// POST /api/nasiya/seed-real-debtors
+router.post('/seed-real-debtors', async (req, res, next) => {
+  try {
+    const realDebtors = [
+      { name: "Саида", phone: "+99897 705-25-60", date: "2026-01-16", amount: 3150000, city: "Коракалпогистон  Нукуз", manager: "Ko'rsatilmadi", notes: "Izohi: Mavjud emas (Menejer: Ko'rsatilmadi)" },
+      { name: "Абдулазиз", phone: "+99890 387-20-01", date: "2026-02-04", amount: 200000, city: "Наманган", manager: "Ko'rsatilmadi", notes: "Бугун ташеди (3350000) | Qayta aloqa: 06.06.2026" },
+      { name: "Гайрат", phone: "+99888 183-69-83", date: "2026-03-04", amount: 300000, city: "Сирдарё", manager: "Мираббос", notes: "Эртага беради | Qayta aloqa: 29.06.2026 (Menejer: Мираббос)" },
+      { name: "Жизах", phone: "+99897 776-10-12", date: "2026-03-08", amount: 300000, city: "Жизах", manager: "Мираббос", notes: "Qayta aloqa: 29.06.2026 (Menejer: Мираббос)" },
+      { name: "Андижон", phone: "+99894 783-44-11", date: "2026-03-10", amount: 1250000, city: "Андижон", manager: "Мираббос", notes: "Menejer: Мираббос" },
+      { name: "Тошкент", phone: "+99897 011-11-47", date: "2026-03-27", amount: 1600000, city: "Пискент", manager: "Мираббос", notes: "Бугун беради | Qayta aloqa: 08.05.2026 (Menejer: Мираббос)" },
+      { name: "Илхом ака Лочин", phone: "+99891 683-00-71", date: "2026-06-12", amount: 2800000, city: "Кукон", manager: "Мираббос", notes: "Ойлик олса беради 2 та олди | Qayta aloqa: 05.07.2026 (Menejer: Мираббос)" },
+      { name: "Тошкент (776-97)", phone: "+99897 776-97-73", date: "2026-07-17", amount: 1200000, city: "Тошкент", manager: "Мираббос", notes: "Эски карздорлик (Menejer: Мираббос)" },
+      { name: "Кашкадарё", phone: "+99891-561-19-46", date: "2026-07-17", amount: 3400000, city: "Кашкадарё", manager: "Мираббос", notes: "Эски карздорлик (Menejer: Мираббос)" },
+      { name: "Тошкент (335-44)", phone: "95-335-44-33", date: "2026-07-28", amount: 400000, city: "Тошкент", manager: "Мираббос", notes: "Буйин массажёр олган (11250000) | Qayta aloqa: 08.08.2026 (Menejer: Мираббос)" },
+      { name: "Тошкент (641-88)", phone: "+99895 641-88-48", date: "2026-06-02", amount: 50000, city: "Тошкент", manager: "Абдумалик", notes: "50 000 колди бугун беради | Qayta aloqa: 03.08.2026 (Menejer: Абдумалик)" },
+      { name: "Сирдарё", phone: "+99850-095-27-27", date: "2026-06-12", amount: 100000, city: "Сирдарё", manager: "Абдумалик", notes: "котармади кайта алока | Qayta aloqa: 01.08.2026 (Menejer: Абдумалик)" },
+      { name: "Сурхандарё", phone: "+99833-799-09-11", date: "2026-07-01", amount: 1200000, city: "Сурхандарё", manager: "Абдумалик", notes: "Хар Жума 600 дан беради кайта алока тел очик | Qayta aloqa: 03.08.2026 (Menejer: Абдумалик)" },
+      { name: "Самарканд (151-11)", phone: "+99895-151-11-67", date: "2026-06-15", amount: 100000, city: "Самарканд", manager: "Абдумалик", notes: "1 800 000 дагавор булди 500 берди котармади кайта алока | Qayta aloqa: 03.08.2026 (Menejer: Абдумалик)" },
+      { name: "Жиззах", phone: "+99899-582-15-19", date: "2026-06-26", amount: 100000, city: "Жиззах", manager: "Абдумалик", notes: "1 700 000 дагавор 600 берди душанба беради | Qayta aloqa: 01.08.2026 (Menejer: Абдумалик)" },
+      { name: "Тошкент (435-76)", phone: "+99893-435-76-73", date: "2026-06-26", amount: 1300000, city: "Тошкент", manager: "Абдумалик", notes: "Массажёр 6 ертага кечга котармади кайта алока | Qayta aloqa: 03.08.2026 (Menejer: Абдумалик)" },
+      { name: "Тошкент (186-09)", phone: "+998931860922", date: "2026-07-09", amount: 400000, city: "Тошкент", manager: "Абдумаликк", notes: "1 600 000 Дагавор килинган кайта алока (3250000) | Qayta aloqa: 05.08.2026 (Menejer: Абдумаликк)" },
+      { name: "Тошкент (262-97)", phone: "+99877-262-97-05", date: "2026-06-23", amount: 1800000, city: "Тошкент", manager: "Кодир", notes: "1 800 000 бериш керак кутармади 102 килинади | Qayta aloqa: 01.07.2026 (Menejer: Кодир)" },
+      { name: "Наманган (0001-01)", phone: "94 0001 01 38", date: "2026-07-21", amount: 900000, city: "Наманган", manager: "Кодир", notes: "1.8 ертагаликга заказ 900 нахт колгани 20 кунда 900 | Qayta aloqa: 10.08.2026 (Menejer: Кодир)" },
+      { name: "Наманган (694-65)", phone: "90-694 65 62", date: "2026-07-20", amount: 1400000, city: "Наманган", manager: "Кодир", notes: "Хар 2 - 3 кунда 200 дан ташеди (200 берди 10.08) | Qayta aloqa: 10.08.2026 (Menejer: Кодир)" },
+      { name: "Кукон", phone: "90-586-57-74", date: "2026-07-25", amount: 600000, city: "Кукон", manager: "Кодир", notes: "600 клик А | Qayta aloqa: 10.08.2026 (Menejer: Кодир)" },
+      { name: "Фаргона (537-21)", phone: "+99890 537-21-56", date: "2026-05-26", amount: 400000, city: "Фаргона", manager: "Кодирхон", notes: "Бугун беради уирилган кодирхон ака берадилар, клиент номерини очириб юборган | Qayta aloqa: 16.06.2025 (Menejer: Кодирхон)" },
+      { name: "Фаргона (511-35)", phone: "+99855 511-35-16", date: "2026-05-26", amount: 950000, city: "Фаргога", manager: "Кодирхон", notes: "Ойлик олса беради душанба (6050000) | Qayta aloqa: 28.06.2026 (Menejer: Кодирхон)" },
+      { name: "Тошкент (683-00)", phone: "91 683-00-71", date: "2026-07-25", amount: 400000, city: "Тошкент", manager: "Исмоилхо", notes: "Исмоилхон уртоги олган 1 400 барака 1 млн берган 400 колди | Qayta aloqa: 05.09.2026 (Menejer: Исмоилхо)" },
+      { name: "Самарканд (386-07)", phone: "+99877-386-07-04", date: "2026-06-13", amount: 530000, city: "Самарканд", manager: "Аюбхон", notes: "1 800 000 келишдик 1 270 берди коганин 5-10 кунда беради очирилган | Qayta aloqa: 03.08.2026 (Menejer: Аюбхон)" },
+      { name: "Такси Наманган", phone: "+99897-828-15-55", date: "2026-03-14", amount: 1250000, city: "Кукон", manager: "Мираббос", notes: "Бугун ташаб беради | Qayta aloqa: 04.05.2026 (Menejer: Мираббос)" },
+      { name: "Такси Самарканд", phone: "+99850-511-66-99", date: "2026-06-02", amount: 1300000, city: "Самарканд", manager: "Абдумалик", notes: "Бугун ташаб беради | Qayta aloqa: 02.06.2026 (Menejer: Абдумалик)" },
+      { name: "Такси Навойи", phone: "+99897-787-97-87", date: "2026-06-03", amount: 1640000, city: "Навойи", manager: "Кодир", notes: "Бугун ташаб беради | Qayta aloqa: 11.06.2026 (Menejer: Кодир)" },
+      { name: "Такси Корапалпок", phone: "+99897-354-91-70", date: "2026-07-08", amount: 220000, city: "Корапалпок", manager: "Абдумалик", notes: "Бугун ташаб беради | Qayta aloqa: 17.06.2026 (Menejer: Абдумалик)" },
+      { name: "Хоразм Шофёр", phone: "+99877-793-81-41", date: "2026-07-21", amount: 1300000, city: "Хоразм", manager: "Ko'rsatilmadi", notes: "Бугун ташаб беради | Qayta aloqa: 08.08.2026 (Menejer: Ko'rsatilmadi)" },
+      { name: "Самарканд Шофёр (766)", phone: "+99899-766-00-58", date: "2026-07-22", amount: 1350000, city: "Самарканд", manager: "Кодир", notes: "Бугун ташаб беради | Qayta aloqa: 08.08.2026 (Menejer: Кодир)" },
+      { name: "Самарканд Шофёр (588)", phone: "+99899-588-90-09", date: "2026-07-29", amount: 1150000, city: "Самарканд", manager: "Кодир", notes: "Бугун ташаб беради | Qayta aloqa: 08.08.2026 (Menejer: Кодир)" }
+    ];
+
+    // Clear old test dummy client debts
+    await prisma.client.updateMany({
+      where: { debt: { gt: 0 } },
+      data: { debt: 0, debtDate: null, debtNotes: null }
+    });
+
+    const inserted = [];
+    for (const rd of realDebtors) {
+      let client = await prisma.client.findFirst({
+        where: { phone: rd.phone }
+      });
+
+      const dDate = new Date(rd.date);
+
+      if (client) {
+        client = await prisma.client.update({
+          where: { id: client.id },
+          data: {
+            name: rd.name,
+            city: rd.city,
+            debt: rd.amount,
+            debtDate: dDate,
+            debtNotes: rd.notes
+          }
+        });
+      } else {
+        client = await prisma.client.create({
+          data: {
+            name: rd.name,
+            phone: rd.phone,
+            city: rd.city,
+            debt: rd.amount,
+            debtDate: dDate,
+            debtNotes: rd.notes
+          }
+        });
+      }
+      inserted.push(client);
+    }
+
+    res.json({ success: true, count: inserted.length, message: "32 ta haqiqiy qarzdorlar kiritildi" });
+  } catch (error) {
+    console.error("Seed real debtors error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
