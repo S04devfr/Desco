@@ -162,14 +162,14 @@ router.get('/', async (req, res, next) => {
         { driverPhone: { contains: searchLower, mode } },
         { tags: { contains: searchLower, mode } },
         { warehouse: { contains: searchLower, mode } },
-        { client: { is: { name: { contains: searchLower, mode } } } },
-        { client: { is: { phone: { contains: searchLower, mode } } } },
-        { client: { is: { city: { contains: searchLower, mode } } } },
-        { contact: { is: { firstName: { contains: searchLower, mode } } } },
-        { contact: { is: { lastName: { contains: searchLower, mode } } } },
-        { contact: { is: { phone: { contains: searchLower, mode } } } },
-        { manager: { is: { fullName: { contains: searchLower, mode } } } },
-        { owner: { is: { fullName: { contains: searchLower, mode } } } }
+        { client: { name: { contains: searchLower, mode } } },
+        { client: { phone: { contains: searchLower, mode } } },
+        { client: { city: { contains: searchLower, mode } } },
+        { contact: { firstName: { contains: searchLower, mode } } },
+        { contact: { lastName: { contains: searchLower, mode } } },
+        { contact: { phone: { contains: searchLower, mode } } },
+        { manager: { fullName: { contains: searchLower, mode } } },
+        { owner: { fullName: { contains: searchLower, mode } } }
       ];
 
       if (!isNaN(idNum) && idNum > 0) {
@@ -179,8 +179,8 @@ router.get('/', async (req, res, next) => {
       if (cleanDigits.length >= 3) {
         searchConditions.push({ contactPhone: { contains: cleanDigits, mode } });
         searchConditions.push({ driverPhone: { contains: cleanDigits, mode } });
-        searchConditions.push({ client: { is: { phone: { contains: cleanDigits, mode } } } });
-        searchConditions.push({ contact: { is: { phone: { contains: cleanDigits, mode } } } });
+        searchConditions.push({ client: { phone: { contains: cleanDigits, mode } } });
+        searchConditions.push({ contact: { phone: { contains: cleanDigits, mode } } });
       }
 
       if (!where.AND) where.AND = [];
