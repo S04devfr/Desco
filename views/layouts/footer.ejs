@@ -72,5 +72,66 @@
   });
 })();
 </script>
+
+<!-- ── WEB PUSH NOTIFICATIONS FOR MOBILE & DESKTOP ── -->
+<script>
+(function() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
+
+  window.addEventListener('load', async function() {
+    try {
+      const reg = await navigator.serviceWorker.register('/sw.js');
+      if (Notification.permission === 'granted') {
+        initPushSubscription(reg);
+      } else if (Notification.permission !== 'denied') {
+        setTimeout(() => {
+          if (Notification.permission === 'default') {
+            Notification.requestPermission().then(perm => {
+              if (perm === 'granted') initPushSubscription(reg);
+            });
+          }
+        }, 5000);
+      }
+    } catch(e) {
+      console.warn('[Push SW Init Error]:', e.message);
+    }
+  });
+
+  async function initPushSubscription(reg) {
+    try {
+      const res = await fetch('/api/push/public-key');
+      const data = await res.json();
+      if (!data.publicKey) return;
+
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(data.publicKey)
+        });
+      }
+
+      await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription: sub.toJSON() })
+      });
+    } catch(e) {
+      console.warn('[Push Subscribe Error]:', e.message);
+    }
+  }
+})();
+</script>
 </body>
 </html>

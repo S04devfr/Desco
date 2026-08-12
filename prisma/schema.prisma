@@ -36,6 +36,7 @@ model User {
   stageHistories        DealStageHistory[]
   newActivities         Activity[]
   dealOwners            Deal[]    @relation("DealOwner")
+  pushSubscriptions     PushSubscription[]
 }
 
 model Client {
@@ -578,6 +579,19 @@ model CallLog {
   @@index([toNumber])
   @@index([createdAt])
   @@map("call_logs")
+}
+
+model PushSubscription {
+  id        Int      @id @default(autoincrement())
+  endpoint  String   @unique
+  keys      String   // JSON string of auth & p256dh keys
+  userAgent String?
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("push_subscriptions")
 }
 
 

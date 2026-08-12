@@ -182,6 +182,8 @@ app.use('/api/delivery',        require('./routes/delivery'));
 app.use('/api/export',          require('./routes/export'));
 app.use('/api/activity',        require('./routes/activity'));
 app.use('/api/telephony',       require('./routes/telephony'));
+app.use('/api/push',            require('./routes/push'));
+app.use('/api/settings/backups',require('./routes/backups'));
 
 // ── PUBLIC LEGAL PAGES (no auth required — Meta App Review uchun) ──
 app.use('/', require('./routes/legal'));

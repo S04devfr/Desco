@@ -1,5 +1,6 @@
 const prisma = require('../config/database');
 const supabase = require('../config/supabase');
+const { sendPushToRole, sendPushToUser } = require('./pushService');
 
 /**
  * Telefon raqami bo'yicha mijozni qidiradi yoki tranzaksiya orqali xavfsiz yaratadi.
@@ -914,6 +915,13 @@ async function handleUniversalLead(source, rawData, broadcast) {
     }, result.deal.id).catch(tgErr => {
       console.error('[Universal Lead Telegram Outer Error] Telegram zanjiridan kutilmagan xato:', tgErr.message);
     });
+
+    // 5b. Web Push Notification to Admins & Managers
+    sendPushToRole('admin', {
+      title: '🆕 Yangi Lead Tushdi!',
+      body: `${parsed.name || 'Mijoz'} (${cleanPhone}) — ${parsed.productName || 'Yangi lead'}`,
+      url: `/deals?dealId=${result.deal.id}`
+    }).catch(() => {});
 
     // 6. Real-time UI yangilanish (WebSocket)
     if (broadcast) {
