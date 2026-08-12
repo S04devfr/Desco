@@ -16,6 +16,9 @@
   </div>
 
   <div style="display:flex; gap:10px;">
+    <button class="btn btn-primary" onclick="restoreSeedData()" type="button" style="border-radius:8px; font-weight:700; background:#10B981; border-color:#10B981;">
+      <i class="fas fa-file-import"></i> ⚡ Barcha 4,167 Mijoz va 492 Sdelkani Qaytarish
+    </button>
     <button class="btn btn-secondary" onclick="refreshCurrentTab()" type="button" style="border-radius:8px; font-weight:600;">
       <i class="fas fa-sync-alt"></i> Yangilash
     </button>
@@ -485,6 +488,23 @@ async function savePermissionsConfig() {
       showToast('Rollar ruxsatnomasi saqlandi');
     }
   } catch(e) {}
+}
+
+async function restoreSeedData() {
+  if (!confirm("Barcha 4,167 ta mijoz va 492 ta sdelkalar zaxirasini yangi bazaga quyaymi?")) return;
+  try {
+    const res = await fetch('/api/tools/restore-seed', { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      if (window.showToast) showToast(data.message);
+      else alert(data.message);
+      setTimeout(() => window.location.href = '/deals', 1200);
+    } else {
+      alert('Xatolik: ' + (data.error || 'Server xatosi'));
+    }
+  } catch(e) {
+    alert('Xatolik: ' + e.message);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

@@ -117,6 +117,16 @@ async function ensureDefaultSeed() {
   const prisma = require('./config/database');
 
   try {
+    // ⚡ ALWAYS CHECK IF RAILWAY DB IS EMPTY (0 DEALS)
+    const dealCount = await prisma.deal.count().catch(() => 0);
+    if (dealCount === 0) {
+      console.log('⚡ Railway Database has 0 deals. Executing instant bulk seed of 492 deals & 4,167 clients...');
+      const runFastSeed = require('../prisma/seed.js');
+      if (typeof runFastSeed === 'function') {
+        await runFastSeed();
+      }
+    }
+
     const existingAdmin = await prisma.user.findFirst({
       where: { email: 'shokirovsharifjon04@gmail.com' }
     }).catch(() => null);
