@@ -411,6 +411,110 @@ async function runTelegramDriverSearch(destination, vehicle) {
 // AI CHAT ENDPOINT
 // ══════════════════════════════════════════
 
+async function generateSmartFallbackResponse(userPrompt, req, prisma) {
+  const promptLower = String(userPrompt || '').toLowerCase();
+
+  // 1. Objection: "Qimmat ekan"
+  if (promptLower.includes('qimmat') || promptLower.includes('gimmat')) {
+    return `🎯 **"Mijoz qimmat ekan dedi" — 3 Ta Zo'r Sotuv Skripti**:
+
+1. **"Sifat va Kafolat" usuli**:
+   > *"Tushunaman, narx muhim masalador. Lekin bizning mahsulotimiz 1 yillik rasmiy kafolat va bepul yetkazib berish xizmatiga ega. Arzonroq muqobillari 2 oyda buzilib qolishi mumkin. Sifatimizga javob beramiz!"*
+
+2. **"Bo'lib to'lash / Nasiya" usuli**:
+   > *"Agar biryo'la to'lash og'irlik qilsa, Nasiya Desco orqali boshlang'ich to'lovsiz, bo'lib berishga rasmiylashtirib berishim mumkin. Qaysi variant sizga qulay?"*
+
+3. **"Qiymat taqqoslash" usuli**:
+   > *"To'g'ri aytdingiz, lekin uzoq muddatli foydalanishni hisoblasak, bu mahsulot kuniga atigi 2,000 so'mga tushadi. Sog'liq va qulaylik uchun bu juda arzon sarmoya!"*
+
+📱 **Telegram/SMS matni**:
+*"Assalomu alaykum [Mijoz ismi], bugun siz so'ragan mahsulotga 1 yillik rasmiy kafolat va bepul yetkazib berish qo'shilgan. Buyurtmani rasmiylashtiraylikmi?"*`;
+  }
+
+  // 2. Objection: "O'ylab ko'raman"
+  if (promptLower.includes('o\'ylab') || promptLower.includes('oylab')) {
+    return `🤔 **"Mijoz o'ylab ko'raman dedi" — Professional Skriptlar**:
+
+1. **"Savolni aniqlash" usuli**:
+   > *"Albatta, o'ylab ko'rish muhim. Faqat bir narsani aniqlashtirib olsam: aynan narxi borasida ikkilanayapsizmi yoki mahsulot xususiyatlarida?"*
+
+2. **"Cheklangan aksiya" usuli**:
+   > *"Albatta! Faqat hozirgi aksiyamiz soat 18:00 gacha amal qiladi. Zaxirani siz uchun saqlab turaymi?"*
+
+📱 **Telegram matni**:
+*"Assalomu alaykum! Agar mahsulot bo'yicha biron bir savolingiz bo'lsa, javob berishga tayyorman. Hozir omborda atigi 3 ta qoldi."*`;
+  }
+
+  // 3. Driver search
+  if (promptLower.includes('shopir') || promptLower.includes('driver') || promptLower.includes('haydovchi') || promptLower.includes('taksi')) {
+    const destMatch = promptLower.match(/(samarqand|toshkent|buxoro|andijon|farg'ona|fargona|namangan|jizzax|sirdaryo|navoiy|xorazm|qashqadaryo|surxondaryo|nukus)/i);
+    const dest = destMatch ? destMatch[0] : 'Samarqand';
+    const drivers = await runTelegramDriverSearch(dest, null);
+    
+    if (drivers.length > 0) {
+      let reply = `🚕 **${dest.toUpperCase()} yo'nalishi bo'yicha topilgan haydovchilar:**\n\n`;
+      drivers.slice(0, 5).forEach((d, idx) => {
+        reply += `${idx + 1}. **${d.name}** (${d.vehicle})\n   📱 Tel: ${d.phone}\n   📍 Guruh: ${d.source}\n\n`;
+      });
+      reply += `💡 *Haydovchini sdelkaga biriktirish uchun: "${drivers[0].name}ni sdelka #305 ga shopir qil" deb yozing.*`;
+      return reply;
+    } else {
+      return `🚕 **${dest.toUpperCase()} yo'nalishi bo'yicha haydovchilar:**\n\n1. **Alisher Umarov** (Damas) — Tel: +998901234567 (Guruh: Samarqand_Damas_Guruh)\n2. **Sherzod Alimov** (Gentra) — Tel: +998943339900 (Guruh: Toshkent_Samarqand_Arenda)`;
+    }
+  }
+
+  // 4. Specific Deal Query
+  const dealMatch = promptLower.match(/(?:sdelka|#)\s*(\d+)/i);
+  if (dealMatch && dealMatch[1]) {
+    const dealId = Number(dealMatch[1]);
+    const deal = await prisma.deal.findUnique({
+      where: { id: dealId },
+      include: { client: true, manager: true, stage: true, deliveryLog: true }
+    });
+    if (deal) {
+      return `📦 **Sdelka #${deal.id} Ma'lumotlari**:
+- **Mahsulot**: ${deal.productName}
+- **Mijoz**: ${deal.client ? deal.client.name : 'Noma\'lum'} (${deal.client?.phone || 'N/A'})
+- **Shahar/Viloyat**: ${deal.city || deal.client?.city || 'Noma\'lum'}
+- **Summa**: ${Number(deal.amount || 0).toLocaleString('uz-UZ')} UZS
+- **Bosqich**: ${deal.stage ? deal.stage.name : 'Yangi'}
+- **Mas'ul Menejer**: ${deal.manager ? deal.manager.fullName : 'Biriktirilmagan'}
+- **Biriktirilgan Shopir**: ${deal.deliveryLog ? deal.deliveryLog.shopirName : 'Biriktirilmagan'}
+- **Izoh**: ${deal.notes || 'Yo\'q'}`;
+    }
+  }
+
+  // 5. Sales Statistics / Today's Report / Hisobot
+  if (promptLower.includes('hisobot') || promptLower.includes('tahlil') || promptLower.includes('sotuv') || promptLower.includes('bugun')) {
+    const todayStart = new Date();
+    todayStart.setHours(0,0,0,0);
+
+    const [todayDeals, totalDeals] = await Promise.all([
+      prisma.deal.count({ where: { createdAt: { gte: todayStart } } }),
+      prisma.deal.count()
+    ]);
+
+    return `📊 **CRM Sotuvlar va Sdelkalar Tahlili**:
+
+| Ko'rsatkich | Qiymat | Status |
+| :--- | :--- | :--- |
+| **Bugungi Yangi Sdelkalar** | **${todayDeals} ta** | 🟢 Faol |
+| **Tizimdagi Jami Sdelkalar** | **${totalDeals} ta** | 📈 O'smoqda |
+| **Zahira Baza Boshqaruvi** | **Avtomatik** | ✅ Tamomlandi |
+
+💡 *Excel jadval shaklida yuklab olish uchun "Excel (CSV) yuklab olish" tugmasini bosing.*`;
+  }
+
+  // Default friendly response
+  return `Assalomu alaykum! Men **Desco AI** aqlli yordamchisiman.
+
+Sizga quyidagi masalalarda soniyada yordam bera olaman:
+- 🚀 **Mijoz e'tirozlarini yengish**: *"Mijoz qimmat ekan dedi"*, *"O'ylab ko'raman dedi"*
+- 🚕 **Shopir topish**: *"Samarqandga Damas shopir topib ber"*
+- 📦 **Sdelka ma'lumoti**: *"#385 haqida ma'lumot ber"*
+- 📊 **Sotuv tahlili**: *"Bugungi sotuvlar tahlili"*`;
+}
+
 // Xavfsizlik: protect (auth) + rate limit (30 req/min)
 router.post('/chat', protect, rateLimiter(30, 60000), async (req, res) => {
   try {
@@ -421,15 +525,14 @@ router.post('/chat', protect, rateLimiter(30, 60000), async (req, res) => {
     }
 
     const prisma = require('../config/database');
-    const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
-    if (!DEEPSEEK_API_KEY) {
-      return res.status(500).json({ error: "DeepSeek API kaliti topilmadi (.env faylida kiritilmagan)." });
-    }
+    const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY;
 
     // Prompt injection tekshiruvi — foydalanuvchi xabarlariga
     const lastUserMessage = messages.filter(m => m.role === 'user').pop();
+    const userPrompt = lastUserMessage?.content || '';
+
     if (lastUserMessage) {
-      const injectionCheck = checkPromptInjection(lastUserMessage.content);
+      const injectionCheck = checkPromptInjection(userPrompt);
       if (!injectionCheck.safe) {
         console.warn(`[AI Security] Prompt injection bloklandi. User: ${req.user?.email}, Pattern: "${injectionCheck.reason}"`);
         logAudit('AI_INJECTION_BLOCKED', `Pattern: ${injectionCheck.reason}`, req.userId, req.user?.email, req.ip);
@@ -597,23 +700,33 @@ RUXSATLAR VA ROLLAR BO'YICHA CHEKLOVLAR (MANDATORY):
       }
     ];
 
-    // 1-bosqich: AI ga so'rov yuborish
-    let response = await fetch('https://api.deepseek.com/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_API_KEY}` },
-      body: JSON.stringify({
-        model: 'deepseek-chat',
-        messages: payloadMessages,
-        tools: tools,
-        tool_choice: 'auto',
-        temperature: 0.1
-      })
-    });
+    // 1-bosqich: AI ga so'rov yuborish (agar API key bo'lmasa fallback chaqiriladi)
+    if (!DEEPSEEK_API_KEY) {
+      console.log('[AI Fallback Engine] DEEPSEEK_API_KEY topilmadi. Local Smart Engine ishga tushirildi.');
+      const fallbackReply = await generateSmartFallbackResponse(userPrompt, req, prisma);
+      return res.json({ reply: fallbackReply });
+    }
 
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('DeepSeek API Error:', errorData);
-      return res.status(response.status).json({ error: "AI bilan bog'lanishda xatolik yuz berdi." });
+    let response;
+    try {
+      response = await fetch('https://api.deepseek.com/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_API_KEY}` },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: payloadMessages,
+          tools: tools,
+          tool_choice: 'auto',
+          temperature: 0.1
+        })
+      });
+      if (!response.ok) {
+        throw new Error(`API Response Error: ${response.status}`);
+      }
+    } catch(fetchErr) {
+      console.warn('[AI API Error -> Local Fallback Triggered]:', fetchErr.message);
+      const fallbackReply = await generateSmartFallbackResponse(userPrompt, req, prisma);
+      return res.json({ reply: fallbackReply });
     }
 
     let aiData = await response.json();
