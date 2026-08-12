@@ -1,9 +1,6 @@
-<%- include('../layouts/header') %>
-<%- include('../layouts/sidebar') %>
-<%- include('../layouts/topbar') %>
+<%- include('../layouts/header', { title: 'Tezkor Enterprise Hub — DESCO CRM', activePage: 'extra-tools', user: user }) %>
 
-<div class="content-wrapper">
-  <div class="page-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+<div class="page-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
     <div>
       <h1 class="page-title" style="font-size:24px; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:10px;">
         <i class="fas fa-rocket" style="color:#0052FF;"></i> Tezkor Enterprise Hub
@@ -186,7 +183,6 @@
       </button>
     </div>
   </div>
-</div>
 
 <style>
 .tools-tab-btn {
