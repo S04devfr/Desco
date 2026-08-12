@@ -1353,11 +1353,11 @@ router.delete('/:id', requireRole('admin', 'manager'), async (req, res, next) =>
       } catch(stockErr) { console.error('[Stock delete-rollback]', stockErr); }
     }
 
-    await prisma.$transaction([
-      prisma.task.deleteMany({ where: { dealId: Number(req.params.id) } }),
-      prisma.activityLog.deleteMany({ where: { dealId: Number(req.params.id) } }),
-      prisma.deal.delete({ where: { id: Number(req.params.id) } })
-    ])
+    await prisma.$transaction(async (tx) => {
+      await tx.task.deleteMany({ where: { dealId: Number(req.params.id) } })
+      await tx.activityLog.deleteMany({ where: { dealId: Number(req.params.id) } })
+      await tx.deal.delete({ where: { id: Number(req.params.id) } })
+    })
     
     const broadcast = req.app.get('broadcast');
     if (broadcast) broadcast({ type: 'deal_deleted', dealId: Number(req.params.id) });

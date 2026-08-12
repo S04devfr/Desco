@@ -174,12 +174,38 @@ function createSafePrismaClient() {
   if (typeof client.$disconnect !== 'function') {
     client.$disconnect = () => Promise.resolve();
   }
-  if (typeof client.$transaction !== 'function') {
-    client.$transaction = async (arg) => {
-      if (typeof arg === 'function') return arg(client);
-      throw new PrismaClientOutOfSyncError('$transaction');
-    };
-  }
+  const originalTransaction = typeof client.$transaction === 'function' ? client.$transaction.bind(client) : null;
+  client.$transaction = async (arg, options) => {
+    if (typeof arg === 'function') {
+      if (originalTransaction) return originalTransaction(arg, options);
+      return arg(client);
+    }
+    if (Array.isArray(arg)) {
+      if (originalTransaction) {
+        try {
+          return await originalTransaction(arg, options);
+        } catch (err) {
+          if (err.message && err.message.includes('Prisma Client promises')) {
+            return await originalTransaction(async (tx) => {
+              const results = [];
+              for (const item of arg) {
+                results.push(await item);
+              }
+              return results;
+            }, options);
+          }
+          throw err;
+        }
+      }
+      const results = [];
+      for (const p of arg) {
+        results.push(await p);
+      }
+      return results;
+    }
+    if (originalTransaction) return originalTransaction(arg, options);
+    throw new PrismaClientOutOfSyncError('$transaction');
+  };
   if (typeof client.$executeRawUnsafe !== 'function') {
     client.$executeRawUnsafe = () => Promise.reject(new PrismaClientOutOfSyncError('$executeRawUnsafe'));
   }

@@ -159,13 +159,13 @@ router.delete('/users/:id', async (req, res, next) => {
     const id = Number(req.params.id)
     if (id === req.userId) return res.status(400).json({ message: "O'zingizni o'chira olmaysiz" })
     // Bog'liq yozuvlarni tozalash (FK violation oldini olish)
-    await prisma.$transaction([
-      prisma.managerSalary.deleteMany({ where: { managerId: id } }),
-      prisma.managerFine.deleteMany({ where: { managerId: id } }),
-      prisma.deal.updateMany({ where: { managerId: id }, data: { managerId: null } }),
-      prisma.task.updateMany({ where: { assignedToId: id }, data: { assignedToId: null } }),
-      prisma.user.delete({ where: { id } })
-    ])
+    await prisma.$transaction(async (tx) => {
+      await tx.managerSalary.deleteMany({ where: { managerId: id } })
+      await tx.managerFine.deleteMany({ where: { managerId: id } })
+      await tx.deal.updateMany({ where: { managerId: id }, data: { managerId: null } })
+      await tx.task.updateMany({ where: { assignedToId: id }, data: { assignedToId: null } })
+      await tx.user.delete({ where: { id } })
+    })
     res.json({ message: "Foydalanuvchi o'chirildi" })
   } catch (error) {
     if (error.code === 'P2025') return res.status(404).json({ message: 'Foydalanuvchi topilmadi' })

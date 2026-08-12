@@ -180,17 +180,17 @@ router.post('/transfer', requireRole('admin', 'manager'), async (req, res) => {
     }
 
     // Tranzaksiya
-    await prisma.$transaction([
-      prisma.warehouseStock.update({
+    await prisma.$transaction(async (tx) => {
+      await tx.warehouseStock.update({
         where: { warehouse_productName_color: { warehouse: fromWarehouse, productName, color: itemColor } },
         data: { stock: { decrement: parseInt(qty) } }
-      }),
-      prisma.warehouseStock.upsert({
+      })
+      await tx.warehouseStock.upsert({
         where: { warehouse_productName_color: { warehouse: toWarehouse, productName, color: itemColor } },
         update: { stock: { increment: parseInt(qty) } },
         create: { warehouse: toWarehouse, productName, color: itemColor, stock: parseInt(qty) }
-      }),
-      prisma.warehouseLog.create({
+      })
+      await tx.warehouseLog.create({
         data: {
           warehouse: fromWarehouse,
           productName,
@@ -200,8 +200,8 @@ router.post('/transfer', requireRole('admin', 'manager'), async (req, res) => {
           notes: `${toWarehouse}ga ko'chirildi${notes ? '. ' + notes : ''}`,
           userName: req.user?.fullName || req.session?.user?.fullName || null
         }
-      }),
-      prisma.warehouseLog.create({
+      })
+      await tx.warehouseLog.create({
         data: {
           warehouse: toWarehouse,
           productName,
@@ -212,7 +212,7 @@ router.post('/transfer', requireRole('admin', 'manager'), async (req, res) => {
           userName: req.user?.fullName || req.session?.user?.fullName || null
         }
       })
-    ]);
+    });
 
     const displayColor = itemColor !== 'oddiy' ? ` (${itemColor})` : '';
     res.json({ success: true, message: `${qty} ta ${productName}${displayColor} — ${fromWarehouse} → ${toWarehouse}` });
