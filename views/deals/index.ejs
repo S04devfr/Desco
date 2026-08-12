@@ -1179,6 +1179,14 @@
       <div class="modal-body">
         <input type="hidden" id="f-id">
 
+        <div id="yangiLeadLockBanner" class="hidden" style="margin-bottom:16px; padding:12px 16px; border-radius:10px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3); color:#D97706; font-size:13px; font-weight:700; display:flex; align-items:center; gap:10px;">
+          <i class="fas fa-lock" style="font-size:18px; flex-shrink:0;"></i>
+          <div>
+            <div>🔒 Yangi Lead (Muzlatilgan)</div>
+            <div style="font-weight:500; font-size:12px; margin-top:2px; color:var(--text-secondary);">Ma'lumotlarni o'zgartirish taqiqlangan. Sdelkani o'zingizga biriktirish uchun pastdan yangi bosqichni tanlang!</div>
+          </div>
+        </div>
+
         <div style="background:var(--bg-secondary); padding:16px; border-radius:10px; margin-bottom:16px; border:1px solid var(--border)">
           <div style="font-size:12px; font-weight:600; color:var(--text-tertiary); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px">Mijoz Ma'lumotlari</div>
           <div class="form-group">
@@ -3187,10 +3195,84 @@ function openDealModal(defaultStageId, editId) {
     }
   }
 
-  const container = document.getElementById('dealModalInstRowsContainer');
-  if (container) container.innerHTML = '';
-  dealModalStageChanged();
-  updateStockVariantsForDeal();
+  // 🔒 YANGI LEAD MUZLATISH (LOCKED READ-ONLY MODAL)
+  const banner = document.getElementById('yangiLeadLockBanner');
+  const saveBtn = document.getElementById('dealSaveBtn');
+  const inputsToLock = [
+    'f-name', 'f-contactName', 'f-contactPhone', 'f-city',
+    'f-amount', 'f-paidAmount', 'f-notes', 'f-warehouse',
+    'f-color', 'f-driverPhone', 'f-source', 'f-deadline'
+  ];
+
+  if (editId) {
+    const deal = _deals?.find(d => d?.id === editId);
+    const currentStage = _stages?.find(s => s.id === deal?.stageId);
+    const isYangiStage = currentStage && currentStage.name.toLowerCase().includes('yangi');
+
+    if (isYangiStage && _userRole !== 'admin') {
+      if (banner) banner.classList.remove('hidden');
+      inputsToLock.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = true;
+      });
+
+      const stageEl = document.getElementById('f-stageId');
+      if (stageEl) {
+        stageEl.disabled = false;
+        stageEl.onchange = function() {
+          const selectedStageId = Number(this.value);
+          if (selectedStageId !== deal.stageId) {
+            if (saveBtn) {
+              saveBtn.disabled = false;
+              saveBtn.innerHTML = '<i class="fas fa-hand-holding-usd"></i> Sdelkani O\'zlashtirish va O\'tkazish';
+              saveBtn.classList.remove('btn-secondary');
+              saveBtn.classList.add('btn-primary');
+            }
+          } else {
+            if (saveBtn) {
+              saveBtn.disabled = true;
+              saveBtn.textContent = 'Saqlash';
+            }
+          }
+          dealModalStageChanged();
+        };
+      }
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saqlash';
+      }
+    } else {
+      if (banner) banner.classList.add('hidden');
+      inputsToLock.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = false;
+      });
+      const stageEl = document.getElementById('f-stageId');
+      if (stageEl) {
+        stageEl.disabled = false;
+        stageEl.onchange = dealModalStageChanged;
+      }
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = 'Saqlash';
+      }
+    }
+  } else {
+    if (banner) banner.classList.add('hidden');
+    inputsToLock.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.disabled = false;
+    });
+    const stageEl = document.getElementById('f-stageId');
+    if (stageEl) {
+      stageEl.disabled = false;
+      stageEl.onchange = dealModalStageChanged;
+    }
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = 'Saqlash';
+    }
+  }
 
   if (modal) modal.classList.remove('hidden');
   setTimeout(() => { const el = document.getElementById('f-name'); if (el) el.focus(); }, 100);

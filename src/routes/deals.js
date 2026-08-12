@@ -851,11 +851,26 @@ router.patch('/:id', async (req, res, next) => {
       contactName, contactPhone, city, createdAt, warehouse, productColor, driverPhone, tags
     } = req.body
 
-    const existing = await prisma.deal.findUnique({ where: { id: Number(req.params.id) } })
+    const existing = await prisma.deal.findUnique({
+      where: { id: Number(req.params.id) },
+      include: { stage: true }
+    })
     if (!existing) return res.status(404).json({ message: 'Sdelka topilmadi' })
 
     if (req.user?.role !== 'admin' && existing.managerId !== null && existing.managerId !== req.userId) {
       return res.status(403).json({ message: "Boshqa menejer sdelkasini o'zgartira olmaysiz" })
+    }
+
+    // 🔒 YANGI LEAD MUZLATISH QOIDASI:
+    const isYangiStage = existing.stage && existing.stage.name.toLowerCase().includes('yangi');
+    const newStageIdNum = stageId ? Number(stageId) : null;
+    
+    if (isYangiStage && req.user?.role !== 'admin') {
+      if (!newStageIdNum || newStageIdNum === existing.stageId) {
+        return res.status(403).json({
+          message: "Yangi bosqichdagi sdelka ma'lumotlarini tahrirlash taqiqlangan. Menejer bo'lib biriktirilish uchun sdelka bosqichini o'zgartiring!"
+        });
+      }
     }
 
     let resolvedClientId = clientId !== undefined ? (clientId ? Number(clientId) : null) : existing.clientId;
