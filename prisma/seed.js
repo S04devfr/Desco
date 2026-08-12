@@ -1,214 +1,132 @@
-const { PrismaClient } = require('@prisma/client')
-const bcrypt = require('bcryptjs')
-const prisma = new PrismaClient()
+const { PrismaClient } = require('@prisma/client');
+const fs = require('fs');
+const path = require('path');
+
+const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🔄 Seeding database with rich mockup data...')
-
-  // Clear existing data safely
-  await prisma.warehouseLog.deleteMany().catch(() => {})
-  await prisma.warehouseStock.deleteMany().catch(() => {})
-  await prisma.instagramMessage.deleteMany().catch(() => {})
-  await prisma.task.deleteMany().catch(() => {})
-  await prisma.expense.deleteMany().catch(() => {})
-  await prisma.activityLog.deleteMany().catch(() => {})
-  await prisma.deal.deleteMany().catch(() => {})
-  await prisma.client.deleteMany().catch(() => {})
-  await prisma.pipelineStage.deleteMany().catch(() => {})
-  await prisma.pipeline.deleteMany().catch(() => {})
-  await prisma.user.deleteMany().catch(() => {})
-  await prisma.companySettings.deleteMany().catch(() => {})
-
-  // 1. Create Default Pipeline
-  const pipeline = await prisma.pipeline.create({
-    data: {
-      name: 'Asosiy voronka',
-      isDefault: true,
-      color: '#007AFF',
-      order: 1
-    }
-  })
-
-  // 2. Create Pipeline Stages
-  const stages = []
-  const stageData = [
-    { name: 'Yangi', color: '#1565C0', order: 1, isDefault: true },
-    { name: 'Muzokaralar', color: '#F57F17', order: 2, isDefault: false },
-    { name: 'Taklif', color: '#512DA8', order: 3, isDefault: false },
-    { name: 'Shopirdagi pul', color: '#007AFF', order: 4, isDefault: false },
-    { name: 'Nasiya Desco', color: '#34C759', order: 5, isDefault: false },
-    { name: 'Nasiya Ishonch', color: '#FF9500', order: 6, isDefault: false },
-    { name: 'Nasiya Baraka', color: '#FF3B30', order: 7, isDefault: false },
-    { name: 'Yutilgan', color: '#2E7D32', order: 8, isDefault: false },
-    { name: "Yo'qotilgan", color: '#C62828', order: 9, isDefault: false }
-  ]
-
-  for (const s of stageData) {
-    const created = await prisma.pipelineStage.create({
-      data: { ...s, pipelineId: pipeline.id }
-    })
-    stages.push(created)
+  const seedPath = path.join(__dirname, 'seed_data.json');
+  if (!fs.existsSync(seedPath)) {
+    console.log('⚠️ No seed_data.json file found. Skipping data import.');
+    return;
   }
-  console.log('✅ Pipeline stages created')
 
-  // Hash distinct secure passwords for each manager
-  const sharifPass = await bcrypt.hash('Sharifjon@2026!', 10)
-  const adminPass  = await bcrypt.hash('Admin@Desco2026!', 10)
-  const abdumalikPass = await bcrypt.hash('Abdumalik#2026', 10)
-  const qodirjonPass  = await bcrypt.hash('Qodirjon#2026', 10)
-  const bekzodPass    = await bcrypt.hash('Bekzod#2026', 10)
-  const ruxshonaPass  = await bcrypt.hash('Ruxshona#2026', 10)
-  const parvinaPass   = await bcrypt.hash('Parvina#2026', 10)
+  console.log('🔄 Loading CRM Seed Data into database...');
+  const fileContent = fs.readFileSync(seedPath, 'utf8');
+  const backup = JSON.parse(fileContent);
+  const data = backup.data;
 
-  // 3. Create Admin Users
-  const admin = await prisma.user.create({
-    data: {
-      fullName: 'Administrator',
-      email: 'admin@desco.com',
-      password: adminPass,
-      role: 'admin'
-    }
-  })
-
-  const sharifjon = await prisma.user.create({
-    data: {
-      fullName: 'Sharifjon',
-      email: 'shokirovsharifjon04@gmail.com',
-      password: sharifPass,
-      role: 'admin'
-    }
-  })
-
-  // 4. Create Manager Users (Unique Logins & Passwords)
-  const mgr1 = await prisma.user.create({
-    data: { fullName: 'Abdumalik', email: 'abdumalik@desco.com', password: abdumalikPass, role: 'manager' }
-  })
-  const mgr2 = await prisma.user.create({
-    data: { fullName: 'Qodirjon', email: 'qodirjon@desco.com', password: qodirjonPass, role: 'manager' }
-  })
-  const mgr3 = await prisma.user.create({
-    data: { fullName: 'Bekzod', email: 'bekzod@desco.com', password: bekzodPass, role: 'manager' }
-  })
-  const mgr4 = await prisma.user.create({
-    data: { fullName: 'Ruxshona', email: 'ruxshona@desco.com', password: ruxshonaPass, role: 'manager' }
-  })
-  const mgr5 = await prisma.user.create({
-    data: { fullName: 'Parvina', email: 'parvina@desco.com', password: parvinaPass, role: 'manager' }
-  })
-  console.log('✅ All 7 Users seeded with distinct secure credentials')
-
-  // 5. Create Clients
-  const cities = ['Toshkent', 'Qo\'qon', 'Farg\'ona', 'Andijon', 'Namangan', 'Buxoro', 'Samarqand']
-  const clientsData = [
-    { name: 'Aziz Karimov', phone: '+998901234567', company: 'Karimov Trading', city: 'Toshkent', ownerId: mgr1.id },
-    { name: 'Dilnoza Yusupova', phone: '+998935552211', company: 'Dilnoza VIP', city: 'Qo\'qon', ownerId: mgr2.id },
-    { name: 'Jasur Umarov', phone: '+998946663344', company: 'Umarov & Co', city: 'Farg\'ona', ownerId: mgr3.id },
-    { name: 'Nodira Aliyeva', phone: '+998971118899', company: 'Nodira Grand', city: 'Andijon', ownerId: mgr1.id },
-    { name: 'Sherzod Tojiyev', phone: '+998908887766', company: 'Tojiyev MChJ', city: 'Namangan', ownerId: mgr2.id },
-    { name: 'Malika Sobirova', phone: '+998993332211', company: 'Sobirova Retail', city: 'Samarqand', ownerId: mgr3.id },
-    { name: 'Bobur Mansurov', phone: '+998951110099', company: 'Mansurov B2B', city: 'Buxoro', ownerId: mgr1.id },
-    { name: 'Kamola Rustamova', phone: '+998907775533', company: 'Kamola Invest', city: 'Toshkent', ownerId: mgr2.id }
-  ]
-
-  const clients = []
-  for (const c of clientsData) {
-    const created = await prisma.client.create({ data: c })
-    clients.push(created)
-  }
-  console.log('✅ Clients seeded')
-
-  // 6. Seed Warehouse Stocks
-  const products = [
-    'Massajor Aparati 5-in-1',
-    'Massajor Pistolet (Pro)',
-    'Oyoq Massajori Comfort',
-    'Bel Massajori Smart',
-    'Massaj Kreslosi Deluxe'
-  ]
-
-  const warehouses = ['Toshkent', 'Qo\'qon']
-  for (const w of warehouses) {
-    for (const p of products) {
-      await prisma.warehouseStock.create({
-        data: {
-          warehouse: w,
-          productName: p,
-          stock: Math.floor(Math.random() * 40) + 20 // 20 to 60 items
-        }
-      })
+  // 1. Seed Users
+  if (data.users && data.users.length > 0) {
+    console.log(`🌱 Seeding ${data.users.length} Users...`);
+    for (const u of data.users) {
+      const { id, ...uData } = u;
+      await prisma.user.upsert({
+        where: { email: u.email },
+        update: { ...uData },
+        create: { id, ...uData }
+      });
     }
   }
-  console.log('✅ Warehouse stocks seeded')
 
-  // 7. Seed Deals (distributed across stages to make funnel complete)
-  const getStageId = (name) => stages.find(s => s.name === name).id
-  const dealsData = [
-    // Won Deals
-    { productName: 'Massajor Aparati 5-in-1', amount: 1500000, paidAmount: 1500000, status: 'won', stageId: getStageId('Yutilgan'), warehouse: 'Toshkent', clientId: clients[0].id, managerId: mgr1.id },
-    { productName: 'Massajor Pistolet (Pro)', amount: 1200000, paidAmount: 1200000, status: 'won', stageId: getStageId('Yutilgan'), warehouse: 'Qo\'qon', clientId: clients[1].id, managerId: mgr2.id },
-    { productName: 'Oyoq Massajori Comfort', amount: 2200000, paidAmount: 2200000, status: 'won', stageId: getStageId('Yutilgan'), warehouse: 'Toshkent', clientId: clients[2].id, managerId: mgr3.id },
-    
-    // Nasiya (Installment) Deals
-    { productName: 'Massaj Kreslosi Deluxe', amount: 12000000, paidAmount: 4000000, status: 'won', stageId: getStageId('Nasiya Desco'), warehouse: 'Toshkent', clientId: clients[3].id, managerId: mgr1.id },
-    { productName: 'Bel Massajori Smart', amount: 1800000, paidAmount: 600000, status: 'won', stageId: getStageId('Nasiya Ishonch'), warehouse: 'Qo\'qon', clientId: clients[4].id, managerId: mgr2.id },
-    { productName: 'Oyoq Massajori Comfort', amount: 2200000, paidAmount: 1100000, status: 'won', stageId: getStageId('Nasiya Baraka'), warehouse: 'Toshkent', clientId: clients[5].id, managerId: mgr3.id },
-
-    // Shipping (Shopirdagi pul)
-    { productName: 'Massajor Pistolet (Pro)', amount: 1200000, paidAmount: 0, status: 'won', stageId: getStageId('Shopirdagi pul'), warehouse: 'Toshkent', clientId: clients[6].id, managerId: mgr1.id },
-    { productName: 'Bel Massajori Smart', amount: 1800000, paidAmount: 0, status: 'won', stageId: getStageId('Shopirdagi pul'), warehouse: 'Qo\'qon', clientId: clients[7].id, managerId: mgr2.id },
-
-    // Negotiation / Active Deals
-    { productName: 'Massaj Kreslosi Deluxe', amount: 12000000, paidAmount: 0, status: 'new', stageId: getStageId('Muzokaralar'), warehouse: 'Toshkent', clientId: clients[0].id, managerId: mgr1.id },
-    { productName: 'Massajor Aparati 5-in-1', amount: 1500000, paidAmount: 0, status: 'new', stageId: getStageId('Taklif'), warehouse: 'Qo\'qon', clientId: clients[1].id, managerId: mgr2.id },
-    { productName: 'Oyoq Massajori Comfort', amount: 2200000, paidAmount: 0, status: 'new', stageId: getStageId('Yangi'), warehouse: 'Toshkent', clientId: clients[2].id, managerId: mgr3.id },
-
-    // Canceled (Lost) Deals
-    { productName: 'Massajor Pistolet (Pro)', amount: 1200000, paidAmount: 0, status: 'lost', stageId: getStageId('Yo\'qotilgan'), warehouse: 'Toshkent', clientId: clients[3].id, managerId: mgr1.id },
-    { productName: 'Bel Massajori Smart', amount: 1800000, paidAmount: 0, status: 'lost', stageId: getStageId('Yo\'qotilgan'), warehouse: 'Qo\'qon', clientId: clients[4].id, managerId: mgr2.id }
-  ]
-
-  for (const d of dealsData) {
-    await prisma.deal.create({
-      data: {
-        ...d,
-        pipelineId: pipeline.id
-      }
-    })
+  // 2. Seed Pipelines & Stages
+  if (data.pipelines && data.pipelines.length > 0) {
+    console.log(`🌱 Seeding ${data.pipelines.length} Pipelines...`);
+    for (const p of data.pipelines) {
+      const { id, ...pData } = p;
+      await prisma.pipeline.upsert({
+        where: { id },
+        update: { ...pData },
+        create: { id, ...pData }
+      });
+    }
   }
-  console.log('✅ Deals seeded')
 
-  // 8. Seed Marketing Expenses (Instagram Target)
-  const now = new Date()
-  const expData = [
-    { description: 'Instagram Target Ad Campaign (June)', amount: 3500000, category: 'marketing', createdById: sharifjon.id, createdAt: new Date(now.getFullYear(), now.getMonth(), 5) },
-    { description: 'Instagram Target Ad Campaign (July)', amount: 4500000, category: 'marketing', createdById: sharifjon.id, createdAt: now },
-    { description: 'Ofis ijarasi va xarajatlari', amount: 2500000, category: 'office', createdById: admin.id, createdAt: now },
-    { description: 'Kuryer va logistika xarajatlari', amount: 1200000, category: 'logistics', createdById: admin.id, createdAt: now }
-  ]
-
-  for (const e of expData) {
-    await prisma.expense.create({ data: e })
+  if (data.pipelineStages && data.pipelineStages.length > 0) {
+    console.log(`🌱 Seeding ${data.pipelineStages.length} Pipeline Stages...`);
+    for (const st of data.pipelineStages) {
+      const { id, ...stData } = st;
+      await prisma.pipelineStage.upsert({
+        where: { id },
+        update: { ...stData },
+        create: { id, ...stData }
+      });
+    }
   }
-  console.log('✅ Expenses seeded')
 
-  // 9. Seed Tasks
-  await prisma.task.create({ data: { title: 'Mijoz Aziz Karimov bilan bog\'lanish', dueDate: now, dueTime: '11:00', assignedToId: mgr1.id, clientId: clients[0].id } })
-  await prisma.task.create({ data: { title: 'Dilnoza Yusupovaga kurer jo\'natish', dueDate: now, dueTime: '15:30', assignedToId: mgr2.id, clientId: clients[1].id } })
-  await prisma.task.create({ data: { title: 'Jasur Umarovga yangi taklif jo\'natish', dueDate: now, dueTime: '17:00', assignedToId: mgr3.id, clientId: clients[2].id } })
-  console.log('✅ Tasks seeded')
+  // 3. Seed Clients (4167 clients)
+  if (data.clients && data.clients.length > 0) {
+    console.log(`🌱 Seeding ${data.clients.length} Clients...`);
+    for (const c of data.clients) {
+      const { id, ...cData } = c;
+      await prisma.client.upsert({
+        where: { id },
+        update: { ...cData },
+        create: { id, ...cData }
+      });
+    }
+  }
 
-  // 10. Default company settings
-  await prisma.companySettings.create({
-    data: { companyName: 'DESCO CRM', currency: 'UZS' }
-  })
+  // 4. Seed Deals (492 deals)
+  if (data.deals && data.deals.length > 0) {
+    console.log(`🌱 Seeding ${data.deals.length} Deals...`);
+    for (const d of data.deals) {
+      const { id, ...dData } = d;
+      await prisma.deal.upsert({
+        where: { id },
+        update: { ...dData },
+        create: { id, ...dData }
+      });
+    }
+  }
 
-  console.log('🎉 Seeding successfully completed!')
+  // 5. Seed Tasks (88 tasks)
+  if (data.tasks && data.tasks.length > 0) {
+    console.log(`🌱 Seeding ${data.tasks.length} Tasks...`);
+    for (const t of data.tasks) {
+      const { id, ...tData } = t;
+      await prisma.task.upsert({
+        where: { id },
+        update: { ...tData },
+        create: { id, ...tData }
+      });
+    }
+  }
+
+  // 6. Seed Expenses
+  if (data.expenses && data.expenses.length > 0) {
+    console.log(`🌱 Seeding ${data.expenses.length} Expenses...`);
+    for (const e of data.expenses) {
+      const { id, ...eData } = e;
+      await prisma.expense.upsert({
+        where: { id },
+        update: { ...eData },
+        create: { id, ...eData }
+      });
+    }
+  }
+
+  // 7. Seed Installments (Nasiyalar)
+  if (data.installments && data.installments.length > 0) {
+    console.log(`🌱 Seeding ${data.installments.length} Installments...`);
+    for (const inst of data.installments) {
+      const { id, ...instData } = inst;
+      await prisma.installment.upsert({
+        where: { id },
+        update: { ...instData },
+        create: { id, ...instData }
+      });
+    }
+  }
+
+  console.log('✅ CRM Seed Data import finished successfully!');
 }
 
 main()
-  .then(() => prisma.$disconnect())
-  .catch(async (e) => {
-    console.error('❌ Seeding failed:', e)
-    await prisma.$disconnect()
-    process.exit(1)
+  .catch((e) => {
+    console.error('❌ Seed error:', e);
+    process.exit(1);
   })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
