@@ -119,9 +119,10 @@ async function ensureDefaultSeed() {
   try {
     // ⚡ ALWAYS CHECK IF RAILWAY DB IS EMPTY (0 DEALS)
     const dealCount = await prisma.deal.count().catch(() => 0);
+    console.log(`[Database Audit] Current deal count: ${dealCount}`);
     if (dealCount === 0) {
       console.log('⚡ Railway Database has 0 deals. Executing instant bulk seed of 492 deals & 4,167 clients...');
-      const runFastSeed = require('../prisma/seed.js');
+      const runFastSeed = require(path.join(__dirname, '../prisma/seed.js'));
       if (typeof runFastSeed === 'function') {
         await runFastSeed();
       }

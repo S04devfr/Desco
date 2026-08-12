@@ -230,7 +230,8 @@ router.post('/permissions', (req, res) => {
 // 6. RESTORE SEED DATA (IMPORT ALL 4,167 CLIENTS & 492 DEALS)
 router.post('/restore-seed', async (req, res) => {
   try {
-    const runFastSeed = require('../../prisma/seed.js');
+    const path = require('path');
+    const runFastSeed = require(path.join(__dirname, '../../prisma/seed.js'));
     await runFastSeed();
     logAudit('DATABASE_SEED_RESTORED', 'Imported full backup into Railway DB', req.userId, req.user?.email, req.ip);
     res.json({ success: true, message: "4,167 ta mijoz va 492 ta sdelkalar Railway bazasiga muvaffaqiyatli quyildi!" });
