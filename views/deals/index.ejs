@@ -2383,6 +2383,9 @@ function renderKanban() {
       </select>
     ` : '';
 
+    const stageSum = sDeals.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+    const stageSumStr = stageSum > 0 ? ` · <span style="font-weight:700; color:var(--text-primary);">${stageSum.toLocaleString('uz-UZ')} so'm</span>` : '';
+
     const hdrHtml = editable ? `
       <div class="kb-col-hdr-edit">
         <i class="fas fa-grip-vertical" title="Tartibni o'zgartirish uchun tutib torting"></i>
@@ -2394,7 +2397,7 @@ function renderKanban() {
         </span>
       </div>
       <div class="kb-col-meta" style="margin-top:4px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:4px;">
-        <div><span>${sDeals.length}</span> sdelka</div>
+        <div><span>${sDeals.length}</span> sdelka${stageSumStr}</div>
         <div style="display:flex; gap:4px; align-items:center;">
           ${sDeals.length ? `
             <span class="kb-col-select-btns" style="display:inline-flex; gap:4px;">
@@ -2411,7 +2414,7 @@ function renderKanban() {
         ${_esc(s.name)}
       </div>
       <div class="kb-col-meta" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:4px;">
-        <div><span>${sDeals.length}</span> sdelka</div>
+        <div><span>${sDeals.length}</span> sdelka${stageSumStr}</div>
         <div style="display:flex; gap:4px; align-items:center;">
           ${sDeals.length ? `
             <span class="kb-col-select-btns" style="display:inline-flex; gap:4px;">
@@ -2468,7 +2471,7 @@ function renderKanban() {
           Bosqichsiz
         </div>
         <div class="kb-col-meta" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:4px;">
-          <div><span>${unassigned.length}</span> sdelka</div>
+          <div><span>${unassigned.length}</span> sdelka${unassigned.reduce((s,d)=>s+(Number(d.amount)||0),0) > 0 ? ` · <span style="font-weight:700; color:var(--text-primary);">${unassigned.reduce((s,d)=>s+(Number(d.amount)||0),0).toLocaleString('uz-UZ')} so'm</span>` : ''}</div>
           ${unassigned.length ? `
             <div style="display:flex; gap:4px; align-items:center;">
               <span class="kb-col-select-btns" style="display:inline-flex; gap:4px;">
