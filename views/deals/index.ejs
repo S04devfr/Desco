@@ -7,19 +7,19 @@
 
   /* ── Top bar ── */
   .deals-topbar {
-  display:flex; align-items:center; gap:10px; padding:0 0 12px 0;
-  flex-shrink:0; flex-wrap:wrap;
+    display:flex; align-items:center; justify-content:space-between; gap:10px; padding:0 0 12px 0;
+    flex-shrink:0; flex-wrap:nowrap; width:100%;
   }
   .pipeline-name-btn {
-  display:flex; align-items:center; gap:6px;
-  font-size:18px; font-weight:700; color:var(--text-primary);
-  background:none; border:none; cursor:pointer; padding:4px 6px;
-  border-radius:6px; transition:background 0.15s;
+    display:flex; align-items:center; gap:6px;
+    font-size:18px; font-weight:700; color:var(--text-primary);
+    background:none; border:none; cursor:pointer; padding:4px 6px;
+    border-radius:6px; transition:background 0.15s;
   }
   .pipeline-name-btn:hover { background:var(--bg-secondary); }
   .pipeline-name-btn i { font-size:12px; color:var(--text-tertiary); }
 
-  .deals-topbar-right { display:flex; align-items:center; gap:8px; margin-left:auto; }
+  .deals-topbar-right { display:flex; align-items:center; gap:8px; flex-shrink:0; }
   .view-toggle { display:flex; background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px;
   overflow:hidden; }
   .vtbtn {
