@@ -1450,11 +1450,29 @@
             <div class="drawer-inline-row">
               <span class="drawer-inline-label">Nasiya Muddati</span>
               <div class="drawer-inline-value">
-                <select id="dw-nasiyaMonths" class="drawer-inline-select" onchange="recalculateDrawerNasiyaPlan()">
+                <select id="dw-nasiyaMonths" class="drawer-inline-select" onchange="toggleNasiyaCustomInputs(); recalculateDrawerNasiyaPlan();">
+                  <option value="1">1 oy (Tezkor)</option>
+                  <option value="2">2 oy</option>
                   <option value="3">3 oy (Choraklik)</option>
+                  <option value="4">4 oy</option>
+                  <option value="5">5 oy</option>
                   <option value="6" selected>6 oy (Yarim yillik)</option>
+                  <option value="8">8 oy</option>
+                  <option value="9">9 oy</option>
+                  <option value="10">10 oy</option>
                   <option value="12">12 oy (Yillik)</option>
+                  <option value="18">18 oy</option>
+                  <option value="24">24 oy (2 Yil)</option>
+                  <option value="custom">✍️ Custom (Boshqa oy...)</option>
                 </select>
+              </div>
+            </div>
+
+            <!-- Custom Months Input Container -->
+            <div id="dw-customMonthsWrap" class="drawer-inline-row" style="display:none; background:rgba(0,122,255,0.06); padding:6px 10px; border-radius:6px; border:1px dashed rgba(0,122,255,0.3); margin-bottom:6px;">
+              <span class="drawer-inline-label" style="font-weight:700; color:var(--accent);">Necha oy?</span>
+              <div class="drawer-inline-value">
+                <input type="number" id="dw-customMonthsInput" class="drawer-inline-input" placeholder="Oy sonini yozing..." min="1" max="60" oninput="recalculateDrawerNasiyaPlan()" style="text-align:right; font-weight:700;">
               </div>
             </div>
 
@@ -1477,15 +1495,34 @@
             <div class="drawer-inline-row">
               <span class="drawer-inline-label">Har oyning to'lov kuni</span>
               <div class="drawer-inline-value">
-                <select id="dw-nasiyaDueDay" class="drawer-inline-select">
+                <select id="dw-nasiyaDueDay" class="drawer-inline-select" onchange="toggleNasiyaCustomInputs()">
+                  <option value="1">Har oyning 1-kuni</option>
                   <option value="5">Har oyning 5-kuni</option>
                   <option value="10">Har oyning 10-kuni</option>
                   <option value="15">Har oyning 15-kuni</option>
                   <option value="20">Har oyning 20-kuni</option>
                   <option value="23" selected>Har oyning 23-kuni</option>
                   <option value="25">Har oyning 25-kuni</option>
+                  <option value="28">Har oyning 28-kuni</option>
                   <option value="30">Har oyning 30-kuni</option>
+                  <option value="custom_date">🗓️ Aniq Sana Kiritish (Custom)...</option>
                 </select>
+              </div>
+            </div>
+
+            <!-- Custom Due Date Input Container -->
+            <div id="dw-customDueDayWrap" class="drawer-inline-row" style="display:none; background:rgba(0,122,255,0.06); padding:6px 10px; border-radius:6px; border:1px dashed rgba(0,122,255,0.3); margin-top:6px;">
+              <span class="drawer-inline-label" style="font-weight:700; color:var(--accent);">Birinchi To'lov Sanasi</span>
+              <div class="drawer-inline-value">
+                <input type="date" id="dw-customDueDateInput" class="drawer-inline-input" style="font-size:12px; font-weight:600;">
+              </div>
+            </div>
+
+            <!-- Custom Izoh / Shartlar Field -->
+            <div class="drawer-inline-row" style="margin-top:6px;">
+              <span class="drawer-inline-label">Plan bo'yicha Izoh</span>
+              <div class="drawer-inline-value">
+                <input type="text" id="dw-nasiyaCustomNote" class="drawer-inline-input" placeholder="Custom izoh (masalan: pasport olindi)...">
               </div>
             </div>
 
@@ -3634,11 +3671,29 @@ function renderDrawerNasiyaSection(deal) {
     <div class="drawer-inline-row">
       <span class="drawer-inline-label">Nasiya Muddati</span>
       <div class="drawer-inline-value">
-        <select id="dw-nasiyaMonths" class="drawer-inline-select" onchange="recalculateDrawerNasiyaPlan()">
+        <select id="dw-nasiyaMonths" class="drawer-inline-select" onchange="toggleNasiyaCustomInputs(); recalculateDrawerNasiyaPlan();">
+          <option value="1">1 oy (Tezkor)</option>
+          <option value="2">2 oy</option>
           <option value="3">3 oy (Choraklik)</option>
+          <option value="4">4 oy</option>
+          <option value="5">5 oy</option>
           <option value="6" selected>6 oy (Yarim yillik)</option>
+          <option value="8">8 oy</option>
+          <option value="9">9 oy</option>
+          <option value="10">10 oy</option>
           <option value="12">12 oy (Yillik)</option>
+          <option value="18">18 oy</option>
+          <option value="24">24 oy (2 Yil)</option>
+          <option value="custom">✍️ Custom (Boshqa oy...)</option>
         </select>
+      </div>
+    </div>
+
+    <!-- Custom Months Input Container -->
+    <div id="dw-customMonthsWrap" class="drawer-inline-row" style="display:none; background:rgba(0,122,255,0.06); padding:6px 10px; border-radius:6px; border:1px dashed rgba(0,122,255,0.3); margin-bottom:6px;">
+      <span class="drawer-inline-label" style="font-weight:700; color:var(--accent);">Necha oy?</span>
+      <div class="drawer-inline-value">
+        <input type="number" id="dw-customMonthsInput" class="drawer-inline-input" placeholder="Oy sonini yozing..." min="1" max="60" oninput="recalculateDrawerNasiyaPlan()" style="text-align:right; font-weight:700;">
       </div>
     </div>
 
@@ -3661,15 +3716,34 @@ function renderDrawerNasiyaSection(deal) {
     <div class="drawer-inline-row">
       <span class="drawer-inline-label">Har oyning to'lov kuni</span>
       <div class="drawer-inline-value">
-        <select id="dw-nasiyaDueDay" class="drawer-inline-select">
+        <select id="dw-nasiyaDueDay" class="drawer-inline-select" onchange="toggleNasiyaCustomInputs()">
+          <option value="1">Har oyning 1-kuni</option>
           <option value="5">Har oyning 5-kuni</option>
           <option value="10">Har oyning 10-kuni</option>
           <option value="15">Har oyning 15-kuni</option>
           <option value="20">Har oyning 20-kuni</option>
           <option value="23" selected>Har oyning 23-kuni</option>
           <option value="25">Har oyning 25-kuni</option>
+          <option value="28">Har oyning 28-kuni</option>
           <option value="30">Har oyning 30-kuni</option>
+          <option value="custom_date">🗓️ Aniq Sana Kiritish (Custom)...</option>
         </select>
+      </div>
+    </div>
+
+    <!-- Custom Due Date Input Container -->
+    <div id="dw-customDueDayWrap" class="drawer-inline-row" style="display:none; background:rgba(0,122,255,0.06); padding:6px 10px; border-radius:6px; border:1px dashed rgba(0,122,255,0.3); margin-top:6px;">
+      <span class="drawer-inline-label" style="font-weight:700; color:var(--accent);">Birinchi To'lov Sanasi</span>
+      <div class="drawer-inline-value">
+        <input type="date" id="dw-customDueDateInput" class="drawer-inline-input" style="font-size:12px; font-weight:600;">
+      </div>
+    </div>
+
+    <!-- Custom Izoh / Shartlar Field -->
+    <div class="drawer-inline-row" style="margin-top:6px;">
+      <span class="drawer-inline-label">Plan bo'yicha Izoh</span>
+      <div class="drawer-inline-value">
+        <input type="text" id="dw-nasiyaCustomNote" class="drawer-inline-input" placeholder="Custom izoh (masalan: pasport olindi)...">
       </div>
     </div>
 
@@ -3868,8 +3942,31 @@ function switchDrawerTab(tabName, tabEl) {
   document.getElementById('tab-' + tabName).classList.add('active');
 }
 
+function toggleNasiyaCustomInputs() {
+  const monthsSelect = document.getElementById('dw-nasiyaMonths')?.value;
+  const customMonthsWrap = document.getElementById('dw-customMonthsWrap');
+  if (customMonthsWrap) {
+    customMonthsWrap.style.display = (monthsSelect === 'custom') ? 'flex' : 'none';
+  }
+
+  const dueDaySelect = document.getElementById('dw-nasiyaDueDay')?.value;
+  const customDueDayWrap = document.getElementById('dw-customDueDayWrap');
+  if (customDueDayWrap) {
+    customDueDayWrap.style.display = (dueDaySelect === 'custom_date') ? 'flex' : 'none';
+  }
+}
+
+function getNasiyaMonthsCount() {
+  const monthsVal = document.getElementById('dw-nasiyaMonths')?.value;
+  if (monthsVal === 'custom') {
+    const customVal = Number(document.getElementById('dw-customMonthsInput')?.value);
+    return (customVal && customVal > 0) ? customVal : 6;
+  }
+  return Number(monthsVal) || 6;
+}
+
 function recalculateDrawerNasiyaPlan() {
-  const months = Number(document.getElementById('dw-nasiyaMonths')?.value) || 6;
+  const months = getNasiyaMonthsCount();
   const totalAmount = Number(document.getElementById('dw-amount')?.value) || 0;
   const downPayment = Number(document.getElementById('dw-nasiyaDownPayment')?.value) || 0;
 
@@ -3886,10 +3983,12 @@ async function saveDrawerNasiyaPlan(e) {
   if (e) e.stopPropagation();
   if (!_detailId) return;
 
-  const months = Number(document.getElementById('dw-nasiyaMonths')?.value) || 6;
+  const months = getNasiyaMonthsCount();
   const totalAmount = Number(document.getElementById('dw-amount')?.value) || 0;
   const downPayment = Number(document.getElementById('dw-nasiyaDownPayment')?.value) || 0;
-  const dueDay = Number(document.getElementById('dw-nasiyaDueDay')?.value) || 23;
+  const dueDayVal = document.getElementById('dw-nasiyaDueDay')?.value;
+  const customDueDateVal = document.getElementById('dw-customDueDateInput')?.value;
+  const customNote = document.getElementById('dw-nasiyaCustomNote')?.value?.trim() || '';
 
   const userCustomMonthly = Number(document.getElementById('dw-nasiyaMonthlyVal')?.value);
   const remaining = Math.max(0, totalAmount - downPayment);
@@ -3911,22 +4010,36 @@ async function saveDrawerNasiyaPlan(e) {
         amount: downPayment,
         paid: true,
         month: '1-chi To\'lov (Boshlang\'ich)',
-        notes: 'Boshlang\'ich to\'lov'
+        notes: customNote ? `Boshlang'ich to'lov (${customNote})` : 'Boshlang\'ich to\'lov'
       });
     }
 
     const monthNames = ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"];
 
+    // Handle custom first due date if chosen
+    let startDate = new Date();
+    if (dueDayVal === 'custom_date' && customDueDateVal) {
+      startDate = new Date(customDueDateVal);
+    }
+
     for (let i = 0; i < months; i++) {
-      const dueDateObj = new Date(dateObj.getFullYear(), dateObj.getMonth() + i + 1, dueDay);
+      let dueDateObj;
+      if (dueDayVal === 'custom_date' && customDueDateVal) {
+        dueDateObj = new Date(startDate.getFullYear(), startDate.getMonth() + i, startDate.getDate());
+      } else {
+        const targetDay = Number(dueDayVal) || 23;
+        dueDateObj = new Date(startDate.getFullYear(), startDate.getMonth() + i + 1, targetDay);
+      }
+
       const amount = (i === months - 1 && !userCustomMonthly) ? (remaining - (monthly * (months - 1))) : monthly;
+      const noteSuffix = customNote ? ` - ${customNote}` : '';
 
       installments.push({
         dueDate: dueDateObj.toISOString(),
         amount: Math.max(0, amount),
         paid: false,
         month: monthNames[dueDateObj.getMonth()],
-        notes: `${i + 1}-oylik to'lov (${dueDay}-kuni)`
+        notes: `${i + 1}-oylik to'lov (${dueDateObj.getDate()}-kuni)${noteSuffix}`
       });
     }
 
