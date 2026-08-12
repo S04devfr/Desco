@@ -6,7 +6,7 @@ const { logAudit } = require('../middleware/auditLog');
 const cacheService = require('../services/cacheService');
 
 router.use(protect);
-router.use(requireRole('admin', 'manager'));
+router.use(requireRole('admin'));
 
 // In-memory config stores (persisted in cacheService & DB fallbacks)
 let roundRobinConfig = {

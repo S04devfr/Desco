@@ -205,7 +205,7 @@ app.get('/clients',  requireAuth, requireRole('admin', 'manager', 'operator'), (
 app.get('/expenses', requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('expenses/index', { user: req.session.user, activePage: 'expenses' }));
 app.get('/extra/drivers',  requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('extra/index',  { user: req.session.user, activePage: 'extra-drivers', subPage: 'drivers' }));
 app.get('/extra/branches', requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('extra/index',  { user: req.session.user, activePage: 'extra-branches', subPage: 'branches' }));
-app.get('/extra/tools',    requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('extra/tools',  { user: req.session.user, activePage: 'extra-tools' }));
+app.get('/extra/tools',    requireAuth, requireRole('admin'), (req, res) => res.render('extra/tools',  { user: req.session.user, activePage: 'extra-tools' }));
 app.get('/tasks',    requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('tasks/index',    { user: req.session.user, activePage: 'tasks' }));
 app.get('/instagram', requireAuth, requireRole('admin', 'manager'), (req, res) => {
   const filter = req.query.filter || 'direct';

@@ -1,198 +1,214 @@
 <%- include('../layouts/header', { title: 'Tezkor Enterprise Hub — DESCO CRM', activePage: 'extra-tools', user: user }) %>
 
-<div class="page-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
-    <div>
-      <h1 class="page-title" style="font-size:24px; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:10px;">
+<div class="page-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+  <div>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <h1 class="page-title" style="font-size:24px; font-weight:800; color:var(--text-primary); margin:0;">
         <i class="fas fa-rocket" style="color:#0052FF;"></i> Tezkor Enterprise Hub
       </h1>
-      <p style="font-size:13px; color:var(--text-secondary); margin-top:4px;">
-        Menejerlar harakat jurnali, leadlarni avto-bo'lish, savdo prognozi, avto-xabarlar va rollar ruxsatini boshqarish
-      </p>
+      <span class="badge" style="background:rgba(239,68,68,0.12); color:#EF4444; border:1px solid rgba(239,68,68,0.25); font-size:11px; font-weight:700; padding:4px 8px;">
+        <i class="fas fa-lock" style="font-size:10px; margin-right:4px;"></i> FAQAT ADMINLAR UCHUN
+      </span>
     </div>
+    <p style="font-size:13px; color:var(--text-secondary); margin-top:6px;">
+      Menejerlar harakat jurnali, leadlarni avto-bo'lish, savdo prognozi, avto-xabarlar va rollar ruxsatini boshqarish
+    </p>
   </div>
 
-  <!-- ── 5-TAB NAVIGATION BAR ── -->
-  <div class="tools-tab-bar" style="display:flex; gap:8px; border-bottom:1px solid var(--border); margin-bottom:24px; padding-bottom:12px; overflow-x:auto;">
-    <button class="tools-tab-btn active" onclick="switchToolsTab('audit')" id="tab-btn-audit">
-      <i class="fas fa-history"></i> Audit Log Jurnali
-    </button>
-    <button class="tools-tab-btn" onclick="switchToolsTab('roundrobin')" id="tab-btn-roundrobin">
-      <i class="fas fa-random"></i> Lead Avto-Bo'lish
-    </button>
-    <button class="tools-tab-btn" onclick="switchToolsTab('forecast')" id="tab-btn-forecast">
-      <i class="fas fa-chart-pie"></i> Savdo Prognozi & Conversion
-    </button>
-    <button class="tools-tab-btn" onclick="switchToolsTab('automsg')" id="tab-btn-automsg">
-      <i class="fas fa-paper-plane"></i> Mijozlarga Avto-Xabarlar
-    </button>
-    <button class="tools-tab-btn" onclick="switchToolsTab('permissions')" id="tab-btn-permissions">
-      <i class="fas fa-shield-alt"></i> Rollar & Ruxsatlar
+  <div style="display:flex; gap:10px;">
+    <button class="btn btn-secondary" onclick="refreshCurrentTab()" type="button" style="border-radius:8px; font-weight:600;">
+      <i class="fas fa-sync-alt"></i> Yangilash
     </button>
   </div>
+</div>
 
-  <!-- ── TAB 1: AUDIT LOG VIEWER ── -->
-  <div class="tools-tab-content active" id="tab-content-audit">
-    <div class="card" style="padding:20px; border-radius:12px; background:var(--bg-surface); border:1px solid var(--border);">
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
-        <div style="display:flex; gap:10px; flex:1; min-width:280px;">
-          <input type="text" id="auditSearchInput" class="form-control" placeholder="Xodim ismi, harakat yoki ID bo'yicha qidiruv..." onkeyup="loadAuditLogs(1)" style="flex:1;">
-          <select id="auditUserFilter" class="form-control" onchange="loadAuditLogs(1)" style="width:180px;">
-            <option value="">Barcha xodimlar</option>
-          </select>
+<!-- ── SENIOR SAAS PILL TAB NAVIGATION BAR ── -->
+<div class="tools-tab-bar" style="display:flex; gap:10px; border-bottom:1px solid var(--border); margin-bottom:24px; padding-bottom:14px; overflow-x:auto;">
+  <button class="tools-tab-btn active" onclick="switchToolsTab('audit')" id="tab-btn-audit">
+    <i class="fas fa-history" style="color:#6366F1;"></i> Audit Log Jurnali
+  </button>
+  <button class="tools-tab-btn" onclick="switchToolsTab('roundrobin')" id="tab-btn-roundrobin">
+    <i class="fas fa-random" style="color:#10B981;"></i> Lead Avto-Bo'lish
+  </button>
+  <button class="tools-tab-btn" onclick="switchToolsTab('forecast')" id="tab-btn-forecast">
+    <i class="fas fa-chart-pie" style="color:#F59E0B;"></i> Savdo Prognozi & Conversion
+  </button>
+  <button class="tools-tab-btn" onclick="switchToolsTab('automsg')" id="tab-btn-automsg">
+    <i class="fas fa-paper-plane" style="color:#0052FF;"></i> Mijozlarga Avto-Xabarlar
+  </button>
+  <button class="tools-tab-btn" onclick="switchToolsTab('permissions')" id="tab-btn-permissions">
+    <i class="fas fa-shield-alt" style="color:#8B5CF6;"></i> Rollar & Ruxsatlar
+  </button>
+</div>
+
+<!-- ── TAB 1: AUDIT LOG VIEWER ── -->
+<div class="tools-tab-content active" id="tab-content-audit">
+  <div class="card" style="padding:24px; border-radius:12px; background:var(--bg-surface); border:1px solid var(--border); box-shadow:0 2px 12px rgba(0,0,0,0.04);">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
+      <div style="display:flex; gap:12px; flex:1; min-width:300px;">
+        <div style="position:relative; flex:1;">
+          <i class="fas fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-tertiary); font-size:13px;"></i>
+          <input type="text" id="auditSearchInput" class="form-control" placeholder="Xodim ismi, harakat yoki ID bo'yicha qidiruv..." onkeyup="loadAuditLogs(1)" style="padding-left:36px; border-radius:8px;">
         </div>
-        <button class="btn btn-secondary" onclick="loadAuditLogs(1)" type="button">
-          <i class="fas fa-sync-alt"></i> Yangilash
-        </button>
+        <select id="auditUserFilter" class="form-control" onchange="loadAuditLogs(1)" style="width:200px; border-radius:8px;">
+          <option value="">Barcha xodimlar</option>
+        </select>
       </div>
+      <div style="font-size:12.5px; color:var(--text-secondary); font-weight:600;" id="auditTotalText">Jami: 0 ta yozuv</div>
+    </div>
 
-      <div class="table-responsive">
-        <table class="table" style="width:100%;">
-          <thead>
-            <tr>
-              <th>Vaqt</th>
-              <th>Xodim</th>
-              <th>Amal / Hodisa</th>
-              <th>Tafsilotlar</th>
-              <th>Sdelka</th>
-            </tr>
-          </thead>
-          <tbody id="auditLogsTbody">
-            <tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-tertiary);">Yuklanmoqda...</td></tr>
-          </tbody>
-        </table>
+    <div class="table-responsive" style="border-radius:8px; border:1px solid var(--border); overflow:hidden;">
+      <table class="table" style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr style="background:var(--bg-surface-hover);">
+            <th style="padding:12px 16px; font-size:12px; font-weight:700; color:var(--text-secondary);">Vaqt</th>
+            <th style="padding:12px 16px; font-size:12px; font-weight:700; color:var(--text-secondary);">Xodim</th>
+            <th style="padding:12px 16px; font-size:12px; font-weight:700; color:var(--text-secondary);">Amal / Hodisa</th>
+            <th style="padding:12px 16px; font-size:12px; font-weight:700; color:var(--text-secondary);">Tafsilotlar</th>
+            <th style="padding:12px 16px; font-size:12px; font-weight:700; color:var(--text-secondary);">Sdelka</th>
+          </tr>
+        </thead>
+        <tbody id="auditLogsTbody">
+          <tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-tertiary);">Yuklanmoqda...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── TAB 2: ROUND ROBIN LEAD AUTO-DISTRIBUTION ── -->
+<div class="tools-tab-content" id="tab-content-roundrobin">
+  <div class="card" style="padding:28px; border-radius:12px; background:var(--bg-surface); border:1px solid var(--border); max-width:850px; box-shadow:0 2px 12px rgba(0,0,0,0.04);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; border-bottom:1px solid var(--border); padding-bottom:20px;">
+      <div>
+        <h3 style="font-size:18px; font-weight:800; color:var(--text-primary); margin:0;">🎯 Leadlarni Avtomatik Menejerlarga Teng Bo'lish</h3>
+        <p style="font-size:13px; color:var(--text-secondary); margin-top:4px;">Yangi kelgan leadlarni (Instagram, Telegram, Target) navbati bilan sotuv menejerlariga avto-biriktiradi</p>
       </div>
+      <label class="switch-container" style="display:flex; align-items:center; gap:10px; cursor:pointer; background:var(--bg-surface-hover); padding:8px 14px; border-radius:30px; border:1px solid var(--border);">
+        <input type="checkbox" id="rrToggleSwitch" onchange="saveRoundRobinConfig()" style="width:20px; height:20px; cursor:pointer;">
+        <span style="font-weight:800; font-size:13px; color:#10B981;" id="rrStatusText">FAOL</span>
+      </label>
+    </div>
+
+    <h4 style="font-size:14px; font-weight:700; margin-bottom:14px; color:var(--text-primary); display:flex; align-items:center; gap:8px;">
+      <i class="fas fa-users" style="color:#0052FF;"></i> Navbatchi Menejerlar Ro'yxati:
+    </h4>
+    <div id="rrManagersList" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:14px; margin-bottom:28px;">
+      <!-- Filled dynamically -->
+    </div>
+
+    <button class="btn btn-primary" onclick="saveRoundRobinConfig()" type="button" style="padding:12px 24px; font-weight:700; border-radius:8px;">
+      <i class="fas fa-save" style="margin-right:6px;"></i> Sozlamalarni Saqlash
+    </button>
+  </div>
+</div>
+
+<!-- ── TAB 3: SALES FORECASTING & CONVERSION ── -->
+<div class="tools-tab-content" id="tab-content-forecast">
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:18px; margin-bottom:24px;">
+    <div class="card" style="padding:22px; background:var(--bg-surface); border-radius:12px; border:1px solid var(--border); border-top:4px solid #10B981; box-shadow:0 2px 12px rgba(0,0,0,0.04);">
+      <div style="font-size:12px; color:var(--text-tertiary); font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">UMUMIY CONVERSION RATE</div>
+      <div style="font-size:36px; font-weight:800; color:#10B981; margin-top:8px;" id="metricConversionRate">0%</div>
+      <div style="font-size:12.5px; color:var(--text-secondary); margin-top:6px;">Yutib olingan sdelkalar ulushi</div>
+    </div>
+    <div class="card" style="padding:22px; background:var(--bg-surface); border-radius:12px; border:1px solid var(--border); border-top:4px solid #0052FF; box-shadow:0 2px 12px rgba(0,0,0,0.04);">
+      <div style="font-size:12px; color:var(--text-tertiary); font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">30 KUNLIK SAVDO PROGNOZI</div>
+      <div style="font-size:32px; font-weight:800; color:#0052FF; margin-top:8px;" id="metricForecast30">0 UZS</div>
+      <div style="font-size:12.5px; color:var(--text-secondary); margin-top:6px;">Nasiya to'lovlar + jarayondagi sdelkalar</div>
+    </div>
+    <div class="card" style="padding:22px; background:var(--bg-surface); border-radius:12px; border:1px solid var(--border); border-top:4px solid #F59E0B; box-shadow:0 2px 12px rgba(0,0,0,0.04);">
+      <div style="font-size:12px; color:var(--text-tertiary); font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">KUTILAYOTGAN NASIYA TUSHUMI</div>
+      <div style="font-size:32px; font-weight:800; color:#F59E0B; margin-top:8px;" id="metricPendingNasiya">0 UZS</div>
+      <div style="font-size:12.5px; color:var(--text-secondary); margin-top:6px;">Kutib turgan nasiya grafiklari</div>
     </div>
   </div>
 
-  <!-- ── TAB 2: ROUND ROBIN LEAD AUTO-DISTRIBUTION ── -->
-  <div class="tools-tab-content" id="tab-content-roundrobin">
-    <div class="card" style="padding:24px; border-radius:12px; background:var(--bg-surface); border:1px solid var(--border); max-width:800px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:16px;">
-        <div>
-          <h3 style="font-size:16px; font-weight:700; color:var(--text-primary);">🎯 Leadlarni Avtomatik Menejerlarga Teng Bo'lish</h3>
-          <p style="font-size:12.5px; color:var(--text-secondary); margin-top:2px;">Yangi kelgan leadlarni (Instagram, Telegram, Target) navbati bilan sotuv menejerlariga avto-biriktiradi</p>
-        </div>
-        <label class="switch-toggle" style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-          <input type="checkbox" id="rrToggleSwitch" onchange="saveRoundRobinConfig()" style="width:18px; height:18px; cursor:pointer;">
-          <span style="font-weight:700; font-size:13px;" id="rrStatusText">Faol</span>
-        </label>
-      </div>
-
-      <h4 style="font-size:14px; font-weight:700; margin-bottom:12px; color:var(--text-primary);">Navbatchi Menejerlar Ro'yxati:</h4>
-      <div id="rrManagersList" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:12px; margin-bottom:24px;">
-        <!-- Filled dynamically -->
-      </div>
-
-      <button class="btn btn-primary" onclick="saveRoundRobinConfig()" type="button" style="padding:10px 20px; font-weight:700;">
-        <i class="fas fa-save"></i> Sozlamalarni Saqlash
-      </button>
+  <div class="card" style="padding:28px; background:var(--bg-surface); border-radius:12px; border:1px solid var(--border); box-shadow:0 2px 12px rgba(0,0,0,0.04);">
+    <h3 style="font-size:18px; font-weight:800; margin-bottom:20px; color:var(--text-primary); display:flex; align-items:center; gap:8px;">
+      <i class="fas fa-filter" style="color:#0052FF;"></i> Voronka Bosqichlari Bo'yicha Conversion Funnel (Drop-off %)
+    </h3>
+    <div id="funnelStagesList" style="display:flex; flex-direction:column; gap:16px;">
+      <!-- Filled dynamically -->
     </div>
   </div>
+</div>
 
-  <!-- ── TAB 3: SALES FORECASTING & CONVERSION ── -->
-  <div class="tools-tab-content" id="tab-content-forecast">
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:16px; margin-bottom:24px;">
-      <div class="card" style="padding:20px; background:var(--bg-surface); border-radius:12px; border:1px solid var(--border);">
-        <div style="font-size:12px; color:var(--text-tertiary); font-weight:600;">UMUMIY CONVERSION RATE</div>
-        <div style="font-size:32px; font-weight:800; color:#10B981; margin-top:6px;" id="metricConversionRate">0%</div>
-        <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">Yutib olingan sdelkalar ulushi</div>
-      </div>
-      <div class="card" style="padding:20px; background:var(--bg-surface); border-radius:12px; border:1px solid var(--border);">
-        <div style="font-size:12px; color:var(--text-tertiary); font-weight:600;">30 KUNLIK SAVDO PROGNOZI</div>
-        <div style="font-size:32px; font-weight:800; color:#0052FF; margin-top:6px;" id="metricForecast30">0 UZS</div>
-        <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">Nasiya to'lovlar + jarayondagi sdelkalar</div>
-      </div>
-      <div class="card" style="padding:20px; background:var(--bg-surface); border-radius:12px; border:1px solid var(--border);">
-        <div style="font-size:12px; color:var(--text-tertiary); font-weight:600;">KUTILAYOTGAN NASIYA TUSHUMI</div>
-        <div style="font-size:32px; font-weight:800; color:#F59E0B; margin-top:6px;" id="metricPendingNasiya">0 UZS</div>
-        <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">Kutib turgan nasiya grafiklari</div>
-      </div>
+<!-- ── TAB 4: AUTOMATED CUSTOMER MESSAGES ── -->
+<div class="tools-tab-content" id="tab-content-automsg">
+  <div class="card" style="padding:28px; background:var(--bg-surface); border-radius:12px; border:1px solid var(--border); max-width:900px; box-shadow:0 2px 12px rgba(0,0,0,0.04);">
+    <h3 style="font-size:18px; font-weight:800; margin-bottom:6px; color:var(--text-primary);">🤖 Sdelka Bosqichlari Bo'yicha Avtomatik Xabarnomalar</h3>
+    <p style="font-size:13px; color:var(--text-secondary); margin-bottom:24px;">Sdelka bosqichi o'zgarganda mijozga avtomatik ravishda yuboriladigan xabar shablonlari</p>
+
+    <div id="autoMsgContainer" style="display:flex; flex-direction:column; gap:18px; margin-bottom:28px;">
+      <!-- Filled dynamically -->
     </div>
 
-    <div class="card" style="padding:24px; background:var(--bg-surface); border-radius:12px; border:1px solid var(--border);">
-      <h3 style="font-size:16px; font-weight:700; margin-bottom:16px; color:var(--text-primary);">📊 Voronka Bosqichlari Bo'yicha Conversion Funnel (Drop-off %)</h3>
-      <div id="funnelStagesList" style="display:flex; flex-direction:column; gap:12px;">
-        <!-- Filled dynamically -->
-      </div>
-    </div>
+    <button class="btn btn-primary" onclick="saveAutoMessages()" type="button" style="padding:12px 24px; font-weight:700; border-radius:8px;">
+      <i class="fas fa-save" style="margin-right:6px;"></i> Avto-Xabarlarni Saqlash
+    </button>
   </div>
+</div>
 
-  <!-- ── TAB 4: AUTOMATED CUSTOMER MESSAGES ── -->
-  <div class="tools-tab-content" id="tab-content-automsg">
-    <div class="card" style="padding:24px; background:var(--bg-surface); border-radius:12px; border:1px solid var(--border); max-width:850px;">
-      <h3 style="font-size:16px; font-weight:700; margin-bottom:6px; color:var(--text-primary);">🤖 Sdelka Bosqichlari Bo'yicha Avtomatik Xabarnomalar</h3>
-      <p style="font-size:12.5px; color:var(--text-secondary); margin-bottom:20px;">Sdelka bosqichi o'zgarganda mijozga avtomatik ravishda yuboriladigan xabar shablonlari</p>
+<!-- ── TAB 5: GRANULAR ROLE PERMISSIONS MATRIX ── -->
+<div class="tools-tab-content" id="tab-content-permissions">
+  <div class="card" style="padding:28px; background:var(--bg-surface); border-radius:12px; border:1px solid var(--border); max-width:950px; box-shadow:0 2px 12px rgba(0,0,0,0.04);">
+    <h3 style="font-size:18px; font-weight:800; margin-bottom:6px; color:var(--text-primary);">🔐 Rollar Bo'yicha Cheklovlar Matrixi</h3>
+    <p style="font-size:13px; color:var(--text-secondary); margin-bottom:24px;">Menejer hamda Operator rollari uchun harakat ruxsatnomalarini sozlash</p>
 
-      <div id="autoMsgContainer" style="display:flex; flex-direction:column; gap:16px; margin-bottom:24px;">
-        <!-- Filled dynamically -->
-      </div>
-
-      <button class="btn btn-primary" onclick="saveAutoMessages()" type="button" style="padding:10px 20px; font-weight:700;">
-        <i class="fas fa-save"></i> Avto-Xabarlarni Saqlash
-      </button>
+    <div class="table-responsive" style="border-radius:8px; border:1px solid var(--border); overflow:hidden; margin-bottom:28px;">
+      <table class="table" style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr style="background:var(--bg-surface-hover);">
+            <th style="padding:14px 18px; font-size:13px; font-weight:700; color:var(--text-secondary);">Harakat / Ruxsatnoma</th>
+            <th style="padding:14px 18px; font-size:13px; font-weight:700; color:var(--text-secondary); text-align:center;">Sotuv Menejeri</th>
+            <th style="padding:14px 18px; font-size:13px; font-weight:700; color:var(--text-secondary); text-align:center;">Operator</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding:14px 18px; font-weight:600;">Sdelkalarni o'chirish (Delete Deal)</td>
+            <td style="text-align:center;"><input type="checkbox" id="perm_manager_canDeleteDeals" style="width:18px; height:18px; cursor:pointer;"></td>
+            <td style="text-align:center;"><input type="checkbox" id="perm_operator_canDeleteDeals" style="width:18px; height:18px; cursor:pointer;"></td>
+          </tr>
+          <tr>
+            <td style="padding:14px 18px; font-weight:600;">Excelga eksport qilish (Export Data)</td>
+            <td style="text-align:center;"><input type="checkbox" id="perm_manager_canExportExcel" style="width:18px; height:18px; cursor:pointer;"></td>
+            <td style="text-align:center;"><input type="checkbox" id="perm_operator_canExportExcel" style="width:18px; height:18px; cursor:pointer;"></td>
+          </tr>
+          <tr>
+            <td style="padding:14px 18px; font-weight:600;">Moliya va Xarajatlarni ko'rish (View Expenses)</td>
+            <td style="text-align:center;"><input type="checkbox" id="perm_manager_canViewExpenses" style="width:18px; height:18px; cursor:pointer;"></td>
+            <td style="text-align:center;"><input type="checkbox" id="perm_operator_canViewExpenses" style="width:18px; height:18px; cursor:pointer;"></td>
+          </tr>
+          <tr>
+            <td style="padding:14px 18px; font-weight:600;">Ombor va Mahsulotlarni tahrirlash (Edit Products)</td>
+            <td style="text-align:center;"><input type="checkbox" id="perm_manager_canEditProducts" style="width:18px; height:18px; cursor:pointer;"></td>
+            <td style="text-align:center;"><input type="checkbox" id="perm_operator_canEditProducts" style="width:18px; height:18px; cursor:pointer;"></td>
+          </tr>
+          <tr>
+            <td style="padding:14px 18px; font-weight:600;">Nasiya Qarzdorlikni tahrirlash (Manage Debts)</td>
+            <td style="text-align:center;"><input type="checkbox" id="perm_manager_canManageDebts" style="width:18px; height:18px; cursor:pointer;"></td>
+            <td style="text-align:center;"><input type="checkbox" id="perm_operator_canManageDebts" style="width:18px; height:18px; cursor:pointer;"></td>
+          </tr>
+        </tbody>
+      </table>
     </div>
+
+    <button class="btn btn-primary" onclick="savePermissionsConfig()" type="button" style="padding:12px 24px; font-weight:700; border-radius:8px;">
+      <i class="fas fa-save" style="margin-right:6px;"></i> Rollar Ruxsatini Saqlash
+    </button>
   </div>
-
-  <!-- ── TAB 5: GRANULAR ROLE PERMISSIONS MATRIX ── -->
-  <div class="tools-tab-content" id="tab-content-permissions">
-    <div class="card" style="padding:24px; background:var(--bg-surface); border-radius:12px; border:1px solid var(--border); max-width:900px;">
-      <h3 style="font-size:16px; font-weight:700; margin-bottom:6px; color:var(--text-primary);">🔐 Rollar Bo'yicha Cheklovlar Matrixi</h3>
-      <p style="font-size:12.5px; color:var(--text-secondary); margin-bottom:20px;">Menejer hamda Operator rollari uchun harakat ruxsatnomalarini sozlash</p>
-
-      <div class="table-responsive" style="margin-bottom:24px;">
-        <table class="table" style="width:100%;">
-          <thead>
-            <tr>
-              <th>Harakat / Ruxsatnoma</th>
-              <th style="text-align:center;">Sotuv Menejeri</th>
-              <th style="text-align:center;">Operator</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Sdelkalarni o'chirish (Delete Deal)</td>
-              <td style="text-align:center;"><input type="checkbox" id="perm_manager_canDeleteDeals"></td>
-              <td style="text-align:center;"><input type="checkbox" id="perm_operator_canDeleteDeals"></td>
-            </tr>
-            <tr>
-              <td>Excelga eksport qilish (Export Data)</td>
-              <td style="text-align:center;"><input type="checkbox" id="perm_manager_canExportExcel"></td>
-              <td style="text-align:center;"><input type="checkbox" id="perm_operator_canExportExcel"></td>
-            </tr>
-            <tr>
-              <td>Moliya va Xarajatlarni ko'rish (View Expenses)</td>
-              <td style="text-align:center;"><input type="checkbox" id="perm_manager_canViewExpenses"></td>
-              <td style="text-align:center;"><input type="checkbox" id="perm_operator_canViewExpenses"></td>
-            </tr>
-            <tr>
-              <td>Ombor va Mahsulotlarni tahrirlash (Edit Products)</td>
-              <td style="text-align:center;"><input type="checkbox" id="perm_manager_canEditProducts"></td>
-              <td style="text-align:center;"><input type="checkbox" id="perm_operator_canEditProducts"></td>
-            </tr>
-            <tr>
-              <td>Nasiya Qarzdorlikni tahrirlash (Manage Debts)</td>
-              <td style="text-align:center;"><input type="checkbox" id="perm_manager_canManageDebts"></td>
-              <td style="text-align:center;"><input type="checkbox" id="perm_operator_canManageDebts"></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <button class="btn btn-primary" onclick="savePermissionsConfig()" type="button" style="padding:10px 20px; font-weight:700;">
-        <i class="fas fa-save"></i> Rollar Ruxsatini Saqlash
-      </button>
-    </div>
-  </div>
+</div>
 
 <style>
 .tools-tab-btn {
-  background: var(--bg-surface-hover);
+  background: var(--bg-surface);
   border: 1px solid var(--border);
   color: var(--text-secondary);
-  padding: 10px 16px;
-  border-radius: 8px;
+  padding: 10px 18px;
+  border-radius: 20px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -203,12 +219,16 @@
 .tools-tab-btn:hover {
   color: var(--text-primary);
   border-color: var(--text-tertiary);
+  transform: translateY(-1px);
 }
 .tools-tab-btn.active {
   background: #0052FF;
   color: #ffffff;
   border-color: #0052FF;
-  box-shadow: 0 2px 8px rgba(0,82,255,0.25);
+  box-shadow: 0 4px 12px rgba(0,82,255,0.3);
+}
+.tools-tab-btn.active i {
+  color: #ffffff !important;
 }
 .tools-tab-content {
   display: none;
@@ -219,18 +239,25 @@
 </style>
 
 <script>
+let currentActiveTab = 'audit';
+
 function switchToolsTab(tabName) {
+  currentActiveTab = tabName;
   document.querySelectorAll('.tools-tab-btn').forEach(btn => btn.classList.remove('active'));
   document.querySelectorAll('.tools-tab-content').forEach(content => content.classList.remove('active'));
 
   document.getElementById('tab-btn-' + tabName)?.classList.add('active');
   document.getElementById('tab-content-' + tabName)?.classList.add('active');
 
-  if (tabName === 'audit') loadAuditLogs(1);
-  if (tabName === 'roundrobin') loadRoundRobinConfig();
-  if (tabName === 'forecast') loadSalesForecast();
-  if (tabName === 'automsg') loadAutoMessages();
-  if (tabName === 'permissions') loadPermissionsConfig();
+  refreshCurrentTab();
+}
+
+function refreshCurrentTab() {
+  if (currentActiveTab === 'audit') loadAuditLogs(1);
+  if (currentActiveTab === 'roundrobin') loadRoundRobinConfig();
+  if (currentActiveTab === 'forecast') loadSalesForecast();
+  if (currentActiveTab === 'automsg') loadAutoMessages();
+  if (currentActiveTab === 'permissions') loadPermissionsConfig();
 }
 
 async function loadAuditLogs(page = 1) {
@@ -241,8 +268,13 @@ async function loadAuditLogs(page = 1) {
     const data = await res.json();
 
     const tbody = document.getElementById('auditLogsTbody');
+    const totalText = document.getElementById('auditTotalText');
+    if (totalText && data.pagination) {
+      totalText.textContent = `Jami: ${data.pagination.total} ta yozuv`;
+    }
+
     if (!data.logs || data.logs.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-tertiary);">Audit yozuvlari topilmadi</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-tertiary);">Audit yozuvlari topilmadi</td></tr>`;
       return;
     }
 
@@ -259,13 +291,21 @@ async function loadAuditLogs(page = 1) {
     tbody.innerHTML = data.logs.map(log => {
       const timeStr = new Date(log.createdAt).toLocaleString('uz-UZ');
       const userName = log.user ? log.user.fullName : 'Tizim';
+      
+      let badgeStyle = 'background:rgba(0,82,255,0.12); color:#0052FF; border:1px solid rgba(0,82,255,0.25);';
+      if (log.action.includes('LOGIN') || log.action.includes('REGISTER')) {
+        badgeStyle = 'background:rgba(16,185,129,0.12); color:#10B981; border:1px solid rgba(16,185,129,0.25);';
+      } else if (log.action.includes('DELETE') || log.action.includes('BLOCKED')) {
+        badgeStyle = 'background:rgba(239,68,68,0.12); color:#EF4444; border:1px solid rgba(239,68,68,0.25);';
+      }
+
       return `
-        <tr>
-          <td style="font-size:12px; color:var(--text-tertiary); font-weight:500;">${timeStr}</td>
-          <td style="font-weight:700; color:var(--text-primary);">${userName}</td>
-          <td><span class="badge" style="background:rgba(0,82,255,0.12); color:#0052FF; border:1px solid rgba(0,82,255,0.25);">${log.action}</span></td>
-          <td style="font-size:12.5px;">${log.details || ''}</td>
-          <td>${log.deal ? `<a href="/deals?dealId=${log.deal.id}" style="color:#0052FF; font-weight:600;">#${log.deal.id} - ${log.deal.productName}</a>` : '-'}</td>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="font-size:12px; color:var(--text-tertiary); font-weight:500; padding:12px 16px;">${timeStr}</td>
+          <td style="font-weight:700; color:var(--text-primary); padding:12px 16px;">${userName}</td>
+          <td style="padding:12px 16px;"><span class="badge" style="${badgeStyle}">${log.action}</span></td>
+          <td style="font-size:12.5px; padding:12px 16px;">${log.details || ''}</td>
+          <td style="padding:12px 16px;">${log.deal ? `<a href="/deals?dealId=${log.deal.id}" style="color:#0052FF; font-weight:600; text-decoration:none;">#${log.deal.id} - ${log.deal.productName}</a>` : '-'}</td>
         </tr>
       `;
     }).join('');
@@ -280,17 +320,19 @@ async function loadRoundRobinConfig() {
     const data = await res.json();
 
     document.getElementById('rrToggleSwitch').checked = data.config.enabled;
-    document.getElementById('rrStatusText').textContent = data.config.enabled ? 'Faol' : 'O\'chiq';
+    const statusText = document.getElementById('rrStatusText');
+    statusText.textContent = data.config.enabled ? 'FAOL' : 'O\'CHIQ';
+    statusText.style.color = data.config.enabled ? '#10B981' : '#EF4444';
 
     const container = document.getElementById('rrManagersList');
     container.innerHTML = data.managers.map(m => {
       const isChecked = data.config.activeManagerIds.includes(m.id);
       return `
-        <label style="display:flex; align-items:center; gap:10px; padding:12px; background:var(--bg-surface-hover); border:1px solid var(--border); border-radius:8px; cursor:pointer;">
-          <input type="checkbox" class="rr-manager-checkbox" value="${m.id}" ${isChecked ? 'checked' : ''} style="width:16px; height:16px;">
+        <label style="display:flex; align-items:center; gap:12px; padding:14px; background:var(--bg-surface-hover); border:1px solid var(--border); border-radius:10px; cursor:pointer; transition:all 0.2s ease;">
+          <input type="checkbox" class="rr-manager-checkbox" value="${m.id}" ${isChecked ? 'checked' : ''} style="width:18px; height:18px; cursor:pointer;">
           <div>
-            <div style="font-size:13px; font-weight:700; color:var(--text-primary);">${m.fullName}</div>
-            <div style="font-size:11px; color:var(--text-tertiary);">${m.role === 'admin' ? 'Administrator' : 'Sotuv menejeri'}</div>
+            <div style="font-size:13.5px; font-weight:700; color:var(--text-primary);">${m.fullName}</div>
+            <div style="font-size:11.5px; color:var(--text-tertiary); margin-top:2px;">${m.role === 'admin' ? 'Administrator' : 'Sotuv menejeri'}</div>
           </div>
         </label>
       `;
@@ -301,7 +343,9 @@ async function loadRoundRobinConfig() {
 async function saveRoundRobinConfig() {
   try {
     const enabled = document.getElementById('rrToggleSwitch').checked;
-    document.getElementById('rrStatusText').textContent = enabled ? 'Faol' : 'O\'chiq';
+    const statusText = document.getElementById('rrStatusText');
+    statusText.textContent = enabled ? 'FAOL' : 'O\'CHIQ';
+    statusText.style.color = enabled ? '#10B981' : '#EF4444';
 
     const checkboxes = document.querySelectorAll('.rr-manager-checkbox:checked');
     const activeManagerIds = Array.from(checkboxes).map(cb => Number(cb.value));
@@ -312,8 +356,8 @@ async function saveRoundRobinConfig() {
       body: JSON.stringify({ enabled, activeManagerIds })
     });
     const data = await res.json();
-    if (data.success) {
-      if (window.showToast) showToast('Round-Robin sozlamalari saqlandi');
+    if (data.success && window.showToast) {
+      showToast('Round-Robin sozlamalari saqlandi');
     }
   } catch(e) {}
 }
@@ -329,13 +373,13 @@ async function loadSalesForecast() {
 
     const container = document.getElementById('funnelStagesList');
     container.innerHTML = data.stageFunnel.map(st => `
-      <div>
-        <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:600; margin-bottom:4px;">
-          <span><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${st.color}; margin-right:6px;"></span> ${st.name}</span>
-          <span>${st.count} ta sdelka (${st.percentage}%)</span>
+      <div style="background:var(--bg-surface-hover); padding:14px; border-radius:10px; border:1px solid var(--border);">
+        <div style="display:flex; justify-content:space-between; font-size:13.5px; font-weight:700; margin-bottom:8px;">
+          <span><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:${st.color}; margin-right:8px;"></span> ${st.name}</span>
+          <span style="color:#0052FF;">${st.count} ta sdelka (${st.percentage}%)</span>
         </div>
-        <div style="width:100%; height:10px; background:var(--bg-surface-hover); border-radius:5px; overflow:hidden;">
-          <div style="width:${st.percentage}%; height:100%; background:${st.color}; border-radius:5px; transition:width 0.4s ease;"></div>
+        <div style="width:100%; height:12px; background:var(--bg-primary); border-radius:6px; overflow:hidden; border:1px solid var(--border);">
+          <div style="width:${st.percentage}%; height:100%; background:${st.color}; border-radius:6px; transition:width 0.5s ease;"></div>
         </div>
       </div>
     `).join('');
@@ -349,14 +393,17 @@ async function loadAutoMessages() {
 
     const container = document.getElementById('autoMsgContainer');
     container.innerHTML = data.messages.map((msg, idx) => `
-      <div style="padding:16px; background:var(--bg-surface-hover); border:1px solid var(--border); border-radius:8px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-          <div style="font-weight:700; font-size:13.5px; color:var(--text-primary);">📌 Bosqich: ${msg.stageName}</div>
-          <label style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; cursor:pointer;">
-            <input type="checkbox" class="auto-msg-enabled" data-idx="${idx}" ${msg.enabled ? 'checked' : ''}> Yuborish Faol
+      <div style="padding:18px; background:var(--bg-surface-hover); border:1px solid var(--border); border-radius:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div style="font-weight:800; font-size:14px; color:var(--text-primary); display:flex; align-items:center; gap:8px;">
+            <i class="fas fa-tag" style="color:#0052FF;"></i> Bosqich: ${msg.stageName}
+          </div>
+          <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; cursor:pointer;">
+            <input type="checkbox" class="auto-msg-enabled" data-idx="${idx}" ${msg.enabled ? 'checked' : ''} style="width:16px; height:16px;"> Yuborish Faol
           </label>
         </div>
-        <textarea class="form-control auto-msg-template" data-idx="${idx}" style="width:100%; height:70px; font-size:12.5px;">${msg.template}</textarea>
+        <textarea class="form-control auto-msg-template" data-idx="${idx}" style="width:100%; height:75px; font-size:13px; border-radius:8px;">${msg.template}</textarea>
+        <div style="font-size:11.5px; color:var(--text-tertiary); margin-top:6px;">O'zgaruvchilar: {clientName}, {productName}, {driverPhone}</div>
       </div>
     `).join('');
   } catch(e) {}
@@ -380,7 +427,9 @@ async function saveAutoMessages() {
       body: JSON.stringify({ messages })
     });
     const data = await res.json();
-    if (data.success && window.showToast) showToast('Avto-xabarlar saqlandi');
+    if (data.success && window.showToast) {
+      showToast('Avto-xabarlar saqlandi');
+    }
   } catch(e) {}
 }
 
@@ -432,7 +481,9 @@ async function savePermissionsConfig() {
       body: JSON.stringify({ permissions })
     });
     const data = await res.json();
-    if (data.success && window.showToast) showToast('Rollar ruxsatnomasi saqlandi');
+    if (data.success && window.showToast) {
+      showToast('Rollar ruxsatnomasi saqlandi');
+    }
   } catch(e) {}
 }
 
