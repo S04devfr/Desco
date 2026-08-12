@@ -75,6 +75,10 @@ model Client {
 
   @@index([ownerId])
   @@index([createdAt])
+  @@index([name])
+  @@index([phone])
+  @@index([city])
+  @@index([debt])
 }
 
 model Company {
@@ -234,6 +238,8 @@ model Deal {
   @@index([ownerId])
   @@index([pipelineId])
   @@index([createdAt])
+  @@index([productName])
+  @@index([stageUpdatedAt])
 }
 
 // ── YETKAZIB BERISH KUZATUVI ──

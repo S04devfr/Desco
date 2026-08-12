@@ -197,12 +197,27 @@ router.get('/', async (req, res, next) => {
     };
 
     let deals = [];
+    let totalCount = 0;
+    const pageNum = Number(req.query.page);
+    const limitNum = Number(req.query.limit) || 50;
+
     try {
-      deals = await prisma.deal.findMany({
-        where,
-        include: includeFields,
-        orderBy: { createdAt: 'desc' }
-      });
+      if (pageNum > 0) {
+        totalCount = await prisma.deal.count({ where });
+        deals = await prisma.deal.findMany({
+          where,
+          include: includeFields,
+          orderBy: { createdAt: 'desc' },
+          skip: (pageNum - 1) * limitNum,
+          take: limitNum
+        });
+      } else {
+        deals = await prisma.deal.findMany({
+          where,
+          include: includeFields,
+          orderBy: { createdAt: 'desc' }
+        });
+      }
     } catch (queryErr) {
       console.error('[Prisma Deals Query Error - Fallback Triggered]:', queryErr.message);
       // Remove search condition from where.AND and query base deals, letting frontend filter in-memory

