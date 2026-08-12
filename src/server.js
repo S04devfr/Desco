@@ -115,35 +115,11 @@ app.use('/api', rateLimiter(200, 60000));    // API uchun global rate limit: 200
 // ── API ROUTES ──
 async function ensureDefaultSeed() {
   const prisma = require('./config/database');
-  const { execSync } = require('child_process');
 
   try {
-    let existingAdmin;
-    try {
-      existingAdmin = await prisma.user.findFirst({
-        where: { email: 'shokirovsharifjon04@gmail.com' }
-      });
-    } catch (dbErr) {
-      if (dbErr.message && (dbErr.message.includes('does not exist') || dbErr.message.includes('public.User'))) {
-        console.log('⚡ Table public.User does not exist. Running Prisma db push & seed script...');
-        try {
-          execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
-          console.log('✅ Schema pushed successfully to PostgreSQL!');
-          execSync('node prisma/seed.js', { stdio: 'inherit' });
-          console.log('✅ Full database seeded successfully!');
-        } catch (execErr) {
-          console.error('❌ Auto migration execution failed:', execErr.message);
-        }
-        return;
-      }
-    }
-
-    const dealCount = await prisma.deal.count().catch(() => 0);
-    if (dealCount === 0) {
-      console.log('⚡ Deal table is empty (0 deals). Triggering high-speed bulk seed...');
-      const runFastSeed = require('../prisma/seed.js');
-      await runFastSeed();
-    }
+    const existingAdmin = await prisma.user.findFirst({
+      where: { email: 'shokirovsharifjon04@gmail.com' }
+    }).catch(() => null);
 
     if (!existingAdmin) {
       console.log('⚡ Seeding default admin & pipeline into database...');
