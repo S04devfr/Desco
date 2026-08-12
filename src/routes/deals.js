@@ -1541,5 +1541,46 @@ router.post('/:id/installments', requireRole('admin', 'manager'), async (req, re
     res.json(result);
   } catch (error) { next(error); }
 });
+// Add transport/delivery expense linked to deal
+router.post('/:id/expenses', requireRole('admin', 'manager'), async (req, res, next) => {
+  try {
+    const dealId = Number(req.params.id);
+    const { amount, description } = req.body;
+
+    const numAmt = Number(amount);
+    if (isNaN(numAmt) || numAmt <= 0) {
+      return res.status(400).json({ message: "Xarajat summasi musbat bo'lishi kerak" });
+    }
+
+    const deal = await prisma.deal.findUnique({
+      where: { id: dealId },
+      include: { client: true, manager: true }
+    });
+
+    if (!deal) {
+      return res.status(404).json({ message: "Sdelka topilmadi" });
+    }
+
+    const clientName = deal.client?.name || deal.name || `Sdelka #${dealId}`;
+    const fullDesc = `🚚 Transport (Sdelka #${dealId} · ${clientName}): ${description || 'Yo\'lkiro xarajati'}`;
+
+    const expense = await prisma.expense.create({
+      data: {
+        description: fullDesc,
+        amount: numAmt,
+        category: 'Transport',
+        date: new Date(),
+        createdById: req.userId
+      },
+      include: { createdBy: { select: { id: true, fullName: true, email: true } } }
+    });
+
+    await logActivity(dealId, req.userId, 'TRANSPORT_EXPENSE_ADDED', `🚚 Transport xarajati: ${numAmt.toLocaleString('uz-UZ')} so'm (${description || 'Yo\'lkiro'})`);
+
+    res.status(201).json({ success: true, expense });
+  } catch (error) {
+    next(error);
+  }
+});
 
 module.exports = router

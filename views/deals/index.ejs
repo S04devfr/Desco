@@ -1622,6 +1622,9 @@
             <button id="tab-btn-task" class="btn btn-ghost btn-sm" onclick="setTimelineInputTab('task')" style="padding:2px 8px; font-size:12px; font-weight:700; color:var(--text-secondary); border:none; border-radius:4px; cursor:pointer; display:flex; align-items:center; gap:4px;">
               <i class="far fa-calendar-check"></i> Vazifa
             </button>
+            <button id="tab-btn-transport" class="btn btn-ghost btn-sm" onclick="setTimelineInputTab('transport')" style="padding:2px 8px; font-size:12px; font-weight:700; color:var(--text-secondary); border:none; border-radius:4px; cursor:pointer; display:flex; align-items:center; gap:4px;">
+              <i class="fas fa-truck"></i> Transport Xarajati
+            </button>
           </div>
 
           <div id="timeline-panel-comment" style="display:flex; gap:10px; align-items:center;">
@@ -1629,6 +1632,28 @@
             <button class="btn btn-primary" onclick="submitDrawerComment()" style="align-self:center; height:42px; width:42px; padding:0; display:inline-flex; align-items:center; justify-content:center; background:var(--brand); border-color:var(--brand); border-radius:8px; cursor:pointer; flex-shrink:0;">
               <i class="fas fa-paper-plane" style="font-size:13px;"></i>
             </button>
+          </div>
+
+          <div id="timeline-panel-transport" style="display:none; flex-direction:column; gap:8px; padding:8px; background:rgba(245,158,11,0.05); border:1px solid rgba(245,158,11,0.25); border-radius:8px;">
+            <div style="font-size:11px; font-weight:800; color:#d97706; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:6px;">
+              <i class="fas fa-shipping-fast"></i> Sdelkaga Transport / Yo'lkiro Xarajati Biriktirish
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1.5fr; gap:8px;">
+              <div>
+                <label style="font-size:10.5px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:3px;">Summa (so'm) *</label>
+                <input type="number" id="tl-transport-amount" class="form-control" style="font-size:12.5px; height:32px; padding:4px 8px; font-weight:800; color:#d97706;" placeholder="50000">
+              </div>
+              <div>
+                <label style="font-size:10.5px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:3px;">Izoh / Kuryer / Yo'nalish</label>
+                <input type="text" id="tl-transport-notes" class="form-control" style="font-size:12px; height:32px; padding:4px 8px;" placeholder="Shopirga yo'lkiro (Toshkent-Samarqand)">
+              </div>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:2px;">
+              <button class="btn btn-ghost btn-sm" onclick="setTimelineInputTab('comment')" style="font-size:12px; padding:2px 8px;">Bekor</button>
+              <button class="btn btn-sm btn-primary" onclick="submitDrawerTransportExpense()" id="btnSubmitTransportExpense" style="background:#f59e0b; border-color:#d97706; font-size:12px; font-weight:700; padding:4px 14px; border-radius:6px; color:#fff;">
+                <i class="fas fa-save"></i> 🚚 Transport Xarajatini Saqlash
+              </button>
+            </div>
           </div>
 
           <div id="timeline-panel-task" style="display:none; flex-direction:column; gap:8px; padding:4px 0;">
@@ -4515,42 +4540,93 @@ async function submitDrawerComment() {
 window.setTimelineInputTab = function(tab) {
   const btnComment = document.getElementById('tab-btn-comment');
   const btnTask = document.getElementById('tab-btn-task');
+  const btnTransport = document.getElementById('tab-btn-transport');
   const panelComment = document.getElementById('timeline-panel-comment');
   const panelTask = document.getElementById('timeline-panel-task');
+  const panelTransport = document.getElementById('timeline-panel-transport');
+
+  const resetBtn = (btn) => {
+    if (!btn) return;
+    btn.style.background = 'transparent';
+    btn.style.color = 'var(--text-secondary)';
+    btn.classList.add('btn-ghost');
+  };
+  const activeBtn = (btn, bg) => {
+    if (!btn) return;
+    btn.style.background = bg || 'var(--accent)';
+    btn.style.color = '#fff';
+    btn.classList.remove('btn-ghost');
+  };
+
+  resetBtn(btnComment);
+  resetBtn(btnTask);
+  resetBtn(btnTransport);
+
+  if (panelComment) panelComment.style.display = 'none';
+  if (panelTask) panelTask.style.display = 'none';
+  if (panelTransport) panelTransport.style.display = 'none';
 
   if (tab === 'comment') {
-    btnComment.style.background = 'var(--accent)';
-    btnComment.style.color = '#fff';
-    btnComment.classList.remove('btn-ghost');
+    activeBtn(btnComment, 'var(--accent)');
+    if (panelComment) panelComment.style.display = 'flex';
+  } else if (tab === 'task') {
+    activeBtn(btnTask, 'var(--accent)');
+    if (panelTask) panelTask.style.display = 'flex';
 
-    btnTask.style.background = 'transparent';
-    btnTask.style.color = 'var(--text-secondary)';
-    btnTask.classList.add('btn-ghost');
-
-    panelComment.style.display = 'flex';
-    panelTask.style.display = 'none';
-  } else {
-    btnTask.style.background = 'var(--accent)';
-    btnTask.style.color = '#fff';
-    btnTask.classList.remove('btn-ghost');
-
-    btnComment.style.background = 'transparent';
-    btnComment.style.color = 'var(--text-secondary)';
-    btnComment.classList.add('btn-ghost');
-
-    panelComment.style.display = 'none';
-    panelTask.style.display = 'flex';
-    
     // Set default date to today
     const today = new Date();
     const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().slice(0, 10);
-    document.getElementById('tl-task-date').value = localDate;
-    
-    // Populate assignee list
-    const assigneeSelect = document.getElementById('tl-task-assignee');
-    if (assigneeSelect && window._managers) {
-      assigneeSelect.innerHTML = '<option value="">— O\'zim —</option>' +
-        window._managers.map(u => `<option value="${u.id}">${_esc(u.fullName||u.email)}</option>`).join('');
+    const dateInput = document.getElementById('tl-task-date');
+    if (dateInput) dateInput.value = localDate;
+  } else if (tab === 'transport') {
+    activeBtn(btnTransport, '#f59e0b');
+    if (panelTransport) panelTransport.style.display = 'flex';
+  }
+};
+
+window.submitDrawerTransportExpense = async function() {
+  if (!_detailId) return;
+
+  const amountInput = document.getElementById('tl-transport-amount');
+  const notesInput = document.getElementById('tl-transport-notes');
+
+  const amount = Number(amountInput?.value);
+  const notes = notesInput?.value?.trim() || '';
+
+  if (!amount || amount <= 0) {
+    if (window._toast) _toast("Iltimos, transport summasini kiriting", "error");
+    else alert("Iltimos, transport summasini kiriting");
+    return;
+  }
+
+  const btn = document.getElementById('btnSubmitTransportExpense');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saqlanmoqda...';
+  }
+
+  try {
+    const res = await apiFetch('/api/deals/' + _detailId + '/expenses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount, description: notes })
+    });
+
+    if (window._toast) _toast("🚚 Transport xarajati saqlandi va Xarajatlar bo'limiga qo'shildi!", "success");
+    else alert("Transport xarajati saqlandi!");
+
+    amountInput.value = '';
+    notesInput.value = '';
+    setTimelineInputTab('comment');
+
+    // Reload deal detail and timeline
+    await openDetail(_detailId);
+  } catch (err) {
+    alert("Xatolik: " + (err.message || "Saqlab bo'lmadi"));
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-save"></i> 🚚 Transport Xarajatini Saqlash';
     }
   }
 };
