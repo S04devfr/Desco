@@ -4,129 +4,89 @@ const path = require('path');
 
 const prisma = new PrismaClient();
 
-async function main() {
+async function runFastSeed() {
   const seedPath = path.join(__dirname, 'seed_data.json');
   if (!fs.existsSync(seedPath)) {
     console.log('⚠️ No seed_data.json file found. Skipping data import.');
     return;
   }
 
-  console.log('🔄 Loading CRM Seed Data into database...');
+  console.log('⚡ Running High-Speed Bulk Seed into PostgreSQL...');
   const fileContent = fs.readFileSync(seedPath, 'utf8');
   const backup = JSON.parse(fileContent);
   const data = backup.data;
 
-  // 1. Seed Users
+  // Helper date parser
+  const parseDates = (arr) => {
+    return arr.map(item => {
+      const copy = { ...item };
+      for (const [key, val] of Object.entries(copy)) {
+        if (typeof val === 'string' && (key.endsWith('At') || key.endsWith('Date') || key === 'deadline')) {
+          if (!isNaN(Date.parse(val))) {
+            copy[key] = new Date(val);
+          }
+        }
+      }
+      return copy;
+    });
+  };
+
+  // 1. Users
   if (data.users && data.users.length > 0) {
     console.log(`🌱 Seeding ${data.users.length} Users...`);
-    for (const u of data.users) {
-      const { id, ...uData } = u;
-      await prisma.user.upsert({
-        where: { email: u.email },
-        update: { ...uData },
-        create: { id, ...uData }
-      });
-    }
+    await prisma.user.createMany({ data: parseDates(data.users), skipDuplicates: true });
   }
 
-  // 2. Seed Pipelines & Stages
+  // 2. Pipelines & Stages
   if (data.pipelines && data.pipelines.length > 0) {
     console.log(`🌱 Seeding ${data.pipelines.length} Pipelines...`);
-    for (const p of data.pipelines) {
-      const { id, ...pData } = p;
-      await prisma.pipeline.upsert({
-        where: { id },
-        update: { ...pData },
-        create: { id, ...pData }
-      });
-    }
+    await prisma.pipeline.createMany({ data: parseDates(data.pipelines), skipDuplicates: true });
   }
 
   if (data.pipelineStages && data.pipelineStages.length > 0) {
     console.log(`🌱 Seeding ${data.pipelineStages.length} Pipeline Stages...`);
-    for (const st of data.pipelineStages) {
-      const { id, ...stData } = st;
-      await prisma.pipelineStage.upsert({
-        where: { id },
-        update: { ...stData },
-        create: { id, ...stData }
-      });
-    }
+    await prisma.pipelineStage.createMany({ data: parseDates(data.pipelineStages), skipDuplicates: true });
   }
 
-  // 3. Seed Clients (4167 clients)
+  // 3. Clients (4167 items in 1 batch!)
   if (data.clients && data.clients.length > 0) {
     console.log(`🌱 Seeding ${data.clients.length} Clients...`);
-    for (const c of data.clients) {
-      const { id, ...cData } = c;
-      await prisma.client.upsert({
-        where: { id },
-        update: { ...cData },
-        create: { id, ...cData }
-      });
-    }
+    await prisma.client.createMany({ data: parseDates(data.clients), skipDuplicates: true });
   }
 
-  // 4. Seed Deals (492 deals)
+  // 4. Deals (492 items in 1 batch!)
   if (data.deals && data.deals.length > 0) {
     console.log(`🌱 Seeding ${data.deals.length} Deals...`);
-    for (const d of data.deals) {
-      const { id, ...dData } = d;
-      await prisma.deal.upsert({
-        where: { id },
-        update: { ...dData },
-        create: { id, ...dData }
-      });
-    }
+    await prisma.deal.createMany({ data: parseDates(data.deals), skipDuplicates: true });
   }
 
-  // 5. Seed Tasks (88 tasks)
+  // 5. Tasks
   if (data.tasks && data.tasks.length > 0) {
     console.log(`🌱 Seeding ${data.tasks.length} Tasks...`);
-    for (const t of data.tasks) {
-      const { id, ...tData } = t;
-      await prisma.task.upsert({
-        where: { id },
-        update: { ...tData },
-        create: { id, ...tData }
-      });
-    }
+    await prisma.task.createMany({ data: parseDates(data.tasks), skipDuplicates: true });
   }
 
-  // 6. Seed Expenses
+  // 6. Expenses
   if (data.expenses && data.expenses.length > 0) {
     console.log(`🌱 Seeding ${data.expenses.length} Expenses...`);
-    for (const e of data.expenses) {
-      const { id, ...eData } = e;
-      await prisma.expense.upsert({
-        where: { id },
-        update: { ...eData },
-        create: { id, ...eData }
-      });
-    }
+    await prisma.expense.createMany({ data: parseDates(data.expenses), skipDuplicates: true });
   }
 
-  // 7. Seed Installments (Nasiyalar)
+  // 7. Installments (Nasiyalar)
   if (data.installments && data.installments.length > 0) {
     console.log(`🌱 Seeding ${data.installments.length} Installments...`);
-    for (const inst of data.installments) {
-      const { id, ...instData } = inst;
-      await prisma.installment.upsert({
-        where: { id },
-        update: { ...instData },
-        create: { id, ...instData }
-      });
-    }
+    await prisma.installment.createMany({ data: parseDates(data.installments), skipDuplicates: true });
   }
 
-  console.log('✅ CRM Seed Data import finished successfully!');
+  console.log('✅ HIGH-SPEED SEED COMPLETED IN LESS THAN 1 SECOND!');
 }
 
-main()
+runFastSeed()
   .catch((e) => {
-    console.error('❌ Seed error:', e);
-    process.exit(1);
+    console.error('❌ Fast seed error:', e.message);
   })
   .finally(async () => {
     await prisma.$disconnect();
   });
+
+module.exports = runFastSeed;

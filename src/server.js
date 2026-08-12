@@ -138,6 +138,13 @@ async function ensureDefaultSeed() {
       }
     }
 
+    const dealCount = await prisma.deal.count().catch(() => 0);
+    if (dealCount === 0) {
+      console.log('⚡ Deal table is empty (0 deals). Triggering high-speed bulk seed...');
+      const runFastSeed = require('../prisma/seed.js');
+      await runFastSeed();
+    }
+
     if (!existingAdmin) {
       console.log('⚡ Seeding default admin & pipeline into database...');
       const bcrypt = require('bcryptjs');
