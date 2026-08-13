@@ -233,13 +233,11 @@ router.get('/kpis', async (req, res, next) => {
       ? dealsCreatedInPeriod.filter(d => d.stage?.pipelineId !== dlvPipelineId).length 
       : dealsCreatedInPeriod.length;
 
-    // ── Source Breakdown (target, instagram, telegram, phone, office, oddiy) ──
+    // ── Source Breakdown (target, instagram, phone, office) ──
     const isTargetSource    = d => d.source === 'target';
     const isInstagramSource = d => d.source === 'instagram';
-    const isTelegramSource  = d => d.source === 'telegram';
     const isPhoneSource     = d => d.source === 'phone' || d.source === 'telefon';
     const isOfficeSource    = d => d.source === 'office';
-    const isOddiySource     = d => !d.source || d.source === 'oddiy' || d.source === 'manual';
 
     const sourceBreakdown = {
       target: {
@@ -252,11 +250,6 @@ router.get('/kpis', async (req, res, next) => {
         wonCount: dealsCreatedInPeriod.filter(d => isInstagramSource(d) && isWonDeal(d)).length,
         wonAmount: dealsCreatedInPeriod.filter(d => isInstagramSource(d) && isWonDeal(d)).reduce((s, d) => s + getEffectivePaid(d), 0)
       },
-      telegram: {
-        leads: dealsCreatedInPeriod.filter(isTelegramSource).length,
-        wonCount: dealsCreatedInPeriod.filter(d => isTelegramSource(d) && isWonDeal(d)).length,
-        wonAmount: dealsCreatedInPeriod.filter(d => isTelegramSource(d) && isWonDeal(d)).reduce((s, d) => s + getEffectivePaid(d), 0)
-      },
       phone: {
         leads: dealsCreatedInPeriod.filter(isPhoneSource).length,
         wonCount: dealsCreatedInPeriod.filter(d => isPhoneSource(d) && isWonDeal(d)).length,
@@ -266,21 +259,14 @@ router.get('/kpis', async (req, res, next) => {
         leads: dealsCreatedInPeriod.filter(isOfficeSource).length,
         wonCount: dealsCreatedInPeriod.filter(d => isOfficeSource(d) && isWonDeal(d)).length,
         wonAmount: dealsCreatedInPeriod.filter(d => isOfficeSource(d) && isWonDeal(d)).reduce((s, d) => s + getEffectivePaid(d), 0)
-      },
-      oddiy: {
-        leads: dealsCreatedInPeriod.filter(isOddiySource).length,
-        wonCount: dealsCreatedInPeriod.filter(d => isOddiySource(d) && isWonDeal(d)).length,
-        wonAmount: dealsCreatedInPeriod.filter(d => isOddiySource(d) && isWonDeal(d)).reduce((s, d) => s + getEffectivePaid(d), 0)
       }
     };
 
     const sourcesCount = {
       target: sourceBreakdown.target.leads,
       instagram: sourceBreakdown.instagram.leads,
-      telegram: sourceBreakdown.telegram.leads,
       phone: sourceBreakdown.phone.leads,
-      office: sourceBreakdown.office.leads,
-      oddiy: sourceBreakdown.oddiy.leads
+      office: sourceBreakdown.office.leads
     };
 
     const totalRevenue = deals.reduce((sum, d) => sum + getEffectivePaid(d), 0);
@@ -592,14 +578,12 @@ router.get('/kpis', async (req, res, next) => {
       pipelineForecastValue: 0,
       managersList: [],
       funnelStages: { yangi: 0, muzokara: 0, lost: 0, total: 0 },
-      sourcesCount: { target: 0, instagram: 0, telegram: 0, phone: 0, office: 0, oddiy: 0 },
+      sourcesCount: { target: 0, instagram: 0, phone: 0, office: 0 },
       sourceBreakdown: {
         target: { leads: 0, wonCount: 0, wonAmount: 0 },
         instagram: { leads: 0, wonCount: 0, wonAmount: 0 },
-        telegram: { leads: 0, wonCount: 0, wonAmount: 0 },
         phone: { leads: 0, wonCount: 0, wonAmount: 0 },
-        office: { leads: 0, wonCount: 0, wonAmount: 0 },
-        oddiy: { leads: 0, wonCount: 0, wonAmount: 0 }
+        office: { leads: 0, wonCount: 0, wonAmount: 0 }
       },
       error: error.message + "\n" + error.stack
     });

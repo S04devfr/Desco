@@ -973,20 +973,12 @@ async function loadDashboard() {
               <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.instagram?.leads ?? safeKpis.sourcesCount?.instagram ?? 0} ta lead <span style="color:#34C759; font-weight:600;">(${safeKpis.sourceBreakdown?.instagram?.wonCount ?? 0} ta zakaz)</span></strong>
             </div>
             <div style="display: flex; justify-content: space-between; gap: 8px;">
-              <span>Telegram:</span>
-              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.telegram?.leads ?? safeKpis.sourcesCount?.telegram ?? 0} ta lead <span style="color:#34C759; font-weight:600;">(${safeKpis.sourceBreakdown?.telegram?.wonCount ?? 0} ta zakaz)</span></strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; gap: 8px;">
               <span>Telefon orqali:</span>
               <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.phone?.leads ?? safeKpis.sourcesCount?.phone ?? 0} ta lead <span style="color:#34C759; font-weight:600;">(${safeKpis.sourceBreakdown?.phone?.wonCount ?? 0} ta zakaz)</span></strong>
             </div>
             <div style="display: flex; justify-content: space-between; gap: 8px;">
               <span>Office'dan:</span>
               <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.office?.leads ?? safeKpis.sourcesCount?.office ?? 0} ta lead <span style="color:#34C759; font-weight:600;">(${safeKpis.sourceBreakdown?.office?.wonCount ?? 0} ta zakaz)</span></strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; gap: 8px;">
-              <span>Qo'lda/Boshqa:</span>
-              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.oddiy?.leads ?? safeKpis.sourcesCount?.oddiy ?? 0} ta lead <span style="color:#34C759; font-weight:600;">(${safeKpis.sourceBreakdown?.oddiy?.wonCount ?? 0} ta zakaz)</span></strong>
             </div>
           </div>
         </div>
@@ -1041,20 +1033,12 @@ async function loadDashboard() {
               <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.instagram?.wonCount ?? 0} ta zakaz (${renderCardMoney(safeKpis.sourceBreakdown?.instagram?.wonAmount ?? 0)})</strong>
             </div>
             <div style="display: flex; justify-content: space-between; gap: 8px;">
-              <span>Telegram:</span>
-              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.telegram?.wonCount ?? 0} ta zakaz (${renderCardMoney(safeKpis.sourceBreakdown?.telegram?.wonAmount ?? 0)})</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; gap: 8px;">
               <span>Telefon orqali:</span>
               <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.phone?.wonCount ?? 0} ta zakaz (${renderCardMoney(safeKpis.sourceBreakdown?.phone?.wonAmount ?? 0)})</strong>
             </div>
             <div style="display: flex; justify-content: space-between; gap: 8px;">
               <span>Office'dan:</span>
               <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.office?.wonCount ?? 0} ta zakaz (${renderCardMoney(safeKpis.sourceBreakdown?.office?.wonAmount ?? 0)})</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; gap: 8px;">
-              <span>Qo'lda/Boshqa:</span>
-              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.oddiy?.wonCount ?? 0} ta zakaz (${renderCardMoney(safeKpis.sourceBreakdown?.oddiy?.wonAmount ?? 0)})</strong>
             </div>
           </div>
         </div>
