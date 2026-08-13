@@ -1644,7 +1644,7 @@
                 <input type="number" id="tl-transport-amount" class="form-control" style="font-size:12.5px; height:32px; padding:4px 8px; font-weight:800; color:#d97706;" placeholder="50000">
               </div>
               <div>
-                <label style="font-size:10.5px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:3px;">Izoh / Kuryer / Yo'nalish</label>
+                <label style="font-size:10.5px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:3px;">Izoh / Kuryer / Yo'nalish *</label>
                 <input type="text" id="tl-transport-notes" class="form-control" style="font-size:12px; height:32px; padding:4px 8px;" placeholder="Shopirga yo'lkiro (Toshkent-Samarqand)">
               </div>
             </div>
@@ -2876,17 +2876,26 @@ async function onDrop(e, stageId) {
     return;
   }
 
-  // Just update the stage via API directly and reload!
+  // Optimistic UI update for smooth UX
+  deal.stageId = newStageId;
+  renderKanban();
+
   try {
-    await apiFetch('/api/deals/' + dealId + '/stage', {
+    const updated = await apiFetch('/api/deals/' + dealId + '/stage', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ stageId: Number(newStageId), reason: null })
     });
     _toast("Bosqich o'zgartirildi", "success");
-    await loadDeals();
+    if (updated && updated.id) {
+      const idx = _deals.findIndex(d => d.id === dealId);
+      if (idx >= 0) _deals[idx] = updated;
+    }
+    renderKanban();
   } catch (err) {
-    _toast(err.message, "error");
+    deal.stageId = previousStageId;
+    renderKanban();
+    _toast(err.message || "Bosqichni o'zgartirishda xatolik yuz berdi", "error");
   }
 }
 
@@ -4590,12 +4599,19 @@ window.submitDrawerTransportExpense = async function() {
   const amountInput = document.getElementById('tl-transport-amount');
   const notesInput = document.getElementById('tl-transport-notes');
 
-  const amount = Number(amountInput?.value);
+  const rawAmount = amountInput?.value;
+  const amount = Number(rawAmount);
   const notes = notesInput?.value?.trim() || '';
 
-  if (!amount || amount <= 0) {
-    if (window._toast) _toast("Iltimos, transport summasini kiriting", "error");
-    else alert("Iltimos, transport summasini kiriting");
+  if (rawAmount === '' || rawAmount === undefined || rawAmount === null || isNaN(amount) || amount < 0) {
+    if (window._toast) _toast("Iltimos, to'g'ri transport summasini kiriting (0 va undan yuqori)", "error");
+    else alert("Iltimos, to'g'ri transport summasini kiriting (0 va undan yuqori)");
+    return;
+  }
+
+  if (!notes) {
+    if (window._toast) _toast("Iltimos, transport xarajati uchun izoh kiriting", "error");
+    else alert("Iltimos, transport xarajati uchun izoh kiriting");
     return;
   }
 

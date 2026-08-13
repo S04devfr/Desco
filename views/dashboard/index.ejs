@@ -74,34 +74,18 @@
   <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-spinner fa-spin"></i></div><div class="stat-info"><div class="stat-label">Yuklanmoqda...</div></div></div>
 </div>
 
-<!-- ADVANCED METRICS GRID (FUNNEL & GEOGRAPHIC) -->
-<div class="dashboard-grid-2">
-  <!-- HubSpot style Conversion Funnel -->
-  <div class="card" <% if (isAdmin) { %>style="grid-column: span 2;"<% } %>>
-    <div class="card-header flex justify-between items-center">
-      <h3 class="section-title"><i class="fas fa-filter text-brand"></i>Savdo Voronkasi</h3>
-      <span class="badge badge-brand">Konversiya</span>
-    </div>
-    <div class="card-body">
-      <div id="funnelContainer" class="funnel-container">
-        <div class="empty-state" style="padding:40px;"><div class="spinner" style="margin:auto;"></div></div>
-      </div>
-    </div>
+<% if (!isAdmin) { %>
+<!-- My Tasks Section -->
+<div class="card mb-6" id="myTasksSection">
+  <div class="card-header flex justify-between items-center">
+    <h3 class="section-title"><i class="fas fa-tasks text-brand"></i>Mening Vazifalarim</h3>
+    <span class="badge badge-brand" id="myTasksCount">0 ta faol</span>
   </div>
-
-  <% if (!isAdmin) { %>
-  <!-- My Tasks Section -->
-  <div class="card" id="myTasksSection">
-    <div class="card-header flex justify-between items-center">
-      <h3 class="section-title"><i class="fas fa-tasks text-brand"></i>Mening Vazifalarim</h3>
-      <span class="badge badge-brand" id="myTasksCount">0 ta faol</span>
-    </div>
-    <div class="card-body" style="padding: 12px; height: 350px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;" id="myTasksContainer">
-      <div style="padding:40px;text-align:center"><div class="spinner" style="margin:auto;"></div></div>
-    </div>
+  <div class="card-body" style="padding: 12px; height: 350px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;" id="myTasksContainer">
+    <div style="padding:40px;text-align:center"><div class="spinner" style="margin:auto;"></div></div>
   </div>
-  <% } %>
 </div>
+<% } %>
 
 <% if (isAdmin) { %>
 <!-- ═══════════════════════════════════════════════════════

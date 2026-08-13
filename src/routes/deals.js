@@ -1548,8 +1548,13 @@ router.post('/:id/expenses', requireRole('admin', 'manager'), async (req, res, n
     const { amount, description } = req.body;
 
     const numAmt = Number(amount);
-    if (isNaN(numAmt) || numAmt <= 0) {
-      return res.status(400).json({ message: "Xarajat summasi musbat bo'lishi kerak" });
+    if (amount === undefined || amount === null || amount === '' || isNaN(numAmt) || numAmt < 0) {
+      return res.status(400).json({ message: "Xarajat summasi 0 yoki undan yuqori bo'lishi kerak" });
+    }
+
+    const trimmedDesc = (description || '').trim();
+    if (!trimmedDesc) {
+      return res.status(400).json({ message: "Izoh (kuryer/yo'nalish) kiritilishi shart" });
     }
 
     const deal = await prisma.deal.findUnique({
@@ -1562,7 +1567,7 @@ router.post('/:id/expenses', requireRole('admin', 'manager'), async (req, res, n
     }
 
     const clientName = deal.client?.name || deal.name || `Sdelka #${dealId}`;
-    const fullDesc = `🚚 Transport (Sdelka #${dealId} · ${clientName}): ${description || 'Yo\'lkiro xarajati'}`;
+    const fullDesc = `🚚 Transport (Sdelka #${dealId} · ${clientName}): ${trimmedDesc}`;
 
     const expense = await prisma.expense.create({
       data: {
@@ -1575,7 +1580,7 @@ router.post('/:id/expenses', requireRole('admin', 'manager'), async (req, res, n
       include: { createdBy: { select: { id: true, fullName: true, email: true } } }
     });
 
-    await logActivity(dealId, req.userId, 'TRANSPORT_EXPENSE_ADDED', `🚚 Transport xarajati: ${numAmt.toLocaleString('uz-UZ')} so'm (${description || 'Yo\'lkiro'})`);
+    await logActivity(dealId, req.userId, 'TRANSPORT_EXPENSE_ADDED', `🚚 Transport xarajati: ${numAmt.toLocaleString('uz-UZ')} so'm (${trimmedDesc})`);
 
     res.status(201).json({ success: true, expense });
   } catch (error) {
