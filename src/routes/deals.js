@@ -321,9 +321,12 @@ router.post('/', async (req, res, next) => {
     const {
       productName, amount, paidAmount, status, notes, clientId, contactId, companyId, deadline, stageId, pipelineId,
       contactName, contactPhone, contactEmail, companyName, companyAddress, city, costPrice, createdAt, warehouse,
-      productColor, driverPhone, tags, ownerId, currency, probability, expectedCloseDate
+      productColor, driverPhone, tags, ownerId, currency, probability, expectedCloseDate, source
     } = req.body
     if (!productName) return res.status(400).json({ message: 'Mahsulot nomi majburiy' })
+    if (!source || String(source).trim() === '' || source === 'null' || source === 'undefined') {
+      return res.status(400).json({ message: "Sdelka manbasi (source) to'ldirilishi majburiy!" });
+    }
 
     let resolvedClientId = clientId ? Number(clientId) : null
     let resolvedContactId = contactId ? Number(contactId) : (clientId ? Number(clientId) : null)
@@ -850,6 +853,10 @@ router.patch('/:id', async (req, res, next) => {
       productName, amount, paidAmount, status, notes, clientId, deadline, managerId, stageId, costPrice, deliveryPrice,
       contactName, contactPhone, city, createdAt, warehouse, productColor, driverPhone, tags, source
     } = req.body
+
+    if (source !== undefined && (!source || String(source).trim() === '' || source === 'null' || source === 'undefined')) {
+      return res.status(400).json({ message: "Sdelka manbasi (source) to'ldirilishi majburiy!" });
+    }
 
     const existing = await prisma.deal.findUnique({
       where: { id: Number(req.params.id) },
