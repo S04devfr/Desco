@@ -399,10 +399,14 @@ router.post('/webhook', async (req, res) => {
   try {
     const TelephonyService = require('../services/telephony/telephonyService');
     const result = await TelephonyService.processWebhook(req);
-    res.json(result);
+    res.status(200).json(result || { success: true });
   } catch (err) {
-    console.error('[Telephony Webhook Error]', err);
-    res.status(err.message === 'Invalid Webhook Signature' ? 401 : 500).json({ message: err.message });
+    console.error('[Telephony Webhook Isolated Exception]', err.message);
+    if (err.message === 'Invalid Webhook Signature') {
+      return res.status(401).json({ success: false, message: err.message });
+    }
+    // Always acknowledge provider with 200 OK so VoIP webhook delivery succeeds
+    res.status(200).json({ success: true, errorHandled: true });
   }
 });
 

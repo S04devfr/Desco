@@ -157,8 +157,6 @@ router.get('/', async (req, res, next) => {
         { productName: { contains: searchLower, mode } },
         { city: { contains: searchLower, mode } },
         { notes: { contains: searchLower, mode } },
-        { contactName: { contains: searchLower, mode } },
-        { contactPhone: { contains: searchLower, mode } },
         { driverPhone: { contains: searchLower, mode } },
         { tags: { contains: searchLower, mode } },
         { warehouse: { contains: searchLower, mode } },

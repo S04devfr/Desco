@@ -60,7 +60,7 @@ router.get('/', async (req, res) => {
           deal: { 
             include: { 
               stage: true,
-              activityLogs: {
+              activities: {
                 orderBy: { createdAt: 'desc' },
                 take: 1
               }

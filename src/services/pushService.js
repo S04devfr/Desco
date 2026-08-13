@@ -121,7 +121,7 @@ setInterval(async () => {
         dueDate: { lte: tenMinsFromNow }
       },
       include: {
-        deal: { select: { id: true, productName: true, contactName: true, contactPhone: true } },
+        deal: { select: { id: true, productName: true, client: { select: { name: true, phone: true } } } },
         assignedTo: { select: { id: true, fullName: true } }
       },
       take: 50
@@ -133,7 +133,7 @@ setInterval(async () => {
 
       const targetUserId = task.assignedToId || task.deal?.managerId;
       if (targetUserId) {
-        const clientName = task.deal?.contactName || task.deal?.productName || 'Mijoz';
+        const clientName = task.deal?.client?.name || task.deal?.productName || 'Mijoz';
         await sendPushToUser(targetUserId, {
           title: '⏰ Qayta Aloqa Vaqti Keldi!',
           body: `${clientName} bilan bog'lanish vaqti bo'ldi (${task.title || 'Qayta aloqa'})`,

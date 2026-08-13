@@ -63,9 +63,15 @@ class TelephonyService {
       });
       if (client) return { type: 'client', record: client, id: client.id, name: client.name };
 
-      // 2. Search in Deal model
+      // 2. Search in Deal model (via client phone or driverPhone)
       const deal = await prisma.deal.findFirst({
-        where: { contactPhone: { contains: cleanPhone } },
+        where: {
+          OR: [
+            { driverPhone: { contains: cleanPhone } },
+            { client: { phone: { contains: cleanPhone } } },
+            { client: { companyPhone: { contains: cleanPhone } } }
+          ]
+        },
         include: { client: true }
       });
       if (deal) {
@@ -74,7 +80,7 @@ class TelephonyService {
           record: deal,
           id: deal.clientId || null,
           dealId: deal.id,
-          name: deal.contactName || deal.client?.name || deal.name
+          name: deal.client?.name || deal.productName || deal.title || `Sdelka #${deal.id}`
         };
       }
 
