@@ -145,8 +145,8 @@ router.get('/kpis', async (req, res, next) => {
 
     const monthlyRevenue = wonDealsThisMonth.reduce((sum, d) => sum + (d.amount || 0), 0);
 
-    // Expenses only use createdAt
-    const expenseWhere = where.createdAt ? { createdAt: where.createdAt } : {};
+    // Expenses use both createdAt and date
+    const expenseWhere = where.createdAt ? { OR: [{ createdAt: where.createdAt }, { date: where.createdAt }] } : {};
     const expenses = await prisma.expense.findMany({ where: expenseWhere });
 
     const isWonDeal = (d) => {
