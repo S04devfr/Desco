@@ -963,21 +963,22 @@ async function loadDashboard() {
             </span>
           </div>
           <div id="leadBreakdownList" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); padding: 12px 16px; z-index: 999; flex-direction: column; gap: 6px; font-size: 11.5px; color: var(--text-secondary);">
+            <div style="font-weight: 700; font-size: 11px; color: var(--text-primary); text-transform: uppercase; margin-bottom: 2px; border-bottom: 1px solid var(--border); padding-bottom: 4px;">Kelgan Leadlar & Haridlar</div>
+            <div style="display: flex; justify-content: space-between; gap: 8px;">
+              <span>Target (Meta):</span>
+              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.target?.leads ?? safeKpis.sourcesCount?.target ?? 0} ta lead <span style="color:#34C759; font-weight:600;">(${safeKpis.sourceBreakdown?.target?.wonCount ?? 0} ta zakaz)</span></strong>
+            </div>
             <div style="display: flex; justify-content: space-between; gap: 8px;">
               <span>Instagram:</span>
-              <strong style="color: var(--text-primary);">${safeKpis.sourcesCount?.instagram ?? 0} ta</strong>
+              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.instagram?.leads ?? safeKpis.sourcesCount?.instagram ?? 0} ta lead <span style="color:#34C759; font-weight:600;">(${safeKpis.sourceBreakdown?.instagram?.wonCount ?? 0} ta zakaz)</span></strong>
             </div>
             <div style="display: flex; justify-content: space-between; gap: 8px;">
               <span>Telegram:</span>
-              <strong style="color: var(--text-primary);">${safeKpis.sourcesCount?.telegram ?? 0} ta</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; gap: 8px;">
-              <span>Target (Meta):</span>
-              <strong style="color: var(--text-primary);">${safeKpis.sourcesCount?.target ?? 0} ta</strong>
+              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.telegram?.leads ?? safeKpis.sourcesCount?.telegram ?? 0} ta lead <span style="color:#34C759; font-weight:600;">(${safeKpis.sourceBreakdown?.telegram?.wonCount ?? 0} ta zakaz)</span></strong>
             </div>
             <div style="display: flex; justify-content: space-between; gap: 8px;">
               <span>Qo'lda/Boshqa:</span>
-              <strong style="color: var(--text-primary);">${safeKpis.sourcesCount?.oddiy ?? 0} ta</strong>
+              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.oddiy?.leads ?? safeKpis.sourcesCount?.oddiy ?? 0} ta lead <span style="color:#34C759; font-weight:600;">(${safeKpis.sourceBreakdown?.oddiy?.wonCount ?? 0} ta zakaz)</span></strong>
             </div>
           </div>
         </div>
@@ -1000,6 +1001,7 @@ async function loadDashboard() {
             </span>
           </div>
           <div id="zakazBreakdownList" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); padding: 12px 16px; z-index: 999; flex-direction: column; gap: 6px; font-size: 11.5px; color: var(--text-secondary);">
+            <div style="font-weight: 700; font-size: 11px; color: var(--text-primary); text-transform: uppercase; margin-bottom: 2px; border-bottom: 1px solid var(--border); padding-bottom: 4px;">Bosqichlar kesimida</div>
             <div style="display: flex; justify-content: space-between; gap: 8px;">
               <span>100% Zakaz:</span>
               <strong style="color: var(--text-primary);">${renderCardMoney(safeKpis.zakaz100?.amount ?? 0)}</strong>
@@ -1019,6 +1021,24 @@ async function loadDashboard() {
             <div style="display: flex; justify-content: space-between; gap: 8px;">
               <span>Mahsulot shopirda:</span>
               <strong style="color: var(--text-primary);">${renderCardMoney(safeKpis.shopir?.amount ?? 0)}</strong>
+            </div>
+
+            <div style="font-weight: 700; font-size: 11px; color: var(--text-primary); text-transform: uppercase; margin-top: 6px; margin-bottom: 2px; border-bottom: 1px solid var(--border); padding-bottom: 4px;">Manbalar (Kanallar) kesimida</div>
+            <div style="display: flex; justify-content: space-between; gap: 8px;">
+              <span>Target (Meta):</span>
+              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.target?.wonCount ?? 0} ta zakaz (${renderCardMoney(safeKpis.sourceBreakdown?.target?.wonAmount ?? 0)})</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; gap: 8px;">
+              <span>Instagram:</span>
+              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.instagram?.wonCount ?? 0} ta zakaz (${renderCardMoney(safeKpis.sourceBreakdown?.instagram?.wonAmount ?? 0)})</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; gap: 8px;">
+              <span>Telegram:</span>
+              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.telegram?.wonCount ?? 0} ta zakaz (${renderCardMoney(safeKpis.sourceBreakdown?.telegram?.wonAmount ?? 0)})</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; gap: 8px;">
+              <span>Qo'lda/Boshqa:</span>
+              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.oddiy?.wonCount ?? 0} ta zakaz (${renderCardMoney(safeKpis.sourceBreakdown?.oddiy?.wonAmount ?? 0)})</strong>
             </div>
           </div>
         </div>

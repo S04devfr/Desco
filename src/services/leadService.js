@@ -1,6 +1,7 @@
 const prisma = require('../config/database');
 const supabase = require('../config/supabase');
 const { sendPushToRole, sendPushToUser } = require('./pushService');
+const { fixPostgresSequences } = require('../utils/sequenceSync');
 
 /**
  * Telefon raqami bo'yicha mijozni qidiradi yoki tranzaksiya orqali xavfsiz yaratadi.
@@ -17,52 +18,64 @@ async function upsertClientByPhone(name, phone, email, source) {
     throw new Error('Mijoz telefon raqami kiritilmagan.');
   }
 
-  // Dublikat yaratilishini oldini olish uchun tranzaksiyadan foydalanamiz (latency yuqori bo'lsa timeout bo'lmasligi uchun 15s)
-  return await prisma.$transaction(async (tx) => {
-    let client = await tx.client.findFirst({
-      where: { phone: { contains: cleanPhone } }
-    });
+  const executeUpsertTx = async () => {
+    return await prisma.$transaction(async (tx) => {
+      let client = await tx.client.findFirst({
+        where: { phone: { contains: cleanPhone } }
+      });
 
-    if (!client) {
-      client = await tx.client.create({
-        data: {
-          name: String(name).trim().substring(0, 200),
-          phone: cleanPhone,
-          email: email || null,
-          notes: `Manba: ${source}`
-        }
+      if (!client) {
+        client = await tx.client.create({
+          data: {
+            name: String(name).trim().substring(0, 200),
+            phone: cleanPhone,
+            email: email || null,
+            notes: `Manba: ${source}`
+          }
+        });
+      } else if (email && !client.email) {
+        // Agar mijoz topilsa va uning emaili bo'lmasa, uni yangilab qo'yamiz
+        client = await tx.client.update({
+          where: { id: client.id },
+          data: { email: email }
+        });
+      }
+
+      // ALSO upsert Contact
+      let contact = await tx.contact.findFirst({
+        where: { phone: { contains: cleanPhone } }
       });
-    } else if (email && !client.email) {
-      // Agar mijoz topilsa va uning emaili bo'lmasa, uni yangilab qo'yamiz
-      client = await tx.client.update({
-        where: { id: client.id },
-        data: { email: email }
-      });
+
+      if (!contact) {
+        const cName = String(name).trim();
+        const nameParts = cName.split(/\s+/);
+        const firstName = nameParts[0] || "Nomsiz";
+        const lastName = nameParts.slice(1).join(' ') || null;
+
+        contact = await tx.contact.create({
+          data: {
+            firstName,
+            lastName,
+            phone: cleanPhone,
+            email: email || null
+          }
+        });
+      }
+
+      return { client, contact };
+    }, { timeout: 15000 });
+  };
+
+  try {
+    return await executeUpsertTx();
+  } catch (err) {
+    if (err.message && (err.message.includes('Unique constraint') || err.code === 'P2002')) {
+      console.warn('[UpsertClientByPhone] Sekvensiya (ID) ziddiyati aniqlandi. Sekvensiyalarni tiklab qayta urinilmoqda...');
+      await fixPostgresSequences(prisma);
+      return await executeUpsertTx();
     }
-
-    // ALSO upsert Contact
-    let contact = await tx.contact.findFirst({
-      where: { phone: { contains: cleanPhone } }
-    });
-
-    if (!contact) {
-      const cName = String(name).trim();
-      const nameParts = cName.split(/\s+/);
-      const firstName = nameParts[0] || "Nomsiz";
-      const lastName = nameParts.slice(1).join(' ') || null;
-
-      contact = await tx.contact.create({
-        data: {
-          firstName,
-          lastName,
-          phone: cleanPhone,
-          email: email || null
-        }
-      });
-    }
-
-    return { client, contact };
-  }, { timeout: 15000 });
+    throw err;
+  }
 }
 
 /**
@@ -763,9 +776,8 @@ async function handleUniversalLead(source, rawData, broadcast) {
   }
 
   // 4. Tranzaksiya: Client va Deal yozuvlarini yaratish/topish (latency yuqori bo'lsa timeout bo'lmasligi uchun 15s)
-  let result;
-  try {
-    result = await prisma.$transaction(async (tx) => {
+  const executeWebhookLeadTx = async () => {
+    return await prisma.$transaction(async (tx) => {
       // Mijozni qidiramiz
       let client = null;
       if (cleanPhone) {
@@ -897,11 +909,29 @@ async function handleUniversalLead(source, rawData, broadcast) {
 
       return { client, deal };
     }, { timeout: 15000 });
+  };
+
+  let result;
+  try {
+    result = await executeWebhookLeadTx();
   } catch (dbErr) {
-    console.error('[Universal Lead DB Transaction Error] Bazaga saqlashda xato:', dbErr.message);
-    const err = new Error(`Ma'lumotlar bazasida xatolik: ${dbErr.message}`);
-    err.statusCode = 500;
-    throw err;
+    if (dbErr.message && (dbErr.message.includes('Unique constraint') || dbErr.code === 'P2002')) {
+      console.warn('[Universal Lead DB Transaction] Sekvensiya (ID) ziddiyati aniqlandi. Sekvensiyalarni tiklab qayta urinilmoqda...');
+      try {
+        await fixPostgresSequences(prisma);
+        result = await executeWebhookLeadTx();
+      } catch (retryErr) {
+        console.error('[Universal Lead DB Transaction Retry Error] Qayta urinishda ham xato:', retryErr.message);
+        const err = new Error(`Ma'lumotlar bazasida xatolik: ${retryErr.message}`);
+        err.statusCode = 500;
+        throw err;
+      }
+    } else {
+      console.error('[Universal Lead DB Transaction Error] Bazaga saqlashda xato:', dbErr.message);
+      const err = new Error(`Ma'lumotlar bazasida xatolik: ${dbErr.message}`);
+      err.statusCode = 500;
+      throw err;
+    }
   }
 
   // 5. Asinxron Telegram xabarini yuborish (Faqat sdelka yaratilgan bo'lsa)

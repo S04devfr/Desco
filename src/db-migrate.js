@@ -1,9 +1,14 @@
+const { fixPostgresSequences } = require('./utils/sequenceSync');
+
 /**
  * DB Auto-Migration — Server startupda avtomatik ishga tushadi.
  * PostgreSQL (Supabase) uchun moslashtirilgan.
  */
 async function runMigrations(prisma) {
   console.log('🔧 DB migration boshlandi...')
+
+  // 0. PostgreSQL sekvensiyalarini oldindan tekshirish va sinxronlash
+  await fixPostgresSequences(prisma);
 
   // 1. Default Pipeline
   try {
@@ -381,6 +386,9 @@ async function runMigrations(prisma) {
   } catch (err) {
     console.log('⚠️ Real debtors migration:', err.message?.slice(0, 100));
   }
+
+  // 8. Sekvensiyalarni ma'lumotlar saqlangandan so'ng qayta tekshirib to'g'rilash
+  await fixPostgresSequences(prisma);
 
   console.log('✅ DB migration tugadi')
 }

@@ -848,7 +848,7 @@ router.patch('/:id', async (req, res, next) => {
 
     const {
       productName, amount, paidAmount, status, notes, clientId, deadline, managerId, stageId, costPrice, deliveryPrice,
-      contactName, contactPhone, city, createdAt, warehouse, productColor, driverPhone, tags
+      contactName, contactPhone, city, createdAt, warehouse, productColor, driverPhone, tags, source
     } = req.body
 
     const existing = await prisma.deal.findUnique({
@@ -983,6 +983,7 @@ router.patch('/:id', async (req, res, next) => {
     if (warehouse !== undefined) data.warehouse = warehouse || null
     if (productColor !== undefined) data.productColor = productColor
     if (driverPhone !== undefined) data.driverPhone = driverPhone || null
+    if (source !== undefined) data.source = source || 'oddiy'
 
     if (data.status === 'won' || data.status === 'lost') {
       await prisma.task.updateMany({
