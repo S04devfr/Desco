@@ -51,7 +51,8 @@ router.get('/:id', async (req, res, next) => {
       where: { id: Number(req.params.id) },
       include: {
         owner: ownerSelect,
-        deals: { include: { manager: ownerSelect, stage: true } }
+        deals: { include: { manager: ownerSelect, stage: true } },
+        callLogs: { orderBy: { createdAt: 'desc' }, take: 20 }
       }
     });
     if (!client) return res.status(404).json({ message: 'Mijoz topilmadi' });

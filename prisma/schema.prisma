@@ -553,31 +553,36 @@ model Activity {
 }
 
 model CallLog {
-  id           Int      @id @default(autoincrement())
-  callId       String?  @unique
-  type         String   @default("incoming") // incoming | outgoing | missed
+  id           Int       @id @default(autoincrement())
+  callId       String?   @unique
+  provider     String?   @default("generic")
+  type         String    @default("incoming") // incoming | outgoing | missed
   fromNumber   String
   toNumber     String
   clientName   String?
-  duration     Int      @default(0) // seconds
-  status       String   @default("answered") // answered | missed | busy | failed
+  duration     Int       @default(0) // seconds
+  status       String    @default("answered") // ringing | answered | missed | busy | failed | completed | rejected
   recordingUrl String?
   notes        String?
-  sipExtension String?  @default("101")
+  sipExtension String?   @default("101")
+  startedAt    DateTime?
+  answeredAt   DateTime?
+  endedAt      DateTime?
 
   managerId    Int?
-  manager      User?    @relation(fields: [managerId], references: [id])
+  manager      User?     @relation(fields: [managerId], references: [id])
   clientId     Int?
-  client       Client?  @relation(fields: [clientId], references: [id])
+  client       Client?   @relation(fields: [clientId], references: [id])
   dealId       Int?
-  deal         Deal?    @relation(fields: [dealId], references: [id])
+  deal         Deal?     @relation(fields: [dealId], references: [id])
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@index([fromNumber])
   @@index([toNumber])
   @@index([createdAt])
+  @@index([provider])
   @@map("call_logs")
 }
 

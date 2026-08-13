@@ -205,61 +205,21 @@ router.post('/dial', async (req, res) => {
       return res.status(400).json({ message: 'Raqam kiritilishi shart' });
     }
 
-    let client = null;
-    try {
-      if (clientId) {
-        client = await prisma.client.findUnique({ where: { id: Number(clientId) } });
-      } else {
-        client = await prisma.client.findFirst({
-          where: {
-            OR: [
-              { phone: { contains: phoneNumber.replace(/\s+/g, '') } },
-              { companyPhone: { contains: phoneNumber.replace(/\s+/g, '') } }
-            ]
-          }
-        });
-      }
-    } catch(e) {}
-
-    let callLog = null;
-    try {
-      callLog = await prisma.callLog.create({
-        data: {
-          type: 'outgoing',
-          fromNumber: '101',
-          toNumber: phoneNumber,
-          clientName: clientName || client?.name || 'Noma\'lum mijoz',
-          duration: 0,
-          status: 'dialing',
-          notes: 'Terilmoqda...',
-          sipExtension: '101',
-          managerId: req.userId || null,
-          clientId: client ? client.id : (clientId ? Number(clientId) : null),
-          dealId: dealId ? Number(dealId) : null
-        },
-        include: {
-          client: { select: { id: true, name: true, phone: true } },
-          deal: { select: { id: true, productName: true } }
-        }
-      });
-    } catch(e) {
-      callLog = {
-        id: Date.now(),
-        type: 'outgoing',
-        fromNumber: '101',
-        toNumber: phoneNumber,
-        clientName: clientName || client?.name || 'Noma\'lum mijoz',
-        duration: 0,
-        status: 'dialing'
-      };
-    }
+    const TelephonyService = require('../services/telephony/telephonyService');
+    const result = await TelephonyService.initiateOutboundCall({
+      phoneNumber,
+      clientName,
+      dealId,
+      clientId,
+      managerId: req.userId || null
+    });
 
     const broadcast = req.app.get('broadcast');
-    if (broadcast) {
-      broadcast({ type: 'call_started', callLog });
+    if (broadcast && result.callLog) {
+      broadcast({ type: 'call_started', callLog: result.callLog });
     }
 
-    res.json({ success: true, message: 'Qo\'ng\'iroq boshlandi', callLog });
+    res.json({ success: true, message: 'Qo\'ng\'iroq boshlandi', callLog: result.callLog });
   } catch (err) {
     console.error('[Telephony Dial Error]', err);
     res.status(500).json({ message: err.message });
@@ -434,37 +394,15 @@ router.get('/sip-status', async (req, res) => {
   }
 });
 
-// ── POST /api/telephony/webhook — SIP Server Webhook Integration ──
+// ── POST /api/telephony/webhook — Provider Webhook Integration ──
 router.post('/webhook', async (req, res) => {
   try {
-    const { event, from, to, duration, callId, recordingUrl } = req.body;
-
-    if (event === 'incoming_call') {
-      const client = await prisma.client.findFirst({
-        where: { OR: [{ phone: { contains: from } }, { companyPhone: { contains: from } }] }
-      });
-
-      const call = await prisma.callLog.create({
-        data: {
-          callId: callId || `call_${Date.now()}`,
-          type: 'incoming',
-          fromNumber: from || 'Noma\'lum',
-          toNumber: to || '101',
-          clientName: client ? client.name : 'Kiruvchi mijoz',
-          duration: 0,
-          status: 'answered',
-          clientId: client ? client.id : null
-        }
-      });
-
-      const broadcast = req.app.get('broadcast');
-      if (broadcast) broadcast({ type: 'incoming_call', call });
-    }
-
-    res.json({ success: true });
+    const TelephonyService = require('../services/telephony/telephonyService');
+    const result = await TelephonyService.processWebhook(req);
+    res.json(result);
   } catch (err) {
     console.error('[Telephony Webhook Error]', err);
-    res.status(500).json({ message: err.message });
+    res.status(err.message === 'Invalid Webhook Signature' ? 401 : 500).json({ message: err.message });
   }
 });
 
