@@ -408,9 +408,31 @@ function runUploadsCleanup() {
 async function syncWazzupUsers() {
   try {
     const prisma = require('./config/database');
-    const settings = await prisma.companySettings.findFirst();
-    const WAZZUP_API_KEY = process.env.WAZZUP_API_KEY || settings?.wazzupApiKey || (settings?.instagramAccessToken && settings.instagramAccessToken.length === 32 ? settings.instagramAccessToken : null);
-    if (!WAZZUP_API_KEY) return;
+    const DEFAULT_WAZZUP_KEY = '1b138429551c4790abf78f8b039f00b4';
+    
+    // Auto-seed CompanySettings in DB with Wazzup API Key if missing or unconfigured
+    let settings = await prisma.companySettings.findFirst();
+    if (!settings) {
+      settings = await prisma.companySettings.create({
+        data: {
+          companyName: 'DESCO CRM',
+          wazzupApiKey: DEFAULT_WAZZUP_KEY,
+          instagramAccessToken: DEFAULT_WAZZUP_KEY,
+          instagramPageId: '17841472980151454'
+        }
+      }).catch(e => console.error('Error creating CompanySettings on startup:', e));
+    } else if (!settings.wazzupApiKey || settings.wazzupApiKey.length !== 32) {
+      settings = await prisma.companySettings.update({
+        where: { id: settings.id },
+        data: {
+          wazzupApiKey: DEFAULT_WAZZUP_KEY,
+          instagramAccessToken: DEFAULT_WAZZUP_KEY,
+          instagramPageId: '17841472980151454'
+        }
+      }).catch(e => console.error('Error updating CompanySettings on startup:', e));
+    }
+
+    const WAZZUP_API_KEY = process.env.WAZZUP_API_KEY || settings?.wazzupApiKey || DEFAULT_WAZZUP_KEY;
 
     // 1. Sync Webhook URL
     const domain = process.env.APP_URL || 'https://desco.up.railway.app';

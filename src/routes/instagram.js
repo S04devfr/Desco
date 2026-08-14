@@ -4,13 +4,14 @@ const prisma = require('../config/database');
 const { protect } = require('../middleware/auth');
 
 function getWazzupApiKey(settings) {
+  const DEFAULT_WAZZUP_KEY = '1b138429551c4790abf78f8b039f00b4';
   const envKey = process.env.WAZZUP_API_KEY;
   if (envKey && envKey.trim()) return envKey.trim();
   if (settings?.wazzupApiKey && settings.wazzupApiKey.trim()) return settings.wazzupApiKey.trim();
   if (settings?.instagramAccessToken && settings.instagramAccessToken.trim().length === 32) {
     return settings.instagramAccessToken.trim();
   }
-  return null;
+  return DEFAULT_WAZZUP_KEY;
 }
 
 // Webhook Verification (Instagram/Wazzup needs this when subscribing)
