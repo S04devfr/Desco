@@ -17,8 +17,8 @@
   /* Stats Cards Grid */
   .wh-stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
     margin-bottom: 24px;
   }
 
@@ -81,6 +81,26 @@
     box-shadow: 0 4px 12px rgba(99,102,241,0.25);
   }
 
+  .wh-filter-btn {
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid var(--border);
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .wh-filter-btn.active {
+    background: var(--text-primary);
+    color: var(--bg-primary);
+    border-color: var(--text-primary);
+  }
+
   /* Table styling */
   .wh-table-card {
     background: var(--bg-primary);
@@ -110,13 +130,14 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 44px;
-    height: 28px;
+    min-width: 46px;
+    height: 30px;
     padding: 0 10px;
     border-radius: 8px;
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 13.5px;
+    font-weight: 800;
     transition: all 0.15s ease;
+    cursor: pointer;
   }
 
   .stock-ok {
@@ -125,8 +146,8 @@
     border: 1px solid rgba(16, 185, 129, 0.2);
   }
   .stock-ok:hover {
-    background: rgba(16, 185, 129, 0.2) !important;
-    transform: scale(1.05);
+    background: rgba(16, 185, 129, 0.25) !important;
+    transform: scale(1.08);
   }
   
   .stock-low {
@@ -135,8 +156,8 @@
     border: 1px solid rgba(245, 158, 11, 0.2);
   }
   .stock-low:hover {
-    background: rgba(245, 158, 11, 0.2) !important;
-    transform: scale(1.05);
+    background: rgba(245, 158, 11, 0.25) !important;
+    transform: scale(1.08);
   }
   
   .stock-zero {
@@ -145,8 +166,8 @@
     border: 1px solid rgba(239, 68, 68, 0.18);
   }
   .stock-zero:hover {
-    background: rgba(239, 68, 68, 0.18) !important;
-    transform: scale(1.05);
+    background: rgba(239, 68, 68, 0.2) !important;
+    transform: scale(1.08);
   }
   
   .stock-total {
@@ -204,6 +225,27 @@
     box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
   }
 
+  .step-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-weight: 800;
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+  }
+  .step-btn:hover {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
   /* Modal Backdrop blur */
   .modal-overlay {
     backdrop-filter: blur(8px);
@@ -223,14 +265,17 @@
       <h1 style="font-size:22px; font-weight:800; margin:0; display:flex; align-items:center; gap:10px;">
         <i class="fas fa-warehouse" style="color:var(--accent)"></i> Ombor Boshqaruvi
       </h1>
-      <p style="font-size:13px; color:var(--text-tertiary); margin:4px 0 0">Filiallar va mahsulotlar kesimida zaxira monitoringi</p>
+      <p style="font-size:13px; color:var(--text-tertiary); margin:4px 0 0">Filiallar va mahsulotlar kesimida zaxiralarni tezkor va aqliy boshqarish</p>
     </div>
-    <div style="display:flex; gap:10px;">
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
       <button class="btn btn-primary" onclick="openFillModal()" style="border-radius:10px; font-weight:700; box-shadow:0 4px 12px rgba(99,102,241,0.3);">
-        <i class="fas fa-plus"></i> Zaxira qo'shish
+        <i class="fas fa-plus"></i> Zaxira To'ldirish
       </button>
-      <button class="btn btn-secondary" onclick="openProductModal()" style="border-radius:10px; font-weight:600;">
-        <i class="fas fa-tags"></i> Mahsulot turlari
+      <button class="btn btn-secondary" onclick="openTransferModal()" style="border-radius:10px; font-weight:600;">
+        <i class="fas fa-exchange-alt"></i> Ko'chirish
+      </button>
+      <button class="btn btn-ghost" onclick="openProductModal()" style="border-radius:10px; font-weight:600;">
+        <i class="fas fa-tags"></i> Katalog
       </button>
     </div>
   </div>
@@ -240,9 +285,9 @@
     <!-- Dynamic Stats Cards -->
   </div>
 
-  <!-- Controls Bar: Tabs & Search -->
+  <!-- Controls Bar: Tabs, Filters & Search -->
   <div class="wh-controls-bar">
-    <div style="display:flex; gap:8px;">
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <button class="wh-pill-tab active" onclick="switchTab('inventory', this)">
         <i class="fas fa-boxes"></i> Zaxira Holati
       </button>
@@ -251,7 +296,14 @@
       </button>
     </div>
 
-    <input type="text" id="whSearch" class="form-control" style="width:230px; border-radius:20px; padding-left:14px; font-size:13px;" placeholder="🔍 Mahsulot qidirish..." oninput="filterInventoryList()">
+    <!-- Filter Pills for Inventory -->
+    <div id="inventoryFilterGroup" style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+      <button class="wh-filter-btn active" onclick="setStockFilter('all', this)">Barchasi</button>
+      <button class="wh-filter-btn" onclick="setStockFilter('low', this)"><i class="fas fa-exclamation-triangle" style="color:#d97706"></i> Kam qolganlar (≤2)</button>
+      <button class="wh-filter-btn" onclick="setStockFilter('zero', this)"><i class="fas fa-times-circle" style="color:#ef4444"></i> Tugaganlar (0)</button>
+    </div>
+
+    <input type="text" id="whSearch" class="form-control" style="width:240px; border-radius:20px; padding-left:14px; font-size:13px;" placeholder="🔍 Mahsulot yoki rang nomini qidirish..." oninput="filterInventoryList()">
   </div>
 
   <!-- Inventory Table Card -->
@@ -260,14 +312,15 @@
       <table class="wh-table">
         <thead>
           <tr>
-            <th style="text-align:left;">Mahsulot</th>
+            <th style="text-align:left;">Mahsulot va Ranglar</th>
             <th style="text-align:center;">Toshkent</th>
             <th style="text-align:center;">Qo'qon</th>
             <th style="text-align:center;">Jami Zaxira</th>
+            <th style="text-align:right;">Tezkor Harakat</th>
           </tr>
         </thead>
         <tbody id="inventoryBody">
-          <tr><td colspan="4" style="text-align:center; padding:40px; color:var(--text-tertiary)"><div class="spinner"></div></td></tr>
+          <tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-tertiary)"><div class="spinner"></div></td></tr>
         </tbody>
       </table>
     </div>
@@ -296,6 +349,85 @@
 
 </main>
 
+<!-- AQLIY QUICK STOCK EDITOR MODAL -->
+<div class="modal-overlay hidden" id="quickStockModal">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-header">
+      <h2><i class="fas fa-edit" style="color:var(--accent); margin-right:8px"></i> Zaxirani Tahrirlash</h2>
+      <button class="modal-close" onclick="closeQuickStockModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:16px; text-align:center;">
+        <div id="qs-product-title" style="font-size:15px; font-weight:800; color:var(--text-primary);">Mahsulot Nomi</div>
+        <div style="font-size:12px; color:var(--text-secondary); margin-top:4px; display:flex; align-items:center; justify-content:center; gap:8px;">
+          <span id="qs-color-badge" class="color-dot"></span>
+          <span id="qs-color-name">Rang</span> | 
+          <span id="qs-warehouse-name" style="font-weight:700; color:var(--accent);">Ombor</span>
+        </div>
+      </div>
+
+      <!-- Quick Stepper Controls -->
+      <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-bottom:18px;">
+        <button class="step-btn" onclick="stepQuickStock(-10)">-10</button>
+        <button class="step-btn" onclick="stepQuickStock(-1)">-1</button>
+        <input type="number" id="qs-stock-input" class="form-control" style="width:100px; height:44px; text-align:center; font-size:20px; font-weight:800; color:var(--accent); border-radius:12px;" min="0">
+        <button class="step-btn" onclick="stepQuickStock(1)">+1</button>
+        <button class="step-btn" onclick="stepQuickStock(10)">+10</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Tahrirlash Izohi / Sababi</label>
+        <input type="text" id="qs-notes-input" class="form-control" style="font-size:12.5px;" placeholder="Masalan: Inventarizatsiya yoki zavoddan keldi...">
+      </div>
+
+      <div style="display:flex; justify-content:space-between; gap:10px; margin-top:20px;">
+        <button class="btn btn-ghost" onclick="closeQuickStockModal()">Bekor qilish</button>
+        <button class="btn btn-primary" onclick="submitQuickStockEdit()" id="btnSaveQuickStock" style="font-weight:700;">
+          <i class="fas fa-save"></i> Zaxirani Saqlash
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- QUICK ADD VARIANT MODAL -->
+<div class="modal-overlay hidden" id="addVariantModal">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-header">
+      <h2><i class="fas fa-palette" style="color:var(--accent); margin-right:8px"></i> Rang / Variant Qo'shish</h2>
+      <button class="modal-close" onclick="closeAddVariantModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Mahsulot Nomi <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="av-product-name" class="form-control" readonly style="font-weight:700; background:var(--bg-secondary);">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Yangi Rang / Variant Nomi <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="av-color-name" class="form-control" placeholder="Masalan: Qora, Tillo, Qizil, Brak...">
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div class="form-group">
+          <label class="form-label">Toshkent Omboridagi Zaxira</label>
+          <input type="number" id="av-stock-toshkent" class="form-control" value="0" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Qo'qon Omboridagi Zaxira</label>
+          <input type="number" id="av-stock-qoqon" class="form-control" value="0" min="0">
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; gap:10px; margin-top:20px;">
+        <button class="btn btn-ghost" onclick="closeAddVariantModal()">Bekor qilish</button>
+        <button class="btn btn-primary" onclick="submitAddVariant()" id="btnSaveAddVariant" style="font-weight:700;">
+          <i class="fas fa-plus"></i> Variantni Qo'shish
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- FILL MODAL -->
 <div class="modal-overlay hidden" id="fillModal">
   <div class="modal-box" style="max-width:440px">
@@ -319,54 +451,89 @@
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label">Mahsulot Rangi</label>
-        <select id="fill-color" class="form-control">
-          <option value="oddiy">Oddiy</option>
-          <option value="Brak (Buzilgan)">Brak (Buzilgan)</option>
-          <option value="Kulrang">Kulrang (Grey)</option>
-          <option value="Tillo">Tillo (Gold)</option>
-          <option value="Qora">Qora (Black)</option>
-          <option value="Qizil">Qizil (Red)</option>
-        </select>
+        <label class="form-label">Rang / Variant</label>
+        <input type="text" id="fill-color" class="form-control" placeholder="Masalan: Qora, Tillo (ixtiyoriy)">
       </div>
       <div class="form-group">
         <label class="form-label">Miqdor (dona) <span style="color:var(--danger)">*</span></label>
-        <input type="number" id="fill-qty" class="form-control" placeholder="Masalan: 10" min="1">
+        <input type="number" id="fill-qty" class="form-control" min="1" placeholder="Masalan: 10">
       </div>
       <div class="form-group">
         <label class="form-label">Izoh</label>
-        <input type="text" id="fill-notes" class="form-control" placeholder="Partiya raqami yoki izoh...">
+        <input type="text" id="fill-notes" class="form-control" placeholder="Masalan: Zavoddan yangi partiya keldi">
       </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeFillModal()">Bekor qilish</button>
-      <button class="btn btn-primary" id="fillSaveBtn" onclick="saveFill()" style="font-weight:700;">
-        <i class="fas fa-save"></i> Saqlash
-      </button>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+        <button class="btn btn-ghost" onclick="closeFillModal()">Bekor qilish</button>
+        <button class="btn btn-primary" onclick="submitFill()" id="btnSubmitFill">Qo'shish</button>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- PRODUCT TYPE MODAL -->
+<!-- TRANSFER MODAL -->
+<div class="modal-overlay hidden" id="transferModal">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-header">
+      <h2><i class="fas fa-exchange-alt" style="color:var(--accent); margin-right:8px"></i> Omborlararo Ko'chirish</h2>
+      <button class="modal-close" onclick="closeTransferModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+        <div class="form-group">
+          <label class="form-label">Qayerdan <span style="color:var(--danger)">*</span></label>
+          <select id="tr-from" class="form-control">
+            <option value="Toshkent">Toshkent</option>
+            <option value="Qo'qon">Qo'qon</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Qayerga <span style="color:var(--danger)">*</span></label>
+          <select id="tr-to" class="form-control">
+            <option value="Qo'qon">Qo'qon</option>
+            <option value="Toshkent">Toshkent</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mahsulot Turi <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="tr-product" class="form-control" placeholder="Mahsulot nomi">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Rang / Variant</label>
+        <input type="text" id="tr-color" class="form-control" placeholder="Masalan: Qora (ixtiyoriy)">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Miqdor (dona) <span style="color:var(--danger)">*</span></label>
+        <input type="number" id="tr-qty" class="form-control" min="1" placeholder="Masalan: 5">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Izoh</label>
+        <input type="text" id="tr-notes" class="form-control" placeholder="Masalan: Kuryer orqali yuborildi">
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+        <button class="btn btn-ghost" onclick="closeTransferModal()">Bekor qilish</button>
+        <button class="btn btn-primary" onclick="submitTransfer()" id="btnSubmitTransfer">Ko'chirish</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRODUCT CATALOG MODAL -->
 <div class="modal-overlay hidden" id="productModal">
-  <div class="modal-box" style="max-width:520px">
+  <div class="modal-box" style="max-width:540px">
     <div class="modal-header">
       <h2><i class="fas fa-tags" style="color:var(--accent); margin-right:8px"></i> Mahsulot Turlari Katalogi</h2>
       <button class="modal-close" onclick="closeProductModal()">&times;</button>
     </div>
     <div class="modal-body">
-      <div style="display:flex; gap:8px; margin-bottom:16px">
-        <input type="text" id="newProductName" class="form-control" placeholder="Yangi mahsulot nomi..." style="flex:1">
-        <button class="btn btn-primary" onclick="addProduct()" style="white-space:nowrap; font-weight:700;">
-          <i class="fas fa-plus"></i> Qo'shish
-        </button>
+      <div style="display:flex; gap:8px; margin-bottom:16px;">
+        <input type="text" id="newCatName" class="form-control" placeholder="Yangi mahsulot turi nomi (masalan: Bo'yin massajor)...">
+        <button class="btn btn-primary" onclick="addProductCategory()" style="flex-shrink:0; font-weight:700;">Qo'shish</button>
       </div>
-      <div id="productList" style="max-height:350px; overflow-y:auto">
-        <div style="text-align:center; padding:20px; color:var(--text-tertiary)"><div class="spinner"></div></div>
+
+      <div style="max-height:300px; overflow-y:auto; border:1px solid var(--border); border-radius:12px; padding:8px;" id="productCatalogList">
+        <!-- Catalog List -->
       </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeProductModal()">Yopish</button>
     </div>
   </div>
 </div>
@@ -374,8 +541,11 @@
 <script>
   let _inventoryData = [];
   let _logsData = [];
-  let _productCatalog = [];
   let _warehouses = [];
+  let _productCatalog = [];
+  let _stockFilter = 'all';
+
+  let _activeQsData = null; // Quick Stock active item data
 
   async function apiFetch(url, opts) {
     const r = await fetch(url, opts);
@@ -410,97 +580,6 @@
     if (isNaN(dt)) return '';
     return dt.toLocaleDateString('uz-UZ', { day:'2-digit', month:'2-digit', year:'2-digit' }) +
       ' ' + dt.toLocaleTimeString('uz-UZ', { hour:'2-digit', minute:'2-digit' });
-  }
-
-  function stockBadge(val, pName, color, warehouse, isEditable) {
-    const cls = val <= 0 ? 'stock-zero' : val <= 5 ? 'stock-low' : 'stock-ok';
-    if (isEditable) {
-      return '<span class="stock-badge ' + cls + '" style="cursor:pointer" onclick="initiateStockEdit(event, this)" ' +
-        'data-product="' + _esc(pName) + '" ' +
-        'data-color="' + _esc(color) + '" ' +
-        'data-warehouse="' + _esc(warehouse) + '" ' +
-        'data-stock="' + val + '">' + val + '</span>';
-    }
-    return '<span class="stock-badge ' + cls + '">' + val + '</span>';
-  }
-
-  function initiateStockEdit(event, badgeEl) {
-    event.stopPropagation();
-    const p = badgeEl.dataset.product;
-    const c = badgeEl.dataset.color;
-    const w = badgeEl.dataset.warehouse;
-    const s = parseInt(badgeEl.dataset.stock) || 0;
-
-    const td = badgeEl.parentNode;
-    const input = document.createElement('input');
-    input.type = 'number';
-    input.value = s;
-    input.style.width = '64px';
-    input.style.padding = '4px 6px';
-    input.style.fontSize = '13px';
-    input.style.fontWeight = '700';
-    input.style.textAlign = 'center';
-    input.style.border = '2px solid var(--accent)';
-    input.style.borderRadius = '8px';
-    input.style.background = 'var(--bg-primary)';
-    input.style.color = 'var(--text-primary)';
-    input.min = '0';
-    
-    input.dataset.product = p;
-    input.dataset.color = c;
-    input.dataset.warehouse = w;
-    input.dataset.oldStock = s;
-
-    td.innerHTML = '';
-    td.appendChild(input);
-    input.focus();
-    input.select();
-
-    input.addEventListener('click', (e) => e.stopPropagation());
-    input.addEventListener('blur', () => finishStockEdit(input));
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        input.blur();
-      } else if (e.key === 'Escape') {
-        cancelStockEdit(input);
-      }
-    });
-  }
-
-  async function finishStockEdit(input) {
-    const p = input.dataset.product;
-    const c = input.dataset.color;
-    const w = input.dataset.warehouse;
-    const oldStock = parseInt(input.dataset.oldStock);
-    const newStock = parseInt(input.value);
-
-    if (isNaN(newStock) || newStock < 0 || newStock === oldStock) {
-      cancelStockEdit(input);
-      return;
-    }
-
-    try {
-      await apiFetch('/api/warehouse/update-stock', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productName: p, color: c, warehouse: w, stock: newStock })
-      });
-      _toast("Zaxira yangilandi", 'success');
-      await loadData();
-    } catch(e) {
-      _toast(e.message, 'error');
-      cancelStockEdit(input);
-    }
-  }
-
-  function cancelStockEdit(input) {
-    const td = input.parentNode;
-    const oldStock = parseInt(input.dataset.oldStock);
-    const p = input.dataset.product;
-    const c = input.dataset.color;
-    const w = input.dataset.warehouse;
-    
-    td.innerHTML = stockBadge(oldStock, p, c, w, true);
   }
 
   function getColorHash(color) {
@@ -562,11 +641,14 @@
     const wTotals = {};
     _warehouses.forEach(w => { wTotals[w] = 0; });
     let totalAll = 0;
+    let lowStockCount = 0;
+
     _inventoryData.forEach(item => {
       _warehouses.forEach(w => {
         const v = (item.warehouses && item.warehouses[w]) || 0;
         wTotals[w] = (wTotals[w] || 0) + v;
         totalAll += v;
+        if (v <= 2) lowStockCount++;
       });
     });
 
@@ -596,6 +678,15 @@
         </div>
       </div>
       ${warehouseCards}
+      <div class="wh-stat-card" style="${lowStockCount > 0 ? 'border-left:4px solid #D97706;' : ''}">
+        <div>
+          <div style="font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Kam Qolganlar (≤2)</div>
+          <div style="font-size:22px; font-weight:800; color:${lowStockCount > 0 ? '#D97706' : 'var(--text-primary)'}; margin-top:2px;">${lowStockCount}</div>
+        </div>
+        <div class="wh-stat-icon" style="background:rgba(245,158,11,0.12); color:#D97706">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+      </div>
       <div class="wh-stat-card">
         <div>
           <div style="font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Mahsulot Turlari</div>
@@ -615,9 +706,15 @@
     const wCols = _warehouses.map(w =>
       '<th style="text-align:center;">' + _esc(w) + '</th>'
     ).join('');
-    thead.innerHTML = '<th style="text-align:left;">Mahsulot Nomi</th>' +
+    thead.innerHTML = '<th style="text-align:left;">Mahsulot va Ranglar</th>' +
       wCols +
-      '<th style="text-align:center;">Jami Zaxira</th>';
+      '<th style="text-align:center;">Jami Zaxira</th>' +
+      '<th style="text-align:right;">Tezkor Harakat</th>';
+  }
+
+  function stockBadgeHtml(val, pName, color, warehouse) {
+    const cls = val <= 0 ? 'stock-zero' : val <= 2 ? 'stock-low' : 'stock-ok';
+    return `<span class="stock-badge ${cls}" title="Zaxirani tahrirlash uchun bosing" onclick="openQuickStockModal(event, '${_esc(pName).replace(/'/g, "\\'")}', '${_esc(color).replace(/'/g, "\\'")}', '${_esc(warehouse).replace(/'/g, "\\'")}', ${val})">${val}</span>`;
   }
 
   function toggleVariants(idx, rowEl) {
@@ -641,14 +738,32 @@
     }
   }
 
+  function setStockFilter(filterType, btnEl) {
+    _stockFilter = filterType;
+    document.querySelectorAll('.wh-filter-btn').forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+    renderInventory();
+  }
+
   function renderInventory() {
     const body = document.getElementById('inventoryBody');
     const searchVal = (document.getElementById('whSearch')?.value || '').toLowerCase().trim();
-    const colspan = _warehouses.length + 2;
+    const colspan = _warehouses.length + 3;
 
     const filteredData = _inventoryData.filter(item => {
-      if (!searchVal) return true;
-      return item.productName.toLowerCase().includes(searchVal);
+      if (searchVal) {
+        const nameMatch = item.productName.toLowerCase().includes(searchVal);
+        const colorMatch = item.variants && item.variants.some(v => (v.color || '').toLowerCase().includes(searchVal));
+        if (!nameMatch && !colorMatch) return false;
+      }
+
+      if (_stockFilter === 'low') {
+        return (item.total || 0) <= 2 || (item.variants && item.variants.some(v => (v.total || 0) <= 2));
+      }
+      if (_stockFilter === 'zero') {
+        return (item.total || 0) === 0 || (item.variants && item.variants.some(v => (v.total || 0) === 0));
+      }
+      return true;
     });
 
     if (!filteredData.length) {
@@ -663,8 +778,7 @@
       // 1. MAIN PRODUCT ROW
       const wCells = _warehouses.map(function(w) {
         const val = (item.warehouses && item.warehouses[w] != null) ? item.warehouses[w] : 0;
-        const isEditable = !hasVariants;
-        return '<td style="padding:14px 18px;text-align:center;">' + stockBadge(val, item.productName, 'oddiy', w, isEditable) + '</td>';
+        return '<td style="padding:14px 18px;text-align:center;">' + (hasVariants ? `<span class="stock-badge stock-total">${val}</span>` : stockBadgeHtml(val, item.productName, 'oddiy', w)) + '</td>';
       }).join('');
 
       const mainRowBg = hasVariants ? 'border-left:3px solid var(--accent);' : '';
@@ -674,13 +788,15 @@
       if (hasVariants) {
         productNameHtml += '<i class="fas fa-chevron-right toggle-icon" style="transition: transform 0.2s ease; color:var(--text-tertiary); font-size:11px;"></i>';
         productNameHtml += '<div style="width:32px;height:32px;border-radius:8px;background:rgba(99,102,241,0.1);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;"><i class="fas fa-boxes"></i></div>';
-        productNameHtml += '<div><span style="font-weight:700;color:var(--text-primary);font-size:14px;">' + _esc(item.productName) + '</span>';
+        productNameHtml += '<div><span style="font-weight:800;color:var(--text-primary);font-size:14px;">' + _esc(item.productName) + '</span>';
         productNameHtml += ' <span style="background:rgba(99,102,241,0.1);color:var(--accent);font-size:10.5px;padding:2px 6px;border-radius:6px;font-weight:700;margin-left:6px">' + item.variants.length + ' xil rang</span></div>';
       } else {
         productNameHtml += '<div style="width:32px;height:32px;border-radius:8px;background:rgba(142,142,147,0.1);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;font-size:13px;margin-left:18px"><i class="fas fa-box"></i></div>';
-        productNameHtml += '<span style="font-weight:600;color:var(--text-primary);font-size:14px;">' + _esc(item.productName) + '</span>';
+        productNameHtml += '<span style="font-weight:700;color:var(--text-primary);font-size:14px;">' + _esc(item.productName) + '</span>';
       }
       productNameHtml += '</div>';
+
+      const quickAddVariantBtn = `<button class="btn btn-sm btn-ghost" onclick="openAddVariantModal(event, '${_esc(item.productName).replace(/'/g, "\\'")}')" style="font-size:11px; padding:3px 8px; font-weight:700; color:var(--accent); border:1px solid rgba(99,102,241,0.3);" title="Ushbu mahsulotga yangi rang qo'shish"><i class="fas fa-plus"></i> Rang qo'shish</button>`;
 
       html += '<tr style="border-bottom:1px solid var(--border);' + mainRowBg + '" ' + mainRowClass + '>' +
               '<td style="padding:14px 18px;">' + productNameHtml + '</td>' +
@@ -688,6 +804,7 @@
               '<td style="padding:14px 18px;text-align:center">' +
                 '<span class="stock-badge stock-total">' + (item.total || 0) + '</span>' +
               '</td>' +
+              '<td style="padding:14px 18px;text-align:right;">' + quickAddVariantBtn + '</td>' +
              '</tr>';
 
       // 2. SUB-ROWS FOR VARIANTS
@@ -695,27 +812,35 @@
         item.variants.forEach(function(v) {
           const vWCells = _warehouses.map(function(w) {
             const val = (v.warehouses && v.warehouses[w] != null) ? v.warehouses[w] : 0;
-            return '<td style="padding:10px 18px;text-align:center;">' + stockBadge(val, item.productName, v.color, w, true) + '</td>';
+            return '<td style="padding:10px 18px;text-align:center;">' + stockBadgeHtml(val, item.productName, v.color, w) + '</td>';
           }).join('');
 
           const colorDot = '<span class="color-dot" style="background-color:' + getColorHash(v.color) + '"></span>';
           
+          const variantActionBtns = `
+            <div style="display:inline-flex; gap:6px; align-items:center;">
+              <button onclick="openFillModalForVariant(event, '${_esc(item.productName).replace(/'/g, "\\'")}', '${_esc(v.color).replace(/'/g, "\\'")}')" class="btn btn-sm btn-ghost" style="font-size:10.5px; padding:2px 6px; font-weight:700; color:#10B981;" title="Zaxira qo'shish">+ Zaxira</button>
+              <button onclick="openTransferModalForVariant(event, '${_esc(item.productName).replace(/'/g, "\\'")}', '${_esc(v.color).replace(/'/g, "\\'")}')" class="btn btn-sm btn-ghost" style="font-size:10.5px; padding:2px 6px; font-weight:700; color:var(--accent);" title="Omborlararo ko'chirish">🔀 Ko'chirish</button>
+              <button onclick="deleteColorVariant(event, '${_esc(item.productName).replace(/'/g, "\\'")}', '${_esc(v.color).replace(/'/g, "\\'")}')" class="btn btn-sm btn-ghost" style="font-size:10.5px; padding:2px 6px; font-weight:700; color:var(--danger);" title="Rangni o'chirish"><i class="fas fa-trash-alt"></i></button>
+            </div>
+          `;
+
           html += '<tr class="variant-row variant-row-' + idx + ' hidden" style="display:none; border-bottom:1px solid var(--border);">' +
                   '<td style="padding:10px 18px 10px 48px;font-size:13px;font-weight:500;color:var(--text-secondary);">' +
                     '<div style="display:flex;align-items:center;gap:8px">' +
                       '<span style="color:var(--text-tertiary);font-weight:bold;margin-right:2px">└─</span>' +
                       colorDot +
-                      '<span class="variant-color-text" title="Rang nomini tahrirlash" onclick="initiateColorRename(event, this, \'' + _esc(item.productName).replace(/'/g, "\\'") + '\', \'' + _esc(v.color).replace(/'/g, "\\'") + '\')">' + 
+                      '<span class="variant-color-text" title="Rang nomini tahrirlash uchun bosing" onclick="initiateColorRename(event, this, \'' + _esc(item.productName).replace(/'/g, "\\'") + '\', \'' + _esc(v.color).replace(/'/g, "\\'") + '\')">' + 
                         _esc(v.color) + 
                         '<i class="fas fa-pencil-alt edit-color-icon"></i>' +
                       '</span>' +
-                      '<i class="fas fa-trash-alt" title="O\'chirish" onclick="deleteColorVariant(event, \'' + _esc(item.productName).replace(/'/g, "\\'") + '\', \'' + _esc(v.color).replace(/'/g, "\\'") + '\')" style="cursor:pointer; font-size:10px; margin-left:6px; color:var(--text-tertiary); transition:color 0.2s;" onmouseover="this.style.color=\'var(--danger)\'" onmouseout="this.style.color=\'var(--text-tertiary)\'"></i>' +
                     '</div>' +
                   '</td>' +
                   vWCells +
                   '<td style="padding:10px 18px;text-align:center">' +
-                    '<span class="stock-badge" style="background:rgba(120,120,128,0.08);color:var(--text-secondary);font-size:12px;font-weight:700">' + (v.total || 0) + '</span>' +
+                    '<span class="stock-badge" style="background:rgba(120,120,128,0.08);color:var(--text-secondary);font-size:12px;font-weight:800">' + (v.total || 0) + '</span>' +
                   '</td>' +
+                  '<td style="padding:10px 18px;text-align:right">' + variantActionBtns + '</td>' +
                  '</tr>';
         });
       }
@@ -726,6 +851,149 @@
 
   function filterInventoryList() {
     renderInventory();
+  }
+
+  // ── AQLIY QUICK STOCK MODAL ──
+  function openQuickStockModal(event, productName, color, warehouse, currentStock) {
+    if (event) event.stopPropagation();
+    _activeQsData = { productName, color, warehouse, currentStock: parseInt(currentStock) || 0 };
+
+    document.getElementById('qs-product-title').textContent = productName;
+    document.getElementById('qs-color-name').textContent = color;
+    document.getElementById('qs-warehouse-name').textContent = warehouse + ' Ombori';
+    document.getElementById('qs-color-badge').style.backgroundColor = getColorHash(color);
+    document.getElementById('qs-stock-input').value = _activeQsData.currentStock;
+    document.getElementById('qs-notes-input').value = '';
+
+    document.getElementById('quickStockModal').classList.remove('hidden');
+  }
+
+  function closeQuickStockModal() {
+    document.getElementById('quickStockModal').classList.add('hidden');
+    _activeQsData = null;
+  }
+
+  function stepQuickStock(delta) {
+    const input = document.getElementById('qs-stock-input');
+    const val = Math.max(0, (parseInt(input.value) || 0) + delta);
+    input.value = val;
+  }
+
+  async function submitQuickStockEdit() {
+    if (!_activeQsData) return;
+    const input = document.getElementById('qs-stock-input');
+    const notesInput = document.getElementById('qs-notes-input');
+
+    const newStock = parseInt(input.value);
+    if (isNaN(newStock) || newStock < 0) {
+      _toast("Tog'ri zaxira miqdorini kiriting", 'error');
+      return;
+    }
+
+    const btn = document.getElementById('btnSaveQuickStock');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saqlanmoqda...';
+
+    try {
+      await apiFetch('/api/warehouse/update-stock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productName: _activeQsData.productName,
+          color: _activeQsData.color,
+          warehouse: _activeQsData.warehouse,
+          stock: newStock,
+          notes: notesInput.value.trim() || undefined
+        })
+      });
+      _toast("Zaxira muvaffaqiyatli saqlandi", 'success');
+      closeQuickStockModal();
+      await loadData();
+    } catch(e) {
+      _toast(e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-save"></i> Zaxirani Saqlash';
+    }
+  }
+
+  // ── QUICK ADD VARIANT MODAL ──
+  function openAddVariantModal(event, productName) {
+    if (event) event.stopPropagation();
+    document.getElementById('av-product-name').value = productName;
+    document.getElementById('av-color-name').value = '';
+    document.getElementById('av-stock-toshkent').value = '0';
+    document.getElementById('av-stock-qoqon').value = '0';
+    document.getElementById('addVariantModal').classList.remove('hidden');
+  }
+
+  function closeAddVariantModal() {
+    document.getElementById('addVariantModal').classList.add('hidden');
+  }
+
+  async function submitAddVariant() {
+    const pName = document.getElementById('av-product-name').value.trim();
+    const color = document.getElementById('av-color-name').value.trim();
+    const stockToshkent = parseInt(document.getElementById('av-stock-toshkent').value) || 0;
+    const stockQoqon = parseInt(document.getElementById('av-stock-qoqon').value) || 0;
+
+    if (!pName || !color) {
+      _toast("Iltimos, rang nomini kiriting", 'error');
+      return;
+    }
+
+    const btn = document.getElementById('btnSaveAddVariant');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Qo\'shilmoqda...';
+
+    try {
+      if (stockToshkent > 0) {
+        await apiFetch('/api/warehouse/fill', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ warehouse: 'Toshkent', productName: pName, color, qty: stockToshkent, notes: "Yangi rang qo'shildi" })
+        });
+      }
+      if (stockQoqon > 0) {
+        await apiFetch('/api/warehouse/fill', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ warehouse: 'Qo\'qon', productName: pName, color, qty: stockQoqon, notes: "Yangi rang qo'shildi" })
+        });
+      }
+      if (stockToshkent === 0 && stockQoqon === 0) {
+        await apiFetch('/api/warehouse/update-stock', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ warehouse: 'Toshkent', productName: pName, color, stock: 0 })
+        });
+      }
+
+      _toast(`"${color}" rangi muvaffaqiyatli qo'shildi`, 'success');
+      closeAddVariantModal();
+      await loadData();
+    } catch(e) {
+      _toast(e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-plus"></i> Variantni Qo\'shish';
+    }
+  }
+
+  // ── QUICK FILL & TRANSFER HELPERS ──
+  function openFillModalForVariant(event, productName, color) {
+    if (event) event.stopPropagation();
+    openFillModal();
+    const selProd = document.getElementById('fill-product');
+    if (selProd) selProd.value = productName;
+    document.getElementById('fill-color').value = color;
+  }
+
+  function openTransferModalForVariant(event, productName, color) {
+    if (event) event.stopPropagation();
+    openTransferModal();
+    document.getElementById('tr-product').value = productName;
+    document.getElementById('tr-color').value = color;
   }
 
   // ── LOGS TABLE ──
@@ -748,35 +1016,47 @@
         <td style="padding:12px 18px;text-align:center;font-size:12.5px;font-weight:600;">${_esc(log.warehouse)}</td>
         <td style="padding:12px 18px;text-align:center;font-weight:800;color:${log.changeQty > 0 ? '#10B981' : '#EF4444'}">${log.changeQty > 0 ? '+' : ''}${log.changeQty}</td>
         <td style="padding:12px 18px;text-align:center">${actionBadge}</td>
-        <td style="padding:12px 18px;font-size:12px;color:var(--text-secondary);">${_esc(log.notes || '')}${log.userName ? ' <span style="opacity:0.75; font-weight:600;">(' + _esc(log.userName) + ')</span>' : ''}</td>
+        <td style="padding:12px 18px;font-size:12px;color:var(--text-secondary);">${_esc(log.notes || '')} ${log.userName ? `<b style="color:var(--text-primary)">(${_esc(log.userName)})</b>` : ''}</td>
       </tr>
-    `;}).join('');
+      `;
+    }).join('');
   }
 
+  // ── MODALS CONTROL ──
   function switchTab(tab, btn) {
     document.querySelectorAll('.wh-pill-tab').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('tab-inventory').style.display = tab === 'inventory' ? '' : 'none';
-    document.getElementById('tab-logs').style.display = tab === 'logs' ? '' : 'none';
+    if (btn) btn.classList.add('active');
+
+    document.getElementById('tab-inventory').style.display = tab === 'inventory' ? 'block' : 'none';
+    document.getElementById('tab-logs').style.display = tab === 'logs' ? 'block' : 'none';
+    document.getElementById('inventoryFilterGroup').style.display = tab === 'inventory' ? 'flex' : 'none';
   }
 
-  // ── Fill Modal ──
   function openFillModal() { document.getElementById('fillModal').classList.remove('hidden'); }
   function closeFillModal() { document.getElementById('fillModal').classList.add('hidden'); }
 
-  async function saveFill() {
+  function openTransferModal() { document.getElementById('transferModal').classList.remove('hidden'); }
+  function closeTransferModal() { document.getElementById('transferModal').classList.add('hidden'); }
+
+  function openProductModal() { document.getElementById('productModal').classList.remove('hidden'); }
+  function closeProductModal() { document.getElementById('productModal').classList.add('hidden'); }
+
+  async function submitFill() {
     const warehouse = document.getElementById('fill-warehouse').value;
     const productName = document.getElementById('fill-product').value;
-    const color = document.getElementById('fill-color').value;
+    const color = document.getElementById('fill-color').value.trim();
     const qty = parseInt(document.getElementById('fill-qty').value);
     const notes = document.getElementById('fill-notes').value.trim();
 
-    if (!warehouse) { _toast('Omborni tanlang', 'error'); return; }
-    if (!productName) { _toast('Mahsulot turini tanlang', 'error'); return; }
-    if (!qty || qty <= 0) { _toast('Miqdor 0 dan katta bo\'lishi kerak', 'error'); return; }
+    if (!warehouse || !productName || isNaN(qty) || qty <= 0) {
+      _toast("Barcha majburiy maydonlarni to'g'ri to'ldiring", 'error');
+      return;
+    }
 
-    const btn = document.getElementById('fillSaveBtn');
+    const btn = document.getElementById('btnSubmitFill');
     btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Qo\'shilmoqda...';
+
     try {
       await apiFetch('/api/warehouse/fill', {
         method: 'POST',
@@ -785,65 +1065,131 @@
       });
       _toast("Zaxira qo'shildi", 'success');
       closeFillModal();
-      document.getElementById('fill-qty').value = '';
-      document.getElementById('fill-notes').value = '';
-      document.getElementById('fill-color').value = 'oddiy';
       await loadData();
-    } catch(e) { _toast(e.message, 'error'); }
-    finally { btn.disabled = false; }
+    } catch(e) {
+      _toast(e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Qo\'shish';
+    }
   }
 
-  // ── Product Type Modal ──
-  function openProductModal() {
-    document.getElementById('productModal').classList.remove('hidden');
-    loadProducts();
-  }
-  function closeProductModal() { document.getElementById('productModal').classList.add('hidden'); }
+  async function submitTransfer() {
+    const fromWarehouse = document.getElementById('tr-from').value;
+    const toWarehouse = document.getElementById('tr-to').value;
+    const productName = document.getElementById('tr-product').value.trim();
+    const color = document.getElementById('tr-color').value.trim();
+    const qty = parseInt(document.getElementById('tr-qty').value);
+    const notes = document.getElementById('tr-notes').value.trim();
 
-  function renderProductList() {
-    const c = document.getElementById('productList');
-    if (!_productCatalog.length) {
-      c.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-tertiary)"><i class="fas fa-tags" style="font-size:24px;margin-bottom:8px;display:block"></i>Hozircha mahsulot turi yo\'q</div>';
+    if (!fromWarehouse || !toWarehouse || !productName || isNaN(qty) || qty <= 0) {
+      _toast("Barcha majburiy maydonlarni to'g'ri to'ldiring", 'error');
       return;
     }
-    c.innerHTML = _productCatalog.map(p => `
-      <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-bottom:1px solid var(--border);">
-        <div style="font-size:14px; font-weight:600; color:var(--text-primary)">${_esc(p.name)}</div>
-        <button class="btn btn-danger" style="padding:4px 10px; font-size:11px" onclick="deleteProduct(${p.id})">
-          <i class="fas fa-trash"></i>
-        </button>
+
+    if (fromWarehouse === toWarehouse) {
+      _toast("Bir xil omborlar o'rtasida ko'chirib bo'lmaydi", 'error');
+      return;
+    }
+
+    const btn = document.getElementById('btnSubmitTransfer');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Ko\'chirilmoqda...';
+
+    try {
+      await apiFetch('/api/warehouse/transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fromWarehouse, toWarehouse, productName, color, qty, notes })
+      });
+      _toast("Ko'chirildi muvaffaqiyatli", 'success');
+      closeTransferModal();
+      await loadData();
+    } catch(e) {
+      _toast(e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Ko\'chirish';
+    }
+  }
+
+  // ── RENAME / DELETE COLOR VARIANT ──
+  function initiateColorRename(event, textEl, productName, oldColor) {
+    event.stopPropagation();
+    const newColor = prompt(`"${productName}" uchun "${oldColor}" rangi nomini yangilang:`, oldColor);
+    if (!newColor || newColor.trim() === '' || newColor.trim() === oldColor) return;
+
+    apiFetch('/api/warehouse/rename-color', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productName, oldColor, newColor: newColor.trim() })
+    }).then(res => {
+      _toast(res.message || "Rang nomi yangilandi", 'success');
+      loadData();
+    }).catch(e => {
+      _toast(e.message, 'error');
+    });
+  }
+
+  async function deleteColorVariant(event, productName, color) {
+    event.stopPropagation();
+    if (!confirm(`"${productName}" mahsulotidan "${color}" rangini (variantini) o'chirishni tasdiqlaysizmi?`)) return;
+
+    try {
+      await apiFetch('/api/warehouse/delete-color', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productName, color })
+      });
+      _toast(`"${color}" rangi o'chirildi`, 'success');
+      await loadData();
+    } catch(e) {
+      _toast(e.message, 'error');
+    }
+  }
+
+  // ── CATALOG MANAGEMENT ──
+  function renderProductList() {
+    const container = document.getElementById('productCatalogList');
+    if (!container) return;
+    if (!_productCatalog.length) {
+      container.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-tertiary); font-size:13px;">Hozircha mahsulot turlari yaratilmagan</div>';
+      return;
+    }
+    container.innerHTML = _productCatalog.map(p => `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-bottom:1px solid var(--border);">
+        <span style="font-size:13.5px; font-weight:700; color:var(--text-primary);">${_esc(p.name)}</span>
+        <button class="btn btn-ghost btn-sm" onclick="deleteProductCategory(${p.id}, '${_esc(p.name).replace(/'/g, "\\'")}')" style="color:var(--danger); font-size:11px; padding:2px 8px;">O'chirish</button>
       </div>
     `).join('');
   }
 
-  async function addProduct() {
-    const nameEl = document.getElementById('newProductName');
-    const name = nameEl.value.trim();
-
-    if (!name) { _toast('Mahsulot nomi kerak', 'error'); nameEl.focus(); return; }
+  async function addProductCategory() {
+    const input = document.getElementById('newCatName');
+    const name = input.value.trim();
+    if (!name) { _toast("Mahsulot turi nomini kiriting", 'error'); return; }
 
     try {
       await apiFetch('/api/product-catalog', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, price: 0 })
+        body: JSON.stringify({ name })
       });
       _toast("Mahsulot turi qo'shildi", 'success');
-      nameEl.value = '';
+      input.value = '';
       await loadProducts();
     } catch(e) { _toast(e.message, 'error'); }
   }
 
-  async function deleteProduct(id) {
-    if (!confirm("Bu mahsulot turini o'chirasizmi?")) return;
+  async function deleteProductCategory(id, name) {
+    if (!confirm(`"${name}" mahsulot turini o'chirishni tasdiqlaysizmi?`)) return;
     try {
       await apiFetch('/api/product-catalog/' + id, { method: 'DELETE' });
-      _toast("O'chirildi", 'success');
+      _toast("Mahsulot turi o'chirildi", 'success');
       await loadProducts();
     } catch(e) { _toast(e.message, 'error'); }
   }
 
-  // ── Init ──
   document.addEventListener('DOMContentLoaded', () => {
     loadData();
     loadProducts();
