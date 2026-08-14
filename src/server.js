@@ -413,7 +413,7 @@ async function syncWazzupUsers() {
     if (!WAZZUP_API_KEY) return;
 
     // 1. Sync Webhook URL
-    const domain = process.env.APP_URL || 'https://desco-production.up.railway.app';
+    const domain = process.env.APP_URL || 'https://desco.up.railway.app';
     const webhookUrl = `${domain}/api/instagram/webhook`;
     const webhookRes = await fetch('https://api.wazzup24.com/v3/webhooks', {
       method: 'PATCH',
