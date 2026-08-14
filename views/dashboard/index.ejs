@@ -965,20 +965,20 @@ async function loadDashboard() {
 
     let row1Html = '';
 
-    // ROW 1 & ROW 2 - UNIFORM 4x2 EXECUTIVE KPI GRID (All cards 1-column equal size)
+    // ROW 1 & ROW 2 - RESTORED HERO LAYOUT (SOF FOYDA span 2 + 3 cards on Row 1, 4 cards on Row 2)
     if (USER_ROLE === 'admin') {
-      // CARD 1: SOF FOYDA
+      // HERO CARD: SOF FOYDA (Span 2)
       row1Html += `
-        <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')" style="display: flex; align-items: center; gap: 14px; height: 100%; border-radius: 20px; padding: 18px 20px; min-height: 110px;">
-          <div class="stat-icon green" style="width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0; background: rgba(16, 185, 129, 0.15); color: #10B981; font-size: 18px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-chart-line"></i></div>
+        <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')" style="grid-column: span 2; display: flex; align-items: flex-start; gap: 16px; height: 100%; border-radius: 20px; padding: 18px 20px; min-height: 110px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.14) 0%, rgba(5, 150, 105, 0.05) 100%); border: 1px solid rgba(16, 185, 129, 0.35); box-shadow: 0 8px 24px rgba(16, 185, 129, 0.1);">
+          <div class="stat-icon green" style="width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0; background: rgba(16, 185, 129, 0.2); color: #10B981; font-size: 20px; display: flex; align-items: center; justify-content: center; margin-top: 2px;"><i class="fas fa-chart-line"></i></div>
           <div class="stat-info" style="flex: 1; min-width: 0;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div class="stat-label" style="color: #10B981; font-weight: 800; font-size: 12px;">SOF FOYDA</div>
-              <span style="font-size: 10px; font-weight: 700; color: #10B981; background: rgba(16, 185, 129, 0.15); padding: 2px 8px; border-radius: 12px;">Net Profit</span>
+              <div class="stat-label" style="color: #10B981; font-weight: 800; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.5px;">SOF FOYDA</div>
+              <span style="font-size: 10.5px; font-weight: 700; color: #10B981; background: rgba(16, 185, 129, 0.15); padding: 2px 10px; border-radius: 12px;">Net Profit</span>
             </div>
-            <div class="stat-value" style="color: #10B981; font-size: 20px; font-weight: 800; margin-top: 2px;">${renderCardMoney(safeKpis.netProfit ?? 0)}</div>
-            <div class="stat-sub" style="font-size: 11.5px; margin-top: 2px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="Savdo - Tannarx - Xarajat">
-              Savdo &minus; Tannarx &minus; Xarajat
+            <div class="stat-value" style="color: #10B981; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-top: 2px;">${renderCardMoney(safeKpis.netProfit ?? 0)}</div>
+            <div class="stat-sub" style="color: var(--text-secondary); margin-top: 4px; font-size: 11.5px; font-weight: 500;">
+              Savdo (${renderCardMoney(totalWonAmount)}) &minus; Tannarx (${renderCardMoney(safeKpis.totalCostPrice ?? 0)}) &minus; Xarajat (${renderCardMoney(safeKpis.totalExpenses ?? 0)})
             </div>
           </div>
         </div>
@@ -987,8 +987,8 @@ async function loadDashboard() {
 
     // CARD 2: ZAKAZLAR
     row1Html += `
-      <div class="stat-card clickable" onclick="toggleZakazBreakdown(event)" style="display: flex; align-items: center; gap: 14px; height: 100%; position: relative; overflow: visible !important; border-radius: 20px; padding: 18px 20px; min-height: 110px;">
-        <div class="stat-icon green" style="width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0; font-size: 18px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-shopping-cart"></i></div>
+      <div class="stat-card clickable" onclick="toggleZakazBreakdown(event)" style="display: flex; align-items: flex-start; gap: 14px; height: 100%; position: relative; overflow: visible !important; border-radius: 20px; padding: 18px 20px; min-height: 110px;">
+        <div class="stat-icon green" style="width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0; font-size: 18px; display: flex; align-items: center; justify-content: center; margin-top: 2px;"><i class="fas fa-shopping-cart"></i></div>
         <div class="stat-info" style="flex: 1; min-width: 0;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div class="stat-label">Zakazlar</div>
@@ -1000,7 +1000,7 @@ async function loadDashboard() {
             <span>${safeKpis.won ?? 0}</span>
             <span style="font-size: 12px; color: var(--text-secondary); font-weight: 500; margin-left: 2px;">/ ${renderCardMoney(totalWonAmount)}</span>
           </div>
-          <div class="stat-sub" style="font-size: 11.5px; margin-top: 2px; display: flex; align-items: center; gap: 4px; color: var(--brand); cursor: pointer;">
+          <div class="stat-sub" style="font-size: 11.5px; margin-top: 4px; display: flex; align-items: center; gap: 4px; color: var(--brand); cursor: pointer;">
             Tafsilotlar <i class="fas fa-chevron-down" id="zakazChevron" style="font-size: 10px;"></i>
           </div>
           <div id="zakazBreakdownList" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); padding: 12px 16px; z-index: 999; flex-direction: column; gap: 6px; font-size: 11.5px; color: var(--text-secondary);">
@@ -1030,8 +1030,8 @@ async function loadDashboard() {
       </div>
 
       <!-- CARD 3: LEADLAR -->
-      <div class="stat-card clickable" onclick="toggleLeadBreakdown(event)" style="display: flex; align-items: center; gap: 14px; height: 100%; position: relative; overflow: visible !important; border-radius: 20px; padding: 18px 20px; min-height: 110px;">
-        <div class="stat-icon blue" style="width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0; font-size: 18px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-crosshairs"></i></div>
+      <div class="stat-card clickable" onclick="toggleLeadBreakdown(event)" style="display: flex; align-items: flex-start; gap: 14px; height: 100%; position: relative; overflow: visible !important; border-radius: 20px; padding: 18px 20px; min-height: 110px;">
+        <div class="stat-icon blue" style="width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0; font-size: 18px; display: flex; align-items: center; justify-content: center; margin-top: 2px;"><i class="fas fa-crosshairs"></i></div>
         <div class="stat-info" style="flex: 1; min-width: 0;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div class="stat-label">Leadlar</div>
@@ -1042,7 +1042,7 @@ async function loadDashboard() {
           <div class="stat-value" style="font-size: 20px; font-weight: 800; margin-top: 2px;">
             <span>${safeKpis.totalLeads ?? 0}</span>
           </div>
-          <div class="stat-sub" style="font-size: 11.5px; margin-top: 2px; display: flex; align-items: center; gap: 4px; color: var(--brand); cursor: pointer;">
+          <div class="stat-sub" style="font-size: 11.5px; margin-top: 4px; display: flex; align-items: center; gap: 4px; color: var(--brand); cursor: pointer;">
             Tafsilotlar <i class="fas fa-chevron-down" id="leadChevron" style="font-size: 10px;"></i>
           </div>
           <div id="leadBreakdownList" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); padding: 12px 16px; z-index: 999; flex-direction: column; gap: 6px; font-size: 11.5px; color: var(--text-secondary);">
@@ -1060,15 +1060,16 @@ async function loadDashboard() {
       </div>
     `;
 
-    // CARD 4: HARAJATLAR (Admin only)
+    // ROW 2 - FINANCIAL BREAKDOWN & RECEIVABLES
     if (USER_ROLE === 'admin') {
+      // CARD 4: HARAJATLAR
       row1Html += `
-        <div class="stat-card clickable" onclick="window.location.href='/expenses'" style="display: flex; align-items: center; gap: 14px; height: 100%; border-radius: 20px; padding: 18px 20px; min-height: 110px;">
-          <div class="stat-icon red" style="width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0; font-size: 18px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-receipt"></i></div>
+        <div class="stat-card clickable" onclick="window.location.href='/expenses'" style="display: flex; align-items: flex-start; gap: 14px; height: 100%; border-radius: 20px; padding: 18px 20px; min-height: 110px;">
+          <div class="stat-icon red" style="width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0; font-size: 18px; display: flex; align-items: center; justify-content: center; margin-top: 2px;"><i class="fas fa-receipt"></i></div>
           <div class="stat-info" style="flex: 1; min-width: 0;">
             <div class="stat-label">Harajatlar</div>
             <div class="stat-value" style="color: #EF4444; font-size: 20px; font-weight: 800; margin-top: 2px;">${renderCardMoney(safeKpis.totalExpenses ?? 0)}</div>
-            <div class="stat-sub" style="font-size: 11.5px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${(() => {
+            <div class="stat-sub" style="font-size: 11.5px; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${(() => {
               const cats = safeKpis.expenseByCategory || {};
               const parts = Object.entries(cats).slice(0,2).map(([k,v]) => k + ': ' + fmtMoney(v));
               return parts.length ? parts.join(' · ') : 'Hali xarajat yo\'q';
@@ -1077,12 +1078,12 @@ async function loadDashboard() {
         </div>
 
         <!-- CARD 5: TAN NARX -->
-        <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')" style="display: flex; align-items: center; gap: 14px; height: 100%; border-radius: 20px; padding: 18px 20px; min-height: 110px;">
-          <div class="stat-icon purple" style="width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0; font-size: 18px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-tags"></i></div>
+        <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')" style="display: flex; align-items: flex-start; gap: 14px; height: 100%; border-radius: 20px; padding: 18px 20px; min-height: 110px;">
+          <div class="stat-icon purple" style="width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0; font-size: 18px; display: flex; align-items: center; justify-content: center; margin-top: 2px;"><i class="fas fa-tags"></i></div>
           <div class="stat-info" style="flex: 1; min-width: 0;">
             <div class="stat-label">Tan narx</div>
             <div class="stat-value" style="font-size: 20px; font-weight: 800; margin-top: 2px;">${renderCardMoney(safeKpis.totalCostPrice ?? 0)}</div>
-            <div class="stat-sub" style="font-size: 11.5px; margin-top: 2px;">Jami mahsulot tannarxi</div>
+            <div class="stat-sub" style="font-size: 11.5px; margin-top: 4px;">Jami mahsulot tannarxi</div>
           </div>
         </div>
       `;
@@ -1090,8 +1091,8 @@ async function loadDashboard() {
 
     // CARD 6: NASIYA TO'LOVLARI
     row1Html += `
-      <div class="stat-card clickable" onclick="window.location.href='/nasiya/list?stage=desco'" style="display: flex; align-items: center; gap: 14px; height: 100%; overflow: visible !important; border-radius: 20px; padding: 18px 20px; min-height: 110px;">
-        <div class="stat-icon purple" style="width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0; background: rgba(139, 92, 246, 0.15); color: #8B5CF6; font-size: 18px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-wallet"></i></div>
+      <div class="stat-card clickable" onclick="window.location.href='/nasiya/list?stage=desco'" style="display: flex; align-items: flex-start; gap: 14px; height: 100%; overflow: visible !important; border-radius: 20px; padding: 18px 20px; min-height: 110px;">
+        <div class="stat-icon purple" style="width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0; background: rgba(139, 92, 246, 0.15); color: #8B5CF6; font-size: 18px; display: flex; align-items: center; justify-content: center; margin-top: 2px;"><i class="fas fa-wallet"></i></div>
         <div class="stat-info" style="flex: 1; min-width: 0;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div class="stat-label">Nasiya To'lovlari</div>
@@ -1100,36 +1101,19 @@ async function loadDashboard() {
             </a>
           </div>
           <div class="stat-value" style="color: #8B5CF6; font-size: 20px; font-weight: 800; margin-top: 2px;">${renderCardMoney((safeKpis.nasiyaDesco?.amount || 0) + (safeKpis.nasiyaIshonch?.amount || 0) + (safeKpis.nasiyaBaraka?.amount || 0))}</div>
-          <div class="stat-sub" style="font-size: 11.5px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Desco: ${fmtMoney(safeKpis.nasiyaDesco?.amount || 0)} · Ishonch: ${fmtMoney(safeKpis.nasiyaIshonch?.amount || 0)}</div>
+          <div class="stat-sub" style="font-size: 11.5px; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Desco: ${fmtMoney(safeKpis.nasiyaDesco?.amount || 0)} · Ishonch: ${fmtMoney(safeKpis.nasiyaIshonch?.amount || 0)}</div>
         </div>
       </div>
     `;
 
-    // CARD 7: SHOPIRDAGI PULLAR (Admin only)
-    if (USER_ROLE === 'admin') {
-      row1Html += `
-        <div class="stat-card clickable" onclick="openShopirDealsModal()" style="display: flex; align-items: center; gap: 14px; height: 100%; border-radius: 20px; padding: 18px 20px; min-height: 110px;">
-          <div class="stat-icon orange" style="width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0; background: rgba(245, 158, 11, 0.15); color: #F59E0B; font-size: 18px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-truck-moving"></i></div>
-          <div class="stat-info" style="flex: 1; min-width: 0;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div class="stat-label">Shopirdagi Pullar</div>
-              <span style="font-size: 10px; font-weight: 700; color: #F59E0B; background: rgba(245, 158, 11, 0.15); padding: 2px 8px; border-radius: 12px;">${safeKpis.shopir?.count || 0} ta</span>
-            </div>
-            <div class="stat-value" style="color: #F59E0B; font-size: 20px; font-weight: 800; margin-top: 2px;">${renderCardMoney(safeKpis.shopir?.amount || 0)}</div>
-            <div class="stat-sub" style="font-size: 11.5px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Kuryerlardagi naqd pul</div>
-          </div>
-        </div>
-      `;
-    }
-
-    // CARD 8: KLIENTLARDAGI QARZ
+    // CARD 7: KLIENTLARDAGI QARZ
     row1Html += `
-      <div class="stat-card clickable" onclick="openFinancialModal('client-debts')" style="display: flex; align-items: center; gap: 14px; height: 100%; overflow: visible !important; border-radius: 20px; padding: 18px 20px; min-height: 110px;">
-        <div class="stat-icon red" style="width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0; font-size: 18px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-hand-holding-usd"></i></div>
+      <div class="stat-card clickable" onclick="openFinancialModal('client-debts')" style="display: flex; align-items: flex-start; gap: 14px; height: 100%; overflow: visible !important; border-radius: 20px; padding: 18px 20px; min-height: 110px;">
+        <div class="stat-icon red" style="width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0; font-size: 18px; display: flex; align-items: center; justify-content: center; margin-top: 2px;"><i class="fas fa-hand-holding-usd"></i></div>
         <div class="stat-info" style="flex: 1; min-width: 0;">
           <div class="stat-label">Klientlardagi Qarz</div>
           <div class="stat-value" style="font-size: 20px; font-weight: 800; margin-top: 2px;">0 UZS</div>
-          <div class="stat-sub" style="font-size: 11.5px; margin-top: 2px;">To'lanmagan qoldiq</div>
+          <div class="stat-sub" style="font-size: 11.5px; margin-top: 4px;">To'lanmagan qoldiq</div>
         </div>
       </div>
     `;
