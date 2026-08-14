@@ -880,6 +880,9 @@ async function loadOperatorPresenceStats() {
           <td class="tc" style="font-size:12px; font-weight:700; color:${badgeCls};">
             ${escHtml(op.statusText)}
           </td>
+          <td class="tc" style="font-size:12.5px; font-weight:700; color:var(--text-primary);">
+            <i class="far fa-clock" style="color:var(--primary); font-size:11px; margin-right:4px;"></i>${escHtml(op.firstLoginTime || '—')}
+          </td>
           <td class="tc" style="font-size:13px; font-weight:800; color:#10b981;">
             ${fmtDuration(op.onlineSec)}
           </td>
@@ -946,45 +949,30 @@ async function loadDashboard() {
     const totalNasiyaCount = ndCount + niCount + nbCount;
     const totalWonAmount = safeKpis.totalRevenue || 0;
 
-    let row1Html = `
-      <div class="stat-card clickable" onclick="toggleLeadBreakdown(event)" style="display: flex; align-items: flex-start; gap: 16px; height: 100%; position: relative; overflow: visible !important;">
-        <div class="stat-icon blue" style="margin-top: 4px; flex-shrink: 0;"><i class="fas fa-crosshairs"></i></div>
-        <div class="stat-info" style="flex: 1; min-width: 0;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div class="stat-label">Leadlar</div>
-            <a href="/clients" class="btn btn-ghost btn-sm text-brand" style="padding: 2px 6px; font-size: 11px;" onclick="event.stopPropagation();" title="Mijozlar bo'limiga o'tish">
-              <i class="fas fa-external-link-alt"></i> Ko'rish
-            </a>
-          </div>
-          <div class="stat-value" style="display: flex; align-items: center; gap: 8px;">
-            <span>${safeKpis.totalLeads ?? 0}</span>
-            <span style="font-size: 11px; font-weight: normal; color: var(--brand); background: rgba(14, 165, 233, 0.1); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 4px;">
-              Tafsilotlar <i class="fas fa-chevron-down" id="leadChevron"></i>
-            </span>
-          </div>
-          <div id="leadBreakdownList" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); padding: 12px 16px; z-index: 999; flex-direction: column; gap: 6px; font-size: 11.5px; color: var(--text-secondary);">
-            <div style="font-weight: 700; font-size: 11px; color: var(--text-primary); text-transform: uppercase; margin-bottom: 2px; border-bottom: 1px solid var(--border); padding-bottom: 4px;">Kelgan Leadlar & Haridlar</div>
-            <div style="display: flex; justify-content: space-between; gap: 8px;">
-              <span>Target (Meta):</span>
-              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.target?.leads ?? safeKpis.sourcesCount?.target ?? 0} ta lead <span style="color:#34C759; font-weight:600;">(${safeKpis.sourceBreakdown?.target?.wonCount ?? 0} ta zakaz)</span></strong>
+    let row1Html = '';
+
+    // ROW 1 - HERO & PRIMARY SALES (Span 2 for Sof Foyda, 1 for Zakazlar, 1 for Leadlar)
+    if (USER_ROLE === 'admin') {
+      row1Html += `
+        <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')" style="grid-column: span 2; display: flex; align-items: flex-start; gap: 20px; height: 100%; background: linear-gradient(135deg, rgba(16, 185, 129, 0.14) 0%, rgba(5, 150, 105, 0.05) 100%); border: 1px solid rgba(16, 185, 129, 0.35); box-shadow: 0 10px 30px rgba(16, 185, 129, 0.12); border-radius: 20px; padding: 22px;">
+          <div class="stat-icon green" style="margin-top: 2px; flex-shrink: 0; width: 52px; height: 52px; border-radius: 16px; background: rgba(16, 185, 129, 0.2); color: #10B981; font-size: 22px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-chart-line"></i></div>
+          <div class="stat-info" style="flex: 1; min-width: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <div class="stat-label" style="color: #10B981; font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: 0.6px;">SOF FOYDA</div>
+              <span style="font-size: 11px; font-weight: 700; color: #10B981; background: rgba(16, 185, 129, 0.15); padding: 3px 10px; border-radius: 20px;">Net Profit</span>
             </div>
-            <div style="display: flex; justify-content: space-between; gap: 8px;">
-              <span>Instagram:</span>
-              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.instagram?.leads ?? safeKpis.sourcesCount?.instagram ?? 0} ta lead <span style="color:#34C759; font-weight:600;">(${safeKpis.sourceBreakdown?.instagram?.wonCount ?? 0} ta zakaz)</span></strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; gap: 8px;">
-              <span>Telefon orqali:</span>
-              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.phone?.leads ?? safeKpis.sourcesCount?.phone ?? 0} ta lead <span style="color:#34C759; font-weight:600;">(${safeKpis.sourceBreakdown?.phone?.wonCount ?? 0} ta zakaz)</span></strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; gap: 8px;">
-              <span>Office'dan:</span>
-              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.office?.leads ?? safeKpis.sourcesCount?.office ?? 0} ta lead <span style="color:#34C759; font-weight:600;">(${safeKpis.sourceBreakdown?.office?.wonCount ?? 0} ta zakaz)</span></strong>
+            <div class="stat-value" style="color: #10B981; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;">${renderCardMoney(safeKpis.netProfit ?? 0)}</div>
+            <div class="stat-sub" style="color: var(--text-secondary); margin-top: 6px; font-size: 12.5px; font-weight: 500;">
+              Savdo (${renderCardMoney(totalWonAmount)}) &minus; Tannarx (${renderCardMoney(safeKpis.totalCostPrice ?? 0)}) &minus; Xarajat (${renderCardMoney(safeKpis.totalExpenses ?? 0)})
             </div>
           </div>
         </div>
-      </div>
+      `;
+    }
 
-      <div class="stat-card clickable" onclick="toggleZakazBreakdown(event)" style="display: flex; align-items: flex-start; gap: 16px; height: 100%; position: relative; overflow: visible !important;">
+    row1Html += `
+      <!-- ZAKAZLAR -->
+      <div class="stat-card clickable" onclick="toggleZakazBreakdown(event)" style="display: flex; align-items: flex-start; gap: 16px; height: 100%; position: relative; overflow: visible !important; border-radius: 20px; padding: 20px;">
         <div class="stat-icon green" style="margin-top: 4px; flex-shrink: 0;"><i class="fas fa-shopping-cart"></i></div>
         <div class="stat-info" style="flex: 1; min-width: 0;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -1022,64 +1010,45 @@ async function loadDashboard() {
               <span>Mahsulot shopirda:</span>
               <strong style="color: var(--text-primary);">${renderCardMoney(safeKpis.shopir?.amount ?? 0)}</strong>
             </div>
-
-            <div style="font-weight: 700; font-size: 11px; color: var(--text-primary); text-transform: uppercase; margin-top: 6px; margin-bottom: 2px; border-bottom: 1px solid var(--border); padding-bottom: 4px;">Manbalar (Kanallar) kesimida</div>
-            <div style="display: flex; justify-content: space-between; gap: 8px;">
-              <span>Target (Meta):</span>
-              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.target?.wonCount ?? 0} ta zakaz (${renderCardMoney(safeKpis.sourceBreakdown?.target?.wonAmount ?? 0)})</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; gap: 8px;">
-              <span>Instagram:</span>
-              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.instagram?.wonCount ?? 0} ta zakaz (${renderCardMoney(safeKpis.sourceBreakdown?.instagram?.wonAmount ?? 0)})</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; gap: 8px;">
-              <span>Telefon orqali:</span>
-              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.phone?.wonCount ?? 0} ta zakaz (${renderCardMoney(safeKpis.sourceBreakdown?.phone?.wonAmount ?? 0)})</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; gap: 8px;">
-              <span>Office'dan:</span>
-              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.office?.wonCount ?? 0} ta zakaz (${renderCardMoney(safeKpis.sourceBreakdown?.office?.wonAmount ?? 0)})</strong>
-            </div>
           </div>
         </div>
       </div>
 
-      <div class="stat-card clickable" onclick="openFinancialModal('client-debts')" style="display: flex; align-items: flex-start; gap: 16px; height: 100%; overflow: visible !important;">
-        <div class="stat-icon red" style="margin-top: 4px; flex-shrink: 0;"><i class="fas fa-hand-holding-usd"></i></div>
-        <div class="stat-info" style="flex: 1; min-width: 0;">
-          <div class="stat-label">Klientlardagi Qarz</div>
-          <div class="stat-value">0 UZS</div>
-          <div class="stat-sub">To'lanmagan qoldiq</div>
-        </div>
-      </div>
-
-      <div class="stat-card clickable" onclick="window.location.href='/nasiya/list?stage=desco'" style="display: flex; align-items: flex-start; gap: 16px; height: 100%; overflow: visible !important;">
-        <div class="stat-icon purple" style="margin-top: 4px; flex-shrink: 0; background: rgba(139, 92, 246, 0.12); color: #8B5CF6;"><i class="fas fa-wallet"></i></div>
+      <!-- LEADLAR -->
+      <div class="stat-card clickable" onclick="toggleLeadBreakdown(event)" style="display: flex; align-items: flex-start; gap: 16px; height: 100%; position: relative; overflow: visible !important; border-radius: 20px; padding: 20px;">
+        <div class="stat-icon blue" style="margin-top: 4px; flex-shrink: 0;"><i class="fas fa-crosshairs"></i></div>
         <div class="stat-info" style="flex: 1; min-width: 0;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div class="stat-label">Nasiya To'lovlari</div>
-            <a href="/nasiya/list?stage=desco" class="btn btn-ghost btn-sm" style="padding: 2px 6px; font-size: 11px; color: #8B5CF6;" onclick="event.stopPropagation();">
+            <div class="stat-label">Leadlar</div>
+            <a href="/clients" class="btn btn-ghost btn-sm text-brand" style="padding: 2px 6px; font-size: 11px;" onclick="event.stopPropagation();" title="Mijozlar bo'limiga o'tish">
               <i class="fas fa-external-link-alt"></i> Ko'rish
             </a>
           </div>
-          <div class="stat-value" style="color: #8B5CF6;">${renderCardMoney((safeKpis.nasiyaDesco?.amount || 0) + (safeKpis.nasiyaIshonch?.amount || 0) + (safeKpis.nasiyaBaraka?.amount || 0))}</div>
-          <div class="stat-sub">Desco: ${fmtMoney(safeKpis.nasiyaDesco?.amount || 0)} · Ishonch: ${fmtMoney(safeKpis.nasiyaIshonch?.amount || 0)}</div>
+          <div class="stat-value" style="display: flex; align-items: center; gap: 8px;">
+            <span>${safeKpis.totalLeads ?? 0}</span>
+            <span style="font-size: 11px; font-weight: normal; color: var(--brand); background: rgba(14, 165, 233, 0.1); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 4px;">
+              Tafsilotlar <i class="fas fa-chevron-down" id="leadChevron"></i>
+            </span>
+          </div>
+          <div id="leadBreakdownList" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); padding: 12px 16px; z-index: 999; flex-direction: column; gap: 6px; font-size: 11.5px; color: var(--text-secondary);">
+            <div style="font-weight: 700; font-size: 11px; color: var(--text-primary); text-transform: uppercase; margin-bottom: 2px; border-bottom: 1px solid var(--border); padding-bottom: 4px;">Kelgan Leadlar & Haridlar</div>
+            <div style="display: flex; justify-content: space-between; gap: 8px;">
+              <span>Target (Meta):</span>
+              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.target?.leads ?? safeKpis.sourcesCount?.target ?? 0} ta lead</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; gap: 8px;">
+              <span>Instagram:</span>
+              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.instagram?.leads ?? safeKpis.sourcesCount?.instagram ?? 0} ta lead</strong>
+            </div>
+          </div>
         </div>
       </div>
     `;
 
+    // ROW 2 - FINANCIAL BREAKDOWN & RECEIVABLES (4 Cards)
     if (USER_ROLE === 'admin') {
       row1Html += `
-        <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')" style="display: flex; align-items: flex-start; gap: 16px; height: 100%;">
-          <div class="stat-icon purple" style="margin-top: 4px; flex-shrink: 0;"><i class="fas fa-tags"></i></div>
-          <div class="stat-info" style="flex: 1; min-width: 0;">
-            <div class="stat-label">Tan narx</div>
-            <div class="stat-value">${renderCardMoney(safeKpis.totalCostPrice ?? 0)}</div>
-            <div class="stat-sub">Jami mahsulot tannarxi</div>
-          </div>
-        </div>
-
-        <div class="stat-card clickable" onclick="window.location.href='/expenses'" style="display: flex; align-items: flex-start; gap: 16px; height: 100%; border: 1px solid rgba(239, 68, 68, 0.25);">
+        <div class="stat-card clickable" onclick="window.location.href='/expenses'" style="display: flex; align-items: flex-start; gap: 16px; height: 100%; border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 20px; padding: 20px;">
           <div class="stat-icon red" style="margin-top: 4px; flex-shrink: 0;"><i class="fas fa-receipt"></i></div>
           <div class="stat-info" style="flex: 1; min-width: 0;">
             <div class="stat-label">Harajatlar</div>
@@ -1092,16 +1061,41 @@ async function loadDashboard() {
           </div>
         </div>
 
-        <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')" style="display: flex; align-items: flex-start; gap: 16px; height: 100%; background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0.04) 100%); border: 1px solid rgba(16, 185, 129, 0.35); box-shadow: 0 8px 24px rgba(16, 185, 129, 0.12);">
-          <div class="stat-icon green" style="margin-top: 4px; flex-shrink: 0; background: rgba(16, 185, 129, 0.2); color: #10B981;"><i class="fas fa-chart-line"></i></div>
+        <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')" style="display: flex; align-items: flex-start; gap: 16px; height: 100%; border-radius: 20px; padding: 20px;">
+          <div class="stat-icon purple" style="margin-top: 4px; flex-shrink: 0;"><i class="fas fa-tags"></i></div>
           <div class="stat-info" style="flex: 1; min-width: 0;">
-            <div class="stat-label" style="color: #10B981; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Sof foyda</div>
-            <div class="stat-value" style="color: #10B981; font-size: 22px; font-weight: 800;">${renderCardMoney(safeKpis.netProfit ?? 0)}</div>
-            <div class="stat-sub" style="color: var(--text-secondary);">Savdo - Tannarx - Xarajat</div>
+            <div class="stat-label">Tan narx</div>
+            <div class="stat-value">${renderCardMoney(safeKpis.totalCostPrice ?? 0)}</div>
+            <div class="stat-sub">Jami mahsulot tannarxi</div>
           </div>
         </div>
       `;
     }
+
+    row1Html += `
+      <div class="stat-card clickable" onclick="window.location.href='/nasiya/list?stage=desco'" style="display: flex; align-items: flex-start; gap: 16px; height: 100%; overflow: visible !important; border-radius: 20px; padding: 20px;">
+        <div class="stat-icon purple" style="margin-top: 4px; flex-shrink: 0; background: rgba(139, 92, 246, 0.12); color: #8B5CF6;"><i class="fas fa-wallet"></i></div>
+        <div class="stat-info" style="flex: 1; min-width: 0;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="stat-label">Nasiya To'lovlari</div>
+            <a href="/nasiya/list?stage=desco" class="btn btn-ghost btn-sm" style="padding: 2px 6px; font-size: 11px; color: #8B5CF6;" onclick="event.stopPropagation();">
+              <i class="fas fa-external-link-alt"></i> Ko'rish
+            </a>
+          </div>
+          <div class="stat-value" style="color: #8B5CF6;">${renderCardMoney((safeKpis.nasiyaDesco?.amount || 0) + (safeKpis.nasiyaIshonch?.amount || 0) + (safeKpis.nasiyaBaraka?.amount || 0))}</div>
+          <div class="stat-sub">Desco: ${fmtMoney(safeKpis.nasiyaDesco?.amount || 0)} · Ishonch: ${fmtMoney(safeKpis.nasiyaIshonch?.amount || 0)}</div>
+        </div>
+      </div>
+
+      <div class="stat-card clickable" onclick="openFinancialModal('client-debts')" style="display: flex; align-items: flex-start; gap: 16px; height: 100%; overflow: visible !important; border-radius: 20px; padding: 20px;">
+        <div class="stat-icon red" style="margin-top: 4px; flex-shrink: 0;"><i class="fas fa-hand-holding-usd"></i></div>
+        <div class="stat-info" style="flex: 1; min-width: 0;">
+          <div class="stat-label">Klientlardagi Qarz</div>
+          <div class="stat-value">0 UZS</div>
+          <div class="stat-sub">To'lanmagan qoldiq</div>
+        </div>
+      </div>
+    `;
 
     document.getElementById('kpiRow1').innerHTML = row1Html;
     const row2El = document.getElementById('kpiRow2');

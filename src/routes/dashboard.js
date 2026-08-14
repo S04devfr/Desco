@@ -1286,7 +1286,6 @@ if (!global._dailyPresenceStore) {
 // GET /api/dashboard/operator-presence — Operatorlar online vaqt va faollik tahlili
 router.get('/operator-presence', async (req, res) => {
   try {
-    // Exclude Administrators — only track operators and sales managers!
     const managers = await prisma.user.findMany({
       where: { role: { not: 'admin' }, isActive: true },
       select: { id: true, fullName: true, name: true, role: true, avatar: true, isActive: true, updatedAt: true, createdAt: true }
@@ -1296,12 +1295,23 @@ router.get('/operator-presence', async (req, res) => {
     today.setHours(0, 0, 0, 0);
     const dateStr = today.toISOString().split('T')[0];
 
-    const [todayCalls, todayTasks, todayDeals, todayActivities] = await Promise.all([
+    const [todayCalls, todayTasks, todayDeals, todayActivities, activityLogsRaw] = await Promise.all([
       prisma.callLog.findMany({ where: { createdAt: { gte: today } } }).catch(() => []),
       prisma.task.findMany({ where: { updatedAt: { gte: today } } }).catch(() => []),
       prisma.deal.findMany({ where: { updatedAt: { gte: today } } }).catch(() => []),
-      prisma.activityLog.findMany({ where: { createdAt: { gte: today } } }).catch(() => [])
+      prisma.activityLog.findMany({ where: { createdAt: { gte: today } } }).catch(() => []),
+      prisma.$queryRaw`
+        SELECT "userId", MIN("sessionStart") AS "firstLogin", MAX("lastPing") AS "lastPing", SUM("durationMin") AS "totalMin"
+        FROM "UserActivityLog"
+        WHERE "date" = ${dateStr}
+        GROUP BY "userId"
+      `.catch(() => [])
     ]);
+
+    const activityLogMap = {};
+    (activityLogsRaw || []).forEach(r => {
+      activityLogMap[Number(r.userId)] = r;
+    });
 
     const now = new Date();
     let totalActive = 0;
@@ -1309,22 +1319,7 @@ router.get('/operator-presence', async (req, res) => {
     let totalOffline = 0;
     let totalOnlineSec = 0;
 
-    const telephonyRes = await fetch(`http://127.0.0.1:${process.env.PORT || 3000}/api/telephony/sip-status`, {
-      headers: { cookie: req.headers.cookie || '' }
-    }).then(r => r.json()).catch(() => ({ sipLines: [] }));
-
-    const sipLines = telephonyRes.sipLines || [];
-
     const operators = managers.map((m) => {
-      const line = sipLines.find(s => s.managerId === m.id) || {};
-      const storeKey = `${dateStr}_${m.id}`;
-      let pStore = global._dailyPresenceStore.get(storeKey);
-      if (!pStore) {
-        pStore = { firstLoginTime: null, accumulatedOnlineSec: 0, accumulatedIdleSec: 0, lastHeartbeat: null };
-        global._dailyPresenceStore.set(storeKey, pStore);
-      }
-
-      // Calculate today's activities count and earliest activity timestamp
       const mCalls = todayCalls.filter(l => l.managerId === m.id);
       const mTasks = todayTasks.filter(t => t.assignedToId === m.id);
       const mDeals = todayDeals.filter(d => d.managerId === m.id);
@@ -1333,8 +1328,13 @@ router.get('/operator-presence', async (req, res) => {
       const dbActivityCount = mCalls.length + mTasks.length + mDeals.length + mActs.length;
       const callDuration = mCalls.reduce((sum, c) => sum + (c.duration || 0), 0);
 
-      // Determine First Login / Clock-in Time
-      if (!pStore.firstLoginTime) {
+      const userLog = activityLogMap[m.id];
+      
+      // First Login Time
+      let firstLoginTimeStr = '—';
+      if (userLog && userLog.firstLogin) {
+        firstLoginTimeStr = new Date(userLog.firstLogin).toLocaleTimeString('uz-UZ', { timeZone: 'Asia/Tashkent', hour: '2-digit', minute: '2-digit', hour12: false });
+      } else {
         const todayStartTs = today.getTime();
         const allTimestamps = [
           ...mCalls.map(c => new Date(c.createdAt).getTime()),
@@ -1343,20 +1343,25 @@ router.get('/operator-presence', async (req, res) => {
           ...mActs.map(a => new Date(a.createdAt).getTime())
         ].filter(t => !isNaN(t) && t >= todayStartTs);
 
-        if (req.userId === m.id || allTimestamps.length > 0) {
-          const earliestTs = allTimestamps.length > 0 ? Math.min(...allTimestamps, now.getTime()) : now.getTime();
-          pStore.firstLoginTime = new Date(earliestTs).toLocaleTimeString('uz-UZ', { timeZone: 'Asia/Tashkent', hour: '2-digit', minute: '2-digit', hour12: false });
+        if (allTimestamps.length > 0) {
+          const earliestTs = Math.min(...allTimestamps);
+          firstLoginTimeStr = new Date(earliestTs).toLocaleTimeString('uz-UZ', { timeZone: 'Asia/Tashkent', hour: '2-digit', minute: '2-digit', hour12: false });
         }
       }
 
-      const lastActiveDate = line.lastActiveAt ? new Date(line.lastActiveAt) : (m.updatedAt ? new Date(m.updatedAt) : null);
-      const secondsSinceActive = lastActiveDate ? Math.round((now.getTime() - lastActiveDate.getTime()) / 1000) : 999999;
+      // Online status calculation
+      let secondsSincePing = 999999;
+      if (userLog && userLog.lastPing) {
+        secondsSincePing = Math.round((now.getTime() - new Date(userLog.lastPing).getTime()) / 1000);
+      }
 
       let status = 'offline';
-      if (req.userId === m.id || line.status === 'online' || secondsSinceActive <= 300) {
+      if (secondsSincePing <= 180) { // Active within 3 minutes = online
         status = 'online';
-      } else if (secondsSinceActive <= 900) {
+      } else if (secondsSincePing <= 600) { // Active within 10 minutes = idle
         status = 'idle';
+      } else if (req.userId === m.id) {
+        status = 'online';
       }
 
       const isOnline = status === 'online';
@@ -1366,27 +1371,14 @@ router.get('/operator-presence', async (req, res) => {
       else if (isIdle) totalIdle++;
       else totalOffline++;
 
-      // Persistent Accumulation Logic (prevents resetting on page reload)
-      if (pStore.lastHeartbeat && isOnline) {
-        const deltaSec = Math.min(60, Math.round((now.getTime() - pStore.lastHeartbeat) / 1000));
-        if (deltaSec > 0 && deltaSec <= 120) {
-          pStore.accumulatedOnlineSec += deltaSec;
-        }
-      } else if (pStore.lastHeartbeat && isIdle) {
-        const deltaSec = Math.min(60, Math.round((now.getTime() - pStore.lastHeartbeat) / 1000));
-        if (deltaSec > 0 && deltaSec <= 300) {
-          pStore.accumulatedIdleSec += deltaSec;
-        }
-      }
-      pStore.lastHeartbeat = now.getTime();
-
-      let onlineSec = Math.max(pStore.accumulatedOnlineSec, (line.onlineSec || 0));
-      if (onlineSec === 0 && dbActivityCount > 0) {
+      let onlineSec = 0;
+      if (userLog && userLog.totalMin) {
+        onlineSec = Number(userLog.totalMin) * 60;
+      } else if (dbActivityCount > 0) {
         onlineSec = (dbActivityCount * 180) + callDuration;
-        pStore.accumulatedOnlineSec = onlineSec;
       }
-
-      let idleSec = Math.max(pStore.accumulatedIdleSec, (line.idleSec || 0));
+      
+      let idleSec = isIdle ? 300 : (status === 'offline' && onlineSec > 0 ? 600 : 0);
       totalOnlineSec += onlineSec;
 
       const totalSec = onlineSec + idleSec;
@@ -1399,7 +1391,7 @@ router.get('/operator-presence', async (req, res) => {
         avatar: m.avatar,
         status,
         statusText: isIdle ? '🟡 Tanaffusda' : isOnline ? '🟢 Aktiv' : '⚪ Offline',
-        firstLoginTime: pStore.firstLoginTime || '—',
+        firstLoginTime: firstLoginTimeStr,
         onlineSec,
         idleSec,
         activeWorkRatio
