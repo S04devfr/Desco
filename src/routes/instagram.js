@@ -31,7 +31,12 @@ router.get('/webhook', async (req, res) => {
 
 // Receive messages from Instagram / Wazzup
 router.post('/webhook', async (req, res) => {
-  const body = req.body;
+  const body = req.body || {};
+
+  // Immediately respond with 200 OK to Wazzup test pings or empty bodies
+  if (!body.object && (!body.messages || !Array.isArray(body.messages))) {
+    return res.status(200).send('OK');
+  }
 
   // Handle Wazzup Webhook Payload
   if (body.messages && Array.isArray(body.messages)) {

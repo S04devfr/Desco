@@ -182,13 +182,17 @@ router.patch('/instagram', requireRole('admin'), async (req, res, next) => {
       await prisma.companySettings.create({
         data: {
           instagramAccessToken: instagramAccessToken !== undefined ? instagramAccessToken : null,
+          wazzupApiKey: instagramAccessToken !== undefined ? instagramAccessToken : null,
           instagramPageId: instagramPageId !== undefined ? instagramPageId : null,
           instagramVerifyToken: instagramVerifyToken !== undefined ? instagramVerifyToken : null
         }
       })
     } else {
       const data = {}
-      if (instagramAccessToken !== undefined) data.instagramAccessToken = instagramAccessToken
+      if (instagramAccessToken !== undefined) {
+        data.instagramAccessToken = instagramAccessToken
+        data.wazzupApiKey = instagramAccessToken
+      }
       if (instagramPageId !== undefined) data.instagramPageId = instagramPageId
       if (instagramVerifyToken !== undefined) data.instagramVerifyToken = instagramVerifyToken
       await prisma.companySettings.update({
