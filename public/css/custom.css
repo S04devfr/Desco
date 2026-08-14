@@ -154,9 +154,9 @@
   --shadow-xl: 0 16px 48px rgba(0,0,0,0.4);
 
   /* Legacy dark overrides */
-  --bg-primary:    var(--surface-base);
-  --bg-secondary:  var(--surface-card);
-  --bg-tertiary:   var(--surface-input);
+  --bg-primary:    rgba(15, 23, 42, 0.75);
+  --bg-secondary:  rgba(30, 41, 59, 0.65);
+  --bg-tertiary:   rgba(30, 41, 59, 0.45);
 }
 
 [data-theme="dark"] option {

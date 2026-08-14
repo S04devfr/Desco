@@ -126,12 +126,21 @@
   box-shadow: 0 8px 32px rgba(31, 38, 135, 0.06), inset 0 1px 1px rgba(255, 255, 255, 0.8);
   overflow:hidden;
   }
+  [data-theme="dark"] .kb-col {
+    background: rgba(30, 41, 59, 0.55) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.08) !important;
+  }
   .kb-col-hdr {
   padding:10px 12px 8px; flex-shrink:0;
   border-top:3px solid var(--_sc, var(--accent));
   border-bottom:1px solid rgba(255, 255, 255, 0.5);
   background: rgba(255, 255, 255, 0.35);
   cursor:default;
+  }
+  [data-theme="dark"] .kb-col-hdr {
+    background: rgba(15, 23, 42, 0.55) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
   }
   .kb-col-title { display:flex; align-items:center; gap:7px; font-size:13px; font-weight:600; margin-bottom:3px; }
   .kb-col-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
@@ -150,6 +159,11 @@
     font-weight: 600;
     transition: all 0.15s ease;
     box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  }
+  [data-theme="dark"] .kb-col-sort-select {
+    background: rgba(15, 23, 42, 0.6) !important;
+    color: #818CF8 !important;
+    border-color: rgba(129, 140, 248, 0.3) !important;
   }
   .kb-col-sort-select:hover {
     border-color: var(--accent);
@@ -186,7 +200,17 @@
   box-shadow: 0 4px 16px rgba(31, 38, 135, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.9);
   border-left: 4px solid var(--border);
   }
+  [data-theme="dark"] .dcard {
+    background: rgba(15, 23, 42, 0.85) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.08) !important;
+  }
   .dcard:hover { box-shadow: 0 16px 40px rgba(99, 102, 241, 0.15), inset 0 1px 1px rgba(255, 255, 255, 1); transform:translateY(-4px) scale(1.015); border-color:var(--accent); }
+  [data-theme="dark"] .dcard:hover {
+    background: rgba(30, 41, 59, 0.95) !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.15) !important;
+    border-color: #818CF8 !important;
+  }
   .dcard.dragging { opacity:0.4; transform:rotate(2deg) scale(1.04); box-shadow:var(--shadow-lg); }
   .dcard-badge { display:inline-block; padding:4px 8px; border-radius:6px; font-size:10px; font-weight:700;
   text-transform:uppercase; letter-spacing:0.5px; }
@@ -206,7 +230,11 @@
   .dcard-progress { height:4px; background:var(--bg-tertiary); border-radius:4px; margin-top:6px; overflow:hidden; }
   .dcard-progress-fill { height:100%; background:var(--accent); border-radius:4px; transition:width 0.3s; }
   .dcard-contact { font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;
-  background: var(--bg-secondary); padding: 4px 8px; border-radius: 6px; width: fit-content; }
+  background: rgba(255, 255, 255, 0.4); padding: 4px 8px; border-radius: 6px; width: fit-content; }
+  [data-theme="dark"] .dcard-contact {
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: #9CA3AF !important;
+  }
   .dcard-contact i { color: var(--text-tertiary); font-size: 11px; }
   .dcard-notes { font-size: 12px; color: var(--text-tertiary); font-style: normal; white-space: nowrap; overflow:
   hidden; text-overflow: ellipsis; max-width: 100%; padding-top: 4px;}
