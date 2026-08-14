@@ -79,13 +79,13 @@ router.post('/webhook', async (req, res) => {
     }
 
     for (const msg of body.messages) {
-      if (msg.chatType !== 'instagram' && msg.chatType !== 'telegram') continue;
+      if (msg.chatType !== 'instagram' && msg.chatType !== 'instagramComment' && msg.chatType !== 'telegram') continue;
 
       // Prefix messageId if it is a comment
       const messageId = msg.chatType === 'instagramComment' ? `comment_${msg.messageId}` : msg.messageId;
       let text = msg.text || '';
       if ((msg.chatType === 'instagram' || msg.chatType === 'instagramComment') && msg.instPost && msg.instPost.url) {
-        text += `\n\n[Instagram Post: ${msg.instPost.url}]`;
+        text += `\n\n📌 [Instagram Post: ${msg.instPost.url}]`;
       }
       const isEcho = msg.isEcho || false;
       const clientIgId = msg.chatId;
@@ -107,7 +107,7 @@ router.post('/webhook', async (req, res) => {
           });
 
           if (!client) {
-            let clientName = msg.contact?.name || `Instagram Lead (${clientIgId})`;
+            let clientName = msg.contact?.name || `Instagram Izoh Lead (${clientIgId})`;
             let username = msg.contact?.username || null;
 
             if (username) {
@@ -120,7 +120,8 @@ router.post('/webhook', async (req, res) => {
                     where: { id: existingClient.id },
                     data: {
                       instagramId: clientIgId,
-                      name: clientName
+                      name: clientName,
+                      notes: msg.chatType === 'instagramComment' ? 'Instagram Comment (izoh) orqali murojaat.' : existingClient.notes
                     }
                   });
                   console.log(`[Wazzup Webhook] Re-mapped client ${client.name} (ID: ${client.id}) to new chatId: ${clientIgId}`);
@@ -137,7 +138,9 @@ router.post('/webhook', async (req, res) => {
                     name: clientName,
                     instagramId: clientIgId,
                     instagramUsername: username,
-                    notes: 'Instagram (Wazzup) orqali yangi murojaat.'
+                    notes: msg.chatType === 'instagramComment' 
+                      ? 'Instagram Comment (izoh) orqali yangi murojaat.' 
+                      : 'Instagram Direct orqali yangi murojaat.'
                   }
                 });
               } catch (createErr) {
@@ -592,11 +595,19 @@ router.post('/messages', protect, async (req, res) => {
           return res.status(400).json({ error: 'Faol Wazzup Instagram kanali topilmadi.' });
         }
 
-        // Construct correct Wazzup payload (do NOT send "type" parameter, Wazzup v3 uses contentUri to identify attachment sends)
+        // Auto-detect if this client or chat is a comment thread
+        const isCommentThread = (client.notes && client.notes.toLowerCase().includes('comment'))
+          || (client.notes && client.notes.toLowerCase().includes('izoh'))
+          || (recipientId && recipientId.startsWith('comment_'))
+          || req.body.chatType === 'instagramComment';
+
+        const targetChatType = isCommentThread ? 'instagramComment' : 'instagram';
+
+        // Construct correct Wazzup payload
         const wazzupPayload = {
           channelId: igChannel.channelId,
           chatId: recipientId,
-          chatType: 'instagram',
+          chatType: targetChatType,
           crmMessageId: messageId
         };
 
