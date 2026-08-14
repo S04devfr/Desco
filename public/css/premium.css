@@ -2127,3 +2127,57 @@ table.deals-tbl tr:hover td, table.data-table tr:hover td {
 [data-theme="dark"] .badge-brand, [data-theme="dark"] .badge-nasiya {
   color: #818CF8 !important;
 }
+
+/* ═══════════════════════════════════════════════════════
+   Apple iOS-Inspired Micro-Interactions & Spring Animations
+   ═══════════════════════════════════════════════════════ */
+
+@keyframes iosSpring {
+  0% {
+    opacity: 0;
+    transform: scale(0.94) translateY(12px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.01) translateY(-2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes iosSlideRight {
+  from { opacity: 0; transform: translateX(-16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 82, 255, 0.3); }
+  50% { box-shadow: 0 0 0 10px rgba(0, 82, 255, 0); }
+}
+
+/* Interactive iOS Button Animations */
+button.btn, .submit-btn, .submit-button, .btn-primary, .btn-secondary {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, background-color 0.2s ease !important;
+  will-change: transform;
+}
+
+button.btn:hover, .btn-primary:hover {
+  transform: translateY(-2px) scale(1.015);
+}
+
+button.btn:active, .btn-primary:active, .submit-button:active {
+  transform: scale(0.96) !important;
+}
+
+/* Glassmorphism Cards Spring Entrance */
+.stat-card, .exp-stat-card, .card, .dashboard-card {
+  animation: iosSpring 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Modal Window Entrance Animation */
+.modal-box, .modal-box-polished {
+  animation: iosSpring 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+}
+

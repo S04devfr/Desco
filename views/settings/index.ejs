@@ -42,35 +42,114 @@ const swatchHtml = colorSwatches.map(c =>
 .stage-name-txt { flex:1; font-size:13.5px; font-weight:500; }
 .stage-order { font-size:11px; color:var(--text-tertiary); }
 
-/* ── Settings Layout ── */
+/* ── Settings Layout Senior Redesign ── */
 .settings-layout {
-  display: flex; gap: 24px; align-items: flex-start; height: 100%;
+  display: flex; gap: 28px; align-items: flex-start; height: 100%;
+}
+@media (max-width: 850px) {
+  .settings-layout { flex-direction: column; }
+  .settings-sidebar { width: 100% !important; flex-direction: row !important; overflow-x: auto; padding-bottom: 8px; }
 }
 .settings-sidebar {
-  width: 240px; flex-shrink: 0; display: flex; flex-direction: column; gap: 6px;
+  width: 250px; flex-shrink: 0; display: flex; flex-direction: column; gap: 6px;
+  background: var(--bg-surface); border: 1px solid var(--border-subtle);
+  border-radius: 20px; padding: 12px; box-shadow: var(--shadow-sm);
 }
 .settings-tab {
-  padding: 10px 14px; font-size: 13.5px; font-weight: 500; color: var(--text-secondary);
-  border-radius: 8px; cursor: pointer; transition: all 0.2s;
-  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; font-size: 13.5px; font-weight: 600; color: var(--text-secondary);
+  border-radius: 14px; cursor: pointer; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex; align-items: center; gap: 12px;
 }
-.settings-tab i { width: 16px; text-align: center; color: var(--text-tertiary); }
-.settings-tab:hover { background: var(--bg-secondary); color: var(--text-primary); }
-.settings-tab:hover i { color: var(--text-secondary); }
-.settings-tab.active { background: var(--accent); color: #fff; font-weight: 600; box-shadow: 0 4px 12px rgba(99,102,241,0.25); }
-.settings-tab.active i { color: #fff; }
+.settings-tab i { width: 18px; text-align: center; color: var(--text-tertiary); font-size: 14px; transition: color 0.2s; }
+.settings-tab:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
+.settings-tab:hover i { color: var(--primary); }
+.settings-tab.active {
+  background: var(--primary); color: #FFF; font-weight: 700;
+  box-shadow: 0 8px 20px rgba(0, 82, 255, 0.25);
+}
+.settings-tab.active i { color: #FFF; }
 
 .settings-content {
   flex: 1; min-width: 0;
 }
 .settings-pane {
-  display: none; animation: fadeIn 0.2s ease;
+  display: none; animation: iosSpring 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 .settings-pane.active {
   display: block;
 }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
+/* User Avatar Banner Card */
+.profile-avatar-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.12) 100%);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  margin-bottom: 24px;
+}
+.avatar-badge-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--brand-gradient, linear-gradient(135deg, #6366F1, #8B5CF6));
+  color: #FFF;
+  font-size: 24px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+}
+.profile-avatar-info h2 {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.profile-role-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #10B981;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* iOS Toggle Switch */
+.ios-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.ios-switch input { opacity: 0; width: 0; height: 0; }
+.ios-slider {
+  position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--border-strong);
+  transition: .3s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 34px;
+}
+.ios-slider:before {
+  position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
+  background-color: white;
+  transition: .3s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.ios-switch input:checked + .ios-slider {
+  background-color: var(--primary);
+}
+.ios-switch input:checked + .ios-slider:before {
+  transform: translateX(20px);
+}
 </style>
 
 <div class="page-header">
@@ -80,13 +159,13 @@ const swatchHtml = colorSwatches.map(c =>
 <div class="settings-layout">
   <!-- Sidebar -->
   <div class="settings-sidebar">
-    <div class="settings-tab active" onclick="switchTab('profile', this)"><i class="fas fa-user"></i> Mening profilim</div>
+    <div class="settings-tab active" onclick="switchTab('profile', this)"><i class="fas fa-user-gear"></i> Mening profilim</div>
     <div class="settings-tab" onclick="switchTab('language', this)"><i class="fas fa-language"></i> Tizim tili</div>
     <% if (isAdmin) { %>
-      <div class="settings-tab" onclick="switchTab('company', this)"><i class="fas fa-building"></i> Kompaniya</div>
-      <div class="settings-tab" onclick="switchTab('pipelines', this)"><i class="fas fa-filter"></i> Voronkalar</div>
-      <div class="settings-tab" onclick="switchTab('users', this)"><i class="fas fa-users"></i> Jamoa va rollar</div>
-      <div class="settings-tab" onclick="switchTab('integrations', this)"><i class="fas fa-plug"></i> Integratsiyalar</div>
+      <div class="settings-tab" onclick="switchTab('company', this)"><i class="fas fa-building-user"></i> Kompaniya</div>
+      <div class="settings-tab" onclick="switchTab('pipelines', this)"><i class="fas fa-diagram-project"></i> Voronkalar</div>
+      <div class="settings-tab" onclick="switchTab('users', this)"><i class="fas fa-users-gear"></i> Jamoa va rollar</div>
+      <div class="settings-tab" onclick="switchTab('integrations', this)"><i class="fas fa-plug-circle-bolt"></i> Integratsiyalar</div>
       <div class="settings-tab" onclick="switchTab('telegram', this)"><i class="fab fa-telegram"></i> Telegram ulash</div>
       <div class="settings-tab" onclick="switchTab('instagram', this)"><i class="fab fa-instagram"></i> Instagram ulash</div>
     <% } %>
@@ -97,35 +176,49 @@ const swatchHtml = colorSwatches.map(c =>
     
     <!-- 1. PROFILE -->
     <div class="settings-pane active" id="pane-profile">
+      <div class="profile-avatar-card">
+        <div class="avatar-badge-circle">
+          <%= (user.fullName || user.email || 'U').charAt(0).toUpperCase() %>
+        </div>
+        <div class="profile-avatar-info">
+          <h2><%= escHtml(user.fullName || 'Foydalanuvchi') %></h2>
+          <span class="profile-role-pill"><i class="fas fa-shield-halved"></i> <%= escHtml(user.role || 'User') %></span>
+        </div>
+      </div>
+
       <div class="settings-section">
         <div class="settings-section-header">
-          <i class="fas fa-user" style="color:var(--accent)"></i>
+          <i class="fas fa-user-pen" style="color:var(--primary)"></i>
           <h3>Shaxsiy ma'lumotlar</h3>
         </div>
         <div class="settings-section-body">
           <div class="form-grid form-grid-2">
             <div class="form-group">
-              <label class="form-label">To'liq ismingiz</label>
-              <input type="text" id="prof-fullName" class="form-control" value="<%= escHtml(user.fullName) %>">
+              <label class="form-label" style="font-weight:700;">To'liq ismingiz</label>
+              <input type="text" id="prof-fullName" class="form-control" value="<%= escHtml(user.fullName) %>" style="border-radius:12px; padding:12px;">
             </div>
             <div class="form-group">
-              <label class="form-label">Email manzilingiz</label>
-              <input type="email" id="prof-email" class="form-control" value="<%= escHtml(user.email) %>">
+              <label class="form-label" style="font-weight:700;">Email manzilingiz</label>
+              <input type="email" id="prof-email" class="form-control" value="<%= escHtml(user.email) %>" style="border-radius:12px; padding:12px;">
             </div>
           </div>
-          <div style="height: 1px; background: var(--border); margin: 20px 0;"></div>
-          <h4 style="font-size: 14px; margin-bottom: 12px; color: var(--text-primary);"><i class="fas fa-lock" style="color:var(--text-tertiary);margin-right:6px"></i> Parolni o'zgartirish</h4>
+          <div style="height: 1px; background: var(--border-subtle); margin: 24px 0;"></div>
+          <h4 style="font-size: 14px; font-weight:700; margin-bottom: 14px; color: var(--text-primary); display:flex; align-items:center; gap:8px;">
+            <i class="fas fa-key" style="color:var(--primary)"></i> Parolni o'zgartirish
+          </h4>
           <div class="form-grid form-grid-2">
             <div class="form-group">
-              <label class="form-label">Joriy parol</label>
-              <input type="password" id="prof-currentPassword" class="form-control" placeholder="Hozirgi parolingiz">
+              <label class="form-label" style="font-weight:700;">Joriy parol</label>
+              <input type="password" id="prof-currentPassword" class="form-control" placeholder="Hozirgi parolingiz" style="border-radius:12px; padding:12px;">
             </div>
             <div class="form-group">
-              <label class="form-label">Yangi parol</label>
-              <input type="password" id="prof-newPassword" class="form-control" placeholder="Kamida 6 ta belgi">
+              <label class="form-label" style="font-weight:700;">Yangi parol</label>
+              <input type="password" id="prof-newPassword" class="form-control" placeholder="Kamida 6 ta belgi" style="border-radius:12px; padding:12px;">
             </div>
           </div>
-          <button class="btn btn-primary btn-sm" onclick="saveProfile()" style="margin-top:10px"><i class="fas fa-save"></i> Saqlash</button>
+          <button class="btn btn-primary" onclick="saveProfile()" style="margin-top:16px; border-radius:12px; padding:10px 20px; font-weight:700;">
+            <i class="fas fa-check"></i> Saqlash
+          </button>
         </div>
       </div>
     </div>
@@ -134,19 +227,21 @@ const swatchHtml = colorSwatches.map(c =>
     <div class="settings-pane" id="pane-language">
       <div class="settings-section">
         <div class="settings-section-header">
-          <i class="fas fa-language" style="color:var(--accent)"></i>
+          <i class="fas fa-language" style="color:var(--primary)"></i>
           <h3>Tizim tili</h3>
         </div>
         <div class="settings-section-body">
-          <div class="form-group" style="max-width: 300px;">
-            <label class="form-label">Tilni tanlang</label>
-            <select id="s-language" class="form-control">
+          <div class="form-group" style="max-width: 320px;">
+            <label class="form-label" style="font-weight:700;">Tilni tanlang</label>
+            <select id="s-language" class="form-control" style="border-radius:12px; padding:12px;">
               <option value="uz">O'zbek tili</option>
               <option value="ru">Русский язык</option>
             </select>
-            <p style="font-size: 11px; color: var(--text-tertiary); margin-top: 8px;">* Tilni o'zgartirgandan so'ng sahifa yangilanadi va o'zgarishlar darhol faollashadi.</p>
+            <p style="font-size: 12px; color: var(--text-tertiary); margin-top: 10px;">* Tilni o'zgartirgandan so'ng sahifa yangilanadi va o'zgarishlar darhol faollashadi.</p>
           </div>
-          <button class="btn btn-primary btn-sm" onclick="saveLanguage()" style="margin-top:10px"><i class="fas fa-save"></i> Saqlash</button>
+          <button class="btn btn-primary" onclick="saveLanguage()" style="margin-top:14px; border-radius:12px; font-weight:700;">
+            <i class="fas fa-check"></i> Saqlash
+          </button>
         </div>
       </div>
     </div>
@@ -155,18 +250,18 @@ const swatchHtml = colorSwatches.map(c =>
     <div class="settings-pane" id="pane-company">
       <div class="settings-section">
         <div class="settings-section-header">
-          <i class="fas fa-building" style="color:var(--accent)"></i>
+          <i class="fas fa-building" style="color:var(--primary)"></i>
           <h3>Kompaniya ma'lumotlari</h3>
         </div>
         <div class="settings-section-body">
           <div class="form-grid form-grid-2">
             <div class="form-group">
-              <label class="form-label">Kompaniya nomi</label>
-              <input type="text" id="s-companyName" class="form-control" value="<%= escHtml(companyName) %>">
+              <label class="form-label" style="font-weight:700;">Kompaniya nomi</label>
+              <input type="text" id="s-companyName" class="form-control" value="<%= escHtml(companyName) %>" style="border-radius:12px; padding:12px;">
             </div>
             <div class="form-group">
-              <label class="form-label">Valyuta</label>
-              <select id="s-currency" class="form-control">
+              <label class="form-label" style="font-weight:700;">Valyuta</label>
+              <select id="s-currency" class="form-control" style="border-radius:12px; padding:12px;">
                 <option value="UZS" <%= companyCurrency==='UZS' ? 'selected' : '' %>>UZS — So'm</option>
                 <option value="USD" <%= companyCurrency==='USD' ? 'selected' : '' %>>USD — Dollar</option>
                 <option value="EUR" <%= companyCurrency==='EUR' ? 'selected' : '' %>>EUR — Euro</option>
@@ -174,35 +269,62 @@ const swatchHtml = colorSwatches.map(c =>
             </div>
           </div>
           
-          <div class="settings-section-header" style="margin-top: 24px; padding-bottom: 8px; border-bottom: 1px solid var(--border-light);">
-            <i class="fas fa-check-double" style="color:var(--accent); font-size:16px;"></i>
-            <h3 style="font-size:14px; margin:0;">Yangi sdelka uchun majburiy maydonlar</h3>
+          <div class="settings-section-header" style="margin-top: 28px; padding-bottom: 10px; border-bottom: 1px solid var(--border-subtle);">
+            <i class="fas fa-list-check" style="color:var(--primary); font-size:18px;"></i>
+            <h3 style="font-size:15px; margin:0; font-weight:800;">Yangi sdelka uchun majburiy maydonlar</h3>
           </div>
-          <div class="settings-section-body" style="padding-top: 12px; padding-bottom: 20px;">
+          <div class="settings-section-body" style="padding-top: 16px; padding-bottom: 20px;">
             <% 
               const mandatoryList = (company && company.mandatoryFields) ? company.mandatoryFields.split(',') : [];
             %>
-            <div style="display:flex; flex-direction:column; gap:10px; margin-bottom: 16px;">
-              <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; color:var(--text-primary);">
-                <input type="checkbox" id="mf-contactName" value="contactName" <%= mandatoryList.includes('contactName') ? 'checked' : '' %> style="accent-color:var(--accent);">
-                <span>Mijoz ismi (Имя контакта)</span>
-              </label>
-              <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; color:var(--text-primary);">
-                <input type="checkbox" id="mf-contactPhone" value="contactPhone" <%= mandatoryList.includes('contactPhone') ? 'checked' : '' %> style="accent-color:var(--accent);">
-                <span>Mijoz telefoni (Телефон контакта)</span>
-              </label>
-              <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; color:var(--text-primary);">
-                <input type="checkbox" id="mf-companyName" value="companyName" <%= mandatoryList.includes('companyName') ? 'checked' : '' %> style="accent-color:var(--accent);">
-                <span>Kompaniya nomi (Название компании)</span>
-              </label>
-              <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; color:var(--text-primary);">
-                <input type="checkbox" id="mf-amount" value="amount" <%= mandatoryList.includes('amount') ? 'checked' : '' %> style="accent-color:var(--accent);">
-                <span>Budjet / Summa (Бюджет/Сумма сделки)</span>
-              </label>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:14px; margin-bottom: 20px;">
+              
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border:1px solid var(--border-subtle); border-radius:16px; background:var(--bg-app);">
+                <div style="font-size:14px; font-weight:600; color:var(--text-primary);">
+                  <i class="fas fa-user-tag" style="color:var(--primary); margin-right:8px;"></i> Mijoz ismi
+                </div>
+                <label class="ios-switch">
+                  <input type="checkbox" id="mf-contactName" value="contactName" <%= mandatoryList.includes('contactName') ? 'checked' : '' %>>
+                  <span class="ios-slider"></span>
+                </label>
+              </div>
+
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border:1px solid var(--border-subtle); border-radius:16px; background:var(--bg-app);">
+                <div style="font-size:14px; font-weight:600; color:var(--text-primary);">
+                  <i class="fas fa-phone" style="color:var(--primary); margin-right:8px;"></i> Mijoz telefoni
+                </div>
+                <label class="ios-switch">
+                  <input type="checkbox" id="mf-contactPhone" value="contactPhone" <%= mandatoryList.includes('contactPhone') ? 'checked' : '' %>>
+                  <span class="ios-slider"></span>
+                </label>
+              </div>
+
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border:1px solid var(--border-subtle); border-radius:16px; background:var(--bg-app);">
+                <div style="font-size:14px; font-weight:600; color:var(--text-primary);">
+                  <i class="fas fa-building" style="color:var(--primary); margin-right:8px;"></i> Kompaniya nomi
+                </div>
+                <label class="ios-switch">
+                  <input type="checkbox" id="mf-companyName" value="companyName" <%= mandatoryList.includes('companyName') ? 'checked' : '' %>>
+                  <span class="ios-slider"></span>
+                </label>
+              </div>
+
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border:1px solid var(--border-subtle); border-radius:16px; background:var(--bg-app);">
+                <div style="font-size:14px; font-weight:600; color:var(--text-primary);">
+                  <i class="fas fa-coins" style="color:var(--primary); margin-right:8px;"></i> Budjet / Summa
+                </div>
+                <label class="ios-switch">
+                  <input type="checkbox" id="mf-amount" value="amount" <%= mandatoryList.includes('amount') ? 'checked' : '' %>>
+                  <span class="ios-slider"></span>
+                </label>
+              </div>
+
             </div>
           </div>
 
-          <button class="btn btn-primary btn-sm" onclick="saveCompany()"><i class="fas fa-save"></i> Saqlash</button>
+          <button class="btn btn-primary" onclick="saveCompany()" style="border-radius:12px; padding:10px 20px; font-weight:700;">
+            <i class="fas fa-check"></i> Saqlash
+          </button>
         </div>
       </div>
     </div>
