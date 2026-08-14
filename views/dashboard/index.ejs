@@ -988,14 +988,34 @@ async function loadDashboard() {
           </div>
         </div>
         <div id="leadBreakdownList" style="display: none; width: 100%; margin-top: 6px; padding: 10px 12px; background: var(--surface-input); border: 1px solid var(--border); border-radius: 14px; flex-direction: column; gap: 6px; font-size: 11.5px; color: var(--text-secondary);" onclick="event.stopPropagation();">
-          <div style="font-weight: 700; font-size: 11px; color: var(--text-primary); text-transform: uppercase; margin-bottom: 2px; border-bottom: 1px solid var(--border); padding-bottom: 4px;">Kelgan Leadlar & Haridlar</div>
-          <div style="display: flex; justify-content: space-between; gap: 8px;">
+          <div style="font-weight: 700; font-size: 11px; color: var(--text-primary); text-transform: uppercase; margin-bottom: 2px; border-bottom: 1px solid var(--border); padding-bottom: 4px;">Kelgan Leadlar & Olingan Zakazlar</div>
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
             <span>Target (Meta):</span>
-            <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.target?.leads ?? safeKpis.sourcesCount?.target ?? 0} ta lead</strong>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.target?.leads ?? safeKpis.sourcesCount?.target ?? 0} lead</strong>
+              <span style="font-size: 10.5px; font-weight: 700; color: #10B981; background: rgba(16, 185, 129, 0.12); padding: 1px 6px; border-radius: 6px;">${safeKpis.sourceBreakdown?.target?.wonCount ?? 0} zakaz</span>
+            </div>
           </div>
-          <div style="display: flex; justify-content: space-between; gap: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
             <span>Instagram:</span>
-            <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.instagram?.leads ?? safeKpis.sourcesCount?.instagram ?? 0} ta lead</strong>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.instagram?.leads ?? safeKpis.sourcesCount?.instagram ?? 0} lead</strong>
+              <span style="font-size: 10.5px; font-weight: 700; color: #10B981; background: rgba(16, 185, 129, 0.12); padding: 1px 6px; border-radius: 6px;">${safeKpis.sourceBreakdown?.instagram?.wonCount ?? 0} zakaz</span>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+            <span>Telegram:</span>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.telegram?.leads ?? 0} lead</strong>
+              <span style="font-size: 10.5px; font-weight: 700; color: #10B981; background: rgba(16, 185, 129, 0.12); padding: 1px 6px; border-radius: 6px;">${safeKpis.sourceBreakdown?.telegram?.wonCount ?? 0} zakaz</span>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+            <span>Telefon / Aloqa:</span>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.phone?.leads ?? 0} lead</strong>
+              <span style="font-size: 10.5px; font-weight: 700; color: #10B981; background: rgba(16, 185, 129, 0.12); padding: 1px 6px; border-radius: 6px;">${safeKpis.sourceBreakdown?.phone?.wonCount ?? 0} zakaz</span>
+            </div>
           </div>
         </div>
       </div>

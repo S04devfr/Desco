@@ -233,11 +233,12 @@ router.get('/kpis', async (req, res, next) => {
       ? dealsCreatedInPeriod.filter(d => d.stage?.pipelineId !== dlvPipelineId).length 
       : dealsCreatedInPeriod.length;
 
-    // ── Source Breakdown (target, instagram, phone, office) ──
-    const isTargetSource    = d => d.source === 'target';
-    const isInstagramSource = d => d.source === 'instagram';
-    const isPhoneSource     = d => d.source === 'phone' || d.source === 'telefon';
-    const isOfficeSource    = d => d.source === 'office';
+    // ── Source Breakdown (target, instagram, telegram, phone, office) ──
+    const isTargetSource    = d => d.source === 'target' || d.client?.source === 'target';
+    const isInstagramSource = d => d.source === 'instagram' || d.client?.source === 'instagram';
+    const isTelegramSource  = d => d.source === 'telegram' || d.client?.source === 'telegram';
+    const isPhoneSource     = d => d.source === 'phone' || d.source === 'telefon' || d.client?.source === 'phone';
+    const isOfficeSource    = d => d.source === 'office' || d.client?.source === 'office';
 
     const sourceBreakdown = {
       target: {
@@ -249,6 +250,11 @@ router.get('/kpis', async (req, res, next) => {
         leads: dealsCreatedInPeriod.filter(isInstagramSource).length,
         wonCount: dealsCreatedInPeriod.filter(d => isInstagramSource(d) && isWonDeal(d)).length,
         wonAmount: dealsCreatedInPeriod.filter(d => isInstagramSource(d) && isWonDeal(d)).reduce((s, d) => s + getEffectivePaid(d), 0)
+      },
+      telegram: {
+        leads: dealsCreatedInPeriod.filter(isTelegramSource).length,
+        wonCount: dealsCreatedInPeriod.filter(d => isTelegramSource(d) && isWonDeal(d)).length,
+        wonAmount: dealsCreatedInPeriod.filter(d => isTelegramSource(d) && isWonDeal(d)).reduce((s, d) => s + getEffectivePaid(d), 0)
       },
       phone: {
         leads: dealsCreatedInPeriod.filter(isPhoneSource).length,
@@ -265,6 +271,7 @@ router.get('/kpis', async (req, res, next) => {
     const sourcesCount = {
       target: sourceBreakdown.target.leads,
       instagram: sourceBreakdown.instagram.leads,
+      telegram: sourceBreakdown.telegram.leads,
       phone: sourceBreakdown.phone.leads,
       office: sourceBreakdown.office.leads
     };
