@@ -1330,26 +1330,13 @@ router.get('/operator-presence', async (req, res) => {
 
       const userLog = activityLogMap[m.id];
       
-      // First Login Time
+      // First Login Time: strictly from authenticated UserActivityLog sessionStart
       let firstLoginTimeStr = '—';
       if (userLog && userLog.firstLogin) {
         firstLoginTimeStr = new Date(userLog.firstLogin).toLocaleTimeString('uz-UZ', { timeZone: 'Asia/Tashkent', hour: '2-digit', minute: '2-digit', hour12: false });
-      } else {
-        const todayStartTs = today.getTime();
-        const allTimestamps = [
-          ...mCalls.map(c => new Date(c.createdAt).getTime()),
-          ...mTasks.map(t => new Date(t.updatedAt).getTime()),
-          ...mDeals.map(d => new Date(d.updatedAt).getTime()),
-          ...mActs.map(a => new Date(a.createdAt).getTime())
-        ].filter(t => !isNaN(t) && t >= todayStartTs);
-
-        if (allTimestamps.length > 0) {
-          const earliestTs = Math.min(...allTimestamps);
-          firstLoginTimeStr = new Date(earliestTs).toLocaleTimeString('uz-UZ', { timeZone: 'Asia/Tashkent', hour: '2-digit', minute: '2-digit', hour12: false });
-        }
       }
 
-      // Online status calculation
+      // Online status calculation: strictly based on real lastPing heartbeat
       let secondsSincePing = 999999;
       if (userLog && userLog.lastPing) {
         secondsSincePing = Math.round((now.getTime() - new Date(userLog.lastPing).getTime()) / 1000);
@@ -1360,8 +1347,6 @@ router.get('/operator-presence', async (req, res) => {
         status = 'online';
       } else if (secondsSincePing <= 600) { // Active within 10 minutes = idle
         status = 'idle';
-      } else if (req.userId === m.id) {
-        status = 'online';
       }
 
       const isOnline = status === 'online';
@@ -1371,18 +1356,17 @@ router.get('/operator-presence', async (req, res) => {
       else if (isIdle) totalIdle++;
       else totalOffline++;
 
+      // Real active work duration (strictly 0 if user never opened CRM today)
       let onlineSec = 0;
       if (userLog && userLog.totalMin) {
-        onlineSec = Number(userLog.totalMin) * 60;
-      } else if (dbActivityCount > 0) {
-        onlineSec = (dbActivityCount * 180) + callDuration;
+        onlineSec = Math.max(0, Number(userLog.totalMin) * 60);
       }
       
-      let idleSec = isIdle ? 300 : (status === 'offline' && onlineSec > 0 ? 600 : 0);
+      let idleSec = isIdle ? 300 : 0;
       totalOnlineSec += onlineSec;
 
       const totalSec = onlineSec + idleSec;
-      const activeWorkRatio = totalSec > 0 ? Math.min(100, Math.round((onlineSec / totalSec) * 100)) : (dbActivityCount > 0 ? 85 : 0);
+      const activeWorkRatio = totalSec > 0 ? Math.min(100, Math.round((onlineSec / totalSec) * 100)) : 0;
 
       return {
         id: m.id,
