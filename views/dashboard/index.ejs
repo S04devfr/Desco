@@ -1017,6 +1017,13 @@ async function loadDashboard() {
               <span style="font-size: 10.5px; font-weight: 700; color: #10B981; background: rgba(16, 185, 129, 0.12); padding: 1px 6px; border-radius: 6px;">${safeKpis.sourceBreakdown?.phone?.wonCount ?? 0} zakaz</span>
             </div>
           </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+            <span>Officedan olib ketdi:</span>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <strong style="color: var(--text-primary);">${safeKpis.sourceBreakdown?.office?.leads ?? 0} lead</strong>
+              <span style="font-size: 10.5px; font-weight: 700; color: #10B981; background: rgba(16, 185, 129, 0.12); padding: 1px 6px; border-radius: 6px;">${safeKpis.sourceBreakdown?.office?.wonCount ?? 0} zakaz</span>
+            </div>
+          </div>
         </div>
       </div>
 
