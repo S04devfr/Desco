@@ -1068,49 +1068,44 @@ async function loadDashboard() {
       </div>
     `;
 
-    document.getElementById('kpiRow1').innerHTML = row1Html;
-
-    // ══════════════════════════════════════════
-    // QATOR 2: Tan narx (admin) | Harajatlar (admin) | Sof foyda (admin)
-    // ══════════════════════════════════════════
-    let row2Html = '';
-
     if (USER_ROLE === 'admin') {
-      row2Html = `
-        <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')">
-          <div class="stat-icon purple"><i class="fas fa-tags"></i></div>
-          <div class="stat-info">
+      row1Html += `
+        <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')" style="display: flex; align-items: flex-start; gap: 16px; height: 100%;">
+          <div class="stat-icon purple" style="margin-top: 4px; flex-shrink: 0;"><i class="fas fa-tags"></i></div>
+          <div class="stat-info" style="flex: 1; min-width: 0;">
             <div class="stat-label">Tan narx</div>
             <div class="stat-value">${renderCardMoney(safeKpis.totalCostPrice ?? 0)}</div>
             <div class="stat-sub">Jami mahsulot tannarxi</div>
           </div>
         </div>
 
-        <div class="stat-card clickable" onclick="window.location.href='/expenses'">
-          <div class="stat-icon red"><i class="fas fa-receipt"></i></div>
-          <div class="stat-info">
+        <div class="stat-card clickable" onclick="window.location.href='/expenses'" style="display: flex; align-items: flex-start; gap: 16px; height: 100%; border: 1px solid rgba(239, 68, 68, 0.25);">
+          <div class="stat-icon red" style="margin-top: 4px; flex-shrink: 0;"><i class="fas fa-receipt"></i></div>
+          <div class="stat-info" style="flex: 1; min-width: 0;">
             <div class="stat-label">Harajatlar</div>
-            <div class="stat-value">${renderCardMoney(safeKpis.totalExpenses ?? 0)}</div>
+            <div class="stat-value" style="color: #EF4444;">${renderCardMoney(safeKpis.totalExpenses ?? 0)}</div>
             <div class="stat-sub">${(() => {
               const cats = safeKpis.expenseByCategory || {};
-              const parts = Object.entries(cats).slice(0,3).map(([k,v]) => k + ': ' + fmtMoney(v));
-              return parts.length ? parts.join(' · ') : 'Hali xarajat yoq';
+              const parts = Object.entries(cats).slice(0,2).map(([k,v]) => k + ': ' + fmtMoney(v));
+              return parts.length ? parts.join(' · ') : 'Hali xarajat yo\'q';
             })()}</div>
           </div>
         </div>
 
-        <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')">
-          <div class="stat-icon green"><i class="fas fa-chart-line"></i></div>
-          <div class="stat-info">
-            <div class="stat-label">Sof foyda</div>
-            <div class="stat-value">${renderCardMoney(safeKpis.netProfit ?? 0)}</div>
-            <div class="stat-sub">Savdo - Tannarx - Xarajat</div>
+        <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')" style="display: flex; align-items: flex-start; gap: 16px; height: 100%; background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0.04) 100%); border: 1px solid rgba(16, 185, 129, 0.35); box-shadow: 0 8px 24px rgba(16, 185, 129, 0.12);">
+          <div class="stat-icon green" style="margin-top: 4px; flex-shrink: 0; background: rgba(16, 185, 129, 0.2); color: #10B981;"><i class="fas fa-chart-line"></i></div>
+          <div class="stat-info" style="flex: 1; min-width: 0;">
+            <div class="stat-label" style="color: #10B981; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Sof foyda</div>
+            <div class="stat-value" style="color: #10B981; font-size: 22px; font-weight: 800;">${renderCardMoney(safeKpis.netProfit ?? 0)}</div>
+            <div class="stat-sub" style="color: var(--text-secondary);">Savdo - Tannarx - Xarajat</div>
           </div>
         </div>
       `;
     }
 
-    document.getElementById('kpiRow2').innerHTML = row2Html;
+    document.getElementById('kpiRow1').innerHTML = row1Html;
+    const row2El = document.getElementById('kpiRow2');
+    if (row2El) row2El.style.display = 'none';
 
     // ══════════════════════════════════════════
     // UMUMIY STATISTIKALAR bo'limi yangilash
