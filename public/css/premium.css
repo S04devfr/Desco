@@ -86,6 +86,17 @@
   --sidebar-w: 248px;
   --topbar-h: 60px;
 
+  /* ── Liquid Glass & Fluid Aero Design System Tokens ── */
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-bg-hover: rgba(255, 255, 255, 0.88);
+  --glass-border: rgba(255, 255, 255, 0.65);
+  --glass-border-subtle: rgba(255, 255, 255, 0.4);
+  --glass-blur: blur(24px) saturate(190%);
+  --glass-shadow: 0 16px 40px rgba(0, 82, 255, 0.06), 0 4px 12px rgba(15, 23, 42, 0.03), inset 0 1px 1px rgba(255, 255, 255, 0.9);
+  --glass-glow-emerald: 0 12px 36px rgba(16, 185, 129, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+  --glass-glow-cobalt: 0 12px 36px rgba(0, 82, 255, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+  --liquid-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
   /* Legacy compatibility mapping */
   --brand: var(--primary);
   --brand-hover: var(--primary-hover);
@@ -132,6 +143,16 @@
   --bg-sidebar: #1A1A1A;
   --bg-sidebar-hover: #262626;
   --bg-sidebar-active: rgba(79, 106, 255, 0.12);
+
+  /* ── Liquid Glass Tokens (Dark Mode) ── */
+  --glass-bg: rgba(26, 26, 26, 0.72);
+  --glass-bg-hover: rgba(38, 38, 38, 0.88);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-border-subtle: rgba(255, 255, 255, 0.06);
+  --glass-blur: blur(24px) saturate(190%);
+  --glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.12);
+  --glass-glow-emerald: 0 12px 36px rgba(52, 211, 153, 0.22), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  --glass-glow-cobalt: 0 12px 36px rgba(108, 138, 255, 0.22), inset 0 1px 1px rgba(255, 255, 255, 0.2);
 
   /* Cobalt Blue Accent */
   --primary: #6C8AFF;
@@ -195,6 +216,181 @@
   --sidebar-text: var(--text-muted-sidebar);
   --sidebar-text-active: #6C8AFF;
   --sidebar-border: var(--border-subtle);
+}
+
+/* ── AMBIENT LIQUID BACKGROUND MESH ── */
+.liquid-ambient-wrapper {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.liquid-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(110px);
+  opacity: 0.22;
+  animation: floatLiquid 22s infinite alternate ease-in-out;
+}
+.liquid-blob-1 { top: -12%; left: 8%; width: 550px; height: 550px; background: radial-gradient(circle, #0052FF 0%, rgba(0,82,255,0) 70%); }
+.liquid-blob-2 { bottom: -12%; right: 8%; width: 650px; height: 650px; background: radial-gradient(circle, #10B981 0%, rgba(16,185,129,0) 70%); animation-delay: -8s; }
+.liquid-blob-3 { top: 38%; left: 45%; width: 500px; height: 500px; background: radial-gradient(circle, #8B5CF6 0%, rgba(139,92,246,0) 70%); animation-delay: -14s; }
+
+[data-theme="dark"] .liquid-blob {
+  opacity: 0.18;
+}
+
+@keyframes floatLiquid {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(35px, -45px) scale(1.08); }
+  100% { transform: translate(-35px, 25px) scale(0.94); }
+}
+
+/* ── LIQUID GLASS CORE CONTAINER STYLING ── */
+.card,
+.stat-card,
+.modal-content,
+.kanban-column,
+.sidebar,
+.topbar,
+.deals-tbl-wrap,
+.mobile-bottom-bar {
+  background: var(--glass-bg) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  -webkit-backdrop-filter: var(--glass-blur) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--glass-shadow) !important;
+  border-radius: 20px !important;
+  transition: all 0.3s var(--liquid-ease) !important;
+}
+
+.card:hover,
+.stat-card:hover {
+  background: var(--glass-bg-hover) !important;
+  transform: translateY(-3px) scale(1.008);
+  box-shadow: 0 20px 48px rgba(0, 82, 255, 0.09), inset 0 1px 1px rgba(255, 255, 255, 1) !important;
+}
+
+[data-theme="dark"] .card:hover,
+[data-theme="dark"] .stat-card:hover {
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Glass Inputs & Form Controls */
+.form-input,
+.form-select,
+.form-control,
+.search-input {
+  background: rgba(255, 255, 255, 0.5) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--glass-border-subtle) !important;
+  border-radius: 12px !important;
+  transition: all 0.2s var(--liquid-ease) !important;
+}
+
+[data-theme="dark"] .form-input,
+[data-theme="dark"] .form-select,
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .search-input {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-control:focus,
+.search-input:focus {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 4px var(--brand-glow) !important;
+}
+
+[data-theme="dark"] .form-input:focus,
+[data-theme="dark"] .form-select:focus,
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .search-input:focus {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* ── SIDEBAR NAV ITEM LIQUID GLOW ── */
+.sidebar-nav a,
+.sidebar-submenu-header {
+  border-radius: 12px !important;
+  margin: 2px 10px !important;
+  padding: 10px 14px !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.sidebar-nav a.active,
+.sidebar-submenu-header.active {
+  background: var(--primary-light) !important;
+  color: var(--primary) !important;
+  box-shadow: 0 4px 16px rgba(0, 82, 255, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.5) !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="dark"] .sidebar-nav a.active,
+[data-theme="dark"] .sidebar-submenu-header.active {
+  box-shadow: 0 4px 16px rgba(108, 138, 255, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.15) !important;
+}
+
+.sidebar-nav a:hover:not(.active),
+.sidebar-submenu-header:hover:not(.active) {
+  background: rgba(0, 82, 255, 0.05) !important;
+  transform: translateX(3px);
+}
+
+[data-theme="dark"] .sidebar-nav a:hover:not(.active),
+[data-theme="dark"] .sidebar-submenu-header:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* ── KANBAN & DEAL CARDS GLASSMORPHISM ── */
+.kanban-board {
+  gap: 20px !important;
+}
+
+.kanban-column {
+  border-radius: 20px !important;
+  padding: 16px !important;
+}
+
+.deal-card {
+  background: var(--glass-bg-hover) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.04), inset 0 1px 1px rgba(255,255,255,0.8) !important;
+  border-radius: 16px !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+[data-theme="dark"] .deal-card {
+  box-shadow: 0 6px 16px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.1) !important;
+}
+
+.deal-card:hover {
+  transform: translateY(-4px) scale(1.015) !important;
+  box-shadow: 0 16px 32px rgba(0, 82, 255, 0.12), inset 0 1px 1px rgba(255,255,255,1) !important;
+}
+
+/* ── LIQUID GLASS MODALS ── */
+.modal-content {
+  border-radius: 24px !important;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.8) !important;
+}
+
+[data-theme="dark"] .modal-content {
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.15) !important;
+}
+
+.modal-backdrop {
+  background: rgba(15, 23, 42, 0.4) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
 }
 
 /* ─────────────────────────────────────────────────────

@@ -92,6 +92,12 @@
   </script>
 </head>
 <body>
+<!-- Ambient Liquid Background Mesh -->
+<div class="liquid-ambient-wrapper" aria-hidden="true">
+  <div class="liquid-blob liquid-blob-1"></div>
+  <div class="liquid-blob liquid-blob-2"></div>
+  <div class="liquid-blob liquid-blob-3"></div>
+</div>
 <div class="mobile-overlay" id="mobileOverlay" onclick="toggleMobileMenu()"></div>
 <div class="app-wrapper">
   <%- include('./sidebar', { user: typeof user !== 'undefined' ? user : null, activePage: typeof activePage !== 'undefined' ? activePage : '' }) %>
