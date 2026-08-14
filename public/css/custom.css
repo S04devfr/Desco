@@ -18,16 +18,16 @@
   --brand-soft:   rgba(99, 102, 241, 0.08);
   --brand-glow:   rgba(99, 102, 241, 0.18);
 
-  /* Surfaces (Light) */
-  --surface-base:   #F2F2F7;
-  --surface-card:   #FFFFFF;
-  --surface-input:  #E5E5EA;
+  /* Surfaces (Liquid Glass Light) */
+  --surface-base:   transparent;
+  --surface-card:   rgba(255, 255, 255, 0.65);
+  --surface-input:  rgba(255, 255, 255, 0.45);
 
-  /* Sidebar (macOS style light sidebar) */
-  --sidebar-bg:          #E5E5EA;
-  --sidebar-border:      rgba(0,0,0,0.08);
-  --sidebar-hover:       rgba(0,0,0,0.04);
-  --sidebar-active:      #007AFF;
+  /* Sidebar (Liquid Glass) */
+  --sidebar-bg:          rgba(255, 255, 255, 0.65);
+  --sidebar-border:      rgba(255, 255, 255, 0.7);
+  --sidebar-hover:       rgba(99, 102, 241, 0.08);
+  --sidebar-active:      #6366F1;
   --sidebar-text:        #3C3C43;
   --sidebar-text-active: #FFFFFF;
 
@@ -52,8 +52,8 @@
   --info-border:    rgba(0, 122, 255, 0.25);
 
   /* Borders */
-  --border:        rgba(0,0,0,0.06);
-  --border-strong: rgba(0,0,0,0.12);
+  --border:        rgba(255,255,255,0.6);
+  --border-strong: rgba(255,255,255,0.85);
 
   /* Shadows (Apple diffuse style) */
   --shadow-xs: 0 1px 2px rgba(0,0,0,0.03);
@@ -61,7 +61,7 @@
   --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
   --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
   --shadow-xl: 0 16px 48px rgba(0,0,0,0.12);
-  --shadow-brand: 0 4px 14px rgba(0,122,255,0.2);
+  --shadow-brand: 0 4px 14px rgba(99,102,241,0.25);
 
   /* Radius (Rounded like iOS/macOS) */
   --r-xs:   6px;
@@ -82,10 +82,10 @@
   --dur-base:       200ms;
   --dur-slow:       300ms;
 
-  /* Legacy aliases (backward compat) */
-  --bg-primary:    var(--surface-base);
-  --bg-secondary:  var(--surface-card);
-  --bg-tertiary:   var(--surface-input);
+  /* Legacy aliases (Liquid Glass mapping) */
+  --bg-primary:    rgba(255, 255, 255, 0.65);
+  --bg-secondary:  rgba(255, 255, 255, 0.45);
+  --bg-tertiary:   rgba(255, 255, 255, 0.3);
   --accent:        var(--brand);
   --accent-hover:  var(--brand-hover);
   --accent-soft:   var(--brand-soft);
@@ -111,13 +111,13 @@
   --brand-soft:   rgba(129, 140, 248, 0.12);
   --brand-glow:   rgba(129, 140, 248, 0.22);
 
-  /* Surfaces — neutral charcoal */
-  --surface-base:  #111827;
-  --surface-card:  #1F2937;
-  --surface-input: #374151;
+  /* Surfaces — Liquid Glass Dark */
+  --surface-base:  transparent;
+  --surface-card:  rgba(30, 41, 59, 0.65);
+  --surface-input: rgba(30, 41, 59, 0.45);
 
-  /* Sidebar — qoraroq charcoal */
-  --sidebar-bg:          #0F172A;
+  /* Sidebar — Liquid Glass Dark */
+  --sidebar-bg:          rgba(30, 41, 59, 0.65);
   --sidebar-border:      rgba(255,255,255,0.07);
   --sidebar-hover:       rgba(129, 140, 248, 0.08);
   --sidebar-active:      #6366F1;
