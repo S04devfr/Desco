@@ -47,14 +47,26 @@ router.get('/', async (req, res, next) => {
 // Get client details
 router.get('/:id', async (req, res, next) => {
   try {
-    const client = await prisma.client.findUnique({
-      where: { id: Number(req.params.id) },
-      include: {
-        owner: ownerSelect,
-        deals: { include: { manager: ownerSelect, stage: true } },
-        callLogs: { orderBy: { createdAt: 'desc' }, take: 20 }
-      }
-    });
+    let client = null;
+    try {
+      client = await prisma.client.findUnique({
+        where: { id: Number(req.params.id) },
+        include: {
+          owner: ownerSelect,
+          deals: { include: { manager: ownerSelect, stage: true } },
+          callLogs: { orderBy: { createdAt: 'desc' }, take: 20 }
+        }
+      });
+    } catch (dbErr) {
+      // Fallback if callLogs relation is missing from generated client
+      client = await prisma.client.findUnique({
+        where: { id: Number(req.params.id) },
+        include: {
+          owner: ownerSelect,
+          deals: { include: { manager: ownerSelect, stage: true } }
+        }
+      });
+    }
     if (!client) return res.status(404).json({ message: 'Mijoz topilmadi' });
     res.json(client);
   } catch (error) {

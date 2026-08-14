@@ -62,7 +62,7 @@ const disabledSendRoute = async (req, res) => {
 
     const recipientId = client.telegramId;
     const settings = await prisma.companySettings.findFirst();
-    const WAZZUP_API_KEY = process.env.WAZZUP_API_KEY || (settings?.instagramAccessToken && settings.instagramAccessToken.length === 32 ? settings.instagramAccessToken : null);
+    const WAZZUP_API_KEY = process.env.WAZZUP_API_KEY || settings?.wazzupApiKey || (settings?.instagramAccessToken && settings.instagramAccessToken.length === 32 ? settings.instagramAccessToken : null);
 
     if (WAZZUP_API_KEY) {
       // Save to DB first with a temp ID

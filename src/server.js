@@ -409,7 +409,7 @@ async function syncWazzupUsers() {
   try {
     const prisma = require('./config/database');
     const settings = await prisma.companySettings.findFirst();
-    const WAZZUP_API_KEY = process.env.WAZZUP_API_KEY || (settings?.instagramAccessToken && settings.instagramAccessToken.length === 32 ? settings.instagramAccessToken : null);
+    const WAZZUP_API_KEY = process.env.WAZZUP_API_KEY || settings?.wazzupApiKey || (settings?.instagramAccessToken && settings.instagramAccessToken.length === 32 ? settings.instagramAccessToken : null);
     if (!WAZZUP_API_KEY) return;
 
     // 1. Sync Webhook URL

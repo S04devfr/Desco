@@ -3,6 +3,16 @@ const router = express.Router();
 const prisma = require('../config/database');
 const { protect } = require('../middleware/auth');
 
+function getWazzupApiKey(settings) {
+  const envKey = process.env.WAZZUP_API_KEY;
+  if (envKey && envKey.trim()) return envKey.trim();
+  if (settings?.wazzupApiKey && settings.wazzupApiKey.trim()) return settings.wazzupApiKey.trim();
+  if (settings?.instagramAccessToken && settings.instagramAccessToken.trim().length === 32) {
+    return settings.instagramAccessToken.trim();
+  }
+  return null;
+}
+
 // Webhook Verification (Instagram/Wazzup needs this when subscribing)
 router.get('/webhook', async (req, res) => {
   const mode = req.query['hub.mode'];
@@ -42,7 +52,7 @@ router.post('/webhook', async (req, res) => {
   if (body.messages && Array.isArray(body.messages)) {
     // Senior implementation: fetch active Wazzup channels list to find target channel ID matching configured settings
     const settings = await prisma.companySettings.findFirst();
-    const WAZZUP_API_KEY = process.env.WAZZUP_API_KEY || (settings?.instagramAccessToken && settings.instagramAccessToken.length === 32 ? settings.instagramAccessToken : null);
+    const WAZZUP_API_KEY = getWazzupApiKey(settings);
     let targetChannelId = null;
     let telegramChannelId = null;
 
@@ -554,7 +564,7 @@ router.post('/messages', protect, async (req, res) => {
 
     const recipientId = client.instagramId;
     const settings = await prisma.companySettings.findFirst();
-    const WAZZUP_API_KEY = process.env.WAZZUP_API_KEY || (settings?.instagramAccessToken && settings.instagramAccessToken.length === 32 ? settings.instagramAccessToken : null);
+    const WAZZUP_API_KEY = getWazzupApiKey(settings);
 
     // 1. If Wazzup API Key is present, send via Wazzup
     if (WAZZUP_API_KEY) {
@@ -856,7 +866,7 @@ router.post('/iframe-url', protect, async (req, res) => {
     }
 
     const settings = await prisma.companySettings.findFirst();
-    const WAZZUP_API_KEY = process.env.WAZZUP_API_KEY || (settings?.instagramAccessToken && settings.instagramAccessToken.length === 32 ? settings.instagramAccessToken : null);
+    const WAZZUP_API_KEY = getWazzupApiKey(settings);
 
     if (!WAZZUP_API_KEY) {
       return res.status(400).json({ error: 'Wazzup API Key not configured' });
