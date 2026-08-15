@@ -130,25 +130,19 @@ async function ensureDefaultSeed() {
     }
 
     const existingAdmin = await prisma.user.findFirst({
-      where: { email: 'shokirovsharifjon04@gmail.com' }
+      where: { email: 'admin@desco.com' }
     }).catch(() => null);
 
     if (!existingAdmin) {
       console.log('⚡ Seeding default admin & pipeline into database...');
       const bcrypt = require('bcryptjs');
-      const sharifPass = await bcrypt.hash('Sharifjon@2026!', 10);
-      const adminPass  = await bcrypt.hash('Admin@Desco2026!', 10);
-      const mgrPass    = await bcrypt.hash('Manager@123', 10);
+      const adminPass = await bcrypt.hash('Admin@Desco2026!', 10);
+      const muhammadPass = await bcrypt.hash('Muhammad@Desco2026!', 10);
 
       await prisma.user.createMany({
         data: [
-          { fullName: 'Sharifjon', email: 'shokirovsharifjon04@gmail.com', password: sharifPass, role: 'admin' },
           { fullName: 'Administrator', email: 'admin@desco.com', password: adminPass, role: 'admin' },
-          { fullName: 'Abdumalik', email: 'abdumalik@desco.com', password: mgrPass, role: 'manager' },
-          { fullName: 'Qodirjon', email: 'qodirjon@desco.com', password: mgrPass, role: 'manager' },
-          { fullName: 'Bekzod', email: 'bekzod@desco.com', password: mgrPass, role: 'manager' },
-          { fullName: 'Ruxshona', email: 'ruxshona@desco.com', password: mgrPass, role: 'manager' },
-          { fullName: 'Parvina', email: 'parvina@desco.com', password: mgrPass, role: 'manager' }
+          { fullName: 'Muhammadyusuf', email: 'muhammad@desco.com', password: muhammadPass, role: 'admin' }
         ],
         skipDuplicates: true
       }).catch(() => {});

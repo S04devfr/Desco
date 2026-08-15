@@ -96,7 +96,7 @@ router.get('/users', async (req, res, next) => {
     const select = isAdmin
       ? { id: true, email: true, fullName: true, role: true, isActive: true, createdAt: true }
       : { id: true, fullName: true, role: true }
-    const users = await prisma.user.findMany({ select, orderBy: { createdAt: 'asc' } })
+    const users = await prisma.user.findMany({ where: { isActive: true }, select, orderBy: { id: 'asc' } })
     res.json(users)
   } catch (error) { next(error) }
 })
