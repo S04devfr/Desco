@@ -971,7 +971,7 @@ async function loadDashboard() {
     
     // CARD 1: LEADLAR
     row1Html += `
-      <div class="stat-card clickable" onclick="toggleLeadBreakdown(event)" style="position: relative; overflow: visible !important; display: flex; flex-direction: column; justify-content: center; border-radius: 20px; padding: 18px 20px; min-height: 110px;">
+      <div class="stat-card clickable" onclick="toggleLeadBreakdown(event)" style="display: flex; flex-direction: column; justify-content: flex-start; border-radius: 20px; padding: 18px 20px; min-height: 110px;">
         <div style="display: flex; align-items: flex-start; gap: 14px; width: 100%;">
           <div class="stat-icon blue" style="width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0; font-size: 18px; display: flex; align-items: center; justify-content: center; margin-top: 2px;"><i class="fas fa-crosshairs"></i></div>
           <div class="stat-info" style="flex: 1; min-width: 0;">
@@ -990,8 +990,8 @@ async function loadDashboard() {
           </div>
         </div>
 
-        <!-- Floating Popover Modal for Lead Breakdown -->
-        <div id="leadBreakdownList" style="display: none; position: absolute; top: calc(100% + 8px); left: 0; width: 100%; min-width: 290px; z-index: 9999; background: rgba(18, 24, 38, 0.96); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 18px; padding: 14px 16px; box-shadow: 0 20px 45px rgba(0,0,0,0.5); flex-direction: column; gap: 8px; font-size: 12px; color: var(--text-secondary);" onclick="event.stopPropagation();">
+        <!-- Inline Accordion Drawer for Lead Breakdown -->
+        <div id="leadBreakdownList" style="display: none; width: 100%; margin-top: 12px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 12px 14px; flex-direction: column; gap: 8px; font-size: 12px; color: var(--text-secondary);" onclick="event.stopPropagation();">
           <div style="font-weight: 800; font-size: 11px; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
             <span>Kelgan Leadlar & Olingan Zakazlar</span>
             <i class="fas fa-times" style="cursor: pointer; opacity: 0.6;" onclick="toggleLeadBreakdown(event)"></i>
@@ -1035,7 +1035,7 @@ async function loadDashboard() {
       </div>
 
       <!-- CARD 2: ZAKAZLAR -->
-      <div class="stat-card clickable" onclick="toggleZakazBreakdown(event)" style="position: relative; overflow: visible !important; display: flex; flex-direction: column; justify-content: center; border-radius: 20px; padding: 18px 20px; min-height: 110px;">
+      <div class="stat-card clickable" onclick="toggleZakazBreakdown(event)" style="display: flex; flex-direction: column; justify-content: flex-start; border-radius: 20px; padding: 18px 20px; min-height: 110px;">
         <div style="display: flex; align-items: flex-start; gap: 14px; width: 100%;">
           <div class="stat-icon green" style="width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0; font-size: 18px; display: flex; align-items: center; justify-content: center; margin-top: 2px;"><i class="fas fa-shopping-cart"></i></div>
           <div class="stat-info" style="flex: 1; min-width: 0;">
@@ -1055,8 +1055,8 @@ async function loadDashboard() {
           </div>
         </div>
 
-        <!-- Floating Popover Modal for Zakaz Breakdown -->
-        <div id="zakazBreakdownList" style="display: none; position: absolute; top: calc(100% + 8px); left: 0; width: 100%; min-width: 290px; z-index: 9999; background: rgba(18, 24, 38, 0.96); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 18px; padding: 14px 16px; box-shadow: 0 20px 45px rgba(0,0,0,0.5); flex-direction: column; gap: 8px; font-size: 12px; color: var(--text-secondary);" onclick="event.stopPropagation();">
+        <!-- Inline Accordion Drawer for Zakaz Breakdown -->
+        <div id="zakazBreakdownList" style="display: none; width: 100%; margin-top: 12px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 12px 14px; flex-direction: column; gap: 8px; font-size: 12px; color: var(--text-secondary);" onclick="event.stopPropagation();">
           <div style="font-weight: 800; font-size: 11px; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
             <span>Bosqichlar kesimida</span>
             <i class="fas fa-times" style="cursor: pointer; opacity: 0.6;" onclick="toggleZakazBreakdown(event)"></i>

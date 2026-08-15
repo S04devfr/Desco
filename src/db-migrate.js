@@ -470,27 +470,10 @@ async function runMigrations(prisma) {
               await prisma.client.update({ where: { id: cl.id }, data: { city: item.region } });
             }
           }
-          if (amount > 0) {
-            const desc = `Shofyor yo'l kirdi puli (${item.region}) - Sdelka #${deal.id} (${deal.productName || 'Zakaz'}) - Tel: +998${digits}`;
-            const existing = existingExpenses.find(e => e.description.includes(`Sdelka #${deal.id}`));
-            if (existing) {
-              await prisma.expense.update({ where: { id: existing.id }, data: { amount, description: desc } });
-            } else {
-              await prisma.expense.create({ data: { description: desc, amount, category: 'transport', date: new Date() } });
-            }
-          }
-        }
-      } else if (amount > 0) {
-        const desc = `Shofyor yo'l kirdi puli (${item.region}) - Tel: +998${digits}`;
-        const existing = existingExpenses.find(e => e.description.includes(digits));
-        if (existing) {
-          await prisma.expense.update({ where: { id: existing.id }, data: { amount, description: desc } });
-        } else {
-          await prisma.expense.create({ data: { description: desc, amount, category: 'transport', date: new Date() } });
         }
       }
     }
-    console.log('✅ Shofyor yo\'l kirdi pullari va transport xarajatlari DBga saqlandi');
+    console.log('✅ Shofyor yetkazib berish ma\'lumotlari yangilandi');
   } catch (err) {
     console.log('⚠️ Driver fees migration:', err.message?.slice(0, 100));
   }
