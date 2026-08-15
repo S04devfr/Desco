@@ -52,6 +52,16 @@ router.use(protect)
 const managerSelect = { select: { id: true, fullName: true, email: true, role: true } }
 const stageSelect = { select: { id: true, name: true, color: true, order: true, statusType: true } }
 
+function canAccessDeal(deal, userId, role) {
+  if (!deal) return false;
+  if (role === 'admin') return true;
+  if (deal.managerId === null) return true;
+  if (deal.managerId === userId) return true;
+  if (deal.ownerId === userId) return true;
+  if (Array.isArray(deal.tasks) && deal.tasks.some(t => t.assignedToId === userId)) return true;
+  return false;
+}
+
 function isCallbackStage(stageName) {
   if (!stageName) return false;
   const name = stageName.toLowerCase();
@@ -280,7 +290,7 @@ router.get('/:id', async (req, res, next) => {
     })
     if (!deal) return res.status(404).json({ message: 'Sdelka topilmadi' })
 
-    if (req.user?.role !== 'admin' && deal.managerId !== null && deal.managerId !== req.userId) {
+    if (!canAccessDeal(deal, req.userId, req.user?.role)) {
       return res.status(403).json({ message: "Bu sdelkani ko'rish huquqiga ega emassiz" })
     }
 
@@ -862,7 +872,7 @@ router.patch('/:id', async (req, res, next) => {
     })
     if (!existing) return res.status(404).json({ message: 'Sdelka topilmadi' })
 
-    if (req.user?.role !== 'admin' && existing.managerId !== null && existing.managerId !== req.userId) {
+    if (!canAccessDeal(existing, req.userId, req.user?.role)) {
       return res.status(403).json({ message: "Boshqa menejer sdelkasini o'zgartira olmaysiz" })
     }
 
@@ -1132,7 +1142,7 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
     if (!existing) return res.status(404).json({ message: 'Sdelka topilmadi' })
 
     // Dastlabki tekshiruv (bu qism tranzaksiyadan tashqarida, tezkor xatolik berish uchun)
-    if (req.user?.role !== 'admin' && existing.managerId !== null && existing.managerId !== req.userId) {
+    if (!canAccessDeal(existing, req.userId, req.user?.role)) {
       return res.status(403).json({ message: "Boshqa menejer sdelkasini o'zgartira olmaysiz" })
     }
 
@@ -1159,7 +1169,7 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
         // RACE CONDITION ni oldini olish: sdelka holatini tranzaksiya ichida qayta o'qiymiz
         const txDeal = await tx.deal.findUnique({ where: { id } })
         if (!txDeal) throw new Error("Sdelka topilmadi")
-        if (req.user?.role !== 'admin' && txDeal.managerId !== null && txDeal.managerId !== req.userId) {
+        if (!canAccessDeal(txDeal, req.userId, req.user?.role)) {
           throw new Error("Sdelkani allaqachon boshqa menejer o'zlashtirgan")
         }
 
@@ -1370,7 +1380,7 @@ router.delete('/:id', requireRole('admin', 'manager'), async (req, res, next) =>
     const existing = await prisma.deal.findUnique({ where: { id: Number(req.params.id) } })
     if (!existing) return res.status(404).json({ message: 'Sdelka topilmadi' })
 
-    if (req.user?.role !== 'admin' && existing.managerId !== null && existing.managerId !== req.userId) {
+    if (!canAccessDeal(existing, req.userId, req.user?.role)) {
       return res.status(403).json({ message: "Boshqa menejer sdelkasini o'chira olmaysiz" })
     }
 
