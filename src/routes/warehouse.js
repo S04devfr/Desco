@@ -379,4 +379,76 @@ router.post('/delete-color', requireRole('admin', 'manager'), async (req, res) =
   }
 });
 
+// ── POST /api/warehouse/rename-product — Mahsulot nomini yangilash ──
+router.post('/rename-product', requireRole('admin', 'manager'), async (req, res) => {
+  try {
+    const { oldName, newName } = req.body;
+    if (!oldName || !newName) {
+      return res.status(400).json({ message: "Eski va yangi mahsulot nomlari majburiy" });
+    }
+    const cleanOld = oldName.trim();
+    const cleanNew = newName.trim();
+
+    if (cleanOld === cleanNew) {
+      return res.json({ success: true, message: "Nom o'zgarmadi" });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Update ProductCatalog if exists
+      await tx.productCatalog.updateMany({
+        where: { name: cleanOld },
+        data: { name: cleanNew }
+      });
+
+      // 2. Update WarehouseStock
+      await tx.warehouseStock.updateMany({
+        where: { productName: cleanOld },
+        data: { productName: cleanNew }
+      });
+
+      // 3. Update WarehouseLog
+      await tx.warehouseLog.updateMany({
+        where: { productName: cleanOld },
+        data: { productName: cleanNew }
+      });
+
+      // 4. Update Deal
+      await tx.deal.updateMany({
+        where: { productName: cleanOld },
+        data: { productName: cleanNew }
+      });
+    });
+
+    res.json({ success: true, message: `Mahsulot nomi '${cleanOld}' -> '${cleanNew}'ga yangilandi` });
+  } catch (err) {
+    console.error('[Warehouse RENAME PRODUCT]', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ── POST /api/warehouse/delete-product — Mahsulotni butunlay o'chirish ──
+router.post('/delete-product', requireRole('admin', 'manager'), async (req, res) => {
+  try {
+    const { productName } = req.body;
+    if (!productName) {
+      return res.status(400).json({ message: "Mahsulot nomi majburiy" });
+    }
+    const cleanName = productName.trim();
+
+    await prisma.$transaction(async (tx) => {
+      await tx.warehouseStock.deleteMany({
+        where: { productName: cleanName }
+      });
+      await tx.productCatalog.deleteMany({
+        where: { name: cleanName }
+      });
+    });
+
+    res.json({ success: true, message: `'${cleanName}' mahsuloti va zaxirasi ombordan o'chirildi` });
+  } catch (err) {
+    console.error('[Warehouse DELETE PRODUCT]', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;

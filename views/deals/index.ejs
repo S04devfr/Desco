@@ -2139,13 +2139,30 @@ async function loadClients() {
 let _productCatalog = [];
 async function loadProductCatalog() {
   try {
-    const data = await apiFetch('/api/product-catalog');
-    _productCatalog = Array.isArray(data) ? data : [];
+    const [catalogData, warehouseData] = await Promise.all([
+      apiFetch('/api/product-catalog').catch(() => []),
+      apiFetch('/api/warehouse').catch(() => ({}))
+    ]);
+    
+    _productCatalog = Array.isArray(catalogData) ? catalogData : [];
+    const inventory = Array.isArray(warehouseData?.inventory) ? warehouseData.inventory : [];
+
+    const stockMap = {};
+    inventory.forEach(inv => {
+      stockMap[inv.productName] = inv.total || 0;
+    });
+
     const sel = document.getElementById('f-name');
     if (sel) {
       const currentVal = sel.value;
       sel.innerHTML = '<option value="">— Mahsulot tanlang —</option>' +
-        _productCatalog.map(p => `<option value="${_esc(p.name)}" data-price="${p.price}">${_esc(p.name)} (${p.price.toLocaleString()} so'm)</option>`).join('');
+        _productCatalog.map(p => {
+          const totalStock = stockMap[p.name] != null ? stockMap[p.name] : 0;
+          const stockTag = totalStock > 0 
+            ? ` — ✅ (Omborda ${totalStock} ta bor)` 
+            : ` — ❌ (Zaxira tugagan)`;
+          return `<option value="${_esc(p.name)}" data-price="${p.price}">${_esc(p.name)} (${p.price.toLocaleString()} so'm)${stockTag}</option>`;
+        }).join('');
       if (currentVal) sel.value = currentVal;
     }
   } catch(e) { /* products not critical */ }

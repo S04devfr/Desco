@@ -796,7 +796,13 @@
       }
       productNameHtml += '</div>';
 
-      const quickAddVariantBtn = `<button class="btn btn-sm btn-ghost" onclick="openAddVariantModal(event, '${_esc(item.productName).replace(/'/g, "\\'")}')" style="font-size:11px; padding:3px 8px; font-weight:700; color:var(--accent); border:1px solid rgba(99,102,241,0.3);" title="Ushbu mahsulotga yangi rang qo'shish"><i class="fas fa-plus"></i> Rang qo'shish</button>`;
+      const mainRowActionBtns = `
+        <div style="display:inline-flex; gap:6px; align-items:center;">
+          <button class="btn btn-sm btn-ghost" onclick="renameProductPrompt(event, '${_esc(item.productName).replace(/'/g, "\\'")}')" style="font-size:11px; padding:3px 8px; font-weight:700; color:var(--text-primary); border:1px solid var(--border);" title="Mahsulot nomini o'zgartirish"><i class="fas fa-edit"></i> Nomini o'zgartirish</button>
+          <button class="btn btn-sm btn-ghost" onclick="openAddVariantModal(event, '${_esc(item.productName).replace(/'/g, "\\'")}')" style="font-size:11px; padding:3px 8px; font-weight:700; color:var(--accent); border:1px solid rgba(99,102,241,0.3);" title="Ushbu mahsulotga yangi rang qo'shish"><i class="fas fa-plus"></i> Rang qo'shish</button>
+          <button class="btn btn-sm btn-ghost" onclick="deleteProductPrompt(event, '${_esc(item.productName).replace(/'/g, "\\'")}')" style="font-size:11px; padding:3px 8px; font-weight:700; color:var(--danger); border:1px solid rgba(239,68,68,0.3);" title="Mahsulotni va zaxirani butunlay o'chirish"><i class="fas fa-trash-alt"></i></button>
+        </div>
+      `;
 
       html += '<tr style="border-bottom:1px solid var(--border);' + mainRowBg + '" ' + mainRowClass + '>' +
               '<td style="padding:14px 18px;">' + productNameHtml + '</td>' +
@@ -804,7 +810,7 @@
               '<td style="padding:14px 18px;text-align:center">' +
                 '<span class="stock-badge stock-total">' + (item.total || 0) + '</span>' +
               '</td>' +
-              '<td style="padding:14px 18px;text-align:right;">' + quickAddVariantBtn + '</td>' +
+              '<td style="padding:14px 18px;text-align:right;">' + mainRowActionBtns + '</td>' +
              '</tr>';
 
       // 2. SUB-ROWS FOR VARIANTS
@@ -851,6 +857,46 @@
 
   function filterInventoryList() {
     renderInventory();
+  }
+
+  // ── MAHSULOT NOMINI TAHRIRLASH VA O'CHIRISH ──
+  async function renameProductPrompt(event, oldName) {
+    if (event) event.stopPropagation();
+    const newName = prompt(`'${oldName}' mahsuloti uchun yangi nom kiriting:`, oldName);
+    if (!newName || !newName.trim() || newName.trim() === oldName) return;
+
+    try {
+      const res = await fetch('/api/warehouse/rename-product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oldName, newName: newName.trim() })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Xatolik yuz berdi');
+      showToast(data.message, 'success');
+      loadWarehouseData();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }
+
+  async function deleteProductPrompt(event, productName) {
+    if (event) event.stopPropagation();
+    if (!confirm(`Haqiqatan ham '${productName}' mahsulotini va uning barcha zaxiralarini ombordan o'chirmoqchimisiz?`)) return;
+
+    try {
+      const res = await fetch('/api/warehouse/delete-product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productName })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Xatolik yuz berdi');
+      showToast(data.message, 'success');
+      loadWarehouseData();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   }
 
   // ── AQLIY QUICK STOCK MODAL ──
