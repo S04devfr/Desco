@@ -1139,12 +1139,21 @@
         <i class="fas fa-search"></i>
         <input type="text" id="filterSearch" placeholder="Mijoz, sdelka, telefon..." style="width:240px" oninput="loadDeals()" autocomplete="off">
       </div>
-      <select id="filterStage" class="filter-select" style="width:160px" onchange="loadDeals()">
-        <option value="">Barcha bosqich</option>
-      </select>
-      <select id="filterManager" class="filter-select" style="width:160px" onchange="loadDeals()">
-        <option value="">Barcha manager</option>
-      </select>
+      <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
+        <select id="filterStage" class="filter-select" style="width:160px" onchange="loadDeals()">
+          <option value="">Barcha bosqich</option>
+        </select>
+        <select id="filterManager" class="filter-select" style="width:160px" onchange="loadDeals()">
+          <option value="">Barcha manager</option>
+        </select>
+      <% } else { %>
+        <select id="filterStage" class="filter-select" style="display:none;" onchange="loadDeals()">
+          <option value="">Barcha bosqich</option>
+        </select>
+        <select id="filterManager" class="filter-select" style="display:none;" onchange="loadDeals()">
+          <option value="">Barcha manager</option>
+        </select>
+      <% } %>
       <button class="filter-clear-btn" onclick="clearFilters()" title="Filtrni tozalash">
         <i class="fas fa-times"></i>
       </button>
