@@ -889,43 +889,59 @@ async function handleUniversalLead(source, rawData, broadcast) {
       let deal = null;
       if (cleanPhone) {
         const dealNotes = cleanLeadNotes(parsed.notes);
-        
-        deal = await tx.deal.create({
-          data: {
-            productName: parsed.productName || parsed.formId || 'Universal Lead',
-            amount: 0,
-            status: 'new',
-            clientId: client.id,
-            contactId: contact.id,
-            pipelineId: targetPipelineId,
-            stageId: targetStageId,
-            notes: dealNotes,
-            source: (function() {
-              let resolvedSource = 'target';
-              const rawSourceField = String(rawData.source || rawData.Source || rawData.source_type || rawData.manba || parsed.pageName || '').toLowerCase();
-              if (rawSourceField.includes('instagram') || rawSourceField.includes('insta') || rawSourceField.includes('ig')) {
-                resolvedSource = 'instagram';
-              } else if (rawSourceField.includes('telegram') || rawSourceField.includes('tg')) {
-                resolvedSource = 'telegram';
-              } else if (rawSourceField.includes('target') || rawSourceField.includes('fb') || rawSourceField.includes('facebook') || rawSourceField.includes('ads')) {
-                resolvedSource = 'target';
-              } else if (rawSourceField.includes('oddiy') || rawSourceField.includes('manual')) {
-                resolvedSource = 'oddiy';
-              }
-              return resolvedSource;
-            })()
-          }
-        });
-        console.log(`[Universal Lead Transaction] Sdelka yaratildi. ID: ${deal.id}`);
+        const targetProductName = parsed.productName || parsed.formId || 'Universal Lead';
 
-        // ActivityLog
-        await tx.activityLog.create({
-          data: {
-            action: 'Sdelka yaratildi',
-            details: `Universal Webhook (${source}) orqali sdelka yaratildi (Lead ID: ${parsed.leadId || 'N/A'})`,
-            dealId: deal.id
+        // Dublikat sdelkalarni oldini olish (15 daqiqa ichida bir xil mijoz va bir xil mahsulot nomi)
+        const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
+        const existingDup = await tx.deal.findFirst({
+          where: {
+            clientId: client.id,
+            productName: targetProductName,
+            createdAt: { gte: fifteenMinsAgo }
           }
         });
+
+        if (existingDup) {
+          console.log(`[Universal Lead Transaction] ⚠ Dublikat sdelka to'sildi (Mijoz ID: ${client.id}, Mahsulot: ${targetProductName}, Sdelka ID: ${existingDup.id})`);
+          deal = existingDup;
+        } else {
+          deal = await tx.deal.create({
+            data: {
+              productName: targetProductName,
+              amount: 0,
+              status: 'new',
+              clientId: client.id,
+              contactId: contact.id,
+              pipelineId: targetPipelineId,
+              stageId: targetStageId,
+              notes: dealNotes,
+              source: (function() {
+                let resolvedSource = 'target';
+                const rawSourceField = String(rawData.source || rawData.Source || rawData.source_type || rawData.manba || parsed.pageName || '').toLowerCase();
+                if (rawSourceField.includes('instagram') || rawSourceField.includes('insta') || rawSourceField.includes('ig')) {
+                  resolvedSource = 'instagram';
+                } else if (rawSourceField.includes('telegram') || rawSourceField.includes('tg')) {
+                  resolvedSource = 'telegram';
+                } else if (rawSourceField.includes('target') || rawSourceField.includes('fb') || rawSourceField.includes('facebook') || rawSourceField.includes('ads')) {
+                  resolvedSource = 'target';
+                } else if (rawSourceField.includes('oddiy') || rawSourceField.includes('manual')) {
+                  resolvedSource = 'oddiy';
+                }
+                return resolvedSource;
+              })()
+            }
+          });
+          console.log(`[Universal Lead Transaction] Sdelka yaratildi. ID: ${deal.id}`);
+
+          // ActivityLog
+          await tx.activityLog.create({
+            data: {
+              action: 'Sdelka yaratildi',
+              details: `Universal Webhook (${source}) orqali sdelka yaratildi (Lead ID: ${parsed.leadId || 'N/A'})`,
+              dealId: deal.id
+            }
+          });
+        }
       } else {
         console.log(`[Universal Lead Transaction] Telefon raqamsiz lead. Sdelka yaratilishi chetlab o'tildi.`);
       }
