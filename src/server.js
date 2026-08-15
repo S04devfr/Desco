@@ -552,10 +552,52 @@ async function fixStuckUnreadCounts() {
   }
 }
 
+// Clean auto-generated lead metadata (Lead ID, Manba, Qabul qilingan vaqt) from deal notes
+async function cleanExistingLeadNotes() {
+  try {
+    const prisma = require('./config/database');
+    const dealsWithLeadNotes = await prisma.deal.findMany({
+      where: {
+        OR: [
+          { notes: { contains: 'Lead ID:' } },
+          { notes: { contains: 'Manba:' } },
+          { notes: { contains: 'Qabul qilingan vaqt:' } },
+          { notes: { contains: 'Meta LeadGen ID:' } }
+        ]
+      }
+    });
+
+    if (dealsWithLeadNotes.length > 0) {
+      console.log(`[Notes Cleaner] Cleaning ${dealsWithLeadNotes.length} deals with lead metadata notes...`);
+      for (const d of dealsWithLeadNotes) {
+        if (!d.notes) continue;
+        let clean = d.notes
+          .replace(/^Lead ID:[^\r\n]*/gim, '')
+          .replace(/^Manba:[^\r\n]*/gim, '')
+          .replace(/^Qabul qilingan vaqt:[^\r\n]*/gim, '')
+          .replace(/^Tafsilotlar:\s*/gim, '')
+          .replace(/^Meta LeadGen ID:[^\r\n]*/gim, '')
+          .replace(/^Form ID:[^\r\n]*/gim, '')
+          .replace(/^Ad ID:[^\r\n]*/gim, '')
+          .trim();
+
+        await prisma.deal.update({
+          where: { id: d.id },
+          data: { notes: clean || null }
+        });
+      }
+      console.log(`[Notes Cleaner] Done cleaning lead notes.`);
+    }
+  } catch (err) {
+    console.error('[Notes Cleaner] Error:', err);
+  }
+}
+
 // Start cleanup check on startup
 runUploadsCleanup();
 syncWazzupUsers();
 fixStuckUnreadCounts();
+cleanExistingLeadNotes();
 
 // Run cleanup check every 24 hours
 setInterval(runUploadsCleanup, 24 * 60 * 60 * 1000);

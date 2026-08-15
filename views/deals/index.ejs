@@ -1847,6 +1847,19 @@
       return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
+    function cleanLeadNotesJS(notes) {
+      if (!notes) return '';
+      return String(notes)
+        .replace(/^Lead ID:[^\r\n]*/gim, '')
+        .replace(/^Manba:[^\r\n]*/gim, '')
+        .replace(/^Qabul qilingan vaqt:[^\r\n]*/gim, '')
+        .replace(/^Tafsilotlar:\s*/gim, '')
+        .replace(/^Meta LeadGen ID:[^\r\n]*/gim, '')
+        .replace(/^Form ID:[^\r\n]*/gim, '')
+        .replace(/^Ad ID:[^\r\n]*/gim, '')
+        .trim();
+    }
+
     function _fmt(v, short) {
       const n = Number(v) || 0;
       if (!short) return n.toLocaleString('uz-UZ') + " so'm";
@@ -2661,7 +2674,7 @@ function dcardHtml(d) {
           <!-- Notes -->
           <div style="font-size:12px; color:var(--text-secondary); display:flex; flex-direction:column; gap:4px; margin-top: 4px;" onclick="event.stopPropagation();">
             <span style="font-weight:600; color:var(--text-tertiary);">Izoh / Muammo:</span>
-            <textarea onchange="updateDealNotes(${d.id}, this.value)" style="width: 100%; min-height: 40px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 11.5px; color: var(--text-primary); background: var(--surface-base); resize: vertical;" placeholder="Izoh yoki muammo tavsifi...">${_esc(d.notes || '')}</textarea>
+            <textarea onchange="updateDealNotes(${d.id}, this.value)" style="width: 100%; min-height: 40px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 11.5px; color: var(--text-primary); background: var(--surface-base); resize: vertical;" placeholder="Izoh yoki muammo tavsifi...">${_esc(cleanLeadNotesJS(d.notes || ''))}</textarea>
           </div>
         </div>
       </div>
@@ -3310,7 +3323,7 @@ function openDealModal(defaultStageId, editId) {
         setVal('f-createdAt', '');
       }
       if (stageEl) stageEl.value = deal?.stageId || '';
-      setVal('f-notes', deal?.notes || '');
+      setVal('f-notes', cleanLeadNotesJS(deal?.notes || ''));
       setVal('f-warehouse', deal?.warehouse || '');
       setVal('f-color', deal?.productColor || 'oddiy');
       setVal('f-driverPhone', deal?.driverPhone || '');

@@ -12,25 +12,48 @@ const { fixPostgresSequences } = require('../utils/sequenceSync');
  * @param {string} source - Manba nomi (masalan: "Instagram Webhook")
  * @returns {Promise<object>} Yaratilgan yoki topilgan mijoz ob'ekti
  */
-async function upsertClientByPhone(name, phone, email, source) {
-  const cleanPhone = phone.replace(/[\s-]/g, '');
-  if (!cleanPhone) {
+function cleanLeadNotes(notes) {
+  if (!notes) return null;
+  let clean = String(notes)
+    .replace(/^Lead ID:[^\r\n]*/gim, '')
+    .replace(/^Manba:[^\r\n]*/gim, '')
+    .replace(/^Qabul qilingan vaqt:[^\r\n]*/gim, '')
+    .replace(/^Tafsilotlar:\s*/gim, '')
+    .replace(/^Meta LeadGen ID:[^\r\n]*/gim, '')
+    .replace(/^Form ID:[^\r\n]*/gim, '')
+    .replace(/^Ad ID:[^\r\n]*/gim, '')
+    .trim();
+  return clean || null;
+}
+
+/**
+ * Telefon raqami bo'yicha mijozni qidiradi yoki tranzaksiya orqali xavfsiz yaratadi.
+ * Bu ma'lumotlar dublikati hosil bo'lishining (race condition) oldini oladi.
+ */
+async function upsertClientByPhone(name, phone, email = null, source = 'webhook') {
+  const cleanPhoneRaw = String(phone).replace(/[\s-]/g, '').trim();
+  if (!cleanPhoneRaw) {
     throw new Error('Mijoz telefon raqami kiritilmagan.');
   }
 
   const executeUpsertTx = async () => {
     return await prisma.$transaction(async (tx) => {
+      let searchPhone = cleanPhoneRaw;
+      if (!searchPhone.startsWith('+') && searchPhone.length === 12 && searchPhone.startsWith('998')) {
+        searchPhone = '+' + searchPhone;
+      }
+
       let client = await tx.client.findFirst({
-        where: { phone: { contains: cleanPhone } }
+        where: { phone: { contains: cleanPhoneRaw } }
       });
 
       if (!client) {
         client = await tx.client.create({
           data: {
             name: String(name).trim().substring(0, 200),
-            phone: cleanPhone,
+            phone: searchPhone,
             email: email || null,
-            notes: `Manba: ${source}`
+            notes: null
           }
         });
       } else if (email && !client.email) {
@@ -240,7 +263,7 @@ async function handleMetaWebhook(body, broadcast) {
                 name: rawName || "Noma'lum Mijoz",
                 phone: null,
                 email: rawEmail || null,
-                notes: `Meta LeadGen ID: ${leadgenId}\nManba: Instagram Webhook`
+                notes: null
               }
             });
             
@@ -275,7 +298,7 @@ async function handleMetaWebhook(body, broadcast) {
                   contactId: contact.id,
                   pipelineId,
                   stageId,
-                  notes: `Meta LeadGen ID: ${leadgenId}\nForm ID: ${formId}\nAd ID: ${adId}`,
+                  notes: null,
                   source: 'target'
                 }
               });
@@ -531,7 +554,7 @@ function parseLeadPayload(source, rawData) {
     productName: String(productName).trim().substring(0, 200),
     leadId: leadId ? String(leadId).trim() : null,
     city: city ? String(city).trim() : null,
-    notes: additionalNotes.join('\n') || `Manba: ${pageName}`
+    notes: cleanLeadNotes(additionalNotes.join('\n'))
   };
 }
 
@@ -865,7 +888,7 @@ async function handleUniversalLead(source, rawData, broadcast) {
       // Sdelkani (Deal) yaratamiz
       let deal = null;
       if (cleanPhone) {
-        const dealNotes = `Lead ID: ${parsed.leadId || 'N/A'}\nManba: ${parsed.pageName}\nQabul qilingan vaqt: ${new Date().toISOString()}\n\nTafsilotlar:\n${parsed.notes}`;
+        const dealNotes = cleanLeadNotes(parsed.notes);
         
         deal = await tx.deal.create({
           data: {
