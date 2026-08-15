@@ -756,14 +756,14 @@ function updateExportUrl() {
 
 // Toggle Lead breakdown list
 window.toggleLeadBreakdown = function(event) {
-  event.stopPropagation();
+  if (event) event.stopPropagation();
   const list = document.getElementById('leadBreakdownList');
   const chevron = document.getElementById('leadChevron');
   // Close other dropdowns
   const zakazList = document.getElementById('zakazBreakdownList');
   const zakazChevron = document.getElementById('zakazChevron');
   if (zakazList) {
-    zakazList.style.display = 'none';
+    zakazList.style.setProperty('display', 'none', 'important');
     if (zakazChevron) {
       zakazChevron.classList.remove('fa-chevron-up');
       zakazChevron.classList.add('fa-chevron-down');
@@ -771,14 +771,15 @@ window.toggleLeadBreakdown = function(event) {
   }
 
   if (list) {
-    if (list.style.display === 'none') {
-      list.style.display = 'flex';
+    const isHidden = window.getComputedStyle(list).display === 'none';
+    if (isHidden) {
+      list.style.setProperty('display', 'flex', 'important');
       if (chevron) {
         chevron.classList.remove('fa-chevron-down');
         chevron.classList.add('fa-chevron-up');
       }
     } else {
-      list.style.display = 'none';
+      list.style.setProperty('display', 'none', 'important');
       if (chevron) {
         chevron.classList.remove('fa-chevron-up');
         chevron.classList.add('fa-chevron-down');
@@ -789,14 +790,14 @@ window.toggleLeadBreakdown = function(event) {
 
 // Toggle Zakaz breakdown list
 window.toggleZakazBreakdown = function(event) {
-  event.stopPropagation();
+  if (event) event.stopPropagation();
   const list = document.getElementById('zakazBreakdownList');
   const chevron = document.getElementById('zakazChevron');
   // Close other dropdowns
   const leadList = document.getElementById('leadBreakdownList');
   const leadChevron = document.getElementById('leadChevron');
   if (leadList) {
-    leadList.style.display = 'none';
+    leadList.style.setProperty('display', 'none', 'important');
     if (leadChevron) {
       leadChevron.classList.remove('fa-chevron-up');
       leadChevron.classList.add('fa-chevron-down');
@@ -804,14 +805,15 @@ window.toggleZakazBreakdown = function(event) {
   }
 
   if (list) {
-    if (list.style.display === 'none') {
-      list.style.display = 'flex';
+    const isHidden = window.getComputedStyle(list).display === 'none';
+    if (isHidden) {
+      list.style.setProperty('display', 'flex', 'important');
       if (chevron) {
         chevron.classList.remove('fa-chevron-down');
         chevron.classList.add('fa-chevron-up');
       }
     } else {
-      list.style.display = 'none';
+      list.style.setProperty('display', 'none', 'important');
       if (chevron) {
         chevron.classList.remove('fa-chevron-up');
         chevron.classList.add('fa-chevron-down');
@@ -969,7 +971,7 @@ async function loadDashboard() {
     
     // CARD 1: LEADLAR
     row1Html += `
-      <div class="stat-card clickable" onclick="toggleLeadBreakdown(event)" style="position: relative; display: flex; flex-direction: column; justify-content: center; border-radius: 20px; padding: 18px 20px; min-height: 110px;">
+      <div class="stat-card clickable" onclick="toggleLeadBreakdown(event)" style="position: relative; overflow: visible !important; display: flex; flex-direction: column; justify-content: center; border-radius: 20px; padding: 18px 20px; min-height: 110px;">
         <div style="display: flex; align-items: flex-start; gap: 14px; width: 100%;">
           <div class="stat-icon blue" style="width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0; font-size: 18px; display: flex; align-items: center; justify-content: center; margin-top: 2px;"><i class="fas fa-crosshairs"></i></div>
           <div class="stat-info" style="flex: 1; min-width: 0;">
@@ -1033,7 +1035,7 @@ async function loadDashboard() {
       </div>
 
       <!-- CARD 2: ZAKAZLAR -->
-      <div class="stat-card clickable" onclick="toggleZakazBreakdown(event)" style="position: relative; display: flex; flex-direction: column; justify-content: center; border-radius: 20px; padding: 18px 20px; min-height: 110px;">
+      <div class="stat-card clickable" onclick="toggleZakazBreakdown(event)" style="position: relative; overflow: visible !important; display: flex; flex-direction: column; justify-content: center; border-radius: 20px; padding: 18px 20px; min-height: 110px;">
         <div style="display: flex; align-items: flex-start; gap: 14px; width: 100%;">
           <div class="stat-icon green" style="width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0; font-size: 18px; display: flex; align-items: center; justify-content: center; margin-top: 2px;"><i class="fas fa-shopping-cart"></i></div>
           <div class="stat-info" style="flex: 1; min-width: 0;">
