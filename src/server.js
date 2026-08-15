@@ -587,11 +587,56 @@ async function cleanExistingLeadNotes() {
   }
 }
 
+// Clean auto driver expenses and seed single consolidated expense on startup if needed
+async function consolidateDriverExpenses() {
+  try {
+    const prisma = require('./config/database');
+    const driverExpenses = await prisma.expense.findMany({
+      where: {
+        OR: [
+          { description: { contains: 'Shofyor' } },
+          { description: { contains: 'Shopir' } },
+          { description: { contains: 'yo\'l kirdi' } }
+        ]
+      }
+    });
+
+    if (driverExpenses.length > 0) {
+      console.log(`[Expense Sync] Cleaning ${driverExpenses.length} auto driver expenses...`);
+      await prisma.expense.deleteMany({
+        where: {
+          id: { in: driverExpenses.map(e => e.id) }
+        }
+      });
+    }
+
+    const existingConsolidated = await prisma.expense.findFirst({
+      where: { description: '1 kundan boshlab shopir pullar' }
+    });
+
+    if (!existingConsolidated) {
+      console.log('[Expense Sync] Creating consolidated driver expense record...');
+      await prisma.expense.create({
+        data: {
+          description: '1 kundan boshlab shopir pullar',
+          amount: 3610000,
+          category: 'transport',
+          date: new Date('2026-08-01T00:00:00.000Z')
+        }
+      });
+      console.log('[Expense Sync] Consolidated expense created successfully!');
+    }
+  } catch (err) {
+    console.error('[Expense Sync] Error:', err);
+  }
+}
+
 // Start cleanup check on startup
 runUploadsCleanup();
 syncWazzupUsers();
 fixStuckUnreadCounts();
 cleanExistingLeadNotes();
+consolidateDriverExpenses();
 
 // Run cleanup check every 24 hours
 setInterval(runUploadsCleanup, 24 * 60 * 60 * 1000);

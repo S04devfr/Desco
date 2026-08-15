@@ -888,60 +888,57 @@ async function handleUniversalLead(source, rawData, broadcast) {
       // Sdelkani (Deal) yaratamiz
       let deal = null;
       if (cleanPhone) {
-        const dealNotes = cleanLeadNotes(parsed.notes);
+        const rawNotes = cleanLeadNotes(parsed.notes);
         const targetProductName = parsed.productName || parsed.formId || 'Universal Lead';
 
-        // Dublikat sdelkalarni oldini olish (15 daqiqa ichida bir xil mijoz va bir xil mahsulot nomi)
-        const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
-        const existingDup = await tx.deal.findFirst({
-          where: {
-            clientId: client.id,
+        // Mijoz ilgari ham sdelka ochganligini tekshiramiz (eslatma/ogohlantirish uchun)
+        const previousDealCount = await tx.deal.count({
+          where: { clientId: client.id }
+        });
+        const isRepeatedLead = previousDealCount > 0;
+
+        const finalNotes = isRepeatedLead
+          ? (rawNotes ? `[⚠️ Takroriy murojaat]\n${rawNotes}` : `[⚠️ Takroriy murojaat]`)
+          : rawNotes;
+
+        deal = await tx.deal.create({
+          data: {
             productName: targetProductName,
-            createdAt: { gte: fifteenMinsAgo }
+            amount: 0,
+            status: 'new',
+            clientId: client.id,
+            contactId: contact.id,
+            pipelineId: targetPipelineId,
+            stageId: targetStageId,
+            notes: finalNotes,
+            source: (function() {
+              let resolvedSource = 'target';
+              const rawSourceField = String(rawData.source || rawData.Source || rawData.source_type || rawData.manba || parsed.pageName || '').toLowerCase();
+              if (rawSourceField.includes('instagram') || rawSourceField.includes('insta') || rawSourceField.includes('ig')) {
+                resolvedSource = 'instagram';
+              } else if (rawSourceField.includes('telegram') || rawSourceField.includes('tg')) {
+                resolvedSource = 'telegram';
+              } else if (rawSourceField.includes('target') || rawSourceField.includes('fb') || rawSourceField.includes('facebook') || rawSourceField.includes('ads')) {
+                resolvedSource = 'target';
+              } else if (rawSourceField.includes('oddiy') || rawSourceField.includes('manual')) {
+                resolvedSource = 'oddiy';
+              }
+              return resolvedSource;
+            })()
           }
         });
+        console.log(`[Universal Lead Transaction] Sdelka yaratildi. ID: ${deal.id} ${isRepeatedLead ? '(⚠️ Takroriy lead)' : ''}`);
 
-        if (existingDup) {
-          console.log(`[Universal Lead Transaction] ⚠ Dublikat sdelka to'sildi (Mijoz ID: ${client.id}, Mahsulot: ${targetProductName}, Sdelka ID: ${existingDup.id})`);
-          deal = existingDup;
-        } else {
-          deal = await tx.deal.create({
-            data: {
-              productName: targetProductName,
-              amount: 0,
-              status: 'new',
-              clientId: client.id,
-              contactId: contact.id,
-              pipelineId: targetPipelineId,
-              stageId: targetStageId,
-              notes: dealNotes,
-              source: (function() {
-                let resolvedSource = 'target';
-                const rawSourceField = String(rawData.source || rawData.Source || rawData.source_type || rawData.manba || parsed.pageName || '').toLowerCase();
-                if (rawSourceField.includes('instagram') || rawSourceField.includes('insta') || rawSourceField.includes('ig')) {
-                  resolvedSource = 'instagram';
-                } else if (rawSourceField.includes('telegram') || rawSourceField.includes('tg')) {
-                  resolvedSource = 'telegram';
-                } else if (rawSourceField.includes('target') || rawSourceField.includes('fb') || rawSourceField.includes('facebook') || rawSourceField.includes('ads')) {
-                  resolvedSource = 'target';
-                } else if (rawSourceField.includes('oddiy') || rawSourceField.includes('manual')) {
-                  resolvedSource = 'oddiy';
-                }
-                return resolvedSource;
-              })()
-            }
-          });
-          console.log(`[Universal Lead Transaction] Sdelka yaratildi. ID: ${deal.id}`);
-
-          // ActivityLog
-          await tx.activityLog.create({
-            data: {
-              action: 'Sdelka yaratildi',
-              details: `Universal Webhook (${source}) orqali sdelka yaratildi (Lead ID: ${parsed.leadId || 'N/A'})`,
-              dealId: deal.id
-            }
-          });
-        }
+        // ActivityLog
+        await tx.activityLog.create({
+          data: {
+            action: isRepeatedLead ? '⚠️ Takroriy sdelka yaratildi' : 'Sdelka yaratildi',
+            details: isRepeatedLead
+              ? `Universal Webhook (${source}) orqali takroriy sdelka yaratildi (Mijozning ${previousDealCount + 1}-murojaati)`
+              : `Universal Webhook (${source}) orqali sdelka yaratildi (Lead ID: ${parsed.leadId || 'N/A'})`,
+            dealId: deal.id
+          }
+        });
       } else {
         console.log(`[Universal Lead Transaction] Telefon raqamsiz lead. Sdelka yaratilishi chetlab o'tildi.`);
       }
