@@ -874,7 +874,7 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Xatolik yuz berdi');
       showToast(data.message, 'success');
-      loadWarehouseData();
+      loadData();
     } catch (err) {
       showToast(err.message, 'error');
     }
@@ -893,7 +893,7 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Xatolik yuz berdi');
       showToast(data.message, 'success');
-      loadWarehouseData();
+      loadData();
     } catch (err) {
       showToast(err.message, 'error');
     }
