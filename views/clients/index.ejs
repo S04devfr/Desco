@@ -739,7 +739,9 @@ async function updateStats() {
 async function loadManagers() {
   try {
     const r = await fetch('/api/settings/users');
-    allManagers = await r.json();
+    const data = await r.json();
+    const userList = Array.isArray(data) ? data : [];
+    allManagers = userList.filter(m => m.role !== 'admin');
     const select = document.getElementById('clientOwnerFilter');
     select.innerHTML = '<option value="">Barcha mas\'ullar</option>';
     allManagers.forEach(m => {

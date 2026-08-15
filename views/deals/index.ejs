@@ -2116,7 +2116,8 @@ document.addEventListener('click', e => {
 async function loadManagers() {
   try {
     const data = await apiFetch('/api/settings/users');
-    _managers = Array.isArray(data) ? data : [];
+    const userList = Array.isArray(data) ? data : [];
+    _managers = userList.filter(u => u.role !== 'admin');
     const sel = document.getElementById('filterManager');
     sel.innerHTML = '<option value="">Barcha manager</option>' +
       _managers.map(u => `<option value="${u.id}">${_esc(u.fullName||u.email)}</option>`).join('');
