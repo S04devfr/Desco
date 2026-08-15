@@ -3705,6 +3705,9 @@ async function openDetail(id) {
     window._drawerNasiyaForceEdit = false;
     renderDrawerNasiyaSection(deal);
 
+    // Apply role-based permissions (Managers read-only, Admin full edit)
+    applyDrawerPermissions();
+
     // Trigger pending stage change from Drag & Drop if any
     if (window._pendingStageChangeAfterOpen) {
       const pendingStageId = window._pendingStageChangeAfterOpen;
@@ -3719,6 +3722,78 @@ async function openDetail(id) {
   } catch(e) {
     console.error('Drawer population error:', e);
     _toast('Drawer yuklanmadi: ' + e.message, 'error');
+  }
+}
+
+function applyDrawerPermissions() {
+  const isAdmin = typeof user !== 'undefined' && user && user.role === 'admin';
+
+  // 1. Manager dropdown (Mas'ul)
+  const managerSelect = document.getElementById('dw-managerId');
+  if (managerSelect) {
+    managerSelect.disabled = !isAdmin;
+    managerSelect.style.cursor = isAdmin ? 'pointer' : 'not-allowed';
+    managerSelect.style.opacity = isAdmin ? '1' : '0.85';
+  }
+
+  // 2. All main editable inputs in drawer
+  const inputsToToggle = [
+    'drawerDealTitle',
+    'dw-amount',
+    'dw-productName',
+    'dw-contactName',
+    'dw-contactPhone',
+    'dw-contactCity',
+    'dw-contactEmail',
+    'dw-companyName',
+    'dw-companyPhone',
+    'dw-companyEmail',
+    'dw-companyWebsite',
+    'dw-companyAddress'
+  ];
+
+  inputsToToggle.forEach(id => {
+    const input = document.getElementById(id);
+    if (input) {
+      if (isAdmin) {
+        input.removeAttribute('readonly');
+        input.style.cursor = 'text';
+      } else {
+        input.setAttribute('readonly', 'readonly');
+        input.style.cursor = 'not-allowed';
+      }
+    }
+  });
+
+  // 3. Header Action Buttons (Edit pencil & Delete trash icon)
+  const editTitleBtn = document.querySelector('.drawer-header-inline .fa-edit')?.parentElement;
+  const deleteDealBtn = document.querySelector('.drawer-header-inline .fa-trash')?.parentElement;
+  if (editTitleBtn) editTitleBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+  if (deleteDealBtn) deleteDealBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+
+  // 4. Floating Save Button in header / footer
+  const saveBtns = document.querySelectorAll('button[onclick*="saveAllDrawerFieldsAndClose"]');
+  saveBtns.forEach(btn => {
+    btn.style.display = isAdmin ? 'inline-flex' : 'none';
+  });
+
+  // 5. Add "Faqat ko'rish" badge for managers
+  let viewOnlyBadge = document.getElementById('dw-view-only-badge');
+  if (!isAdmin) {
+    if (!viewOnlyBadge) {
+      const container = document.getElementById('drawerDealId')?.parentElement;
+      if (container) {
+        viewOnlyBadge = document.createElement('span');
+        viewOnlyBadge.id = 'dw-view-only-badge';
+        viewOnlyBadge.style.cssText = "font-size:10px; font-weight:700; color:var(--text-tertiary); background:rgba(255,255,255,0.06); padding:2px 8px; border-radius:4px; border:1px solid var(--border); margin-left:4px;";
+        viewOnlyBadge.innerHTML = '<i class="fas fa-eye"></i> Faqat ko\'rish rejimida';
+        container.appendChild(viewOnlyBadge);
+      }
+    } else {
+      viewOnlyBadge.style.display = 'inline-block';
+    }
+  } else if (viewOnlyBadge) {
+    viewOnlyBadge.style.display = 'none';
   }
 }
 
