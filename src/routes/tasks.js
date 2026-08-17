@@ -45,116 +45,23 @@ function formatTaskClient(t) {
 // List tasks
 router.get('/', async (req, res) => {
   try {
-    const { completed, priority, dealId, mine } = req.query
-    const where = (req.user && req.user.role === 'admin' && mine !== 'true') ? {} : { assignedToId: req.userId }
+    const { completed, priority, dealId, mine } = req.query;
 
-    if (completed !== undefined) where.completed = completed === 'true'
-    if (priority) where.priority = priority
-    if (dealId) where.dealId = Number(dealId)
+    const isAdminAll = (req.user && req.user.role === 'admin' && mine !== 'true');
 
-    // ── Obsolete Callback Tasks Auto-Cleanup (Bitrix24/amoCRM style) ──
-    try {
-      const activeTasksWithDeals = await prisma.task.findMany({
-        where: { completed: false, NOT: { dealId: null } },
-        include: { 
-          deal: { 
-            include: { 
-              stage: true,
-              activities: {
-                orderBy: { createdAt: 'desc' },
-                take: 1
-              }
-            } 
-          } 
-        }
-      });
-      
-      const isCallbackStage = (stageName) => {
-        if (!stageName) return false;
-        const name = stageName.toLowerCase();
-        return name.includes('qayta aloqa') || 
-               name.includes('vazifa') || 
-               name.includes('ko\'tarmadi') || 
-               name.includes('kotarmadi') || 
-               name.includes('javob') || 
-               name.includes('qayta');
-      };
+    const where = isAdminAll
+      ? {}
+      : {
+          OR: [
+            { assignedToId: req.userId },
+            { deal: { managerId: req.userId } },
+            { deal: { ownerId: req.userId } }
+          ]
+        };
 
-      const obsoleteTaskIds = activeTasksWithDeals
-        .filter(t => {
-          if (!t.deal) return false;
-          
-          const isCallbackTask = t.actionType === 'Связаться' || 
-                                 t.actionType === 'Aloqaga chiqish' || 
-                                 (t.title || '').toLowerCase().includes('qayta aloqa') ||
-                                 (t.title || '').toLowerCase().includes('vazifa');
-          if (!isCallbackTask) return false;
-
-          const stageName = t.deal.stage?.name || '';
-          return !isCallbackStage(stageName);
-        })
-        .map(t => t.id);
-
-      if (obsoleteTaskIds.length > 0) {
-        await prisma.task.updateMany({
-          where: { id: { in: obsoleteTaskIds } },
-          data: { completed: true, status: 'completed', result: "Avtomatik bajarildi: Sdelka bosqichi o'zgardi" }
-        });
-        console.log(`[Auto-Cleanup] ${obsoleteTaskIds.length} ta eskirgan vazifa yopildi.`);
-      }
-
-      // ── Clean up duplicate active tasks for the same deal (keeping only the latest one) ──
-      const dealTaskGroups = {};
-      activeTasksWithDeals.forEach(t => {
-        if (!dealTaskGroups[t.dealId]) dealTaskGroups[t.dealId] = [];
-        dealTaskGroups[t.dealId].push(t);
-      });
-
-      const duplicateTaskIdsToClose = [];
-      for (const dealId in dealTaskGroups) {
-        const group = dealTaskGroups[dealId];
-        if (group.length > 1) {
-          // Sort by id descending so the latest task is first
-          group.sort((a, b) => b.id - a.id);
-          // Keep the first one (latest), mark others to close
-          const toClose = group.slice(1).map(t => t.id);
-          duplicateTaskIdsToClose.push(...toClose);
-        }
-      }
-
-      if (duplicateTaskIdsToClose.length > 0) {
-        await prisma.task.updateMany({
-          where: { id: { in: duplicateTaskIdsToClose } },
-          data: { completed: true, status: 'completed', result: "Avtomatik yopildi: Yangi vazifa yaratildi" }
-        });
-        console.log(`[Auto-Cleanup] ${duplicateTaskIdsToClose.length} ta dublikat vazifa yopildi.`);
-      }
-
-      // ── Auto-complete tasks if the deal already has newer activity logs (i.e. manager already worked on it) ──
-      const resolvedTaskIds = [];
-      activeTasksWithDeals.forEach(t => {
-        if (!t.deal) return;
-        const latestLog = t.deal.activityLogs?.[0];
-        if (latestLog) {
-          const taskTime = new Date(t.createdAt).getTime();
-          const logTime = new Date(latestLog.createdAt).getTime();
-          // If any activity happened after the task was created, the task is resolved
-          if (logTime > taskTime) {
-            resolvedTaskIds.push(t.id);
-          }
-        }
-      });
-
-      if (resolvedTaskIds.length > 0) {
-        await prisma.task.updateMany({
-          where: { id: { in: resolvedTaskIds } },
-          data: { completed: true, status: 'completed', result: "Avtomatik yopildi: Sdelkada yangi harakat bajarildi" }
-        });
-        console.log(`[Auto-Cleanup] ${resolvedTaskIds.length} ta eskirgan vazifa yangi sdelka harakati sababli yopildi.`);
-      }
-    } catch (cleanupErr) {
-      console.error('[Auto-Cleanup Error] Obsolete/duplicate tasks cleanup failed:', cleanupErr.message);
-    }
+    if (completed !== undefined) where.completed = completed === 'true';
+    if (priority) where.priority = priority;
+    if (dealId) where.dealId = Number(dealId);
 
     const tasks = await prisma.task.findMany({
       where,
@@ -186,16 +93,17 @@ router.get('/', async (req, res) => {
           }
         }
       },
-      orderBy: [{ completed: 'asc' }, { dueDate: 'asc' }]
-    })
+      orderBy: [
+        { dueDate: 'asc' },
+        { createdAt: 'desc' }
+      ]
+    });
 
-    if (!Array.isArray(tasks)) return res.json([])
-    res.json(tasks.map(formatTaskClient))
+    res.json(tasks.map(formatTaskClient));
   } catch (error) {
-    console.error('[Tasks] GET / xato:', error.message)
-    res.json([])
+    res.status(500).json({ message: 'Vazifalarni yuklashda xatolik: ' + error.message });
   }
-})
+});
 
 // Get task by ID
 router.get('/:id', async (req, res, next) => {

@@ -4511,11 +4511,12 @@ async function saveCallbackSchedule() {
       body: JSON.stringify({
         title: taskTitle,
         description: notesVal,
-        dueDate: new Date(dateVal + 'T' + timeVal + ':00'),
+        dueDate: dateVal,
         dueTime: timeVal,
         actionType: 'Qayta aloqa',
         dealId: Number(_detailId),
-        clientId: window._currentDeal ? window._currentDeal.clientId : null
+        clientId: window._currentDeal ? window._currentDeal.clientId : null,
+        assignedToId: (window._currentDeal && window._currentDeal.managerId) ? Number(window._currentDeal.managerId) : null
       })
     });
 

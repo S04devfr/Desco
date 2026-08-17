@@ -389,36 +389,34 @@ function getFilteredTasks() {
   tomorrowEnd.setHours(23,59,59,999);
 
   return allTasks.filter(t => {
-    // Ko'tarmadi bosqichidagi vazifalarni olib tashla
-    if (isKotarmadiStage(t) && !t.completed) return false;
-
     if (q && !(
       (t.title || '').toLowerCase().includes(q) ||
+      (t.description || '').toLowerCase().includes(q) ||
       (t.client && t.client.name && t.client.name.toLowerCase().includes(q)) ||
       (t.client && t.client.phone && t.client.phone.toLowerCase().includes(q)) ||
       (t.deal && t.deal.productName && t.deal.productName.toLowerCase().includes(q))
     )) return false;
 
-    const due = t.dueDate ? new Date(t.dueDate) : null;
+    const due = t.dueDate ? new Date(t.dueDate) : today;
     const filter = window._dateFilterMode || 'day';
 
     if (filter === 'day') {
-      return due && due <= tomorrowEnd && !t.completed;
+      return due <= tomorrowEnd && !t.completed;
     }
     if (filter === 'week') {
       const endOfWeek = new Date(today);
       endOfWeek.setDate(today.getDate() + 7);
       endOfWeek.setHours(23,59,59,999);
-      return due && due <= endOfWeek && !t.completed;
+      return due <= endOfWeek && !t.completed;
     }
     if (filter === 'month') {
       const endOfMonth = new Date(today);
       endOfMonth.setDate(today.getDate() + 30);
       endOfMonth.setHours(23,59,59,999);
-      return due && due <= endOfMonth && !t.completed;
+      return due <= endOfMonth && !t.completed;
     }
     if (filter === 'overdue') {
-      return due && due < today && !t.completed;
+      return t.dueDate && new Date(t.dueDate) < today && !t.completed;
     }
     if (filter === 'done') {
       return t.completed;
