@@ -113,6 +113,7 @@ router.post('/register', async (req, res, next) => {
 
     const payload = buildUserPayload(user)
     req.session.userId = user.id
+    req.session.passwordHash = user.password
     req.session.user = payload
 
     logAudit('USER_REGISTER', `Yangi foydalanuvchi: ${email}`, user.id, email, req.ip);
@@ -191,10 +192,11 @@ router.post('/login', rateLimiter(20, 60000), async (req, res, next) => {
     const payload = buildUserPayload(user)
 
     req.session.userId = user.id
+    req.session.passwordHash = user.password
     req.session.user = payload
 
     const secretKey = process.env.JWT_SECRET || 'desco-jwt-default-secret-key-2026';
-    const token = jwt.sign(payload, secretKey, {
+    const token = jwt.sign({ ...payload, passwordHash: user.password }, secretKey, {
       expiresIn: process.env.JWT_EXPIRY || '7d'
     })
 

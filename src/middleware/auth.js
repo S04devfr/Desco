@@ -5,9 +5,36 @@ const prisma = require('../config/database');
 const protect = async (req, res, next) => {
   // Check session
   if (req.session && req.session.userId) {
-    req.userId = req.session.userId;
-    req.user = req.session.user;
-    return next();
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: req.session.userId },
+        select: { id: true, email: true, password: true, fullName: true, role: true, isActive: true }
+      });
+
+      if (!user || !user.isActive) {
+        req.session.destroy(() => {});
+        res.clearCookie('connect.sid');
+        return res.status(401).json({ message: 'Unauthorized - Sessiya tugagan' });
+      }
+
+      if (req.session.passwordHash && req.session.passwordHash !== user.password) {
+        req.session.destroy(() => {});
+        res.clearCookie('connect.sid');
+        return res.status(401).json({ message: 'Unauthorized - Parol o\'zgargan' });
+      }
+
+      req.session.passwordHash = user.password;
+      req.userId = user.id;
+      req.user = {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role
+      };
+      return next();
+    } catch (err) {
+      return res.status(500).json({ message: 'Auth middleware xatoligi' });
+    }
   }
 
   // Check JWT token in header
@@ -20,8 +47,22 @@ const protect = async (req, res, next) => {
   try {
     const secretKey = process.env.JWT_SECRET || 'desco-jwt-default-secret-key-2026';
     const decoded = jwt.verify(token, secretKey);
-    req.userId = decoded.id;
-    req.user = decoded;
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: { id: true, email: true, password: true, fullName: true, role: true, isActive: true }
+    });
+
+    if (!user || !user.isActive || (decoded.passwordHash && decoded.passwordHash !== user.password)) {
+      return res.status(401).json({ message: 'Unauthorized - Sessiya tugagan yoki parol o\'zgargan' });
+    }
+
+    req.userId = user.id;
+    req.user = {
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role
+    };
     next();
   } catch (error) {
     res.status(401).json({ message: 'Unauthorized - Invalid token' });

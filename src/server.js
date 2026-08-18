@@ -197,9 +197,38 @@ app.use('/api/tools',           require('./routes/tools'));
 app.use('/', require('./routes/legal'));
 
 // ── PAGE ROUTES ──
-function requireAuth(req, res, next) {
-  if (!req.session.userId) return res.redirect('/login');
-  next();
+async function requireAuth(req, res, next) {
+  if (!req.session || !req.session.userId) return res.redirect('/login');
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.session.userId },
+      select: { id: true, email: true, password: true, fullName: true, role: true, isActive: true }
+    });
+
+    if (!user || !user.isActive) {
+      req.session.destroy(() => {});
+      res.clearCookie('connect.sid');
+      return res.redirect('/login');
+    }
+
+    if (req.session.passwordHash && req.session.passwordHash !== user.password) {
+      req.session.destroy(() => {});
+      res.clearCookie('connect.sid');
+      return res.redirect('/login');
+    }
+
+    req.session.passwordHash = user.password;
+    req.session.user = {
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role
+    };
+    next();
+  } catch (err) {
+    console.error('[requireAuth Error]', err);
+    next(err);
+  }
 }
 
 const { requireRole } = require('./middleware/auth');

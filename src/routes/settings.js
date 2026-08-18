@@ -83,6 +83,7 @@ router.patch('/profile', async (req, res, next) => {
     if (Object.keys(data).length === 0) return res.status(400).json({ message: "Hech narsa o'zgartirilmadi" })
 
     const updated = await prisma.user.update({ where: { id: req.userId }, data })
+    req.session.passwordHash = updated.password
     req.session.user = { id: updated.id, email: updated.email, fullName: updated.fullName, role: updated.role }
     res.json({ message: 'Profil yangilandi', user: req.session.user })
   } catch (error) { next(error) }
