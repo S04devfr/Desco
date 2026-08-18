@@ -2657,6 +2657,45 @@ function renderKanban() {
       <span>Yangi bosqich</span>
     </button>
   ` : '');
+
+  renderMobileKanbanTabs();
+}
+
+function renderMobileKanbanTabs() {
+  let tabsContainer = document.getElementById('kanbanMobileTabs');
+  if (!tabsContainer) {
+    tabsContainer = document.createElement('div');
+    tabsContainer.id = 'kanbanMobileTabs';
+    tabsContainer.className = 'kanban-mobile-tabs';
+    const wrap = document.getElementById('kanbanWrap');
+    if (wrap) wrap.insertBefore(tabsContainer, wrap.firstChild);
+  }
+
+  if (!_stages || !_stages.length) {
+    tabsContainer.style.display = 'none';
+    return;
+  }
+
+  tabsContainer.style.display = 'flex';
+  tabsContainer.innerHTML = _stages.map((s, idx) => {
+    const sDealsCount = _deals.filter(d => d.stageId === s.id).length;
+    const activeClass = idx === 0 ? 'active' : '';
+    return `<button type="button" class="kanban-tab-btn ${activeClass}" onclick="scrollToKanbanCol(${s.id}, this)">
+              ${_esc(s.name)} (${sDealsCount})
+            </button>`;
+  }).join('');
+}
+
+function scrollToKanbanCol(stageId, btnEl) {
+  const cols = document.querySelectorAll('#kanbanBoard .kb-col');
+  const targetCol = Array.from(cols).find(c => c.querySelector(`#col-${stageId}`));
+  if (targetCol) {
+    targetCol.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+  }
+  if (btnEl) {
+    document.querySelectorAll('.kanban-tab-btn').forEach(b => b.classList.remove('active'));
+    btnEl.classList.add('active');
+  }
 }
 
 function dcardHtml(d) {

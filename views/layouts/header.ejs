@@ -114,8 +114,10 @@
 <script>
 function toggleMobileMenu() {
   const sidebar = document.querySelector('.sidebar');
-  const overlay = document.getElementById('mobileOverlay');
-  if (sidebar) sidebar.classList.toggle('mobile-open');
-  if (overlay) overlay.classList.toggle('active');
+  const overlay = document.getElementById('mobileOverlay') || document.getElementById('sidebarOverlay');
+  const isOpen = sidebar ? sidebar.classList.contains('mobile-open') : false;
+  if (sidebar) sidebar.classList.toggle('mobile-open', !isOpen);
+  if (overlay) overlay.classList.toggle('active', !isOpen);
+  document.body.classList.toggle('mobile-nav-open', !isOpen);
 }
 </script>

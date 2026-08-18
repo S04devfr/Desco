@@ -2070,4 +2070,228 @@ a.quick-nav-card .card:hover {
   content: url('/img/logo-dark.png');
 }
 
+/* ─────────────────────────────────────────────────────
+   32. SENIOR MOBILE UX & RESPONSIVE COMPONENT SYSTEM
+───────────────────────────────────────────────────── */
+body.mobile-nav-open {
+  overflow: hidden !important;
+  touch-action: none;
+}
+
+/* iOS Safari Input Zoom Fix */
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="date"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Mobile Bottom Navigation Bar */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
+  z-index: 1000;
+  padding-bottom: env(safe-area-inset-bottom);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.12);
+  justify-content: space-around;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .mobile-bottom-nav {
+    display: flex;
+  }
+  .app-wrapper {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+}
+
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex: 1;
+  height: 100%;
+  color: var(--text-tertiary);
+  text-decoration: none;
+  font-size: 10.5px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.mobile-nav-item i {
+  font-size: 18px;
+  transition: transform 0.2s ease;
+}
+
+.mobile-nav-item.active,
+.mobile-nav-item:hover {
+  color: var(--primary);
+}
+
+.mobile-nav-item.active i {
+  transform: translateY(-2px);
+}
+
+.mobile-nav-item.quick-add-item i {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563EB, #4F46E5);
+  color: #FFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+}
+
+/* Mobile Kanban Segmented Column Tabs */
+.kanban-mobile-tabs {
+  display: none;
+  overflow-x: auto;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  .kanban-mobile-tabs {
+    display: flex;
+  }
+  .kanban-board {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+  }
+  .kanban-col {
+    scroll-snap-align: start;
+    min-width: 88vw !important;
+    width: 88vw !important;
+  }
+}
+
+.kanban-tab-btn {
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface-hover);
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.kanban-tab-btn.active {
+  background: var(--primary);
+  color: #FFF;
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+/* Mobile Search Overlay Modal */
+.mobile-search-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-primary);
+  z-index: 2000;
+  padding: 16px;
+  flex-direction: column;
+}
+
+.mobile-search-modal.active {
+  display: flex;
+}
+
+.mobile-search-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.mobile-search-input-wrap {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.mobile-search-input-wrap i {
+  position: absolute;
+  left: 14px;
+  color: var(--text-tertiary);
+}
+
+.mobile-search-input-wrap input {
+  width: 100%;
+  padding: 12px 14px 12px 42px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+/* Mobile Card View Transformation for Data Tables */
+@media (max-width: 768px) {
+  .mobile-card-view thead {
+    display: none;
+  }
+  .mobile-card-view tbody,
+  .mobile-card-view tr,
+  .mobile-card-view td {
+    display: block;
+    width: 100%;
+  }
+  .mobile-card-view tr {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+  .mobile-card-view td {
+    padding: 6px 0;
+    border: none !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13.5px;
+  }
+  .mobile-card-view td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: var(--text-tertiary);
+    font-size: 12px;
+    text-transform: uppercase;
+  }
+}
+
+
 
