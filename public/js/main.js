@@ -8,6 +8,11 @@ function applyTheme(theme) {
   localStorage.setItem('crm-theme', theme);
   const icon = document.getElementById('themeIcon');
   if (icon) icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+  
+  // Sync logo image according to theme
+  document.querySelectorAll('.app-brand-logo').forEach(img => {
+    img.src = theme === 'dark' ? '/img/logo-dark.png' : '/img/logo-light.png';
+  });
 }
 
 function toggleTheme() {
@@ -18,6 +23,7 @@ function toggleTheme() {
 (function () {
   const saved = localStorage.getItem('crm-theme') || 'light';
   applyTheme(saved);
+  document.addEventListener('DOMContentLoaded', () => applyTheme(saved));
 })();
 
 // ── TOAST ──

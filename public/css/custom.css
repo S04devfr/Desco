@@ -2059,17 +2059,15 @@ a.quick-nav-card .card:hover {
 /* ─────────────────────────────────────────────────────
    31. DYNAMIC LOGO THEME VISIBILITY
 ───────────────────────────────────────────────────── */
-.logo-light-mode {
-  display: block !important;
-}
-.logo-dark-mode {
-  display: none !important;
+.app-brand-logo {
+  display: block;
+  max-width: 100%;
+  object-fit: contain;
+  transition: opacity 0.2s ease;
 }
 
-[data-theme="dark"] .logo-light-mode {
-  display: none !important;
+[data-theme="dark"] .app-brand-logo {
+  content: url('/img/logo-dark.png');
 }
-[data-theme="dark"] .logo-dark-mode {
-  display: block !important;
-}
+
 
