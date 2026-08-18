@@ -1735,6 +1735,16 @@
           </div>
 
           <div id="timeline-panel-task" style="display:none; flex-direction:column; gap:8px; padding:4px 0;">
+            <!-- Quick Preset Chips -->
+            <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center; background:rgba(99,102,241,0.06); padding:6px 10px; border-radius:8px; border:1px solid rgba(99,102,241,0.2);">
+              <span style="font-size:11px; font-weight:800; color:#6366f1; display:flex; align-items:center; gap:4px; margin-right:2px;">
+                <i class="fas fa-bolt"></i> Tezkor sana:
+              </span>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="setTaskPreset('today')" style="font-size:11px; padding:3px 8px; border-radius:6px; background:#fff; border:1px solid #cbd5e1; color:#1e293b; font-weight:700; cursor:pointer;">⚡ Bugun (18:00)</button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="setTaskPreset('tomorrow')" style="font-size:11px; padding:3px 8px; border-radius:6px; background:#fff; border:1px solid #cbd5e1; color:#1e293b; font-weight:700; cursor:pointer;">🌅 Ertaga (10:00)</button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="setTaskPreset('in2days')" style="font-size:11px; padding:3px 8px; border-radius:6px; background:#fff; border:1px solid #cbd5e1; color:#1e293b; font-weight:700; cursor:pointer;">📅 +2 kun</button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="setTaskPreset('in1week')" style="font-size:11px; padding:3px 8px; border-radius:6px; background:#fff; border:1px solid #cbd5e1; color:#1e293b; font-weight:700; cursor:pointer;">📆 +1 hafta</button>
+            </div>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
               <div>
                 <label style="font-size:10.5px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:3px;">Sarlavha *</label>
@@ -2750,23 +2760,49 @@ function dcardHtml(d) {
   }).join('');
 
   let taskHtml = '';
-  const activeTasks = d.tasks || [];
-  if (activeTasks.length === 0) {
-    taskHtml = '';
-  } else {
-    activeTasks.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
-    const nextTask = activeTasks[0];
-    const taskDate = new Date(nextTask.dueDate);
-    const taskDateFormatted = `${String(taskDate.getDate()).padStart(2,'0')}.${String(taskDate.getMonth()+1).padStart(2,'0')}`;
-    const isOverdue = taskDate < new Date().setHours(0,0,0,0);
-    const color = isOverdue ? '#ef4444' : '#10b981';
-    
+  const allTasks = d.tasks || [];
+  const pendingTasks = allTasks.filter(t => !t.completed);
+  if (pendingTasks.length === 0) {
     taskHtml = `
-      <div style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: ${color}; font-weight: 700;" title="${_esc(nextTask.title || '')}">
-        <span style="width: 6px; height: 6px; border-radius: 50%; background: ${color}; display: inline-block;"></span>
-        ${_esc(nextTask.actionType || 'Bog\'lanish')}: ${taskDateFormatted}
+      <div style="display:inline-flex; align-items:center; gap:4px; font-size:10.5px; color:#ef4444; font-weight:800; background:rgba(239,68,68,0.1); padding:2px 6px; border-radius:4px;" title="Vazifa biriktirilmagan!">
+        <i class="fas fa-exclamation-triangle" style="font-size:9.5px;"></i> ⚠️ Vazifa yo'q
       </div>
     `;
+  } else {
+    pendingTasks.sort((a, b) => new Date(a.dueDate || a.createdAt) - new Date(b.dueDate || b.createdAt));
+    const nextTask = pendingTasks[0];
+    const taskDate = new Date(nextTask.dueDate || nextTask.createdAt);
+    const pad = n => String(n).padStart(2, '0');
+    const taskDateFormatted = `${pad(taskDate.getDate())}.${pad(taskDate.getMonth()+1)}`;
+    const taskTimeFormatted = nextTask.dueTime || '10:00';
+    
+    const todayStart = new Date().setHours(0,0,0,0);
+    const taskDayStart = new Date(taskDate).setHours(0,0,0,0);
+    const isOverdue = taskDayStart < todayStart;
+    const isToday = taskDayStart === todayStart;
+
+    if (isOverdue) {
+      taskHtml = `
+        <div style="display:inline-flex; align-items:center; gap:4px; font-size:10.5px; color:#ef4444; font-weight:800; background:rgba(239,68,68,0.12); padding:2px 7px; border-radius:4px; border:1px solid rgba(239,68,68,0.3);" title="${_esc(nextTask.title || '')}">
+          <span style="width:6px; height:6px; border-radius:50%; background:#ef4444; display:inline-block; box-shadow:0 0 6px #ef4444;"></span>
+          🔴 ${taskDateFormatted} (${taskTimeFormatted}): ${_esc(nextTask.actionType || 'Aloqa')}
+        </div>
+      `;
+    } else if (isToday) {
+      taskHtml = `
+        <div style="display:inline-flex; align-items:center; gap:4px; font-size:10.5px; color:#d97706; font-weight:800; background:rgba(245,158,11,0.12); padding:2px 7px; border-radius:4px; border:1px solid rgba(245,158,11,0.3);" title="${_esc(nextTask.title || '')}">
+          <span style="width:6px; height:6px; border-radius:50%; background:#f59e0b; display:inline-block;"></span>
+          🟡 Bugun (${taskTimeFormatted})
+        </div>
+      `;
+    } else {
+      taskHtml = `
+        <div style="display:inline-flex; align-items:center; gap:4px; font-size:10.5px; color:#6366f1; font-weight:700; background:rgba(99,102,241,0.08); padding:2px 6px; border-radius:4px;" title="${_esc(nextTask.title || '')}">
+          <span style="width:6px; height:6px; border-radius:50%; background:#6366f1; display:inline-block;"></span>
+          📅 ${taskDateFormatted} (${taskTimeFormatted})
+        </div>
+      `;
+    }
   }
 
   const initials = clientName && typeof clientName === 'string' && !clientName.includes('span')
@@ -3001,6 +3037,25 @@ async function onDrop(e, stageId) {
       if (idx >= 0) _deals[idx] = updated;
     }
     renderKanban();
+
+    // Auto-trigger Task tab when dropped onto callback stage
+    const isCallback = targetStage && (
+      targetStage.name.toLowerCase().includes('qayta') || 
+      targetStage.name.toLowerCase().includes('vazifa') || 
+      targetStage.name.toLowerCase().includes('ko\'tarmadi') ||
+      targetStage.name.toLowerCase().includes('kotarmadi') ||
+      targetStage.name.toLowerCase().includes('aloqa')
+    );
+    if (isCallback) {
+      await openDetail(dealId);
+      setTimelineInputTab('task');
+      const titleInput = document.getElementById('tl-task-title');
+      if (titleInput && !titleInput.value) {
+        titleInput.value = `${targetStage.name} bo'yicha qayta aloqa`;
+      }
+      setTaskPreset('tomorrow');
+      _toast("📌 Qayta aloqa sana va vaqtini belgilang!", "info");
+    }
   } catch (err) {
     deal.stageId = previousStageId;
     renderKanban();
@@ -3997,6 +4052,7 @@ function renderTimelineAndTasks(deal) {
   const comments = [];
   const pendingTasks = [];
   const completedItems = [];
+  const systemHistory = [];
 
   if (deal.activities) {
     deal.activities.forEach(a => {
@@ -4010,6 +4066,13 @@ function renderTimelineAndTasks(deal) {
           author: a.user ? (a.user.fullName || a.user.email) : 'Tizim',
           details: a.details || '',
           id: a.id
+        });
+      } else {
+        systemHistory.push({
+          date: new Date(a.createdAt),
+          author: a.user ? (a.user.fullName || a.user.email) : 'Tizim',
+          action: a.action || 'Tizim harakati',
+          details: a.details || ''
         });
       }
     });
@@ -4037,22 +4100,107 @@ function renderTimelineAndTasks(deal) {
   }
 
   comments.sort((a, b) => a.date - b.date);
-
-  // Sort pending tasks: NEAREST / OVERDUE FIRST (most urgent at top!)
   pendingTasks.sort((a, b) => a.date - b.date);
-
-  // Sort completed items newest first
   completedItems.sort((a, b) => b.date - a.date);
+  systemHistory.sort((a, b) => b.date - a.date);
 
   let html = '';
 
-  // 1. Comments notebook
-  html += `
-    <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 18px; box-shadow: 0 2px 5px rgba(0,0,0,0.04); margin-bottom: 20px;">
-      <div style="font-size: 11.5px; font-weight: 800; color: #1e293b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-        <i class="fas fa-file-alt" style="color: #6366f1;"></i> Izohlar Daftari
+  // ── 1. TOP ACTIVELY PENDING TASK BANNER (amoCRM Style) ──
+  if (pendingTasks.length > 0) {
+    const mostUrgent = pendingTasks[0];
+    const todayStart = new Date().setHours(0,0,0,0);
+    const taskDayStart = new Date(mostUrgent.date).setHours(0,0,0,0);
+    const diffDays = Math.round((taskDayStart - todayStart) / (1000 * 60 * 60 * 24));
+    
+    const isOverdue = taskDayStart < todayStart;
+    const isToday = taskDayStart === todayStart;
+
+    const dayText = isToday ? 'Bugun' : diffDays === 1 ? 'Ertaga' : diffDays === -1 ? 'Kecha' : isOverdue ? `${Math.abs(diffDays)} KUN MUDDAT O'TDI` : `${diffDays} kun qoldi`;
+    
+    const isoDate = mostUrgent.date.getFullYear() + '-' + String(mostUrgent.date.getMonth() + 1).padStart(2, '0') + '-' + String(mostUrgent.date.getDate()).padStart(2, '0');
+    const isoTime = String(mostUrgent.date.getHours()).padStart(2, '0') + ':' + String(mostUrgent.date.getMinutes()).padStart(2, '0');
+
+    let bannerBg = 'rgba(99,102,241,0.06)';
+    let bannerBorder = '1.5px solid #6366f1';
+    let headerColor = '#6366f1';
+    let headerText = `📅 KELGUSI VAZIFA (${dayText})`;
+
+    if (isOverdue) {
+      bannerBg = 'rgba(239,68,68,0.08)';
+      bannerBorder = '2px solid #ef4444';
+      headerColor = '#ef4444';
+      headerText = `🔴 MUDDATI O'TGAN VAZIFA (${dayText})`;
+    } else if (isToday) {
+      bannerBg = 'rgba(245,158,11,0.08)';
+      bannerBorder = '2px solid #f59e0b';
+      headerColor = '#d97706';
+      headerText = `🟡 BUGUNGI VAZIFA (${isoTime})`;
+    }
+
+    html += `
+      <div style="background:${bannerBg}; border:${bannerBorder}; border-radius:12px; padding:14px 16px; margin-bottom:16px; box-shadow:0 4px 12px rgba(0,0,0,0.04);" id="task-${mostUrgent.id}">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-size:12px; font-weight:800; color:${headerColor}; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:6px;">
+            <i class="fas fa-clock"></i> ${headerText}
+          </span>
+          <span style="font-size:11px; font-weight:700; color:${headerColor}; background:rgba(255,255,255,0.8); padding:2px 8px; border-radius:12px; border:1px solid ${headerColor}33;">${isoDate} ${isoTime}</span>
+        </div>
+        
+        <div style="font-size:14px; font-weight:700; color:#1e293b; margin-bottom:4px;">${_esc(mostUrgent.actionType)}: ${_esc(mostUrgent.title)}</div>
+        ${mostUrgent.description ? `<div style="font-size:12.5px; color:#475569; margin-bottom:10px;">${_esc(mostUrgent.description)}</div>` : ''}
+
+        <!-- Quick Action Controls -->
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:10px; border-top:1px dashed ${headerColor}44; padding-top:10px;">
+          <input type="text" id="task-res-${mostUrgent.id}" class="form-control" style="font-size:12px; height:32px; flex:1; min-width:130px; background:#fff;" placeholder="Natijani yozing (masalan: gaplashdik)...">
+          <button class="btn btn-sm" onclick="completeTimelineTask(${mostUrgent.id})" style="background:${headerColor}; color:#fff; font-weight:700; font-size:12px; height:32px; padding:0 14px; border:none; border-radius:6px; cursor:pointer;">
+            <i class="fas fa-check-circle"></i> Bajarildi
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="quickRescheduleTask(${mostUrgent.id}, 'tomorrow')" style="font-size:11.5px; height:32px; padding:0 10px; color:#475569; background:#fff; border:1px solid #cbd5e1; border-radius:6px; cursor:pointer;" title="Ertagaga surish">
+            <i class="fas fa-arrow-right"></i> Ertaga
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleRescheduleForm(${mostUrgent.id})" style="font-size:11.5px; height:32px; padding:0 10px; color:#475569; background:#fff; border:1px solid #cbd5e1; border-radius:6px; cursor:pointer;">
+            <i class="fas fa-pencil-alt"></i> Tahrirlash
+          </button>
+        </div>
+
+        <!-- Inline Reschedule Form -->
+        <div id="reschedule-form-${mostUrgent.id}" class="hidden" style="display:none; margin-top:10px; padding:10px; background:#fff; border-radius:8px; border:1px solid #cbd5e1;">
+          <div style="font-size:11px; font-weight:700; color:#475569; margin-bottom:6px;">Vazifa vaqtini tahrirlash:</div>
+          <div style="display:flex; gap:6px; margin-bottom:8px;">
+            <input type="date" id="reschedule-date-${mostUrgent.id}" class="form-control" style="font-size:12px; height:30px;" value="${isoDate}">
+            <input type="time" id="reschedule-time-${mostUrgent.id}" class="form-control" style="font-size:12px; height:30px; width:80px;" value="${isoTime}">
+          </div>
+          <div style="display:flex; justify-content:flex-end; gap:6px;">
+            <button class="btn btn-ghost btn-sm" onclick="toggleRescheduleForm(${mostUrgent.id})">Bekor qilish</button>
+            <button class="btn btn-primary btn-sm" style="background:${headerColor}; border-color:${headerColor};" onclick="saveRescheduledTask(${mostUrgent.id})">Saqlash</button>
+          </div>
+        </div>
       </div>
-      <div id="comments-document-flow" style="display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto; padding-right: 4px;">
+    `;
+  } else {
+    // WARNING BANNER WHEN NO PENDING TASK EXISTS
+    html += `
+      <div style="background:rgba(239,68,68,0.06); border:1.5px dashed #ef4444; border-radius:12px; padding:14px; margin-bottom:16px; text-align:center;">
+        <div style="font-size:12.5px; font-weight:800; color:#ef4444; display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:4px;">
+          <i class="fas fa-exclamation-triangle"></i> USHBU SDELKADA BAJARILISHI KERAK BO'LGAN VAZIFA YO'Q!
+        </div>
+        <div style="font-size:11.5px; color:#64748b; margin-bottom:10px;">Menejerlar amoCRM qoidasiga ko'ra har bir sdelkaga vazifa biriktirishi shart.</div>
+        <button class="btn btn-sm btn-primary" onclick="setTimelineInputTab('task')" style="background:#ef4444; border-color:#ef4444; font-weight:700; font-size:12px; padding:6px 16px; border-radius:6px; cursor:pointer;">
+          <i class="fas fa-plus-circle"></i> + Hozir Vazifa Biriktirish
+        </button>
+      </div>
+    `;
+  }
+
+  // ── 2. IZOHLAR DAFTARI (Notebook Card for Real Manager Comments) ──
+  html += `
+    <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); margin-bottom: 20px;">
+      <div style="font-size: 12px; font-weight: 800; color: #1e293b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+        <span style="display:flex; align-items:center; gap:6px;"><i class="fas fa-file-alt" style="color: #6366f1;"></i> Izohlar Daftari</span>
+        <span style="font-size:10.5px; color:#6366f1; font-weight:700; background:rgba(99,102,241,0.08); padding:2px 8px; border-radius:10px;">${comments.length} ta izoh</span>
+      </div>
+      <div id="comments-document-flow" style="display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto; padding-right: 4px;">
   `;
 
   if (comments.length > 0) {
@@ -4073,81 +4221,38 @@ function renderTimelineAndTasks(deal) {
       `;
     });
   } else {
-    html += `<div style="text-align: center; padding: 20px 10px; color: #94a3b8; font-size: 12px; font-style: italic;">Hozircha izohlar yozilmagan.</div>`;
+    html += `<div style="text-align: center; padding: 16px 10px; color: #94a3b8; font-size: 12px; font-style: italic;">Hozircha izohlar yozilmagan.</div>`;
   }
   html += `</div></div>`;
 
-  // 2. ACTIVE PENDING TASKS AT THE VERY TOP
-  if (pendingTasks.length > 0) {
+  // ── 3. COMPLETED TASKS & COMPACT SYSTEM AUDIT LOGS ──
+  if (completedItems.length > 0 || systemHistory.length > 0) {
     html += `
-      <div style="font-size: 11.5px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display:flex; align-items:center; gap:6px;">
-        <i class="fas fa-clock" style="color:var(--accent);"></i> Bajarilishi kerak bo'lgan vazifa
+      <div style="font-size: 11.5px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 14px; margin-bottom: 10px; display:flex; align-items:center; gap:6px;">
+        <i class="fas fa-history"></i> Bajarilgan Vazifalar va Tarix
       </div>
     `;
 
-    pendingTasks.forEach(item => {
-      const today = new Date().setHours(0,0,0,0);
-      const taskTime = new Date(item.date).setHours(0,0,0,0);
-      const diffDays = Math.round((taskTime - today) / (1000 * 60 * 60 * 24));
-      const dayText = diffDays === 0 ? 'Bugun' : diffDays === 1 ? 'Ertaga' : diffDays === -1 ? 'Kecha' : diffDays < 0 ? `${Math.abs(diffDays)} KUN MUDDAT O'TDI` : `${diffDays} kun qoldi`;
-      const isOverdue = diffDays < 0;
-      const colorClass = isOverdue ? 'color:#ef4444; font-weight:800;' : 'color:#a78bfa; font-weight:800;';
-
-      const isoDate = item.date.getFullYear() + '-' + String(item.date.getMonth() + 1).padStart(2, '0') + '-' + String(item.date.getDate()).padStart(2, '0');
-      const isoTime = String(item.date.getHours()).padStart(2, '0') + ':' + String(item.date.getMinutes()).padStart(2, '0');
-
+    // Completed Tasks
+    completedItems.forEach(item => {
       html += `
-        <div class="timeline-task-card" style="border-color:${isOverdue ? '#ef4444' : 'rgba(88,86,214,0.3)'}; margin-bottom:16px;" id="task-${item.id}">
-          <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 6px;">
-            <div class="timeline-task-header" style="margin-bottom:0">
-              <i class="far fa-clock" style="${colorClass}"></i>
-              <span style="${colorClass}"> KEYINGI VAZIFA: ${dayText} (${isoTime})</span>
-            </div>
-            <button class="btn btn-ghost btn-sm" onclick="toggleRescheduleForm(${item.id})" style="font-size:11px; padding:2px 6px; height:22px; color:var(--text-secondary); cursor:pointer;">
-              <i class="fas fa-calendar-alt"></i> O'zgartirish
-            </button>
+        <div class="timeline-entry" style="border-left: 3px solid #10b981; margin-bottom:8px; background:#fff; padding:10px 12px; border-radius:8px; border:1px solid #e2e8f0; border-left:3px solid #10b981;" id="task-${item.id}">
+          <div class="timeline-entry-meta" style="display:flex; justify-content:space-between; font-size:11px; color:#94a3b8; margin-bottom:4px;">
+            <span style="font-weight:700; color:#10b981;">✅ ${item.assignedTo} (Bajarildi)</span>
+            <span>${item.date.toLocaleDateString('uz-UZ')} ${item.date.toLocaleTimeString('uz-UZ', {hour: '2-digit', minute:'2-digit'})}</span>
           </div>
-          
-          <div id="reschedule-form-${item.id}" class="hidden" style="display:none; margin: 8px 0; padding: 10px; background: var(--bg-tertiary); border-radius: 6px; border: 1px solid var(--border); flex-direction: column; gap: 8px;">
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-secondary);">Vazifa vaqtini tahrirlash:</div>
-            <div style="display: flex; gap: 6px;">
-              <input type="date" id="reschedule-date-${item.id}" class="form-control" style="font-size:12px; padding:4px 8px; height:28px; flex:1;" value="${isoDate}">
-              <input type="time" id="reschedule-time-${item.id}" class="form-control" style="font-size:12px; padding:4px 8px; height:28px; width:75px;" value="${isoTime}">
-            </div>
-            <div style="display: flex; justify-content: flex-end; gap: 6px;">
-              <button class="btn btn-ghost btn-sm" style="font-size:11px; padding:2px 8px;" onclick="toggleRescheduleForm(${item.id})">Bekor qilish</button>
-              <button class="btn btn-primary btn-sm" style="font-size:11px; padding:2px 10px; background:var(--brand);" onclick="saveRescheduledTask(${item.id})">Saqlash</button>
-            </div>
-          </div>
-
-          <div class="timeline-task-title" style="margin-top:4px; font-size:13.5px;">${_esc(item.actionType)}: ${_esc(item.title)}</div>
-          ${item.description ? `<div style="font-size:12px; color:var(--text-secondary); margin-bottom:6px;">${_esc(item.description)}</div>` : ''}
-          <div class="timeline-task-result-box">
-            <input type="text" id="task-res-${item.id}" class="timeline-task-input" placeholder="Natijani yozing...">
-            <button class="btn btn-primary btn-sm" style="padding:2px 12px; font-size:12px; height:32px; font-weight:700;" onclick="completeTimelineTask(${item.id})">Bajarildi</button>
-          </div>
+          <div style="font-size:12.5px; font-weight:600; color:#1e293b;"><strong>${_esc(item.actionType)}</strong>: ${_esc(item.title)}</div>
+          ${item.result ? `<div style="margin-top:4px; font-size:11.5px; padding:4px 8px; background:rgba(16,185,129,0.08); border-radius:4px; color:#065f46;"><b>Natija:</b> ${_esc(item.result)}</div>` : ''}
         </div>
       `;
     });
-  }
 
-  // 3. COMPLETED HISTORY LOGS
-  if (completedItems.length > 0) {
-    html += `
-      <div style="font-size: 11.5px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 14px; margin-bottom: 10px;">
-        📜 Bajarilgan Vazifalar va Tarix
-      </div>
-    `;
-
-    completedItems.forEach(item => {
+    // Compact System Field History (Single line sleek entries)
+    systemHistory.forEach(h => {
       html += `
-        <div class="timeline-entry" style="border-left: 3px solid #10b981; margin-bottom:8px;" id="task-${item.id}">
-          <div class="timeline-entry-meta">
-            <span class="timeline-entry-author" style="color:#10b981;">${_esc(item.assignedTo)}</span>
-            <span>Vazifa bajarildi · ${item.date.toLocaleDateString('uz-UZ')} ${item.date.toLocaleTimeString('uz-UZ', {hour: '2-digit', minute:'2-digit'})}</span>
-          </div>
-          <div><strong>${_esc(item.actionType)}</strong>: ${_esc(item.title)}</div>
-          ${item.result ? `<div style="margin-top:4px; font-size:11px; padding:3px 8px; background:rgba(16,185,129,0.06); border-radius:4px; color:#10b981;"><b>Natija:</b> ${_esc(item.result)}</div>` : ''}
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; font-size:11.5px; color:#64748b; margin-bottom:6px;">
+          <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding-right:8px;"><i class="fas fa-cog" style="color:#94a3b8; margin-right:4px;"></i> <b>${_esc(h.author)}:</b> ${_esc(h.details || h.action)}</span>
+          <span style="font-size:10.5px; color:#94a3b8; flex-shrink:0;">${h.date.toLocaleDateString('uz-UZ', {day:'2-digit', month:'2-digit'})} ${h.date.toLocaleTimeString('uz-UZ', {hour:'2-digit', minute:'2-digit'})}</span>
         </div>
       `;
     });
@@ -4884,6 +4989,58 @@ window.submitTimelineTask = async function() {
     openDetail(_detailId); // Refresh timeline
   } catch (err) {
     _toast(err.message, "error");
+  }
+};
+
+window.setTaskPreset = function(preset) {
+  const dateInput = document.getElementById('tl-task-date');
+  const timeInput = document.getElementById('tl-task-time');
+  if (!dateInput || !timeInput) return;
+
+  const now = new Date();
+  let targetDate = new Date();
+
+  if (preset === 'today') {
+    targetDate = now;
+    timeInput.value = '18:00';
+  } else if (preset === 'tomorrow') {
+    targetDate.setDate(now.getDate() + 1);
+    timeInput.value = '10:00';
+  } else if (preset === 'in2days') {
+    targetDate.setDate(now.getDate() + 2);
+    timeInput.value = '10:00';
+  } else if (preset === 'in1week') {
+    targetDate.setDate(now.getDate() + 7);
+    timeInput.value = '10:00';
+  }
+
+  const pad = n => String(n).padStart(2, '0');
+  dateInput.value = `${targetDate.getFullYear()}-${pad(targetDate.getMonth() + 1)}-${pad(targetDate.getDate())}`;
+};
+
+window.quickRescheduleTask = async function(taskId, preset) {
+  const now = new Date();
+  let targetDate = new Date();
+  let timeStr = '10:00';
+  if (preset === 'tomorrow') {
+    targetDate.setDate(now.getDate() + 1);
+  } else if (preset === 'in2days') {
+    targetDate.setDate(now.getDate() + 2);
+  }
+
+  const pad = n => String(n).padStart(2, '0');
+  const isoDate = `${targetDate.getFullYear()}-${pad(targetDate.getMonth() + 1)}-${pad(targetDate.getDate())}`;
+
+  try {
+    await apiFetch('/api/tasks/' + taskId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dueDate: isoDate, dueTime: timeStr })
+    });
+    _toast("Vazifa vaqti surildi!", "success");
+    if (_detailId) openDetail(_detailId);
+  } catch (e) {
+    _toast("Xatolik: " + e.message, "error");
   }
 };
 
