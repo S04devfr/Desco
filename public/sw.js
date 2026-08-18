@@ -13,8 +13,8 @@ self.addEventListener('push', function(event) {
   const title = data.title || 'Desco CRM Bildirishnomasi';
   const options = {
     body: data.body || 'Yangi xabar mavjud',
-    icon: data.icon || '/public/favicon.ico',
-    badge: data.badge || '/public/favicon.ico',
+    icon: data.icon || '/img/android-chrome-192x192.png',
+    badge: data.badge || '/img/favicon-32x32.png',
     vibrate: [200, 100, 200],
     data: {
       url: data.url || '/'

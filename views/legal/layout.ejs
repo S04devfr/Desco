@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= pageTitle %> — Desco Lead CRM</title>
   <meta name="description" content="<%= pageDescription || 'Desco Lead CRM — Professional Meta Lead Ads Management Platform' %>">
+  <!-- Favicon & Brand Icons -->
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
@@ -299,9 +305,8 @@
 
   <header class="legal-header">
     <div class="legal-header-inner">
-      <a href="/" class="legal-logo">
-        <div class="legal-logo-icon">D</div>
-        <div class="legal-logo-text">Desco <span>Lead CRM</span></div>
+      <a href="/" class="legal-logo" style="display: flex; align-items: center;">
+        <img src="/img/logo-dark.png" alt="Desco CRM" style="height: 38px; width: auto; object-fit: contain;">
       </a>
       <nav class="legal-nav">
         <a href="/about" class="<%= activePage === 'about' ? 'active' : '' %>">About</a>

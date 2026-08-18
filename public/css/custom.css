@@ -2055,3 +2055,21 @@ a.quick-nav-card .card:hover {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
+
+/* ─────────────────────────────────────────────────────
+   31. DYNAMIC LOGO THEME VISIBILITY
+───────────────────────────────────────────────────── */
+.logo-light-mode {
+  display: block !important;
+}
+.logo-dark-mode {
+  display: none !important;
+}
+
+[data-theme="dark"] .logo-light-mode {
+  display: none !important;
+}
+[data-theme="dark"] .logo-dark-mode {
+  display: block !important;
+}
+

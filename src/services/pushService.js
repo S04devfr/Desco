@@ -57,8 +57,8 @@ async function sendPushToUser(userId, notificationPayload) {
     const payload = JSON.stringify({
       title: notificationPayload.title || 'Desco CRM',
       body: notificationPayload.body || 'Yangi bildirishnoma',
-      icon: notificationPayload.icon || '/public/favicon.ico',
-      badge: notificationPayload.badge || '/public/favicon.ico',
+      icon: notificationPayload.icon || '/img/android-chrome-192x192.png',
+      badge: notificationPayload.badge || '/img/favicon-32x32.png',
       url: notificationPayload.url || '/',
       timestamp: Date.now()
     });

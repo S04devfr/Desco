@@ -4,11 +4,21 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kirish — DESCO CRM</title>
+  <!-- Favicon & Brand Icons -->
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script>(function(){const t=localStorage.getItem('crm-theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
   <style>
+    .logo-light-mode { display: block !important; }
+    .logo-dark-mode { display: none !important; }
+    [data-theme="dark"] .logo-light-mode { display: none !important; }
+    [data-theme="dark"] .logo-dark-mode { display: block !important; }
     :root {
       --brand-primary: #6366F1;
       --brand-secondary: #8B5CF6;
@@ -598,10 +608,8 @@
       <div class="auth-left">
         <div>
           <div class="brand-header">
-            <div class="brand-icon-box">
-              <i class="fas fa-layer-group"></i>
-            </div>
-            <div class="brand-title">Desco<span>.crm</span></div>
+            <img src="/img/logo-light.png" alt="DESCO CRM" class="logo-light-mode" style="height: 48px; width: auto; object-fit: contain;">
+            <img src="/img/logo-dark.png" alt="DESCO CRM" class="logo-dark-mode" style="height: 48px; width: auto; object-fit: contain;">
           </div>
 
           <div class="status-badge">
