@@ -2770,18 +2770,29 @@ function dcardHtml(d) {
     const taskDate = new Date(nextTask.dueDate || nextTask.createdAt);
     const pad = n => String(n).padStart(2, '0');
     const taskDateFormatted = `${pad(taskDate.getDate())}.${pad(taskDate.getMonth()+1)}`;
-    const taskTimeFormatted = nextTask.dueTime || '10:00';
     
+    let taskTimeFormatted = nextTask.dueTime;
+    if (!taskTimeFormatted || taskTimeFormatted === 'null') {
+      const h = taskDate.getHours();
+      const m = taskDate.getMinutes();
+      taskTimeFormatted = `${pad(h)}:${pad(m)}`;
+    }
+
     const todayStart = new Date().setHours(0,0,0,0);
+    const tomorrowStart = todayStart + (24 * 60 * 60 * 1000);
     const taskDayStart = new Date(taskDate).setHours(0,0,0,0);
+
     const isOverdue = taskDayStart < todayStart;
     const isToday = taskDayStart === todayStart;
+    const isTomorrow = taskDayStart === tomorrowStart;
 
     if (isOverdue) {
+      const isYesterday = (todayStart - taskDayStart) === (24 * 60 * 60 * 1000);
+      const label = isYesterday ? `Kecha (${taskTimeFormatted})` : `${taskDateFormatted} (${taskTimeFormatted})`;
       taskHtml = `
         <div style="display:inline-flex; align-items:center; gap:4px; font-size:10.5px; color:#ef4444; font-weight:800; background:rgba(239,68,68,0.12); padding:2px 7px; border-radius:4px; border:1px solid rgba(239,68,68,0.3);" title="${_esc(nextTask.title || '')}">
           <span style="width:6px; height:6px; border-radius:50%; background:#ef4444; display:inline-block; box-shadow:0 0 6px #ef4444;"></span>
-          🔴 ${taskDateFormatted} (${taskTimeFormatted}): ${_esc(nextTask.actionType || 'Aloqa')}
+          🔴 ${label}
         </div>
       `;
     } else if (isToday) {
@@ -2789,6 +2800,13 @@ function dcardHtml(d) {
         <div style="display:inline-flex; align-items:center; gap:4px; font-size:10.5px; color:#d97706; font-weight:800; background:rgba(245,158,11,0.12); padding:2px 7px; border-radius:4px; border:1px solid rgba(245,158,11,0.3);" title="${_esc(nextTask.title || '')}">
           <span style="width:6px; height:6px; border-radius:50%; background:#f59e0b; display:inline-block;"></span>
           🟡 Bugun (${taskTimeFormatted})
+        </div>
+      `;
+    } else if (isTomorrow) {
+      taskHtml = `
+        <div style="display:inline-flex; align-items:center; gap:4px; font-size:10.5px; color:#10b981; font-weight:800; background:rgba(16,185,129,0.12); padding:2px 7px; border-radius:4px; border:1px solid rgba(16,185,129,0.3);" title="${_esc(nextTask.title || '')}">
+          <span style="width:6px; height:6px; border-radius:50%; background:#10b981; display:inline-block;"></span>
+          🟢 Ertaga (${taskTimeFormatted})
         </div>
       `;
     } else {
@@ -2814,11 +2832,26 @@ function dcardHtml(d) {
     const cbDate = new Date(callbackT.dueDate);
     const pad = n => String(n).padStart(2, '0');
     const cbFmt = `${pad(cbDate.getDate())}.${pad(cbDate.getMonth()+1)}.${cbDate.getFullYear()}`;
-    const cbIsOverdue = cbDate < new Date().setHours(0,0,0,0);
+    let cbTimeFmt = callbackT.dueTime;
+    if (!cbTimeFmt || cbTimeFmt === 'null') {
+      const h = cbDate.getHours();
+      const m = cbDate.getMinutes();
+      cbTimeFmt = `${pad(h)}:${pad(m)}`;
+    }
+    const cbTodayStart = new Date().setHours(0,0,0,0);
+    const cbTomorrowStart = cbTodayStart + (24 * 60 * 60 * 1000);
+    const cbDayStart = new Date(cbDate).setHours(0,0,0,0);
+    
+    let dayLabel = cbFmt;
+    if (cbDayStart === cbTodayStart) dayLabel = `Bugun (${cbTimeFmt})`;
+    else if (cbDayStart === cbTomorrowStart) dayLabel = `Ertaga (${cbTimeFmt})`;
+    else dayLabel = `${cbFmt} (${cbTimeFmt})`;
+
+    const cbIsOverdue = cbDayStart < cbTodayStart;
     callbackHtml = `
       <div class="dcard-callback-banner${cbIsOverdue ? ' overdue' : ''}" style="margin: 4px -14px -12px; padding: 6px 14px; background: rgba(124, 58, 237, 0.07); border-top: 1px dashed rgba(124, 58, 237, 0.15); display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: #7c3aed; font-weight: 700; border-radius: 0 0 10px 10px;">
         <i class="fas fa-phone-alt" style="font-size:9px;"></i>
-        <span>Qayta aloqa: ${cbFmt}</span>
+        <span>Qayta aloqa: ${dayLabel}</span>
       </div>
     `;
   }
