@@ -3662,6 +3662,13 @@ async function openDetail(id) {
   try {
     const deal = await apiFetch('/api/deals/' + id);
     window._currentDeal = deal;
+    if (window._deals && Array.isArray(window._deals)) {
+      const idx = window._deals.findIndex(d => d.id === deal.id);
+      if (idx >= 0) {
+        window._deals[idx] = deal;
+        renderKanban();
+      }
+    }
 
     // Header values
     document.getElementById('drawerDealTitle').value = deal.productName || deal.name || '';
