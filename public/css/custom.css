@@ -2066,12 +2066,18 @@ a.quick-nav-card .card:hover {
   transition: opacity 0.2s ease;
 }
 
-[data-theme="dark"] .app-brand-logo {
-  content: url('/img/logo-dark.png');
+.logo-light-mode {
+  display: block !important;
+}
+.logo-dark-mode {
+  display: none !important;
 }
 
-[data-theme="light"] .app-brand-logo {
-  content: url('/img/logo-light.png');
+[data-theme=dark] .logo-light-mode {
+  display: none !important;
+}
+[data-theme=dark] .logo-dark-mode {
+  display: block !important;
 }
 
 /* ─────────────────────────────────────────────────────
