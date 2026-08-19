@@ -9,13 +9,7 @@ function applyTheme(theme) {
   const icon = document.getElementById('themeIcon');
   if (icon) icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
   
-  // Sync logo image according to theme
-  const targetLogo = theme === 'dark' ? '/img/logo-dark.png' : '/img/logo-light.png';
-  document.querySelectorAll('.app-brand-logo').forEach(img => {
-    if (img.getAttribute('src') !== targetLogo) {
-      img.setAttribute('src', targetLogo);
-    }
-  });
+  // Logo styling automatically adapted via CSS theme filters
 }
 
 function toggleTheme() {

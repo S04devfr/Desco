@@ -562,15 +562,8 @@
       <div class="auth-left">
         <div>
           <div class="brand-header">
-            <img src="/img/logo-light.png" alt="DESCO CRM" class="app-brand-logo" style="height: 48px; width: auto; object-fit: contain;">
+            <img src="/img/logo-dark.png" alt="DESCO CRM" class="app-brand-logo" style="height: 48px; width: auto; object-fit: contain;">
           </div>
-          <script>
-            (function() {
-              var t = localStorage.getItem('crm-theme') || 'light';
-              var img = document.querySelector('.brand-header .app-brand-logo');
-              if (img && t === 'dark') img.src = '/img/logo-dark.png';
-            })();
-          </script>
 
           <div class="status-badge">
             <span class="status-dot"></span>
@@ -681,9 +674,7 @@
     const currentTheme = localStorage.getItem('crm-theme') || 'light';
     document.documentElement.setAttribute('data-theme', currentTheme);
     updateThemeIcon(currentTheme);
-    document.querySelectorAll('.app-brand-logo').forEach(img => {
-      img.src = currentTheme === 'dark' ? '/img/logo-dark.png' : '/img/logo-light.png';
-    });
+    
 
     themeBtn.addEventListener('click', () => {
       const activeTheme = document.documentElement.getAttribute('data-theme');
@@ -691,9 +682,7 @@
       document.documentElement.setAttribute('data-theme', newTheme);
       localStorage.setItem('crm-theme', newTheme);
       updateThemeIcon(newTheme);
-      document.querySelectorAll('.app-brand-logo').forEach(img => {
-        img.src = newTheme === 'dark' ? '/img/logo-dark.png' : '/img/logo-light.png';
-      });
+      
     });
 
     const canvas = document.getElementById('interactive-canvas');
