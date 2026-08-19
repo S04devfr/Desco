@@ -2063,12 +2063,6 @@ a.quick-nav-card .card:hover {
   display: block;
   max-width: 100%;
   object-fit: contain;
-  transition: filter 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
-  filter: invert(0.92) hue-rotate(185deg) brightness(0.25) contrast(1.2);
-}
-
-[data-theme="dark"] .app-brand-logo {
-  filter: none !important;
 }
 
 /* ─────────────────────────────────────────────────────
