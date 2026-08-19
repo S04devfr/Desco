@@ -11,7 +11,7 @@ function applyTheme(theme) {
   
   // Sync logo image according to theme
   document.querySelectorAll('.app-brand-logo').forEach(img => {
-    img.src = '/img/logo-dark.png';
+    img.src = theme === 'dark' ? '/img/logo-dark.png' : '/img/logo-light.png';
   });
 }
 
