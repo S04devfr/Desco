@@ -2066,9 +2066,7 @@ a.quick-nav-card .card:hover {
   transition: opacity 0.2s ease;
 }
 
-[data-theme="dark"] .app-brand-logo {
-  content: url('/img/logo-dark.png');
-}
+/* [data-theme="dark"] .app-brand-logo logo locked to white version */
 
 /* ─────────────────────────────────────────────────────
    32. SENIOR MOBILE UX & RESPONSIVE COMPONENT SYSTEM
