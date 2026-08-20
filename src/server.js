@@ -206,6 +206,7 @@ app.use('/api/clients',         require('./routes/clients'));
 app.use('/api/companies',       require('./routes/companies'));
 app.use('/api/expenses',        require('./routes/expenses'));
 app.use('/api/tasks',           require('./routes/tasks'));
+app.use('/api/kanban',          require('./routes/kanban'));
 app.use('/api/notifications',   require('./routes/notifications'));
 app.use('/api/product-catalog', require('./routes/productCatalog'));
 app.use('/api/search',          require('./routes/search'));
@@ -277,6 +278,7 @@ app.get('/extra/drivers',  requireAuth, requireRole('admin', 'manager'), (req, r
 app.get('/extra/branches', requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('extra/index',  { user: req.session.user, activePage: 'extra-branches', subPage: 'branches' }));
 app.get('/extra/tools',    requireAuth, requireRole('admin'), (req, res) => res.render('extra/tools',  { user: req.session.user, activePage: 'extra-tools' }));
 app.get('/tasks',    requireAuth, requireRole('admin', 'manager', 'operator'), (req, res) => res.render('tasks/index',    { user: req.session.user, activePage: 'tasks' }));
+app.get('/kanban',   requireAuth, requireRole('admin', 'manager', 'operator'), (req, res) => res.render('kanban/index',   { user: req.session.user, activePage: 'kanban' }));
 app.get('/instagram', requireAuth, requireRole('admin', 'manager'), (req, res) => {
   const filter = req.query.filter || 'direct';
   res.render('instagram/index', { user: req.session.user, activePage: 'instagram-' + filter });

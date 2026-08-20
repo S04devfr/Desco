@@ -42,9 +42,14 @@
     </div>
 
     <a href="/tasks" class="<%= activePage === 'tasks' ? 'active' : '' %>">
-      <span class="nav-icon"><i class="fas fa-clipboard-list"></i></span>
+      <span class="nav-icon"><i class="fas fa-check-circle"></i></span>
       <span class="nav-label">Vazifalar</span>
       <span id="sidebar-task-badge" class="nav-badge hidden">0</span>
+    </a>
+
+    <a href="/kanban" class="<%= activePage === 'kanban' ? 'active' : '' %>">
+      <span class="nav-icon"><i class="fas fa-columns" style="color:var(--brand);"></i></span>
+      <span class="nav-label">Kanban Doska</span>
     </a>
 
     <a href="/expenses" class="<%= activePage === 'expenses' ? 'active' : '' %>">

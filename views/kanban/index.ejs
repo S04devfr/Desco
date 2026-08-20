@@ -1,0 +1,1979 @@
+<%- include('../layouts/header', {
+  title: 'Kanban Doska — DESCO CRM',
+  activePage: 'kanban',
+  user: user
+}) %>
+
+<style>
+/* ══════════════════════════════════════════════════════════════════════════════
+   TRELLO-STYLE KANBAN & TASK WORKSPACE STYLES
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.task-workspace {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 85px);
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Workspace Header ─────────────────────────────────────────────── */
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0 16px 0;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.task-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.board-select-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+.board-select-btn:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.task-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ── View Toggle & Filter Pills ───────────────────────────────────── */
+.view-switch {
+  display: flex;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 2px;
+  gap: 2px;
+}
+.view-switch-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+.view-switch-btn.active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+}
+
+.task-search-input {
+  height: 34px;
+  padding: 0 12px 0 34px;
+  font-size: 12.5px;
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  width: 220px;
+  transition: all 0.2s ease;
+}
+.task-search-input:focus {
+  width: 260px;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+  outline: none;
+}
+
+/* ── Filter Bar ───────────────────────────────────────────────────── */
+.task-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 12px;
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+.task-filter-chip {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.task-filter-chip:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+.task-filter-chip.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 2px 6px rgba(0, 122, 255, 0.25);
+}
+
+/* ── Kanban Board Layout ─────────────────────────────────────────── */
+.kanban-board-container {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex: 1;
+  padding-bottom: 16px;
+  align-items: flex-start;
+  user-select: none;
+}
+
+.kanban-column {
+  width: 320px;
+  min-width: 320px;
+  max-width: 320px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(14px);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.kanban-column-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px 10px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  cursor: grab;
+}
+
+.kanban-column-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.col-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.col-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.kanban-cards-list {
+  padding: 10px 12px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 120px;
+  transition: background 0.15s ease;
+}
+
+.kanban-cards-list.drag-over {
+  background: rgba(0, 122, 255, 0.06);
+  border-radius: 12px;
+}
+
+/* ── Task Card Design ─────────────────────────────────────────────── */
+.task-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: grab;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  position: relative;
+  overflow: hidden;
+}
+
+.task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 122, 255, 0.4);
+}
+
+.task-card.dragging {
+  opacity: 0.35;
+  transform: rotate(2deg) scale(1.02);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+}
+
+.task-card.completed {
+  opacity: 0.65;
+}
+.task-card.completed .task-card-title {
+  text-decoration: line-through;
+  color: var(--text-tertiary);
+}
+
+.task-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.task-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.task-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+}
+
+.priority-badge-low { background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
+.priority-badge-medium { background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
+.priority-badge-high { background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+.priority-badge-urgent { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3); }
+
+.task-card-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.35;
+  margin-bottom: 6px;
+  word-break: break-word;
+}
+
+.task-card-client {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent);
+  background: rgba(0, 122, 255, 0.08);
+  padding: 3px 8px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  text-decoration: none;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-card-checklist-bar {
+  width: 100%;
+  height: 4px;
+  background: var(--bg-tertiary);
+  border-radius: 2px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.task-card-checklist-fill {
+  height: 100%;
+  background: #10b981;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.task-card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--text-secondary);
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.task-meta-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.task-due-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+}
+.task-due-badge.overdue {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.task-user-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--brand-soft), rgba(88,86,214,0.2));
+  color: var(--brand);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  border: 1px solid rgba(0, 122, 255, 0.2);
+}
+
+/* ── Quick Card Creator ───────────────────────────────────────────── */
+.quick-add-card-wrap {
+  padding: 8px 12px 12px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+.quick-add-btn {
+  width: 100%;
+  padding: 8px;
+  background: transparent;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+.quick-add-btn:hover {
+  background: rgba(0, 122, 255, 0.08);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.quick-add-form {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+}
+.quick-add-input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+.quick-add-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+/* ── Add Column Button ────────────────────────────────────────────── */
+.add-column-btn {
+  min-width: 260px;
+  height: 52px;
+  border-radius: 14px;
+  border: 2px dashed var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.add-column-btn:hover {
+  background: rgba(0, 122, 255, 0.08);
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-2px);
+}
+
+/* ── Slide-Over Task Detail Drawer ─────────────────────────────────── */
+.task-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.task-drawer-overlay.active {
+  display: block;
+  opacity: 1;
+}
+
+.task-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 620px;
+  max-width: 95vw;
+  height: 100vh;
+  background: var(--bg-primary);
+  border-left: 1px solid var(--border);
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.2);
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.task-drawer.active {
+  transform: translateX(0);
+}
+
+.task-drawer-header {
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-secondary);
+}
+
+.task-drawer-body {
+  padding: 22px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Drawer Detail Grid */
+.drawer-props-grid {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  row-gap: 14px;
+  column-gap: 12px;
+  align-items: center;
+  font-size: 13px;
+}
+.drawer-prop-label {
+  color: var(--text-secondary);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.drawer-section-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+/* Checklist Items */
+.checklist-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+.checklist-row:hover {
+  background: var(--bg-secondary);
+}
+.checklist-row.done .checklist-text {
+  text-decoration: line-through;
+  color: var(--text-tertiary);
+}
+
+/* Comments Feed */
+.comment-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+/* List View Table */
+.task-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.task-table th {
+  background: var(--bg-secondary);
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-secondary);
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.task-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-primary);
+}
+.task-table tr:hover {
+  background: rgba(0, 122, 255, 0.03);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .task-drawer { width: 100vw; max-width: 100vw; }
+  .kanban-column { width: 280px; min-width: 280px; }
+}
+</style>
+
+<div class="task-workspace">
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       1. WORKSPACE HEADER
+       ══════════════════════════════════════════════════════════════════════════ -->
+  <div class="task-header">
+    <div class="task-header-left">
+      <!-- Board Selector -->
+      <div style="position: relative;">
+        <button class="board-select-btn" id="activeBoardBtn" onclick="toggleBoardDropdown()">
+          <i class="fas fa-clipboard-list" id="activeBoardIcon" style="color: var(--accent);"></i>
+          <span id="activeBoardName">Asosiy Vazifalar</span>
+          <i class="fas fa-chevron-down" style="font-size: 11px; opacity: 0.6; margin-left: 4px;"></i>
+        </button>
+        <!-- Board Dropdown Menu -->
+        <div id="boardDropdownMenu" style="display:none; position:absolute; top:calc(100% + 6px); left:0; width:250px; background:var(--bg-secondary); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow-lg); z-index:200; padding:6px;">
+          <div id="boardDropdownList" style="display:flex; flex-direction:column; gap:2px; max-height:220px; overflow-y:auto;">
+            <!-- Rendered dynamically -->
+          </div>
+          <div style="border-top:1px solid var(--border); margin-top:6px; padding-top:6px;">
+            <button class="btn btn-ghost btn-sm" onclick="openCreateBoardModal()" style="width:100%; justify-content:flex-start; font-size:12px; color:var(--accent);">
+              <i class="fas fa-plus"></i> Yangi board yaratish
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Search -->
+      <div style="position: relative;">
+        <i class="fas fa-search" style="position: absolute; left: 12px; top: 10px; font-size: 12px; color: var(--text-tertiary);"></i>
+        <input type="text" id="taskSearchInput" class="task-search-input" placeholder="Qidirish... ( / )" oninput="onTaskSearchInput(this.value)">
+      </div>
+    </div>
+
+    <div class="task-header-right">
+      <!-- View Switch (Kanban / List) -->
+      <div class="view-switch">
+        <button class="view-switch-btn active" id="btnViewKanban" onclick="switchTaskView('kanban')">
+          <i class="fas fa-columns"></i> Kanban
+        </button>
+        <button class="view-switch-btn" id="btnViewList" onclick="switchTaskView('list')">
+          <i class="fas fa-list"></i> Ro'yxat
+        </button>
+      </div>
+
+      <!-- Add Column Button -->
+      <button class="btn btn-secondary btn-sm" onclick="openCreateColumnModal()" title="Yangi ustun qo'shish">
+        <i class="fas fa-plus"></i> Ustun
+      </button>
+
+      <!-- Add Task Button -->
+      <button class="btn btn-primary btn-sm" onclick="openCreateTaskModal()">
+        <i class="fas fa-plus-circle"></i> Yangi Vazifa
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       2. FILTER BAR
+       ══════════════════════════════════════════════════════════════════════════ -->
+  <div class="task-filter-bar">
+    <button class="task-filter-chip active" id="filterAll" onclick="setTaskFilter('all', this)">
+      Barchasi
+    </button>
+    <button class="task-filter-chip" id="filterMine" onclick="setTaskFilter('mine', this)">
+      <i class="fas fa-user"></i> Mening vazifalarim
+    </button>
+    <button class="task-filter-chip" id="filterToday" onclick="setTaskFilter('today', this)">
+      <i class="fas fa-sun"></i> Bugun
+    </button>
+    <button class="task-filter-chip" id="filterOverdue" onclick="setTaskFilter('overdue', this)">
+      <i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i> Muddati o'tgan
+    </button>
+    <button class="task-filter-chip" id="filterUrgent" onclick="setTaskFilter('urgent', this)">
+      <i class="fas fa-bolt" style="color: #f59e0b;"></i> Shoshilinch
+    </button>
+    <button class="task-filter-chip" id="filterDone" onclick="setTaskFilter('done', this)">
+      <i class="fas fa-check-circle" style="color: #10b981;"></i> Bajarilgan
+    </button>
+
+    <!-- Assignee Filter Selector -->
+    <select id="filterAssigneeSelect" class="form-control" style="width: auto; height: 28px; font-size: 11.5px; padding: 0 8px; border-radius: 14px;" onchange="loadTasks()">
+      <option value="">Barcha mas'ullar</option>
+    </select>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       3. KANBAN BOARD VIEW
+       ══════════════════════════════════════════════════════════════════════════ -->
+  <div class="kanban-board-container" id="kanbanBoardView">
+    <div style="padding: 40px; text-align: center; width: 100%;">
+      <div class="spinner" style="margin: auto;"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       4. LIST VIEW
+       ══════════════════════════════════════════════════════════════════════════ -->
+  <div id="taskListView" style="display: none; flex: 1; overflow-y: auto; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; padding: 14px;">
+    <table class="task-table">
+      <thead>
+        <tr>
+          <th style="width: 40px;"></th>
+          <th>Vazifa nomi</th>
+          <th>Ustun / Status</th>
+          <th>Muhimlik</th>
+          <th>Mas'ul</th>
+          <th>Muddat</th>
+          <th>Mijoz</th>
+          <th style="text-align: right;">Amallar</th>
+        </tr>
+      </thead>
+      <tbody id="taskListTableBody">
+        <tr><td colspan="8" class="tc" style="padding: 30px;"><div class="spinner" style="margin: auto;"></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     5. RIGHT SLIDE-OVER TASK DETAIL DRAWER
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="task-drawer-overlay" id="taskDrawerOverlay" onclick="closeTaskDrawer()"></div>
+<div class="task-drawer" id="taskDrawer">
+  <div class="task-drawer-header">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span class="badge badge-brand" id="drawerStatusBadge">Yangi</span>
+      <span style="font-size: 12px; color: var(--text-tertiary);" id="drawerTaskId">#0</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <button class="btn btn-ghost btn-sm" onclick="archiveCurrentDrawerTask()" title="Arxivlash">
+        <i class="fas fa-archive"></i>
+      </button>
+      <button class="btn btn-ghost btn-sm text-red" onclick="deleteCurrentDrawerTask()" title="O'chirish">
+        <i class="fas fa-trash-alt"></i>
+      </button>
+      <button class="modal-close" onclick="closeTaskDrawer()" style="font-size: 22px; width: 32px; height: 32px;">&times;</button>
+    </div>
+  </div>
+
+  <div class="task-drawer-body">
+    <div>
+      <input type="text" id="drawerTaskTitle" style="font-size: 18px; font-weight: 800; color: var(--text-primary); background: transparent; border: 1px solid transparent; border-radius: 8px; width: 100%; padding: 4px 6px; transition: border-color 0.2s;" onchange="saveDrawerField('title', this.value)" placeholder="Vazifa nomi...">
+    </div>
+
+    <div class="drawer-props-grid">
+      <div class="drawer-prop-label"><i class="fas fa-columns"></i> Ustun:</div>
+      <div>
+        <select id="drawerColumnSelect" class="form-control" style="height: 32px; font-size: 12.5px;" onchange="onDrawerColumnChange(this.value)"></select>
+      </div>
+
+      <div class="drawer-prop-label"><i class="fas fa-flag"></i> Muhimlik:</div>
+      <div>
+        <select id="drawerPrioritySelect" class="form-control" style="height: 32px; font-size: 12.5px;" onchange="saveDrawerField('priority', this.value)">
+          <option value="low">🟢 Past (Low)</option>
+          <option value="medium">🟡 O'rta (Medium)</option>
+          <option value="high">🔴 Yuqori (High)</option>
+          <option value="urgent">⚡ Shoshilinch (Urgent)</option>
+        </select>
+      </div>
+
+      <div class="drawer-prop-label"><i class="fas fa-user"></i> Mas'ul:</div>
+      <div>
+        <select id="drawerAssigneeSelect" class="form-control" style="height: 32px; font-size: 12.5px;" onchange="saveDrawerField('assignedToId', this.value)"></select>
+      </div>
+
+      <div class="drawer-prop-label"><i class="far fa-calendar-alt"></i> Muddat:</div>
+      <div style="display: flex; gap: 8px;">
+        <input type="date" id="drawerDueDate" class="form-control" style="height: 32px; font-size: 12px; width: 140px;" onchange="saveDrawerField('dueDate', this.value)">
+        <input type="time" id="drawerDueTime" class="form-control" style="height: 32px; font-size: 12px; width: 100px;" onchange="saveDrawerField('dueTime', this.value)">
+      </div>
+
+      <div class="drawer-prop-label"><i class="fas fa-bell"></i> Eslatma:</div>
+      <div>
+        <select id="drawerReminderSelect" class="form-control" style="height: 32px; font-size: 12.5px;" onchange="saveDrawerField('reminderMinutes', this.value)">
+          <option value="">Eslatma yo'q</option>
+          <option value="5">5 daqiqa oldin</option>
+          <option value="15">15 daqiqa oldin</option>
+          <option value="30">30 daqiqa oldin</option>
+          <option value="60">1 soat oldin</option>
+          <option value="1440">1 kun oldin</option>
+        </select>
+      </div>
+
+      <div class="drawer-prop-label"><i class="fas fa-building-user"></i> CRM Mijoz:</div>
+      <div id="drawerClientWrapper">
+        <select id="drawerClientSelect" class="form-control" style="height: 32px; font-size: 12.5px;" onchange="saveDrawerField('clientId', this.value)">
+          <option value="">Bog'lanmagan</option>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <div class="drawer-section-title"><i class="fas fa-align-left"></i> Tavsif</div>
+      <textarea id="drawerDescription" class="form-control" rows="3" placeholder="Batafsil ma'lumot, topshiriq shartlari..." onchange="saveDrawerField('description', this.value)"></textarea>
+    </div>
+
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <div class="drawer-section-title" style="margin: 0;"><i class="fas fa-check-square"></i> Checklist</div>
+        <span id="drawerChecklistCounter" style="font-size: 11.5px; font-weight: 700; color: var(--text-tertiary);">0 / 0</span>
+      </div>
+      <div class="task-card-checklist-bar" style="height: 6px; margin-bottom: 12px;">
+        <div class="task-card-checklist-fill" id="drawerChecklistProgressFill" style="width: 0%;"></div>
+      </div>
+      <div id="drawerChecklistContainer" style="display: flex; flex-direction: column; gap: 4px;"></div>
+      <div style="display: flex; gap: 6px; margin-top: 8px;">
+        <input type="text" id="newChecklistInput" class="form-control" style="height: 32px; font-size: 12px;" placeholder="+ Yangi band yozing..." onkeydown="if(event.key==='Enter') addDrawerChecklistItem()">
+        <button class="btn btn-secondary btn-sm" onclick="addDrawerChecklistItem()"><i class="fas fa-plus"></i></button>
+      </div>
+    </div>
+
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <div class="drawer-section-title" style="margin: 0;"><i class="fas fa-paperclip"></i> Biriktirilgan Fayllar</div>
+        <label class="btn btn-ghost btn-sm" style="cursor: pointer; font-size: 12px; color: var(--accent);">
+          <i class="fas fa-upload"></i> Fayl yuklash
+          <input type="file" id="drawerFileInput" style="display: none;" onchange="handleDrawerFileUpload(this)">
+        </label>
+      </div>
+      <div id="drawerAttachmentsContainer" style="display: flex; flex-direction: column; gap: 6px;"></div>
+    </div>
+
+    <div>
+      <div class="drawer-section-title"><i class="fas fa-comments"></i> Sharhlar</div>
+      <div id="drawerCommentsList" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;"></div>
+      <div style="display: flex; gap: 8px;">
+        <input type="text" id="newCommentInput" class="form-control" placeholder="Fikr yoki eslatma yozing..." style="height: 36px; font-size: 13px;" onkeydown="if(event.key==='Enter') addDrawerComment()">
+        <button class="btn btn-primary btn-sm" onclick="addDrawerComment()"><i class="fas fa-paper-plane"></i></button>
+      </div>
+    </div>
+
+    <div>
+      <div class="drawer-section-title" style="cursor: pointer;" onclick="toggleDrawerActivityLog()">
+        <i class="fas fa-history"></i> Faoliyat Tarixi
+        <i class="fas fa-chevron-down" id="activityChevron" style="font-size: 10px; margin-left: auto;"></i>
+      </div>
+      <div id="drawerActivityLogContainer" style="display: none; flex-direction: column; gap: 8px; font-size: 12px; color: var(--text-secondary);"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     6. CREATE TASK MODAL
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="createTaskModal">
+  <div class="modal-box" style="max-width: 540px;">
+    <div class="modal-header">
+      <h2><i class="fas fa-plus-circle text-brand" style="margin-right: 6px;"></i> Yangi Vazifa</h2>
+      <button class="modal-close" onclick="closeCreateTaskModal()">&times;</button>
+    </div>
+    <form id="createTaskForm" onsubmit="submitCreateTaskForm(event)">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Sarlavha *</label>
+          <input type="text" id="modalTaskTitle" class="form-control" placeholder="Masalan: Ali Valiyev bilan qayta bog'lanish" required>
+        </div>
+
+        <div class="form-grid form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Ustun / Bosqich</label>
+            <select id="modalTaskColumn" class="form-control"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Muhimlik</label>
+            <select id="modalTaskPriority" class="form-control">
+              <option value="low">🟢 Past (Low)</option>
+              <option value="medium" selected>🟡 O'rta (Medium)</option>
+              <option value="high">🔴 Yuqori (High)</option>
+              <option value="urgent">⚡ Shoshilinch (Urgent)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Mas'ul xodim</label>
+            <select id="modalTaskAssignee" class="form-control"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">CRM Mijoz (ixtiyoriy)</label>
+            <select id="modalTaskClient" class="form-control">
+              <option value="">Mijoz biriktirilmagan</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Tugash sanasi</label>
+            <input type="date" id="modalTaskDueDate" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Vaqti</label>
+            <input type="time" id="modalTaskDueTime" class="form-control">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tavsif</label>
+          <textarea id="modalTaskDescription" class="form-control" rows="2" placeholder="Qo'shimcha izoh yoki ko'rsatmalar..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer flex justify-end gap-2">
+        <button type="button" class="btn btn-secondary" onclick="closeCreateTaskModal()">Bekor qilish</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Yaratish</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     7. CREATE / EDIT BOARD & COLUMN MODALS
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="boardModal">
+  <div class="modal-box" style="max-width: 440px;">
+    <div class="modal-header">
+      <h2 id="boardModalTitle">Yangi Board</h2>
+      <button class="modal-close" onclick="closeBoardModal()">&times;</button>
+    </div>
+    <form onsubmit="submitBoardForm(event)">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Board nomi *</label>
+          <input type="text" id="boardNameInput" class="form-control" placeholder="Masalan: Yetkazib berish" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tavsif</label>
+          <input type="text" id="boardDescInput" class="form-control" placeholder="Qisqacha ma'lumot...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Rang</label>
+          <input type="color" id="boardColorInput" value="#007AFF" style="width: 100%; height: 36px; border: none; border-radius: 8px; cursor: pointer;">
+        </div>
+      </div>
+      <div class="modal-footer flex justify-end gap-2">
+        <button type="button" class="btn btn-secondary" onclick="closeBoardModal()">Bekor qilish</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Saqlash</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="columnModal">
+  <div class="modal-box" style="max-width: 420px;">
+    <div class="modal-header">
+      <h2 id="columnModalTitle">Yangi Ustun</h2>
+      <button class="modal-close" onclick="closeColumnModal()">&times;</button>
+    </div>
+    <form onsubmit="submitColumnForm(event)">
+      <input type="hidden" id="columnEditId">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Ustun nomi *</label>
+          <input type="text" id="columnNameInput" class="form-control" placeholder="Masalan: Muzokara jarayonida" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Rang</label>
+          <input type="color" id="columnColorInput" value="#007AFF" style="width: 100%; height: 36px; border: none; border-radius: 8px; cursor: pointer;">
+        </div>
+      </div>
+      <div class="modal-footer flex justify-end gap-2">
+        <button type="button" class="btn btn-secondary" onclick="closeColumnModal()">Bekor qilish</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Saqlash</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     8. JAVASCRIPT LOGIC & KANBAN ENGINE
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script>
+let _boards = [];
+let _activeBoardId = null;
+let _tasks = [];
+let _users = [];
+let _clients = [];
+let _currentFilter = 'all';
+let _searchDebounceTimer = null;
+let _activeDrawerTaskId = null;
+let _currentView = 'kanban';
+let _dragTaskId = null;
+
+function esc(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await Promise.all([
+    loadUsersList(),
+    loadClientsList(),
+    loadBoardsList()
+  ]);
+  setupKeyboardShortcuts();
+  setupWebSocketUpdates();
+});
+
+function setupKeyboardShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    const tag = e.target.tagName.toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') {
+      if (e.key === 'Escape') {
+        closeTaskDrawer();
+        closeCreateTaskModal();
+      }
+      return;
+    }
+
+    if (e.key === 'n' || e.key === 'N') {
+      e.preventDefault();
+      openCreateTaskModal();
+    } else if (e.key === '/') {
+      e.preventDefault();
+      document.getElementById('taskSearchInput')?.focus();
+    } else if (e.key === 'Escape') {
+      closeTaskDrawer();
+      closeCreateTaskModal();
+    }
+  });
+}
+
+function setupWebSocketUpdates() {
+  try {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${protocol}//${window.location.host}`);
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type && data.type.startsWith('kanban_')) {
+          loadTasks(false);
+        }
+      } catch (_) {}
+    };
+  } catch (_) {}
+}
+
+async function loadUsersList() {
+  try {
+    const r = await fetch('/api/settings/users');
+    if (r.ok) {
+      _users = await r.json();
+      populateUserSelectors();
+    }
+  } catch (_) {}
+}
+
+async function loadClientsList() {
+  try {
+    const r = await fetch('/api/clients');
+    if (r.ok) {
+      const data = await r.json();
+      _clients = Array.isArray(data) ? data : (data.clients || []);
+      populateClientSelectors();
+    }
+  } catch (_) {}
+}
+
+function populateUserSelectors() {
+  const options = '<option value="">Mas\'ul tanlanmagan</option>' +
+    _users.map(u => `<option value="${u.id}">${esc(u.fullName || u.email)} (${u.role})</option>`).join('');
+
+  const filterSel = document.getElementById('filterAssigneeSelect');
+  if (filterSel) filterSel.innerHTML = '<option value="">Barcha mas\'ullar</option>' + _users.map(u => `<option value="${u.id}">${esc(u.fullName || u.email)}</option>`).join('');
+
+  const modalSel = document.getElementById('modalTaskAssignee');
+  if (modalSel) modalSel.innerHTML = options;
+
+  const drawerSel = document.getElementById('drawerAssigneeSelect');
+  if (drawerSel) drawerSel.innerHTML = options;
+}
+
+function populateClientSelectors() {
+  const options = '<option value="">Mijoz biriktirilmagan</option>' +
+    _clients.map(c => `<option value="${c.id}">${esc(c.name)} ${c.phone ? '(' + esc(c.phone) + ')' : ''}</option>`).join('');
+
+  const modalSel = document.getElementById('modalTaskClient');
+  if (modalSel) modalSel.innerHTML = options;
+
+  const drawerSel = document.getElementById('drawerClientSelect');
+  if (drawerSel) drawerSel.innerHTML = options;
+}
+
+async function loadBoardsList() {
+  try {
+    const r = await fetch('/api/kanban/boards');
+    if (!r.ok) throw new Error('Boardlarni yuklab bo\'lmadi');
+    _boards = await r.json();
+
+    if (_boards.length > 0) {
+      if (!_activeBoardId || !_boards.find(b => b.id === _activeBoardId)) {
+        _activeBoardId = _boards[0].id;
+      }
+      renderBoardDropdown();
+      updateActiveBoardDisplay();
+      await loadTasks();
+    }
+  } catch (err) {
+    console.error('loadBoardsList error:', err);
+  }
+}
+
+function renderBoardDropdown() {
+  const listEl = document.getElementById('boardDropdownList');
+  if (!listEl) return;
+  listEl.innerHTML = _boards.map(b => `
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:8px; cursor:pointer; background:${b.id === _activeBoardId ? 'rgba(0,122,255,0.1)' : 'transparent'}; color:${b.id === _activeBoardId ? 'var(--accent)' : 'var(--text-primary)'}; font-weight:700; font-size:13px;" onclick="selectBoard(${b.id})">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <i class="fas ${b.icon || 'fa-clipboard-list'}" style="color:${b.color || '#007AFF'};"></i>
+        <span>${esc(b.name)}</span>
+      </div>
+      <span class="badge" style="font-size:10px;">${b._count?.tasks || 0}</span>
+    </div>
+  `).join('');
+}
+
+function updateActiveBoardDisplay() {
+  const activeBoard = _boards.find(b => b.id === _activeBoardId);
+  if (!activeBoard) return;
+  document.getElementById('activeBoardName').textContent = activeBoard.name;
+  const iconEl = document.getElementById('activeBoardIcon');
+  if (iconEl) {
+    iconEl.className = `fas ${activeBoard.icon || 'fa-clipboard-list'}`;
+    iconEl.style.color = activeBoard.color || '#007AFF';
+  }
+  populateColumnSelectors(activeBoard.columns || []);
+}
+
+function populateColumnSelectors(columns) {
+  const options = columns.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  const modalCol = document.getElementById('modalTaskColumn');
+  if (modalCol) modalCol.innerHTML = options;
+  const drawerCol = document.getElementById('drawerColumnSelect');
+  if (drawerCol) drawerCol.innerHTML = options;
+}
+
+function toggleBoardDropdown() {
+  const menu = document.getElementById('boardDropdownMenu');
+  if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#activeBoardBtn') && !e.target.closest('#boardDropdownMenu')) {
+    const menu = document.getElementById('boardDropdownMenu');
+    if (menu) menu.style.display = 'none';
+  }
+});
+
+function selectBoard(id) {
+  _activeBoardId = id;
+  toggleBoardDropdown();
+  updateActiveBoardDisplay();
+  loadTasks();
+}
+
+async function loadTasks(showLoading = true) {
+  if (!_activeBoardId) return;
+  if (showLoading) {
+    if (_currentView === 'kanban') {
+      document.getElementById('kanbanBoardView').innerHTML = '<div style="padding:40px;text-align:center;width:100%"><div class="spinner"></div></div>';
+    } else {
+      document.getElementById('taskListTableBody').innerHTML = '<tr><td colspan="8" class="tc" style="padding:30px;"><div class="spinner"></div></td></tr>';
+    }
+  }
+
+  try {
+    let url = `/api/kanban/tasks?boardId=${_activeBoardId}`;
+
+    if (_currentFilter === 'mine') url += '&mine=true';
+    else if (_currentFilter === 'today') url += '&today=true';
+    else if (_currentFilter === 'overdue') url += '&overdue=true';
+    else if (_currentFilter === 'urgent') url += '&priority=urgent';
+    else if (_currentFilter === 'done') url += '&completed=true';
+
+    const assigneeVal = document.getElementById('filterAssigneeSelect')?.value;
+    if (assigneeVal) url += `&assignedToId=${assigneeVal}`;
+
+    const searchVal = document.getElementById('taskSearchInput')?.value?.trim();
+    if (searchVal) url += `&search=${encodeURIComponent(searchVal)}`;
+
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('Vazifalarni yuklab bo\'lmadi');
+    _tasks = await r.json();
+
+    if (_currentView === 'kanban') {
+      renderKanbanBoard();
+    } else {
+      renderListView();
+    }
+  } catch (err) {
+    console.error('loadTasks error:', err);
+  }
+}
+
+function renderKanbanBoard() {
+  const board = _boards.find(b => b.id === _activeBoardId);
+  const container = document.getElementById('kanbanBoardView');
+  if (!container) return;
+
+  if (!board || !board.columns || board.columns.length === 0) {
+    container.innerHTML = `
+      <div style="padding: 60px; text-align: center; width: 100%; color: var(--text-tertiary);">
+        <i class="fas fa-columns" style="font-size: 36px; opacity: 0.3; margin-bottom: 12px;"></i>
+        <div style="font-size: 15px; font-weight: 700;">Ushbu boardda hali ustunlar yo'q</div>
+        <button class="btn btn-primary btn-sm" onclick="openCreateColumnModal()" style="margin-top: 12px;">
+          <i class="fas fa-plus"></i> Birinchi ustunni qo'shish
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  let html = '';
+  for (const col of board.columns) {
+    const colTasks = _tasks.filter(t => t.columnId === col.id);
+    colTasks.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    html += `
+      <div class="kanban-column" data-col-id="${col.id}">
+        <div class="kanban-column-header">
+          <div class="kanban-column-title">
+            <span class="col-dot" style="background: ${col.color || '#007AFF'};"></span>
+            <span>${esc(col.name)}</span>
+            <span class="col-badge">${colTasks.length}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <button class="btn btn-ghost btn-sm" style="padding: 2px 6px; font-size: 11px;" onclick="openEditColumnModal(${col.id}, '${esc(col.name)}', '${col.color || '#007AFF'}')" title="Ustunni tahrirlash">
+              <i class="fas fa-ellipsis-h"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="kanban-cards-list"
+          data-col-id="${col.id}"
+          ondragover="onCardDragOver(event)"
+          ondragleave="onCardDragLeave(event)"
+          ondrop="onCardDrop(event, ${col.id})">
+          ${colTasks.map(t => renderTaskCard(t)).join('')}
+        </div>
+
+        <div class="quick-add-card-wrap">
+          <button class="quick-add-btn" id="quickAddBtn_${col.id}" onclick="showQuickAddForm(${col.id})">
+            <i class="fas fa-plus"></i> Vazifa qo'shish
+          </button>
+          <div class="quick-add-form" id="quickAddForm_${col.id}">
+            <input type="text" class="quick-add-input" id="quickAddInput_${col.id}" placeholder="Vazifa nomi... (Enter)" onkeydown="handleQuickAddKeyDown(event, ${col.id})">
+            <div class="quick-add-actions">
+              <button class="btn btn-ghost btn-sm" onclick="hideQuickAddForm(${col.id})">Bekor</button>
+              <button class="btn btn-primary btn-sm" onclick="submitQuickAdd(${col.id})">Qo'shish</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  html += `
+    <div class="add-column-btn" onclick="openCreateColumnModal()">
+      <i class="fas fa-plus"></i> Yangi ustun qo'shish
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
+
+function renderTaskCard(t) {
+  const priorityClass = `priority-badge-${t.priority || 'medium'}`;
+  const priorityLabels = { low: 'Past', medium: 'O\'rta', high: 'Yuqori', urgent: 'Shoshilinch' };
+
+  let checklistHtml = '';
+  if (t.checklistProgress && t.checklistProgress.total > 0) {
+    const pct = Math.round((t.checklistProgress.completed / t.checklistProgress.total) * 100);
+    checklistHtml = `
+      <div class="task-card-checklist-bar">
+        <div class="task-card-checklist-fill" style="width: ${pct}%;"></div>
+      </div>
+    `;
+  }
+
+  let clientHtml = '';
+  if (t.client && t.client.name) {
+    clientHtml = `
+      <div class="task-card-client" title="${esc(t.client.name)} ${esc(t.client.phone || '')}">
+        <i class="fas fa-user-circle"></i>
+        <span>${esc(t.client.name)}</span>
+      </div>
+    `;
+  }
+
+  let dueHtml = '';
+  if (t.dueDate) {
+    const d = new Date(t.dueDate);
+    const dateStr = d.toLocaleDateString('uz-UZ', { month: 'short', day: 'numeric' });
+    dueHtml = `
+      <span class="task-due-badge ${t.isOverdue ? 'overdue' : ''}" title="${t.isOverdue ? 'Muddati o\'tgan!' : 'Tugash vaqti'}">
+        <i class="far fa-clock"></i> ${dateStr} ${t.dueTime || ''}
+      </span>
+    `;
+  }
+
+  let userHtml = '';
+  if (t.assignedTo) {
+    const initials = (t.assignedTo.fullName || t.assignedTo.email || '?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    userHtml = `<span class="task-user-avatar" title="${esc(t.assignedTo.fullName || t.assignedTo.email)}">${initials}</span>`;
+  }
+
+  let tagsHtml = '';
+  if (t.parsedLabels && t.parsedLabels.length > 0) {
+    tagsHtml = t.parsedLabels.map(l => `<span class="task-tag" style="background:rgba(0,122,255,0.12); color:var(--accent);">${esc(l)}</span>`).join('');
+  }
+
+  return `
+    <div class="task-card ${t.completed ? 'completed' : ''}"
+      id="taskCard_${t.id}"
+      data-task-id="${t.id}"
+      draggable="true"
+      ondragstart="onCardDragStart(event, ${t.id})"
+      ondragend="onCardDragEnd(event)"
+      onclick="openTaskDrawer(${t.id})">
+
+      <div class="task-card-header">
+        <div class="task-card-tags">
+          <span class="task-tag ${priorityClass}">${priorityLabels[t.priority || 'medium']}</span>
+          ${tagsHtml}
+        </div>
+      </div>
+
+      <div class="task-card-title">${esc(t.title)}</div>
+
+      ${clientHtml}
+      ${checklistHtml}
+
+      <div class="task-card-meta">
+        <div class="task-meta-left">
+          ${dueHtml}
+          ${t.checklistProgress?.total ? `<span style="font-size:10.5px; font-weight:700; color:var(--text-tertiary);"><i class="fas fa-check-square"></i> ${t.checklistProgress.completed}/${t.checklistProgress.total}</span>` : ''}
+          ${t.commentsCount ? `<span style="font-size:10.5px; font-weight:700; color:var(--text-tertiary);"><i class="fas fa-comment"></i> ${t.commentsCount}</span>` : ''}
+          ${t.attachmentsCount ? `<span style="font-size:10.5px; font-weight:700; color:var(--text-tertiary);"><i class="fas fa-paperclip"></i> ${t.attachmentsCount}</span>` : ''}
+        </div>
+        <div>${userHtml}</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderListView() {
+  const tbody = document.getElementById('taskListTableBody');
+  if (!tbody) return;
+
+  if (_tasks.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="tc" style="padding:40px; color:var(--text-tertiary);">Vazifalar topilmadi</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = _tasks.map(t => {
+    const priorityLabels = { low: 'Past', medium: 'O\'rta', high: 'Yuqori', urgent: 'Shoshilinch' };
+    const dateStr = t.dueDate ? new Date(t.dueDate).toLocaleDateString('uz-UZ') : '—';
+    const userName = t.assignedTo ? (t.assignedTo.fullName || t.assignedTo.email) : '—';
+    const clientName = t.client ? t.client.name : '—';
+
+    return `
+      <tr style="cursor:pointer;" onclick="openTaskDrawer(${t.id})">
+        <td>
+          <input type="checkbox" ${t.completed ? 'checked' : ''} onclick="event.stopPropagation(); toggleTaskComplete(${t.id}, this.checked)" style="width:16px; height:16px; cursor:pointer;">
+        </td>
+        <td style="font-weight:700; ${t.completed ? 'text-decoration:line-through; opacity:0.6;' : ''}">
+          ${esc(t.title)}
+        </td>
+        <td>
+          <span class="badge" style="background:${t.column?.color || '#007AFF'}20; color:${t.column?.color || '#007AFF'}; border:1px solid ${t.column?.color || '#007AFF'}40;">
+            ${esc(t.column?.name || 'Yangi')}
+          </span>
+        </td>
+        <td>
+          <span class="task-tag priority-badge-${t.priority || 'medium'}">${priorityLabels[t.priority || 'medium']}</span>
+        </td>
+        <td style="font-size:12.5px;">${esc(userName)}</td>
+        <td style="font-size:12px; ${t.isOverdue ? 'color:#ef4444; font-weight:700;' : ''}">${dateStr}</td>
+        <td style="font-size:12px; color:var(--accent);">${esc(clientName)}</td>
+        <td style="text-align:right;" onclick="event.stopPropagation();">
+          <button class="btn btn-ghost btn-sm text-red" onclick="deleteTaskDirect(${t.id})" title="O'chirish">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function onCardDragStart(e, id) {
+  _dragTaskId = id;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function onCardDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.kanban-cards-list').forEach(el => el.classList.remove('drag-over'));
+  _dragTaskId = null;
+}
+
+function _dragAfterElement(container, y) {
+  const draggableElements = [...container.querySelectorAll('.task-card:not(.dragging)')];
+  return draggableElements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    if (offset < 0 && offset > closest.offset) {
+      return { offset: offset, element: child };
+    } else {
+      return closest;
+    }
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function onCardDragOver(e) {
+  e.preventDefault();
+  const container = e.currentTarget;
+  container.classList.add('drag-over');
+  const afterElement = _dragAfterElement(container, e.clientY);
+  const draggable = document.querySelector('.task-card.dragging');
+  if (draggable) {
+    if (afterElement == null) {
+      container.appendChild(draggable);
+    } else {
+      container.insertBefore(draggable, afterElement);
+    }
+  }
+}
+
+function onCardDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+async function onCardDrop(e, columnId) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (!_dragTaskId) return;
+
+  const taskId = _dragTaskId;
+  _dragTaskId = null;
+
+  const container = e.currentTarget;
+  const cards = [...container.querySelectorAll('.task-card')];
+  const newOrder = cards.findIndex(c => Number(c.dataset.taskId) === taskId);
+
+  const task = _tasks.find(t => t.id === taskId);
+  if (task) {
+    task.columnId = columnId;
+    task.order = newOrder >= 0 ? newOrder : 0;
+  }
+
+  try {
+    const r = await fetch(`/api/kanban/tasks/${taskId}/move`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ columnId, order: newOrder >= 0 ? newOrder : 0 })
+    });
+    if (!r.ok) {
+      const errData = await r.json();
+      throw new Error(errData.message || 'Ko\'chirishda xatolik');
+    }
+  } catch (err) {
+    console.error('Task move error:', err);
+    loadTasks(false);
+  }
+}
+
+function showQuickAddForm(colId) {
+  document.getElementById(`quickAddBtn_${colId}`).style.display = 'none';
+  const form = document.getElementById(`quickAddForm_${colId}`);
+  form.style.display = 'flex';
+  const input = document.getElementById(`quickAddInput_${colId}`);
+  input.focus();
+}
+
+function hideQuickAddForm(colId) {
+  document.getElementById(`quickAddBtn_${colId}`).style.display = 'flex';
+  const form = document.getElementById(`quickAddForm_${colId}`);
+  form.style.display = 'none';
+  document.getElementById(`quickAddInput_${colId}`).value = '';
+}
+
+function handleQuickAddKeyDown(e, colId) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    submitQuickAdd(colId);
+  } else if (e.key === 'Escape') {
+    hideQuickAddForm(colId);
+  }
+}
+
+async function submitQuickAdd(colId) {
+  const input = document.getElementById(`quickAddInput_${colId}`);
+  const title = input ? input.value.trim() : '';
+  if (!title) return;
+
+  hideQuickAddForm(colId);
+
+  try {
+    const r = await fetch('/api/kanban/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title,
+        boardId: _activeBoardId,
+        columnId: colId,
+        priority: 'medium'
+      })
+    });
+    if (r.ok) {
+      const created = await r.json();
+      _tasks.push(created);
+      renderKanbanBoard();
+    }
+  } catch (err) {
+    console.error('Quick add error:', err);
+  }
+}
+
+async function openTaskDrawer(taskId) {
+  _activeDrawerTaskId = taskId;
+  const overlay = document.getElementById('taskDrawerOverlay');
+  const drawer = document.getElementById('taskDrawer');
+  overlay.classList.add('active');
+  drawer.classList.add('active');
+
+  try {
+    const r = await fetch(`/api/kanban/tasks/${taskId}`);
+    if (!r.ok) throw new Error('Vazifani yuklab bo\'lmadi');
+    const task = await r.json();
+
+    document.getElementById('drawerTaskId').textContent = `#${task.id}`;
+    document.getElementById('drawerTaskTitle').value = task.title || '';
+    document.getElementById('drawerDescription').value = task.description || '';
+    document.getElementById('drawerPrioritySelect').value = task.priority || 'medium';
+    document.getElementById('drawerAssigneeSelect').value = task.assignedToId || '';
+    document.getElementById('drawerClientSelect').value = task.clientId || '';
+    document.getElementById('drawerColumnSelect').value = task.columnId || '';
+    document.getElementById('drawerDueDate').value = task.dueDate ? task.dueDate.slice(0, 10) : '';
+    document.getElementById('drawerDueTime').value = task.dueTime || '';
+    document.getElementById('drawerReminderSelect').value = task.reminderMinutes || '';
+
+    const statusBadge = document.getElementById('drawerStatusBadge');
+    if (statusBadge) {
+      statusBadge.textContent = task.column ? task.column.name : (task.completed ? 'Bajarildi' : 'Yangi');
+      statusBadge.style.background = task.column?.color || 'var(--accent)';
+    }
+
+    renderDrawerChecklist(task.checklists || []);
+    renderDrawerAttachments(task.attachments || []);
+    renderDrawerComments(task.comments || []);
+    renderDrawerActivities(task.activities || []);
+  } catch (err) {
+    console.error('openTaskDrawer error:', err);
+  }
+}
+
+function closeTaskDrawer() {
+  const overlay = document.getElementById('taskDrawerOverlay');
+  const drawer = document.getElementById('taskDrawer');
+  overlay.classList.remove('active');
+  drawer.classList.remove('active');
+  _activeDrawerTaskId = null;
+}
+
+async function saveDrawerField(fieldName, value) {
+  if (!_activeDrawerTaskId) return;
+  try {
+    const payload = {};
+    payload[fieldName] = value;
+    const r = await fetch(`/api/kanban/tasks/${_activeDrawerTaskId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (r.ok) {
+      const updated = await r.json();
+      const idx = _tasks.findIndex(t => t.id === updated.id);
+      if (idx >= 0) _tasks[idx] = updated;
+      if (_currentView === 'kanban') renderKanbanBoard();
+      else renderListView();
+    }
+  } catch (err) {
+    console.error('saveDrawerField error:', err);
+  }
+}
+
+async function onDrawerColumnChange(colId) {
+  if (!_activeDrawerTaskId) return;
+  await saveDrawerField('columnId', colId);
+  const board = _boards.find(b => b.id === _activeBoardId);
+  const col = board?.columns?.find(c => c.id === Number(colId));
+  const statusBadge = document.getElementById('drawerStatusBadge');
+  if (statusBadge && col) {
+    statusBadge.textContent = col.name;
+    statusBadge.style.background = col.color || 'var(--accent)';
+  }
+}
+
+function renderDrawerChecklist(items) {
+  const container = document.getElementById('drawerChecklistContainer');
+  if (!container) return;
+
+  const total = items.length;
+  const completed = items.filter(i => i.isCompleted).length;
+  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  document.getElementById('drawerChecklistCounter').textContent = `${completed} / ${total}`;
+  document.getElementById('drawerChecklistProgressFill').style.width = `${pct}%`;
+
+  container.innerHTML = items.map(item => `
+    <div class="checklist-row ${item.isCompleted ? 'done' : ''}">
+      <input type="checkbox" ${item.isCompleted ? 'checked' : ''} onchange="toggleChecklistItem(${item.id}, this.checked)" style="width:16px; height:16px; cursor:pointer;">
+      <span class="checklist-text" style="flex:1; font-size:13px; color:var(--text-primary);">${esc(item.title)}</span>
+      <button class="btn btn-ghost btn-sm text-red" style="padding:2px 6px; font-size:11px;" onclick="deleteChecklistItem(${item.id})">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  `).join('');
+}
+
+async function addDrawerChecklistItem() {
+  const input = document.getElementById('newChecklistInput');
+  const title = input ? input.value.trim() : '';
+  if (!title || !_activeDrawerTaskId) return;
+  input.value = '';
+
+  try {
+    const r = await fetch(`/api/kanban/tasks/${_activeDrawerTaskId}/checklist`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title })
+    });
+    if (r.ok) {
+      openTaskDrawer(_activeDrawerTaskId);
+      loadTasks(false);
+    }
+  } catch (err) {
+    console.error('addChecklist error:', err);
+  }
+}
+
+async function toggleChecklistItem(itemId, isCompleted) {
+  if (!_activeDrawerTaskId) return;
+  try {
+    await fetch(`/api/kanban/tasks/${_activeDrawerTaskId}/checklist/${itemId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isCompleted })
+    });
+    openTaskDrawer(_activeDrawerTaskId);
+    loadTasks(false);
+  } catch (err) {
+    console.error('toggleChecklist error:', err);
+  }
+}
+
+async function deleteChecklistItem(itemId) {
+  if (!_activeDrawerTaskId) return;
+  try {
+    await fetch(`/api/kanban/tasks/${_activeDrawerTaskId}/checklist/${itemId}`, { method: 'DELETE' });
+    openTaskDrawer(_activeDrawerTaskId);
+    loadTasks(false);
+  } catch (err) {
+    console.error('deleteChecklist error:', err);
+  }
+}
+
+function renderDrawerAttachments(attachments) {
+  const container = document.getElementById('drawerAttachmentsContainer');
+  if (!container) return;
+
+  if (attachments.length === 0) {
+    container.innerHTML = '<div style="font-size:12px; color:var(--text-tertiary); padding:4px 0;">Biriktirilgan fayllar yo\'q</div>';
+    return;
+  }
+
+  container.innerHTML = attachments.map(a => `
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:var(--bg-secondary); border:1px solid var(--border); border-radius:10px;">
+      <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
+        <i class="fas fa-file-alt" style="color:var(--accent); font-size:16px;"></i>
+        <a href="${esc(a.fileUrl)}" target="_blank" style="font-size:12.5px; font-weight:700; color:var(--text-primary); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+          ${esc(a.fileName)}
+        </a>
+      </div>
+      <button class="btn btn-ghost btn-sm text-red" onclick="deleteDrawerAttachment(${a.id})">
+        <i class="fas fa-trash-alt"></i>
+      </button>
+    </div>
+  `).join('');
+}
+
+async function handleDrawerFileUpload(input) {
+  const file = input.files[0];
+  if (!file || !_activeDrawerTaskId) return;
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const fileData = e.target.result;
+    try {
+      const r = await fetch(`/api/kanban/tasks/${_activeDrawerTaskId}/attachments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileData,
+          fileType: file.type,
+          fileSize: file.size
+        })
+      });
+      if (r.ok) {
+        openTaskDrawer(_activeDrawerTaskId);
+        loadTasks(false);
+      }
+    } catch (err) {
+      console.error('File upload error:', err);
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+async function deleteDrawerAttachment(attId) {
+  if (!_activeDrawerTaskId) return;
+  try {
+    await fetch(`/api/kanban/tasks/${_activeDrawerTaskId}/attachments/${attId}`, { method: 'DELETE' });
+    openTaskDrawer(_activeDrawerTaskId);
+    loadTasks(false);
+  } catch (err) {
+    console.error('deleteAttachment error:', err);
+  }
+}
+
+function renderDrawerComments(comments) {
+  const container = document.getElementById('drawerCommentsList');
+  if (!container) return;
+
+  if (comments.length === 0) {
+    container.innerHTML = '<div style="font-size:12px; color:var(--text-tertiary);">Hali sharhlar yo\'q</div>';
+    return;
+  }
+
+  container.innerHTML = comments.map(c => `
+    <div class="comment-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <span style="font-size:12px; font-weight:800; color:var(--text-primary);">${esc(c.user?.fullName || c.user?.email || 'Menejer')}</span>
+        <span style="font-size:10.5px; color:var(--text-tertiary);">${new Date(c.createdAt).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}</span>
+      </div>
+      <div style="font-size:12.5px; color:var(--text-secondary);">${esc(c.content)}</div>
+    </div>
+  `).join('');
+}
+
+async function addDrawerComment() {
+  const input = document.getElementById('newCommentInput');
+  const content = input ? input.value.trim() : '';
+  if (!content || !_activeDrawerTaskId) return;
+  input.value = '';
+
+  try {
+    const r = await fetch(`/api/kanban/tasks/${_activeDrawerTaskId}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content })
+    });
+    if (r.ok) {
+      openTaskDrawer(_activeDrawerTaskId);
+      loadTasks(false);
+    }
+  } catch (err) {
+    console.error('addComment error:', err);
+  }
+}
+
+function toggleDrawerActivityLog() {
+  const container = document.getElementById('drawerActivityLogContainer');
+  const chevron = document.getElementById('activityChevron');
+  if (container.style.display === 'none') {
+    container.style.display = 'flex';
+    chevron.className = 'fas fa-chevron-up';
+  } else {
+    container.style.display = 'none';
+    chevron.className = 'fas fa-chevron-down';
+  }
+}
+
+function renderDrawerActivities(activities) {
+  const container = document.getElementById('drawerActivityLogContainer');
+  if (!container) return;
+
+  if (activities.length === 0) {
+    container.innerHTML = '<div>Hozircha tarix yo\'q</div>';
+    return;
+  }
+
+  container.innerHTML = activities.map(a => `
+    <div style="display:flex; gap:8px; align-items:flex-start;">
+      <span style="font-size:11px; color:var(--text-tertiary); width:70px; flex-shrink:0;">${new Date(a.createdAt).toLocaleDateString('uz-UZ', { month:'short', day:'numeric' })}</span>
+      <div>
+        <strong style="color:var(--text-primary);">${esc(a.user?.fullName || a.user?.email || 'Tizim')}:</strong>
+        <span>${esc(a.action)}</span> ${a.details ? `<span style="opacity:0.8;">(${esc(a.details)})</span>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function archiveCurrentDrawerTask() {
+  if (!_activeDrawerTaskId) return;
+  if (!confirm('Ushbu vazifani arxivlashni xohlaysizmi?')) return;
+  await fetch(`/api/kanban/tasks/${_activeDrawerTaskId}/archive`, { method: 'POST' });
+  closeTaskDrawer();
+  loadTasks();
+}
+
+async function deleteCurrentDrawerTask() {
+  if (!_activeDrawerTaskId) return;
+  if (!confirm('Haqiqatan ham bu vazifani butunlay o\'chirmoqchimisiz?')) return;
+  await fetch(`/api/kanban/tasks/${_activeDrawerTaskId}`, { method: 'DELETE' });
+  closeTaskDrawer();
+  loadTasks();
+}
+
+async function deleteTaskDirect(taskId) {
+  if (!confirm('Vazifani o\'chirmoqchimisiz?')) return;
+  await fetch(`/api/kanban/tasks/${taskId}`, { method: 'DELETE' });
+  loadTasks();
+}
+
+async function toggleTaskComplete(taskId, completed) {
+  try {
+    await fetch(`/api/kanban/tasks/${taskId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ completed })
+    });
+    loadTasks(false);
+  } catch (err) {
+    console.error('toggleComplete error:', err);
+  }
+}
+
+function openCreateTaskModal() {
+  const activeBoard = _boards.find(b => b.id === _activeBoardId);
+  populateColumnSelectors(activeBoard?.columns || []);
+  document.getElementById('createTaskModal').classList.remove('hidden');
+  document.getElementById('modalTaskTitle').focus();
+}
+function closeCreateTaskModal() {
+  document.getElementById('createTaskModal').classList.add('hidden');
+  document.getElementById('createTaskForm').reset();
+}
+
+async function submitCreateTaskForm(e) {
+  e.preventDefault();
+  const title = document.getElementById('modalTaskTitle').value.trim();
+  const columnId = document.getElementById('modalTaskColumn').value;
+  const priority = document.getElementById('modalTaskPriority').value;
+  const assignedToId = document.getElementById('modalTaskAssignee').value;
+  const clientId = document.getElementById('modalTaskClient').value;
+  const dueDate = document.getElementById('modalTaskDueDate').value;
+  const dueTime = document.getElementById('modalTaskDueTime').value;
+  const description = document.getElementById('modalTaskDescription').value;
+
+  try {
+    const r = await fetch('/api/kanban/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title,
+        boardId: _activeBoardId,
+        columnId,
+        priority,
+        assignedToId,
+        clientId,
+        dueDate,
+        dueTime,
+        description
+      })
+    });
+    if (r.ok) {
+      closeCreateTaskModal();
+      loadTasks();
+    }
+  } catch (err) {
+    console.error('createTask error:', err);
+  }
+}
+
+function openCreateBoardModal() {
+  toggleBoardDropdown();
+  document.getElementById('boardModal').classList.remove('hidden');
+}
+function closeBoardModal() {
+  document.getElementById('boardModal').classList.add('hidden');
+}
+async function submitBoardForm(e) {
+  e.preventDefault();
+  const name = document.getElementById('boardNameInput').value.trim();
+  const description = document.getElementById('boardDescInput').value.trim();
+  const color = document.getElementById('boardColorInput').value;
+
+  try {
+    const r = await fetch('/api/kanban/boards', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, description, color })
+    });
+    if (r.ok) {
+      closeBoardModal();
+      await loadBoardsList();
+    }
+  } catch (err) {
+    console.error('submitBoardForm error:', err);
+  }
+}
+
+function openCreateColumnModal() {
+  document.getElementById('columnModalTitle').textContent = 'Yangi Ustun';
+  document.getElementById('columnEditId').value = '';
+  document.getElementById('columnNameInput').value = '';
+  document.getElementById('columnColorInput').value = '#007AFF';
+  document.getElementById('columnModal').classList.remove('hidden');
+}
+function openEditColumnModal(id, name, color) {
+  document.getElementById('columnModalTitle').textContent = 'Ustunni Tahrirlash';
+  document.getElementById('columnEditId').value = id;
+  document.getElementById('columnNameInput').value = name;
+  document.getElementById('columnColorInput').value = color;
+  document.getElementById('columnModal').classList.remove('hidden');
+}
+function closeColumnModal() {
+  document.getElementById('columnModal').classList.add('hidden');
+}
+async function submitColumnForm(e) {
+  e.preventDefault();
+  const editId = document.getElementById('columnEditId').value;
+  const name = document.getElementById('columnNameInput').value.trim();
+  const color = document.getElementById('columnColorInput').value;
+
+  try {
+    if (editId) {
+      await fetch(`/api/kanban/columns/${editId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, color })
+      });
+    } else {
+      await fetch('/api/kanban/columns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ boardId: _activeBoardId, name, color })
+      });
+    }
+    closeColumnModal();
+    await loadBoardsList();
+  } catch (err) {
+    console.error('submitColumnForm error:', err);
+  }
+}
+
+function switchTaskView(view) {
+  _currentView = view;
+  document.getElementById('btnViewKanban').classList.toggle('active', view === 'kanban');
+  document.getElementById('btnViewList').classList.toggle('active', view === 'list');
+  document.getElementById('kanbanBoardView').style.display = view === 'kanban' ? 'flex' : 'none';
+  document.getElementById('taskListView').style.display = view === 'list' ? 'block' : 'none';
+  if (view === 'kanban') renderKanbanBoard();
+  else renderListView();
+}
+
+function onTaskSearchInput(val) {
+  clearTimeout(_searchDebounceTimer);
+  _searchDebounceTimer = setTimeout(() => {
+    loadTasks(false);
+  }, 250);
+}
+
+function setTaskFilter(filterName, btnEl) {
+  _currentFilter = filterName;
+  document.querySelectorAll('.task-filter-chip').forEach(el => el.classList.remove('active'));
+  btnEl.classList.add('active');
+  loadTasks();
+}
+</script>
+
+<%- include('../layouts/footer') %>
