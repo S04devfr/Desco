@@ -28,23 +28,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// ── SECURITY HEADERS (Helmet) — Production-grade ──
+// ── SECURITY HEADERS (Helmet) ──
 app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "https://unpkg.com"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net"],
-      fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "https://fonts.gstatic.com", "https://cdn.jsdelivr.net"],
-      imgSrc: ["'self'", "data:", "blob:", "https:"],
-      connectSrc: ["'self'", "wss:", "ws:", "https://api.wazzup24.com", "https://api.deepseek.com"],
-      frameSrc: ["'none'"],
-      objectSrc: ["'none'"],
-      baseUri: ["'self'"],
-      formAction: ["'self'"],
-      upgradeInsecureRequests: []
-    }
-  },
+  contentSecurityPolicy: false, // EJS shablonlardagi inline onclick va scriptlar uzluksiz ishlashi uchun
   hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
   frameguard: { action: 'deny' },
   xssFilter: true,
@@ -104,12 +90,12 @@ let sessionConfig = {
   secret: SESSION_SECRET || crypto.randomBytes(64).toString('hex'),
   resave: false,
   saveUninitialized: false,
-  name: '__desco_sid', // SECURITY: Default 'connect.sid' o'rniga nomi o'zgartirildi
+  name: '__desco_sid',
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // SECURITY: Production'da faqat HTTPS
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    sameSite: 'strict', // SECURITY: 'lax' dan 'strict' ga kuchaytirildi
-    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 kun (30 kundan qisqartirildi)
+    sameSite: 'lax',
+    maxAge: 1000 * 60 * 60 * 24 * 7,
     path: '/'
   }
 };

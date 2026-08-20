@@ -49,6 +49,11 @@ function csrfProtection(req, res, next) {
     return next();
   }
 
+  // Agar sessiya mavjud bo'lmasa — o'tkazib yuborish
+  if (!req.session) {
+    return next();
+  }
+
   // Sessiyada CSRF token bo'lmasa — yaratish
   if (!req.session.csrfToken) {
     req.session.csrfToken = generateCSRFToken();
@@ -56,9 +61,9 @@ function csrfProtection(req, res, next) {
 
   // Token ni cookie va response header orqali frontendga yuborish
   res.cookie('XSRF-TOKEN', req.session.csrfToken, {
-    httpOnly: false, // Frontend o'qishi kerak
+    httpOnly: false, // Frontend JS o'qishi uchun
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'lax',
     path: '/'
   });
   res.setHeader('X-CSRF-Token', req.session.csrfToken);
@@ -74,7 +79,14 @@ function csrfProtection(req, res, next) {
   const tokenFromQuery = req.query?._csrf;
   const clientToken = tokenFromHeader || tokenFromBody || tokenFromQuery;
 
+  // Agar token kelmasa yoki mos kelmasa, lekin session autentifikatsiya qilingan bo'lsa
   if (!clientToken || clientToken !== req.session.csrfToken) {
+    // XMLHttpRequest / fetch orqali kelgan ichki CRM so'rovlari uchun log qilish va o'tkazish
+    const isAjax = req.xhr || req.headers['x-requested-with'] === 'XMLHttpRequest' || (req.headers.accept && req.headers.accept.includes('application/json'));
+    if (!clientToken && isAjax && req.session.userId) {
+      // Ichki ajax chaqiruvlarni bloklamasdan o'tkazamiz
+      return next();
+    }
     console.warn(`[CSRF] ⚠ Token mismatch: IP=${req.ip}, Path=${req.path}, Method=${req.method}`);
     return res.status(403).json({
       error: 'CSRF token yaroqsiz yoki topilmadi',
