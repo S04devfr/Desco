@@ -710,7 +710,26 @@ async function consolidateDriverExpenses() {
   }
 }
 
+// Auto-migrate schema changes (ensure phone2 column exists in SQLite / PostgreSQL)
+async function autoMigrateDatabase() {
+  try {
+    const prisma = require('./config/database');
+    const isPostgres = process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith('postgres://') || process.env.DATABASE_URL.startsWith('postgresql://'));
+    if (isPostgres) {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "clients" ADD COLUMN IF NOT EXISTS "phone2" TEXT;`).catch(() => {});
+      await prisma.$executeRawUnsafe(`ALTER TABLE "contacts" ADD COLUMN IF NOT EXISTS "phone2" TEXT;`).catch(() => {});
+    } else {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "clients" ADD COLUMN "phone2" TEXT;`).catch(() => {});
+      await prisma.$executeRawUnsafe(`ALTER TABLE "contacts" ADD COLUMN "phone2" TEXT;`).catch(() => {});
+    }
+    console.log('[Database] Auto-migration check completed.');
+  } catch (err) {
+    console.warn('[Database] Auto-migration warning:', err.message);
+  }
+}
+
 // Start cleanup check on startup
+autoMigrateDatabase();
 runUploadsCleanup();
 syncWazzupUsers();
 fixStuckUnreadCounts();

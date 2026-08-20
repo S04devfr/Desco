@@ -60,12 +60,15 @@ function stripFieldDeep(obj, fieldName) {
   return stripped;
 }
 
-// Wraps a model delegate's mutating method (create/update/upsert/...) so
-// that if the live (possibly stale) Prisma client rejects the call with
-// "Unknown argument `X`" — meaning schema.prisma defines field X but the
-// generated client predates it — we strip X from the payload and retry,
-// instead of crashing the request. Bounded to handle a few bad fields in a
-// single call without looping forever on a genuinely different error.
+const ALL_HEALABLE_METHODS = [
+  'findMany', 'findUnique', 'findFirst', 'count', 'aggregate', 'groupBy',
+  'create', 'createMany', 'update', 'updateMany', 'upsert', 'delete', 'deleteMany'
+];
+
+// Wraps a model delegate's method so that if the live (possibly stale) Prisma client
+// rejects the call with "Unknown argument `X`" or "Unknown field `X`" — meaning
+// schema.prisma defines field X or code queries field X but the generated client predates it —
+// we strip X from the payload/query/select/include/where and retry, instead of crashing the request.
 function wrapAutoHealingMethod(originalFn, modelName, methodName) {
   const maxAttempts = 6;
   return async function (args) {
@@ -75,7 +78,7 @@ function wrapAutoHealingMethod(originalFn, modelName, methodName) {
         return await originalFn(currentArgs);
       } catch (err) {
         const message = err && err.message ? String(err.message) : '';
-        const match = message.match(/Unknown argument [`'"]([a-zA-Z0-9_]+)[`'"]/);
+        const match = message.match(/Unknown (?:argument|field) [`'"]([a-zA-Z0-9_]+)[`'"]/i);
         if (!match || attempt === maxAttempts) throw err;
 
         const fieldName = match[1];
@@ -84,9 +87,8 @@ function wrapAutoHealingMethod(originalFn, modelName, methodName) {
         if (!didStrip) throw err;
 
         console.warn(
-          `[Database] "${modelName}.${methodName}": eskirgan Prisma client noma'lum argument "${fieldName}" ni rad etdi — ` +
-          `uni olib tashlab qayta urinilmoqda (${attempt + 1}/${maxAttempts}). ` +
-          `Iltimos "npx prisma generate" buyrug'ini ishga tushiring va serverni qayta ishga tushiring.`
+          `[Database] "${modelName}.${methodName}": eskirgan Prisma client noma'lum argument/maydon "${fieldName}" ni rad etdi — ` +
+          `uni olib tashlab qayta urinilmoqda (${attempt + 1}/${maxAttempts}).`
         );
         currentArgs = cloned;
       }
@@ -153,15 +155,12 @@ function createSafePrismaClient() {
     );
   }
 
-  // Auto-heal "Unknown argument" errors on every valid (non-stubbed) model
-  // delegate's mutating methods — see wrapAutoHealingMethod above. This is
-  // what actually fixes "Unknown argument 'clientId'"-style crashes at
-  // runtime without needing a fresh `npx prisma generate`.
+  // Auto-heal unknown field / argument errors on every valid model delegate's query and mutating methods
   for (const modelName of EXPECTED_MODELS) {
     if (missing.includes(modelName)) continue;
     const delegate = client[modelName];
     if (!delegate) continue;
-    for (const method of MUTATING_METHODS) {
+    for (const method of ALL_HEALABLE_METHODS) {
       if (typeof delegate[method] === 'function') {
         const original = delegate[method].bind(delegate);
         delegate[method] = wrapAutoHealingMethod(original, modelName, method);
