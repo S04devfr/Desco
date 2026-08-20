@@ -276,7 +276,7 @@ app.get('/expenses', requireAuth, requireRole('admin', 'manager'), (req, res) =>
 app.get('/extra/drivers',  requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('extra/index',  { user: req.session.user, activePage: 'extra-drivers', subPage: 'drivers' }));
 app.get('/extra/branches', requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('extra/index',  { user: req.session.user, activePage: 'extra-branches', subPage: 'branches' }));
 app.get('/extra/tools',    requireAuth, requireRole('admin'), (req, res) => res.render('extra/tools',  { user: req.session.user, activePage: 'extra-tools' }));
-app.get('/tasks',    requireAuth, requireRole('admin', 'manager'), (req, res) => res.render('tasks/index',    { user: req.session.user, activePage: 'tasks' }));
+app.get('/tasks',    requireAuth, requireRole('admin', 'manager', 'operator'), (req, res) => res.render('tasks/index',    { user: req.session.user, activePage: 'tasks' }));
 app.get('/instagram', requireAuth, requireRole('admin', 'manager'), (req, res) => {
   const filter = req.query.filter || 'direct';
   res.render('instagram/index', { user: req.session.user, activePage: 'instagram-' + filter });
@@ -715,17 +715,21 @@ async function autoMigrateDatabase() {
   try {
     const prisma = require('./config/database');
     const isPostgres = process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith('postgres://') || process.env.DATABASE_URL.startsWith('postgresql://'));
-    const queries = isPostgres
-      ? [
-          'ALTER TABLE "Client" ADD COLUMN IF NOT EXISTS "phone2" TEXT;',
-          'ALTER TABLE "contacts" ADD COLUMN IF NOT EXISTS "phone2" TEXT;',
-          'ALTER TABLE "Deal" ADD COLUMN IF NOT EXISTS "contactPhone2" TEXT;'
-        ]
-      : [
-          'ALTER TABLE "Client" ADD COLUMN "phone2" TEXT;',
-          'ALTER TABLE "contacts" ADD COLUMN "phone2" TEXT;',
-          'ALTER TABLE "Deal" ADD COLUMN "contactPhone2" TEXT;'
-        ];
+    if (!isPostgres) return;
+
+    const queries = [
+      'ALTER TABLE "Client" ADD COLUMN IF NOT EXISTS "phone2" TEXT;',
+      'ALTER TABLE "contacts" ADD COLUMN IF NOT EXISTS "phone2" TEXT;',
+      'ALTER TABLE "Deal" ADD COLUMN IF NOT EXISTS "contactPhone2" TEXT;',
+      'ALTER TABLE "Task" ADD COLUMN IF NOT EXISTS "boardId" INTEGER;',
+      'ALTER TABLE "Task" ADD COLUMN IF NOT EXISTS "columnId" INTEGER;',
+      'ALTER TABLE "Task" ADD COLUMN IF NOT EXISTS "order" INTEGER DEFAULT 0;',
+      'ALTER TABLE "Task" ADD COLUMN IF NOT EXISTS "isArchived" BOOLEAN DEFAULT false;',
+      'ALTER TABLE "Task" ADD COLUMN IF NOT EXISTS "reminderMinutes" INTEGER;',
+      'ALTER TABLE "Task" ADD COLUMN IF NOT EXISTS "reminderSent" BOOLEAN DEFAULT false;',
+      'ALTER TABLE "Task" ADD COLUMN IF NOT EXISTS "labels" TEXT;',
+      'ALTER TABLE "Task" ADD COLUMN IF NOT EXISTS "completedAt" TIMESTAMP;'
+    ];
     for (const q of queries) {
       try {
         await prisma.$executeRawUnsafe(q);
@@ -737,8 +741,50 @@ async function autoMigrateDatabase() {
   }
 }
 
+async function ensureDefaultTaskBoard() {
+  try {
+    const prisma = require('./config/database');
+    const boardCount = await prisma.taskBoard.count().catch(() => 0);
+    if (boardCount === 0) {
+      console.log('⚡ Seeding default Trello Task Board & Columns...');
+      const admin = await prisma.user.findFirst({ where: { role: 'admin' } });
+      const board = await prisma.taskBoard.create({
+        data: {
+          name: 'Asosiy Vazifalar',
+          description: 'Kompaniyaning asosiy vazifalari va eslatmalari',
+          color: '#007AFF',
+          icon: 'fa-clipboard-list',
+          isDefault: true,
+          createdById: admin ? admin.id : null,
+          columns: {
+            create: [
+              { name: 'Yangi', color: '#007AFF', icon: 'fa-inbox', order: 0 },
+              { name: 'Jarayonda', color: '#F59E0B', icon: 'fa-spinner', order: 1 },
+              { name: 'Kutilmoqda', color: '#8B5CF6', icon: 'fa-clock', order: 2 },
+              { name: 'Yakunlandi', color: '#10B981', icon: 'fa-check-circle', order: 3 }
+            ]
+          }
+        },
+        include: { columns: true }
+      }).catch(() => null);
+
+      if (board && board.columns.length > 0) {
+        const firstCol = board.columns[0];
+        await prisma.task.updateMany({
+          where: { boardId: null },
+          data: { boardId: board.id, columnId: firstCol.id }
+        }).catch(() => {});
+      }
+      console.log('✅ Default Trello Task Board & Columns seeded.');
+    }
+  } catch (err) {
+    console.warn('[Task Board Seed Notice]', err.message);
+  }
+}
+
 // Start cleanup check on startup
 autoMigrateDatabase();
+ensureDefaultTaskBoard();
 runUploadsCleanup();
 syncWazzupUsers();
 fixStuckUnreadCounts();

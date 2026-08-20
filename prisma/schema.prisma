@@ -37,6 +37,10 @@ model User {
   newActivities         Activity[]
   dealOwners            Deal[]    @relation("DealOwner")
   pushSubscriptions     PushSubscription[]
+  taskBoards            TaskBoard[]
+  taskComments          TaskComment[]
+  taskAttachments       TaskAttachment[]
+  taskActivities        TaskActivity[]
 }
 
 model Client {
@@ -298,19 +302,65 @@ model Expense {
   createdBy   User? @relation(fields: [createdById], references: [id])
 }
 
-model Task {
-  id          Int       @id @default(autoincrement())
-  title       String
+model TaskBoard {
+  id          Int          @id @default(autoincrement())
+  name        String
   description String?
-  dueDate     DateTime?
-  dueTime     String?
-  completed   Boolean   @default(false)
-  status      String    @default("todo")
-  priority    String    @default("medium")
-  actionType  String    @default("Связаться")
-  result      String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  color       String       @default("#007AFF")
+  icon        String       @default("fa-clipboard-list")
+  isDefault   Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  createdById Int?
+  createdBy   User?        @relation(fields: [createdById], references: [id])
+  columns     TaskColumn[]
+  tasks       Task[]
+  labels      TaskLabel[]
+
+  @@index([createdById])
+}
+
+model TaskColumn {
+  id        Int       @id @default(autoincrement())
+  boardId   Int
+  board     TaskBoard @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  name      String
+  color     String    @default("#007AFF")
+  icon      String    @default("fa-circle")
+  order     Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  tasks     Task[]
+
+  @@index([boardId])
+  @@index([order])
+}
+
+model Task {
+  id              Int       @id @default(autoincrement())
+  title           String
+  description     String?
+  dueDate         DateTime?
+  dueTime         String?
+  completed       Boolean   @default(false)
+  status          String    @default("todo")
+  priority        String    @default("medium") // low, medium, high, urgent
+  actionType      String    @default("Aloqaga chiqish")
+  result          String?
+  order           Int       @default(0)
+  isArchived      Boolean   @default(false)
+  reminderMinutes Int?      // 5, 15, 30, 60, 1440
+  reminderSent    Boolean   @default(false)
+  labels          String?   // JSON array of strings: ["Mijoz", "Muhim"]
+  completedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  boardId Int?
+  board   TaskBoard? @relation(fields: [boardId], references: [id])
+
+  columnId Int?
+  column   TaskColumn? @relation(fields: [columnId], references: [id])
 
   assignedToId Int?
   assignedTo   User? @relation(fields: [assignedToId], references: [id])
@@ -330,12 +380,88 @@ model Task {
   companyId Int?
   company   Company? @relation(fields: [companyId], references: [id])
 
+  checklists  TaskChecklistItem[]
+  comments    TaskComment[]
+  attachments TaskAttachment[]
+  activities  TaskActivity[]
+
+  @@index([boardId])
+  @@index([columnId])
   @@index([assignedToId])
   @@index([createdById])
   @@index([completed])
+  @@index([isArchived])
+  @@index([dueDate])
+  @@index([order])
   @@index([contactId])
   @@index([companyId])
   @@index([createdAt])
+}
+
+model TaskChecklistItem {
+  id          Int      @id @default(autoincrement())
+  taskId      Int
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  title       String
+  isCompleted Boolean  @default(false)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([taskId])
+}
+
+model TaskComment {
+  id        Int      @id @default(autoincrement())
+  taskId    Int
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([taskId])
+  @@index([userId])
+}
+
+model TaskAttachment {
+  id           Int      @id @default(autoincrement())
+  taskId       Int
+  task         Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  fileName     String
+  fileUrl      String
+  fileSize     Int?
+  fileType     String?
+  uploadedById Int?
+  uploadedBy   User?    @relation(fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now())
+
+  @@index([taskId])
+}
+
+model TaskActivity {
+  id        Int      @id @default(autoincrement())
+  taskId    Int
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+}
+
+model TaskLabel {
+  id        Int        @id @default(autoincrement())
+  boardId   Int?
+  board     TaskBoard? @relation(fields: [boardId], references: [id])
+  name      String
+  color     String     @default("#007AFF")
+  createdAt DateTime   @default(now())
+
+  @@index([boardId])
 }
 
 model CompanySettings {

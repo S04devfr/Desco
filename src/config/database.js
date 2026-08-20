@@ -108,17 +108,21 @@ function wrapAutoHealingMethod(originalFn, modelName, methodName) {
 async function autoMigrateDatabase(client) {
   try {
     const isPostgres = process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith('postgres://') || process.env.DATABASE_URL.startsWith('postgresql://'));
-    const queries = isPostgres
-      ? [
-          'ALTER TABLE "Client" ADD COLUMN IF NOT EXISTS "phone2" TEXT;',
-          'ALTER TABLE "contacts" ADD COLUMN IF NOT EXISTS "phone2" TEXT;',
-          'ALTER TABLE "Deal" ADD COLUMN IF NOT EXISTS "contactPhone2" TEXT;'
-        ]
-      : [
-          'ALTER TABLE "Client" ADD COLUMN "phone2" TEXT;',
-          'ALTER TABLE "contacts" ADD COLUMN "phone2" TEXT;',
-          'ALTER TABLE "Deal" ADD COLUMN "contactPhone2" TEXT;'
-        ];
+    if (!isPostgres) return;
+
+    const queries = [
+      'ALTER TABLE "Client" ADD COLUMN IF NOT EXISTS "phone2" TEXT;',
+      'ALTER TABLE "contacts" ADD COLUMN IF NOT EXISTS "phone2" TEXT;',
+      'ALTER TABLE "Deal" ADD COLUMN IF NOT EXISTS "contactPhone2" TEXT;',
+      'ALTER TABLE "Task" ADD COLUMN IF NOT EXISTS "boardId" INTEGER;',
+      'ALTER TABLE "Task" ADD COLUMN IF NOT EXISTS "columnId" INTEGER;',
+      'ALTER TABLE "Task" ADD COLUMN IF NOT EXISTS "order" INTEGER DEFAULT 0;',
+      'ALTER TABLE "Task" ADD COLUMN IF NOT EXISTS "isArchived" BOOLEAN DEFAULT false;',
+      'ALTER TABLE "Task" ADD COLUMN IF NOT EXISTS "reminderMinutes" INTEGER;',
+      'ALTER TABLE "Task" ADD COLUMN IF NOT EXISTS "reminderSent" BOOLEAN DEFAULT false;',
+      'ALTER TABLE "Task" ADD COLUMN IF NOT EXISTS "labels" TEXT;',
+      'ALTER TABLE "Task" ADD COLUMN IF NOT EXISTS "completedAt" TIMESTAMP;'
+    ];
 
     for (const q of queries) {
       try {

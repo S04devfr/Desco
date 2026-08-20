@@ -1,1201 +1,2036 @@
 <%- include('../layouts/header', {
-  title: 'Vazifalar — DESCO CRM',
+  title: 'Vazifalar / Kanban — DESCO CRM',
   activePage: 'tasks',
-  user: user}) %>
+  user: user
+}) %>
+
 <style>
-  /* Task List Styles */
-  .task-card-row {
-    display: grid;
-    grid-template-columns: 32px 2.5fr 1.5fr 1.3fr 1.3fr 1.1fr 165px;
-    gap: 12px;
-    align-items: center;
-    padding: 14px 20px;
-    background: var(--bg-secondary, #1e293b);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
-    border-radius: 16px;
-    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-    position: relative;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-  }
-  [data-theme="light"] .task-card-row {
-    background: #ffffff;
-    border-color: rgba(226, 232, 240, 0.9);
-    box-shadow: 0 4px 16px rgba(31, 38, 135, 0.05);
-  }
-  .task-card-row:hover {
-    transform: translateY(-2px) scale(1.005);
-    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
-    border-color: var(--accent);
-  }
-  .task-card-row.completed-task {
-    opacity: 0.55;
-  }
-  .task-action-btn {
-    width: 28px; height: 28px; border-radius: 50%; border: none;
-    display: inline-flex; align-items: center; justify-content: center;
-    cursor: pointer; transition: all 0.15s ease;
-  }
-  .task-action-btn:hover { transform: scale(1.1); }
+/* ══════════════════════════════════════════════════════════════════════════════
+   TRELLO-STYLE KANBAN & TASK WORKSPACE STYLES
+   ══════════════════════════════════════════════════════════════════════════════ */
 
-  .view-toggle { 
-    display: flex; 
-    background: var(--bg-secondary, #1e293b); 
-    backdrop-filter: blur(12px); 
-    border: 1px solid var(--border, rgba(255,255,255,0.12)); 
-    border-radius: 12px; 
-    overflow: hidden; 
-  }
-  [data-theme="light"] .view-toggle {
-    background: rgba(255, 255, 255, 0.8);
-    border-color: rgba(226, 232, 240, 0.9);
-  }
-  .vtbtn {
-    padding: 6px 14px; font-size: 12.5px; font-weight: 500; border: none;
-    background: none; color: var(--text-secondary); cursor: pointer; transition: all 0.14s;
-    display: flex; align-items: center; gap: 5px;
-  }
-  .vtbtn.active { background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(99,102,241,0.3); }
-  .vtbtn:hover:not(.active) { background: rgba(255,255,255,0.1); color: var(--text-primary); }
+.task-workspace {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 85px);
+  overflow: hidden;
+  position: relative;
+}
 
-  .kanban-col-body .task-item {
-    background: var(--bg-secondary, #1e293b); backdrop-filter: blur(12px); border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
-    border-radius: 12px; margin-bottom: 0; transition: transform 0.2s, box-shadow 0.2s;
-  }
-  [data-theme="light"] .kanban-col-body .task-item {
-    background: #ffffff;
-    border-color: rgba(226, 232, 240, 0.9);
-  }
+/* ── Workspace Header ─────────────────────────────────────────────── */
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0 16px 0;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
 
-  /* Stats mini cards */
-  .task-stat-card {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 14px 20px; border-radius: 16px; border: 1px solid var(--border, rgba(255,255,255,0.12));
-    background: var(--bg-secondary, #1e293b); backdrop-filter: blur(16px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-    min-width: 120px; gap: 4px; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  [data-theme="light"] .task-stat-card {
-    background: #ffffff;
-    border-color: rgba(226, 232, 240, 0.9);
-    box-shadow: 0 4px 16px rgba(31, 38, 135, 0.05);
-  }
-  .task-stat-card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(99, 102, 241, 0.12); }
-  .task-stat-num { font-size: 22px; font-weight: 800; line-height: 1; }
-  .task-stat-label { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.3px; }
+.task-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
 
-  /* Filter pill buttons */
-  .filter-pill {
-    padding: 5px 14px; font-size: 12.5px; font-weight: 600; border: 1px solid var(--border);
-    background: transparent; color: var(--text-secondary); cursor: pointer;
-    border-radius: 20px; transition: all 0.14s; display: inline-flex; align-items: center; gap: 5px;
-  }
-  .filter-pill:hover { background: var(--bg-secondary); color: var(--text-primary); }
-  .filter-pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.board-select-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+.board-select-btn:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.task-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ── View Toggle & Filter Pills ───────────────────────────────────── */
+.view-switch {
+  display: flex;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 2px;
+  gap: 2px;
+}
+.view-switch-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+.view-switch-btn.active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+}
+
+.task-search-input {
+  height: 34px;
+  padding: 0 12px 0 34px;
+  font-size: 12.5px;
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  width: 220px;
+  transition: all 0.2s ease;
+}
+.task-search-input:focus {
+  width: 260px;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+  outline: none;
+}
+
+/* ── Filter Bar ───────────────────────────────────────────────────── */
+.task-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 12px;
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+.task-filter-chip {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.task-filter-chip:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+.task-filter-chip.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 2px 6px rgba(0, 122, 255, 0.25);
+}
+
+/* ── Kanban Board Layout ─────────────────────────────────────────── */
+.kanban-board-container {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex: 1;
+  padding-bottom: 16px;
+  align-items: flex-start;
+  user-select: none;
+}
+
+.kanban-column {
+  width: 320px;
+  min-width: 320px;
+  max-width: 320px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(14px);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.kanban-column-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px 10px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  cursor: grab;
+}
+
+.kanban-column-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.col-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.col-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.kanban-cards-list {
+  padding: 10px 12px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 120px;
+  transition: background 0.15s ease;
+}
+
+.kanban-cards-list.drag-over {
+  background: rgba(0, 122, 255, 0.06);
+  border-radius: 12px;
+}
+
+/* ── Task Card Design ─────────────────────────────────────────────── */
+.task-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: grab;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  position: relative;
+  overflow: hidden;
+}
+
+.task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 122, 255, 0.4);
+}
+
+.task-card.dragging {
+  opacity: 0.35;
+  transform: rotate(2deg) scale(1.02);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+}
+
+.task-card.completed {
+  opacity: 0.65;
+}
+.task-card.completed .task-card-title {
+  text-decoration: line-through;
+  color: var(--text-tertiary);
+}
+
+.task-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.task-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.task-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+}
+
+.priority-badge-low { background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
+.priority-badge-medium { background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
+.priority-badge-high { background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+.priority-badge-urgent { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3); }
+
+.task-card-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.35;
+  margin-bottom: 6px;
+  word-break: break-word;
+}
+
+.task-card-client {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent);
+  background: rgba(0, 122, 255, 0.08);
+  padding: 3px 8px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  text-decoration: none;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-card-checklist-bar {
+  width: 100%;
+  height: 4px;
+  background: var(--bg-tertiary);
+  border-radius: 2px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.task-card-checklist-fill {
+  height: 100%;
+  background: #10b981;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.task-card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--text-secondary);
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.task-meta-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.task-due-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+}
+.task-due-badge.overdue {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.task-user-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--brand-soft), rgba(88,86,214,0.2));
+  color: var(--brand);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  border: 1px solid rgba(0, 122, 255, 0.2);
+}
+
+/* ── Quick Card Creator ───────────────────────────────────────────── */
+.quick-add-card-wrap {
+  padding: 8px 12px 12px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+.quick-add-btn {
+  width: 100%;
+  padding: 8px;
+  background: transparent;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+.quick-add-btn:hover {
+  background: rgba(0, 122, 255, 0.08);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.quick-add-form {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+}
+.quick-add-input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+.quick-add-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+/* ── Add Column Button ────────────────────────────────────────────── */
+.add-column-btn {
+  min-width: 260px;
+  height: 52px;
+  border-radius: 14px;
+  border: 2px dashed var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.add-column-btn:hover {
+  background: rgba(0, 122, 255, 0.08);
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-2px);
+}
+
+/* ── Slide-Over Task Detail Drawer ─────────────────────────────────── */
+.task-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.task-drawer-overlay.active {
+  display: block;
+  opacity: 1;
+}
+
+.task-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 620px;
+  max-width: 95vw;
+  height: 100vh;
+  background: var(--bg-primary);
+  border-left: 1px solid var(--border);
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.2);
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.task-drawer.active {
+  transform: translateX(0);
+}
+
+.task-drawer-header {
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-secondary);
+}
+
+.task-drawer-body {
+  padding: 22px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Drawer Detail Grid */
+.drawer-props-grid {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  row-gap: 14px;
+  column-gap: 12px;
+  align-items: center;
+  font-size: 13px;
+}
+.drawer-prop-label {
+  color: var(--text-secondary);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.drawer-section-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+/* Checklist Items */
+.checklist-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+.checklist-row:hover {
+  background: var(--bg-secondary);
+}
+.checklist-row.done .checklist-text {
+  text-decoration: line-through;
+  color: var(--text-tertiary);
+}
+
+/* Comments Feed */
+.comment-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+/* List View Table */
+.task-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.task-table th {
+  background: var(--bg-secondary);
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-secondary);
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.task-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-primary);
+}
+.task-table tr:hover {
+  background: rgba(0, 122, 255, 0.03);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .task-drawer { width: 100vw; max-width: 100vw; }
+  .kanban-column { width: 280px; min-width: 280px; }
+}
 </style>
 
-<div class="page-header">
-  <div>
-    <h1 style="display:flex; align-items:center; gap:10px;"><i class="fas fa-bell" style="color:var(--accent); font-size:22px;"></i> Eslatmalar</h1>
-    <p>Sdelkalar bo'yicha eslatmalar va vazifalar</p>
-  </div>
-  <div class="page-header-actions" style="display: flex; align-items: center; gap: 12px;">
-    <div class="view-toggle">
-      <button class="vtbtn active" id="btnList" onclick="setTasksView('list')">
-        <i class="fas fa-list"></i> Ro'yxat
-      </button>
-      <button class="vtbtn" id="btnKanban" onclick="setTasksView('kanban')">
-        <i class="fas fa-columns"></i> Kanban
-      </button>
-    </div>
-  </div>
-</div>
+<div class="task-workspace">
 
-
-<!-- FILTER BAR -->
-<div class="filter-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-  <div style="display:flex; gap:6px; flex-wrap:wrap;">
-    <button class="filter-pill" id="fAll" onclick="setDateFilter('all', this)">Barchasi</button>
-    <button class="filter-pill active" id="fDay" onclick="setDateFilter('day', this)"><i class="fas fa-sun"></i> Bugun</button>
-    <button class="filter-pill" id="fWeek" onclick="setDateFilter('week', this)"><i class="fas fa-calendar-week"></i> Hafta</button>
-    <button class="filter-pill" id="fMonth" onclick="setDateFilter('month', this)"><i class="fas fa-calendar-alt"></i> Oy</button>
-    <button class="filter-pill" id="fOverdue" onclick="setDateFilter('overdue', this)"><i class="fas fa-exclamation-triangle"></i> Muddati o'tgan</button>
-    <button class="filter-pill" id="fDone" onclick="setDateFilter('done', this)"><i class="fas fa-check-circle"></i> Bajarilgan</button>
-  </div>
-  <div style="display:flex; gap:10px; align-items:center;">
-    <button type="button" class="btn btn-ghost btn-sm" onclick="autoCleanupDoneDealTasks()" style="font-size:12px; border:1px solid var(--border); color:var(--text-secondary); border-radius:20px; padding:4px 12px;" title="Yutilgan yoki yo'qotilgan sdelkalar eslatmalarini avtomatik yopish">
-      <i class="fas fa-magic" style="color:var(--brand); margin-right:4px;"></i> Eskirganlarni tozalash
-    </button>
-    <input type="text" id="taskSearch" class="form-control" style="width:200px; border-radius:20px; padding-left:16px;" placeholder="🔍 Qidirish...">
-  </div>
-</div>
-
-<!-- LIST VIEW CONTAINER -->
-<div id="taskListView" style="background: transparent; border: none; box-shadow: none;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-    <h3 id="taskListTitle" style="margin:0; font-size:15px; font-weight:700; color: var(--text-primary);">Bugungi vazifalar</h3>
-    <span id="taskCount" class="badge badge-blue" style="font-weight: 700;">0</span>
-  </div>
-  <div style="display: flex; flex-direction: column; gap: 12px; min-width: 900px; overflow-x: auto;">
-    <div id="taskListBody" style="display: flex; flex-direction: column; gap: 10px;">
-      <div style="text-align:center;padding:40px"><div class="spinner"></div></div>
-    </div>
-  </div>
-</div></div>
-
-<!-- KANBAN VIEW CONTAINER -->
-<div id="taskKanbanView" class="hidden" style="margin-top: 16px;">
-  <div id="taskKanbanBoard" style="display: flex; gap: 16px; overflow-x: auto; padding-bottom: 16px; align-items: flex-start; min-height: 580px;">
-    <div style="padding:40px;text-align:center;width:100%"><div class="spinner"></div></div>
-  </div>
-</div>
-
-<!-- CREATE/EDIT MODAL -->
-<div class="modal-overlay hidden" id="taskModal">
-  <div class="modal-box">
-    <div class="modal-header">
-      <h2 id="taskModalTitle">Yangi vazifa</h2>
-      <button class="modal-close" onclick="closeTaskModal()">&times;</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="taskId">
-      <input type="hidden" id="t-dealId">
-      <input type="hidden" id="t-clientId">
-      <div class="form-group">
-        <label class="form-label">Sarlavha *</label>
-        <input type="text" id="t-title" class="form-control" placeholder="Vazifa sarlavhasi">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Vazifa turi</label>
-        <select id="t-actionType" class="form-control">
-          <option value="Aloqaga chiqish" selected>📞 Aloqaga chiqish (Bog'lanish)</option>
-          <option value="Bron qilish">📅 Bron qilish (Buyurtma)</option>
-          <option value="Uchrashuv">🤝 Uchrashuv</option>
-          <option value="To'lov kutish">💳 To'lov kutish</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Tavsif</label>
-        <textarea id="t-description" class="form-control" rows="2" placeholder="Batafsil ma'lumot..."></textarea>
-      </div>
-      <div class="form-grid form-grid-2">
-        <div class="form-group">
-          <label class="form-label">Sana</label>
-          <input type="date" id="t-dueDate" class="form-control">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Vaqt</label>
-          <input type="time" id="t-dueTime" class="form-control">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Muhimlik</label>
-          <select id="t-priority" class="form-control">
-            <option value="low">🟢 Past</option>
-            <option value="medium" selected>🟡 O'rta</option>
-            <option value="high">🔴 Yuqori</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Mas'ul</label>
-          <select id="t-assignedTo" class="form-control">
-            <option value="">— O'zim —</option>
-          </select>
-        </div>
-      </div>
-      <!-- Deal Stage Option (only shown if task is associated with a deal) -->
-      <div class="form-group hidden" id="taskDealStageGroup" style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 12px;">
-        <label class="form-label" style="font-weight: 700; color: var(--accent);"><i class="fas fa-shopping-bag" style="margin-right: 6px;"></i> Sdelka bosqichini o'zgartirish</label>
-        <select id="t-dealStage" class="form-control">
-          <option value="">— Bosqichni o'zgartirmaslik —</option>
-        </select>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeTaskModal()">Bekor qilish</button>
-      <button class="btn btn-primary" id="taskSaveBtn" onclick="saveTask()">
-        <i class="fas fa-save"></i> Saqlash
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- VIEW DETAILS MODAL -->
-<div class="modal-overlay hidden" id="viewTaskModal" style="z-index: 1000;">
-  <div class="modal-box" style="max-width: 550px;">
-    <div class="modal-header" style="border-bottom: 1px solid var(--border); padding-bottom: 12px;">
-      <h2>Vazifa tafsilotlari</h2>
-      <button class="modal-close" onclick="closeViewTaskModal()">&times;</button>
-    </div>
-    <div class="modal-body" style="padding-top: 16px; display:flex; flex-direction:column; gap:20px;">
-      
-      <!-- Task Section -->
-      <div>
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
-          <h3 id="v-title" style="margin:0; font-size:16px; font-weight:700; color:var(--text-primary);">Vazifa nomi</h3>
-          <div id="v-status"></div>
-        </div>
-        <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:12px; font-size:13px; color:var(--text-primary); margin-bottom:12px;">
-          <div style="font-weight:600; color:var(--text-secondary); margin-bottom:4px;">Vazifa izohi:</div>
-          <div id="v-desc" style="white-space:pre-wrap; line-height:1.4;">Tavsif</div>
-        </div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:12px; color:var(--text-secondary);">
-          <div><i class="far fa-calendar-alt" style="margin-right:6px; color:var(--accent);"></i><b>Muddati:</b> <span id="v-due">-</span></div>
-          <div><i class="fas fa-exclamation-circle" style="margin-right:6px; color:var(--accent);"></i><b>Muhimlik:</b> <span id="v-priority">-</span></div>
-          <div style="grid-column: span 2;"><i class="fas fa-user-tie" style="margin-right:6px; color:var(--accent);"></i><b>Mas'ul:</b> <span id="v-assigned">-</span></div>
-        </div>
-      </div>
-
-      <!-- Client Section -->
-      <div id="v-client-section" style="border-top:1px solid var(--border); padding-top:16px;">
-        <h4 style="margin:0 0 10px 0; font-size:13.5px; font-weight:700; color:var(--text-primary);"><i class="fas fa-user" style="margin-right:6px; color:var(--accent);"></i>Mijoz ma'lumotlari</h4>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:12.5px; color:var(--text-secondary); background:var(--bg-secondary); border:1px solid var(--border); padding:12px; border-radius:8px;">
-          <div><b>Ismi:</b> <span id="v-client-name">-</span></div>
-          <div><b>Telefon:</b> <span id="v-client-phone">-</span></div>
-          <div><b>Shahar:</b> <span id="v-client-city">-</span></div>
-          <div><b>Kompaniya:</b> <span id="v-client-company">-</span></div>
-        </div>
-      </div>
-
-      <!-- Deal Section -->
-      <div id="v-deal-section" style="border-top:1px solid var(--border); padding-top:16px;">
-        <h4 style="margin:0 0 10px 0; font-size:13.5px; font-weight:700; color:var(--text-primary);"><i class="fas fa-shopping-bag" style="margin-right:6px; color:var(--accent);"></i>Sdelka ma'lumotlari</h4>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:12.5px; color:var(--text-secondary); background:var(--bg-secondary); border:1px solid var(--border); padding:12px; border-radius:8px;">
-          <div><b>Mahsulot:</b> <span id="v-deal-product">-</span></div>
-          <div><b>Status:</b> <span id="v-deal-status">-</span></div>
-          <div><b>Bosqich:</b> <span id="v-deal-stage" class="badge badge-blue" style="font-weight:700; padding:1px 6px; border-radius:4px; font-size:11px;">-</span></div>
-          <div><b>Summa:</b> <span id="v-deal-amount">0</span></div>
-          <div><b>To'landi:</b> <span id="v-deal-paid">0</span></div>
-          <div><b>Qoldiq qarz:</b> <span id="v-deal-debt">0</span></div>
-          <div style="grid-column: span 2; border-top: 1px solid var(--border); padding-top:8px; margin-top:4px;">
-            <div style="font-weight:600; color:var(--text-secondary); margin-bottom:4px;">Sdelkadagi izoh:</div>
-            <div id="v-deal-notes" style="white-space:pre-wrap; line-height:1.4; color:var(--text-primary);">Izoh</div>
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       1. WORKSPACE HEADER
+       ══════════════════════════════════════════════════════════════════════════ -->
+  <div class="task-header">
+    <div class="task-header-left">
+      <!-- Board Selector -->
+      <div style="position: relative;">
+        <button class="board-select-btn" id="activeBoardBtn" onclick="toggleBoardDropdown()">
+          <i class="fas fa-clipboard-list" id="activeBoardIcon" style="color: var(--accent);"></i>
+          <span id="activeBoardName">Asosiy Vazifalar</span>
+          <i class="fas fa-chevron-down" style="font-size: 11px; opacity: 0.6; margin-left: 4px;"></i>
+        </button>
+        <!-- Board Dropdown Menu -->
+        <div id="boardDropdownMenu" style="display:none; position:absolute; top:calc(100% + 6px); left:0; width:250px; background:var(--bg-secondary); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow-lg); z-index:200; padding:6px;">
+          <div id="boardDropdownList" style="display:flex; flex-direction:column; gap:2px; max-height:220px; overflow-y:auto;">
+            <!-- Rendered dynamically -->
+          </div>
+          <div style="border-top:1px solid var(--border); margin-top:6px; padding-top:6px;">
+            <button class="btn btn-ghost btn-sm" onclick="openCreateBoardModal()" style="width:100%; justify-content:flex-start; font-size:12px; color:var(--accent);">
+              <i class="fas fa-plus"></i> Yangi board yaratish
+            </button>
           </div>
         </div>
       </div>
 
-    </div>
-    <div class="modal-footer" style="border-top: 1px solid var(--border); padding-top: 12px; margin-top: 0;">
-      <button class="btn btn-secondary" onclick="closeViewTaskModal()">Yopish</button>
-    </div>
-  </div>
-</div>
-
-<script>
-const escHtml = s => String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-const _esc = escHtml;
-let allTasks = [], currentFilter = 'all';
-
-async function loadTasks() {
-  try {
-    const fetchFn = (typeof fetchWithTimeout === 'function') ? fetchWithTimeout : fetch;
-    const r = await fetchFn('/api/tasks');
-    const data = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(data.message || 'Server xatosi: ' + r.status);
-    allTasks = Array.isArray(data) ? data : [];
-    refreshView();
-  } catch(e) {
-    allTasks = [];
-    _safeToast("Ma'lumotlarni yuklashda xatolik" + (e && e.message && !e.isTimeout ? ': ' + e.message : ''), 'error');
-    refreshView();
-  }
-}
-
-// Toast that doesn't depend on main.js having loaded yet (defense in
-// depth — init() below is already DOMContentLoaded-gated so main.js
-// will be ready, but this keeps loadTasks() safe even if called earlier).
-function _safeToast(msg, type) {
-  if (typeof showToast === 'function') showToast(msg, type);
-  else console.warn('[Tasks]', msg);
-}
-
-async function toggleTaskStatus(id) {
-  const task = allTasks.find(t => t.id === id);
-  if (!task) return;
-  const newCompleted = !task.completed;
-  try {
-    const res = await fetch(`/api/tasks/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ completed: newCompleted })
-    });
-    if (!res.ok) throw new Error();
-    task.completed = newCompleted;
-    _safeToast(newCompleted ? "Vazifa bajarildi deb belgilandi! ✅" : "Vazifa qayta tiklandi", 'success');
-    if (typeof updateSidebarTaskBadge === 'function') updateSidebarTaskBadge();
-    refreshView();
-  } catch (e) {
-    _safeToast("Vazifa holatini o'zgartirishda xatolik", 'error');
-  }
-}
-window.toggleTaskStatus = toggleTaskStatus;
-
-async function deleteTaskRow(id) {
-  if (!confirm("Ushbu vazifani o'chirishni tasdiqlaysizmi?")) return;
-  try {
-    const res = await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
-    if (!res.ok) throw new Error();
-    allTasks = allTasks.filter(t => t.id !== id);
-    _safeToast("Vazifa o'chirildi", 'info');
-    if (typeof updateSidebarTaskBadge === 'function') updateSidebarTaskBadge();
-    refreshView();
-  } catch (e) {
-    _safeToast("O'chirishda xatolik", 'error');
-  }
-}
-window.deleteTaskRow = deleteTaskRow;
-
-async function autoCleanupDoneDealTasks() {
-  const isCallback = (name) => {
-    const n = (name || '').toLowerCase();
-    return n.includes('qayta') || n.includes('aloqa') || n.includes('ko\'tarmadi') || n.includes('kotarmadi') || n.includes('vazifa');
-  };
-  const stale = allTasks.filter(t => !t.completed && t.deal && (
-    t.deal.status === 'won' || 
-    t.deal.status === 'lost' || 
-    (t.deal.stage && !isCallback(t.deal.stage.name))
-  ));
-  if (!stale.length) {
-    _safeToast("Eskirgan yoki bosqichi o'zgargan sdelka eslatmalari topilmadi. Barcha eslatmalar dolzarb! ✨", 'info');
-    return;
-  }
-  if (!confirm(`${stale.length} ta bosqichi o'zgargan / yopilgan sdelkalarga tegishli eski eslatmalarni bajarildi deb belgilamoqchimisiz?`)) return;
-
-  for (const task of stale) {
-    try {
-      await fetch(`/api/tasks/${task.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ completed: true, result: "Avtomatik tozalash: Bosqich o'zgargan" })
-      });
-      task.completed = true;
-    } catch(e) {}
-  }
-  _safeToast(`${stale.length} ta eslatma muvaffaqiyatli tozalandi! ✅`, 'success');
-  if (typeof updateSidebarTaskBadge === 'function') updateSidebarTaskBadge();
-  refreshView();
-}
-window.autoCleanupDoneDealTasks = autoCleanupDoneDealTasks;
-
-async function loadUsers() {
-  try {
-    const users = await fetch('/api/settings/users').then(r => r.json()).catch(() => []);
-    const sel = document.getElementById('t-assignedTo');
-    sel.innerHTML = '<option value="">— O\'zim —</option>' +
-      (Array.isArray(users) ? users : []).map(u => `<option value="${u.id}">${_esc(u.fullName||u.email)}</option>`).join('');
-  } catch(e) {}
-}
-
-function setFilter(f) {
-  currentFilter = f;
-  ['fAll','fToday','fOverdue','fDone'].forEach(id => {
-    const el = document.getElementById(id);
-    el.className = 'btn btn-sm' + (id === 'f' + f.charAt(0).toUpperCase() + f.slice(1) ? '' : '');
-    el.style.background = id === 'f' + f.charAt(0).toUpperCase() + f.slice(1) ? 'var(--bg-secondary)' : 'transparent';
-    el.style.color = id === 'f' + f.charAt(0).toUpperCase() + f.slice(1) ? 'var(--text-primary)' : 'var(--text-secondary)';
-    el.style.border = 'none';
-  });
-  renderTasks();
-}
-
-window._dateFilterMode = 'day';
-function setDateFilter(mode, btn) {
-  window._dateFilterMode = mode;
-  document.querySelectorAll('.filter-pill').forEach(b => {
-    b.classList.remove('active');
-  });
-  if (btn) btn.classList.add('active');
-  refreshView();
-}
-window.setDateFilter = setDateFilter;
-
-function isKotarmadiStage(task) {
-  if (!task.deal || !task.deal.stage) return false;
-  const name = (task.deal.stage.name || '').toLowerCase();
-  return name.includes("ko'tarmadi") || name.includes('kotarmadi') || name.includes('javob bermadi');
-}
-
-function getTaskExactDate(t) {
-  if (!t || !t.dueDate) return null;
-  let d = new Date(t.dueDate);
-  if (isNaN(d.getTime())) return null;
-  if (t.dueTime && typeof t.dueTime === 'string' && t.dueTime.includes(':')) {
-    const parts = t.dueTime.split(':');
-    d = new Date(d);
-    d.setHours(Number(parts[0]) || 0, Number(parts[1]) || 0, 0, 0);
-  }
-  return d;
-}
-
-function getFilteredTasks() {
-  const q = (document.getElementById('taskSearch')?.value || '').toLowerCase().trim();
-  const nowMs = Date.now();
-  const today = new Date(); today.setHours(0,0,0,0);
-  const tomorrowEnd = new Date(today); tomorrowEnd.setDate(today.getDate() + 1); tomorrowEnd.setHours(23,59,59,999);
-
-  return allTasks.filter(t => {
-    if (q && !(
-      (t.title || '').toLowerCase().includes(q) ||
-      (t.description || '').toLowerCase().includes(q) ||
-      (t.client && t.client.name && t.client.name.toLowerCase().includes(q)) ||
-      (t.client && t.client.phone && t.client.phone.toLowerCase().includes(q)) ||
-      (t.deal && t.deal.productName && t.deal.productName.toLowerCase().includes(q))
-    )) return false;
-
-    const exactDue = getTaskExactDate(t);
-    const filter = window._dateFilterMode || 'day';
-
-    if (filter === 'day') {
-      return (!exactDue || exactDue <= tomorrowEnd) && !t.completed;
-    }
-    if (filter === 'week') {
-      const endOfWeek = new Date(today);
-      endOfWeek.setDate(today.getDate() + 7);
-      endOfWeek.setHours(23,59,59,999);
-      return (!exactDue || exactDue <= endOfWeek) && !t.completed;
-    }
-    if (filter === 'month') {
-      const endOfMonth = new Date(today);
-      endOfMonth.setDate(today.getDate() + 30);
-      endOfMonth.setHours(23,59,59,999);
-      return (!exactDue || exactDue <= endOfMonth) && !t.completed;
-    }
-    if (filter === 'overdue') {
-      return exactDue && exactDue.getTime() < nowMs && !t.completed;
-    }
-    if (filter === 'done') {
-      return t.completed;
-    }
-    return !t.completed; // 'all' - faqat bajarilmagan
-  });
-}
-
-function updateStats() {
-  const nowMs = Date.now();
-  const today = new Date(); today.setHours(0,0,0,0);
-  const tomorrowEnd = new Date(today); tomorrowEnd.setDate(today.getDate() + 1); tomorrowEnd.setHours(23,59,59,999);
-  const endOfWeek = new Date(today); endOfWeek.setDate(today.getDate() + 7); endOfWeek.setHours(23,59,59,999);
-
-  const active = allTasks.filter(t => !t.completed);
-  const todayCount = active.filter(t => { const d = getTaskExactDate(t); return !d || d <= tomorrowEnd; }).length;
-  const overdueCount = active.filter(t => { const d = getTaskExactDate(t); return d && d.getTime() < nowMs; }).length;
-  const weekCount = active.filter(t => { const d = getTaskExactDate(t); return !d || d <= endOfWeek; }).length;
-  const doneCount = allTasks.filter(t => t.completed).length;
-
-  const el = (id) => document.getElementById(id);
-  if (el('statToday')) el('statToday').textContent = todayCount;
-  if (el('statOverdue')) el('statOverdue').textContent = overdueCount;
-  if (el('statWeek')) el('statWeek').textContent = weekCount;
-  if (el('statDone')) el('statDone').textContent = doneCount;
-}
-
-function renderSingleTaskRowHtml(t) {
-  const nowMs = Date.now();
-  const today = new Date(); today.setHours(0,0,0,0);
-  const tomorrowEnd = new Date(today); tomorrowEnd.setDate(today.getDate() + 1); tomorrowEnd.setHours(23,59,59,999);
-  const exactDue = getTaskExactDate(t);
-  const isOverdue = exactDue && exactDue.getTime() < nowMs && !t.completed;
-  const isToday = exactDue && exactDue >= today && exactDue < tomorrowEnd;
-  const dueClass = isOverdue ? 'overdue' : isToday ? 'today' : '';
-  const pLabel = { high: '🔴 Yuqori', medium: "🟡 O'rta", low: '🟢 Past' };
-  const pColors = { high: '#ef4444', medium: '#eab308', low: '#22c55e' };
-  const pBg = { high: 'rgba(239, 68, 68, 0.08)', medium: 'rgba(234, 179, 8, 0.08)', low: 'rgba(34, 197, 94, 0.08)' };
-
-  let actionTypeHtml = '';
-  const isBron = t.actionType === 'Bron qilish';
-  const isMeeting = t.actionType === 'Uchrashuv';
-  const isPayment = t.actionType === 'To\'lov kutish' || t.actionType === 'To_lov kutish';
-  
-  if (isBron) {
-    actionTypeHtml = `<span style="background: rgba(16, 185, 129, 0.12); color: #10b981; font-weight: 700; font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.2); display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;"><i class="fas fa-ticket-alt"></i> BRON</span>`;
-  } else if (isMeeting) {
-    actionTypeHtml = `<span style="background: rgba(99, 102, 241, 0.12); color: #6366f1; font-weight: 700; font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(99, 102, 241, 0.2); display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;"><i class="fas fa-handshake"></i> UCHRASHUV</span>`;
-  } else if (isPayment) {
-    actionTypeHtml = `<span style="background: rgba(245, 158, 11, 0.12); color: #f59e0b; font-weight: 700; font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.2); display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;"><i class="fas fa-credit-card"></i> TO'LOV</span>`;
-  } else {
-    actionTypeHtml = `<span style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9; font-weight: 700; font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(14, 165, 233, 0.15); display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;"><i class="fas fa-phone-alt"></i> ALOQA</span>`;
-  }
-
-  let dueHtml = '<span style="color:var(--text-tertiary); font-size:12px;"><i class="far fa-calendar-times"></i> Belgilanmagan</span>';
-  if (t.completed && t.updatedAt) {
-    const d = new Date(t.updatedAt);
-    if (!isNaN(d.getTime())) {
-      const dd = String(d.getDate()).padStart(2, '0');
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const yyyy = d.getFullYear();
-      dueHtml = `<span style="color:#10b981; font-size:12px; font-weight:600;"><i class="fas fa-check-circle"></i> Bajarildi: ${dd}.${mm}.${yyyy}</span>`;
-    }
-  } else if (t.dueDate) {
-    const d = new Date(t.dueDate);
-    if (!isNaN(d.getTime())) {
-      const dd = String(d.getDate()).padStart(2, '0');
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const yyyy = d.getFullYear();
-      dueHtml = `<span class="${dueClass}" style="font-size:12px; font-weight:600;"><i class="far fa-calendar-alt"></i> ${dd}.${mm}.${yyyy} ${t.dueTime || '10:00'}</span>`;
-    }
-  }
-
-  // Client column
-  let clientHtml = '<span style="color:var(--text-tertiary);">—</span>';
-  if (t.client) {
-    clientHtml = `
-      <div style="font-weight:600; color:var(--text-primary); font-size:13px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${_esc(t.client.name)}</div>
-      ${t.client.phone ? `<a href="tel:${_esc(t.client.phone)}" style="font-size:11.5px; color:var(--brand); font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:4px; margin-top:2px;"><i class="fas fa-phone-alt" style="font-size:9.5px;"></i> ${_esc(t.client.phone)}</a>` : ''}
-      ${t.client.phone2 ? `<div style="font-size:11px; margin-top:1px;"><a href="tel:${_esc(t.client.phone2)}" style="color:var(--text-secondary); text-decoration:none; display:inline-flex; align-items:center; gap:4px;"><i class="fas fa-phone-volume" style="font-size:9px;"></i> 2: ${_esc(t.client.phone2)}</a></div>` : ''}
-    `;
-  }
-
-  // Deal column (omit product name if already in title to avoid ugly repetition!)
-  let dealHtml = '<span style="color:var(--text-tertiary);">—</span>';
-  if (t.deal) {
-    const stageName = (t.deal.stage && t.deal.stage.name) ? t.deal.stage.name : 'Bosqichsiz';
-    const isRepetitive = (t.title || '').toLowerCase().includes((t.deal.productName || '').toLowerCase());
-    dealHtml = `
-      ${isRepetitive ? '' : `<div style="font-weight:600; font-size:12.5px; color:var(--text-secondary); margin-bottom:2px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${_esc(t.deal.productName)}</div>`}
-      <span class="badge badge-blue" style="font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px;">${_esc(stageName)}</span>
-    `;
-  }
-
-  // Assignee initials avatar style
-  let assigneeHtml = '<span style="color:var(--text-tertiary);">—</span>';
-  if (t.assignedTo) {
-    const name = t.assignedTo.fullName || t.assignedTo.email;
-    const initials = name.substring(0, 2).toUpperCase();
-    assigneeHtml = `
-      <div style="display:flex; align-items:center; gap:6px;">
-        <div style="width:24px; height:24px; border-radius:50%; background:var(--accent-soft); color:var(--accent); font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${initials}</div>
-        <span style="font-size:12px; font-weight:500; color:var(--text-secondary); max-width: 80px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${_esc(name)}</span>
+      <!-- Quick Search -->
+      <div style="position: relative;">
+        <i class="fas fa-search" style="position: absolute; left: 12px; top: 10px; font-size: 12px; color: var(--text-tertiary);"></i>
+        <input type="text" id="taskSearchInput" class="task-search-input" placeholder="Qidirish... ( / )" oninput="onTaskSearchInput(this.value)">
       </div>
-    `;
-  }
+    </div>
 
-  const titleStyle = t.completed ? 'text-decoration: line-through; color: var(--text-tertiary);' : 'font-weight:600; color: var(--text-primary);';
-
-  return `
-    <div class="task-card-row ${t.completed ? 'completed-task' : ''}" id="task-${t.id}" ${t.dealId ? `onclick="window.location.href='/deals?openDealId=${t.dealId}'"` : ''} style="cursor:${t.dealId ? 'pointer' : 'default'};">
-      <div style="position:absolute; left:0; top:12px; bottom:12px; width:4px; border-radius:0 4px 4px 0; background: ${isOverdue ? '#ef4444' : t.completed ? '#10b981' : 'var(--accent)'}"></div>
-
-      <div style="display: flex; justify-content: center; align-items: center;">
-        <button onclick="event.stopPropagation(); toggleTaskStatus(${t.id})" title="${t.completed ? 'Bajarilmagan qilish' : 'Bajarildi deb belgilash'}" style="width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer; transition:all 0.15s; ${t.completed ? 'background:#10b981; color:#fff; border:none;' : isOverdue ? 'background:rgba(239,68,68,0.12); color:#ef4444; border:2px solid #ef4444;' : 'background:rgba(14,165,233,0.1); color:#0ea5e9; border:2px solid #0ea5e9;'}">
-          ${t.completed ? '<i class="fas fa-check" style="font-size:10px"></i>' : isOverdue ? '<i class="fas fa-exclamation" style="font-size:10px"></i>' : '<i class="fas fa-check" style="font-size:9px; opacity:0.3;"></i>'}
+    <div class="task-header-right">
+      <!-- View Switch (Kanban / List) -->
+      <div class="view-switch">
+        <button class="view-switch-btn active" id="btnViewKanban" onclick="switchTaskView('kanban')">
+          <i class="fas fa-columns"></i> Kanban
+        </button>
+        <button class="view-switch-btn" id="btnViewList" onclick="switchTaskView('list')">
+          <i class="fas fa-list"></i> Ro'yxat
         </button>
       </div>
+
+      <!-- Add Column Button (Admin / Manager) -->
+      <button class="btn btn-secondary btn-sm" onclick="openCreateColumnModal()" title="Yangi ustun qo'shish">
+        <i class="fas fa-plus"></i> Ustun
+      </button>
+
+      <!-- Add Task Button -->
+      <button class="btn btn-primary btn-sm" onclick="openCreateTaskModal()">
+        <i class="fas fa-plus-circle"></i> Yangi Vazifa
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       2. FILTER BAR
+       ══════════════════════════════════════════════════════════════════════════ -->
+  <div class="task-filter-bar">
+    <button class="task-filter-chip active" id="filterAll" onclick="setTaskFilter('all', this)">
+      Barchasi
+    </button>
+    <button class="task-filter-chip" id="filterMine" onclick="setTaskFilter('mine', this)">
+      <i class="fas fa-user"></i> Mening vazifalarim
+    </button>
+    <button class="task-filter-chip" id="filterToday" onclick="setTaskFilter('today', this)">
+      <i class="fas fa-sun"></i> Bugun
+    </button>
+    <button class="task-filter-chip" id="filterOverdue" onclick="setTaskFilter('overdue', this)">
+      <i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i> Muddati o'tgan
+    </button>
+    <button class="task-filter-chip" id="filterUrgent" onclick="setTaskFilter('urgent', this)">
+      <i class="fas fa-bolt" style="color: #f59e0b;"></i> Shoshilinch
+    </button>
+    <button class="task-filter-chip" id="filterDone" onclick="setTaskFilter('done', this)">
+      <i class="fas fa-check-circle" style="color: #10b981;"></i> Bajarilgan
+    </button>
+
+    <!-- Assignee Filter Selector -->
+    <select id="filterAssigneeSelect" class="form-control" style="width: auto; height: 28px; font-size: 11.5px; padding: 0 8px; border-radius: 14px;" onchange="loadTasks()">
+      <option value="">Barcha mas'ullar</option>
+    </select>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       3. KANBAN BOARD VIEW
+       ══════════════════════════════════════════════════════════════════════════ -->
+  <div class="kanban-board-container" id="kanbanBoardView">
+    <div style="padding: 40px; text-align: center; width: 100%;">
+      <div class="spinner" style="margin: auto;"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       4. LIST VIEW
+       ══════════════════════════════════════════════════════════════════════════ -->
+  <div id="taskListView" style="display: none; flex: 1; overflow-y: auto; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; padding: 14px;">
+    <table class="task-table">
+      <thead>
+        <tr>
+          <th style="width: 40px;"></th>
+          <th>Vazifa nomi</th>
+          <th>Ustun / Status</th>
+          <th>Muhimlik</th>
+          <th>Mas'ul</th>
+          <th>Muddat</th>
+          <th>Mijoz</th>
+          <th style="text-align: right;">Amallar</th>
+        </tr>
+      </thead>
+      <tbody id="taskListTableBody">
+        <tr><td colspan="8" class="tc" style="padding: 30px;"><div class="spinner" style="margin: auto;"></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     5. RIGHT SLIDE-OVER TASK DETAIL DRAWER
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="task-drawer-overlay" id="taskDrawerOverlay" onclick="closeTaskDrawer()"></div>
+<div class="task-drawer" id="taskDrawer">
+  <!-- Drawer Header -->
+  <div class="task-drawer-header">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span class="badge badge-brand" id="drawerStatusBadge">Yangi</span>
+      <span style="font-size: 12px; color: var(--text-tertiary);" id="drawerTaskId">#0</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <button class="btn btn-ghost btn-sm" onclick="archiveCurrentDrawerTask()" title="Arxivlash">
+        <i class="fas fa-archive"></i>
+      </button>
+      <button class="btn btn-ghost btn-sm text-red" onclick="deleteCurrentDrawerTask()" title="O'chirish">
+        <i class="fas fa-trash-alt"></i>
+      </button>
+      <button class="modal-close" onclick="closeTaskDrawer()" style="font-size: 22px; width: 32px; height: 32px;">&times;</button>
+    </div>
+  </div>
+
+  <!-- Drawer Body -->
+  <div class="task-drawer-body">
+    <!-- Title -->
+    <div>
+      <input type="text" id="drawerTaskTitle" style="font-size: 18px; font-weight: 800; color: var(--text-primary); background: transparent; border: 1px solid transparent; border-radius: 8px; width: 100%; padding: 4px 6px; transition: border-color 0.2s;" onchange="saveDrawerField('title', this.value)" placeholder="Vazifa nomi...">
+    </div>
+
+    <!-- Properties Grid -->
+    <div class="drawer-props-grid">
+      <!-- Status / Column -->
+      <div class="drawer-prop-label"><i class="fas fa-columns"></i> Ustun:</div>
       <div>
-        <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;">
-          ${actionTypeHtml}
-          <div style="${titleStyle} font-size:13.5px; line-height:1.4;">${_esc(t.title)}</div>
-        </div>
-        ${t.description ? `<div style="font-size:11.5px; color:var(--text-secondary); margin-top:2px; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${_esc(t.description)}">${_esc(t.description)}</div>` : ''}
-        ${t.dealId ? `<div style="font-size:10.5px; color:var(--accent); margin-top:4px; display:inline-flex; align-items:center; gap:4px;"><i class="fas fa-external-link-alt" style="font-size:8px;"></i> Sdelkada ochish</div>` : ''}
+        <select id="drawerColumnSelect" class="form-control" style="height: 32px; font-size: 12.5px;" onchange="onDrawerColumnChange(this.value)"></select>
       </div>
-      <div>${clientHtml}</div>
-      <div>${dealHtml}</div>
-      <div>${dueHtml}</div>
-      <div>${assigneeHtml}</div>
-      <div style="text-align:right;">
-        <div style="display:flex; justify-content:flex-end; gap:6px; align-items:center;">
-          <button class="task-action-btn" onclick="event.stopPropagation(); toggleTaskStatus(${t.id})" title="${t.completed ? 'Qaytarish' : 'Bajarildi deb belgilash'}" style="background:${t.completed ? 'rgba(245,158,11,0.12)' : 'rgba(16,185,129,0.15)'}; color:${t.completed ? '#f59e0b' : '#10b981'}; width:auto; padding:0 10px; border-radius:6px; font-size:11.5px; font-weight:700; height:28px;">
-            <i class="fas fa-${t.completed ? 'undo' : 'check'}" style="margin-right:4px;"></i> ${t.completed ? 'Qaytarish' : 'Bajarildi'}
-          </button>
-          <button class="task-action-btn" onclick="event.stopPropagation(); viewTaskDetails(${t.id})" title="Ko'rish" style="background:var(--accent-soft); color:var(--accent);"><i class="fas fa-eye" style="font-size:11.5px;"></i></button>
-          ${t.dealId ? `<button class="task-action-btn" onclick="event.stopPropagation(); window.location.href='/deals?openDealId=${t.dealId}'" title="Sdelkaga o'tish" style="background:rgba(14,165,233,0.1); color:#0ea5e9;"><i class="fas fa-arrow-right" style="font-size:11.5px;"></i></button>` : ''}
-          <button class="task-action-btn" onclick="event.stopPropagation(); deleteTaskRow(${t.id})" title="O'chirish" style="background:rgba(239,68,68,0.1); color:#ef4444;"><i class="fas fa-trash-alt" style="font-size:11px;"></i></button>
-        </div>
+
+      <!-- Priority -->
+      <div class="drawer-prop-label"><i class="fas fa-flag"></i> Muhimlik:</div>
+      <div>
+        <select id="drawerPrioritySelect" class="form-control" style="height: 32px; font-size: 12.5px;" onchange="saveDrawerField('priority', this.value)">
+          <option value="low">🟢 Past (Low)</option>
+          <option value="medium">🟡 O'rta (Medium)</option>
+          <option value="high">🔴 Yuqori (High)</option>
+          <option value="urgent">⚡ Shoshilinch (Urgent)</option>
+        </select>
+      </div>
+
+      <!-- Assignee -->
+      <div class="drawer-prop-label"><i class="fas fa-user"></i> Mas'ul:</div>
+      <div>
+        <select id="drawerAssigneeSelect" class="form-control" style="height: 32px; font-size: 12.5px;" onchange="saveDrawerField('assignedToId', this.value)"></select>
+      </div>
+
+      <!-- Deadline -->
+      <div class="drawer-prop-label"><i class="far fa-calendar-alt"></i> Muddat:</div>
+      <div style="display: flex; gap: 8px;">
+        <input type="date" id="drawerDueDate" class="form-control" style="height: 32px; font-size: 12px; width: 140px;" onchange="saveDrawerField('dueDate', this.value)">
+        <input type="time" id="drawerDueTime" class="form-control" style="height: 32px; font-size: 12px; width: 100px;" onchange="saveDrawerField('dueTime', this.value)">
+      </div>
+
+      <!-- Reminder -->
+      <div class="drawer-prop-label"><i class="fas fa-bell"></i> Eslatma:</div>
+      <div>
+        <select id="drawerReminderSelect" class="form-control" style="height: 32px; font-size: 12.5px;" onchange="saveDrawerField('reminderMinutes', this.value)">
+          <option value="">Eslatma yo'q</option>
+          <option value="5">5 daqiqa oldin</option>
+          <option value="15">15 daqiqa oldin</option>
+          <option value="30">30 daqiqa oldin</option>
+          <option value="60">1 soat oldin</option>
+          <option value="1440">1 kun oldin</option>
+        </select>
+      </div>
+
+      <!-- CRM Client -->
+      <div class="drawer-prop-label"><i class="fas fa-building-user"></i> CRM Mijoz:</div>
+      <div id="drawerClientWrapper">
+        <select id="drawerClientSelect" class="form-control" style="height: 32px; font-size: 12.5px;" onchange="saveDrawerField('clientId', this.value)">
+          <option value="">Bog'lanmagan</option>
+        </select>
       </div>
     </div>
-  `;
+
+    <!-- Description -->
+    <div>
+      <div class="drawer-section-title"><i class="fas fa-align-left"></i> Tavsif</div>
+      <textarea id="drawerDescription" class="form-control" rows="3" placeholder="Batafsil ma'lumot, topshiriq shartlari..." onchange="saveDrawerField('description', this.value)"></textarea>
+    </div>
+
+    <!-- Checklist -->
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <div class="drawer-section-title" style="margin: 0;"><i class="fas fa-check-square"></i> Checklist</div>
+        <span id="drawerChecklistCounter" style="font-size: 11.5px; font-weight: 700; color: var(--text-tertiary);">0 / 0</span>
+      </div>
+      <div class="task-card-checklist-bar" style="height: 6px; margin-bottom: 12px;">
+        <div class="task-card-checklist-fill" id="drawerChecklistProgressFill" style="width: 0%;"></div>
+      </div>
+      <div id="drawerChecklistContainer" style="display: flex; flex-direction: column; gap: 4px;"></div>
+      <!-- Add checklist input -->
+      <div style="display: flex; gap: 6px; margin-top: 8px;">
+        <input type="text" id="newChecklistInput" class="form-control" style="height: 32px; font-size: 12px;" placeholder="+ Yangi band yozing..." onkeydown="if(event.key==='Enter') addDrawerChecklistItem()">
+        <button class="btn btn-secondary btn-sm" onclick="addDrawerChecklistItem()"><i class="fas fa-plus"></i></button>
+      </div>
+    </div>
+
+    <!-- Attachments -->
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <div class="drawer-section-title" style="margin: 0;"><i class="fas fa-paperclip"></i> Biriktirilgan Fayllar</div>
+        <label class="btn btn-ghost btn-sm" style="cursor: pointer; font-size: 12px; color: var(--accent);">
+          <i class="fas fa-upload"></i> Fayl yuklash
+          <input type="file" id="drawerFileInput" style="display: none;" onchange="handleDrawerFileUpload(this)">
+        </label>
+      </div>
+      <div id="drawerAttachmentsContainer" style="display: flex; flex-direction: column; gap: 6px;"></div>
+    </div>
+
+    <!-- Comments -->
+    <div>
+      <div class="drawer-section-title"><i class="fas fa-comments"></i> Sharhlar</div>
+      <div id="drawerCommentsList" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;"></div>
+      <div style="display: flex; gap: 8px;">
+        <input type="text" id="newCommentInput" class="form-control" placeholder="Fikr yoki eslatma yozing..." style="height: 36px; font-size: 13px;" onkeydown="if(event.key==='Enter') addDrawerComment()">
+        <button class="btn btn-primary btn-sm" onclick="addDrawerComment()"><i class="fas fa-paper-plane"></i></button>
+      </div>
+    </div>
+
+    <!-- Activity Log -->
+    <div>
+      <div class="drawer-section-title" style="cursor: pointer;" onclick="toggleDrawerActivityLog()">
+        <i class="fas fa-history"></i> Faoliyat Tarixi
+        <i class="fas fa-chevron-down" id="activityChevron" style="font-size: 10px; margin-left: auto;"></i>
+      </div>
+      <div id="drawerActivityLogContainer" style="display: none; flex-direction: column; gap: 8px; font-size: 12px; color: var(--text-secondary);"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     6. CREATE TASK MODAL
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="createTaskModal">
+  <div class="modal-box" style="max-width: 540px;">
+    <div class="modal-header">
+      <h2><i class="fas fa-plus-circle text-brand" style="margin-right: 6px;"></i> Yangi Vazifa</h2>
+      <button class="modal-close" onclick="closeCreateTaskModal()">&times;</button>
+    </div>
+    <form id="createTaskForm" onsubmit="submitCreateTaskForm(event)">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Sarlavha *</label>
+          <input type="text" id="modalTaskTitle" class="form-control" placeholder="Masalan: Ali Valiyev bilan qayta bog'lanish" required>
+        </div>
+
+        <div class="form-grid form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Ustun / Bosqich</label>
+            <select id="modalTaskColumn" class="form-control"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Muhimlik</label>
+            <select id="modalTaskPriority" class="form-control">
+              <option value="low">🟢 Past (Low)</option>
+              <option value="medium" selected>🟡 O'rta (Medium)</option>
+              <option value="high">🔴 Yuqori (High)</option>
+              <option value="urgent">⚡ Shoshilinch (Urgent)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Mas'ul xodim</label>
+            <select id="modalTaskAssignee" class="form-control"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">CRM Mijoz (ixtiyoriy)</label>
+            <select id="modalTaskClient" class="form-control">
+              <option value="">Mijoz biriktirilmagan</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Tugash sanasi</label>
+            <input type="date" id="modalTaskDueDate" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Vaqti</label>
+            <input type="time" id="modalTaskDueTime" class="form-control">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tavsif</label>
+          <textarea id="modalTaskDescription" class="form-control" rows="2" placeholder="Qo'shimcha izoh yoki ko'rsatmalar..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer flex justify-end gap-2">
+        <button type="button" class="btn btn-secondary" onclick="closeCreateTaskModal()">Bekor qilish</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Yaratish</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     7. CREATE / EDIT BOARD & COLUMN MODALS
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="boardModal">
+  <div class="modal-box" style="max-width: 440px;">
+    <div class="modal-header">
+      <h2 id="boardModalTitle">Yangi Board</h2>
+      <button class="modal-close" onclick="closeBoardModal()">&times;</button>
+    </div>
+    <form onsubmit="submitBoardForm(event)">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Board nomi *</label>
+          <input type="text" id="boardNameInput" class="form-control" placeholder="Masalan: Yetkazib berish" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tavsif</label>
+          <input type="text" id="boardDescInput" class="form-control" placeholder="Qisqacha ma'lumot...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Rang</label>
+          <input type="color" id="boardColorInput" value="#007AFF" style="width: 100%; height: 36px; border: none; border-radius: 8px; cursor: pointer;">
+        </div>
+      </div>
+      <div class="modal-footer flex justify-end gap-2">
+        <button type="button" class="btn btn-secondary" onclick="closeBoardModal()">Bekor qilish</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Saqlash</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="columnModal">
+  <div class="modal-box" style="max-width: 420px;">
+    <div class="modal-header">
+      <h2 id="columnModalTitle">Yangi Ustun</h2>
+      <button class="modal-close" onclick="closeColumnModal()">&times;</button>
+    </div>
+    <form onsubmit="submitColumnForm(event)">
+      <input type="hidden" id="columnEditId">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Ustun nomi *</label>
+          <input type="text" id="columnNameInput" class="form-control" placeholder="Masalan: Muzokara jarayonida" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Rang</label>
+          <input type="color" id="columnColorInput" value="#007AFF" style="width: 100%; height: 36px; border: none; border-radius: 8px; cursor: pointer;">
+        </div>
+      </div>
+      <div class="modal-footer flex justify-end gap-2">
+        <button type="button" class="btn btn-secondary" onclick="closeColumnModal()">Bekor qilish</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Saqlash</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     8. JAVASCRIPT LOGIC & KANBAN ENGINE
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script>
+// ── State Management ─────────────────────────────────────────────────────────
+let _boards = [];
+let _activeBoardId = null;
+let _tasks = [];
+let _users = [];
+let _clients = [];
+let _currentFilter = 'all';
+let _searchDebounceTimer = null;
+let _activeDrawerTaskId = null;
+let _currentView = 'kanban';
+let _dragTaskId = null;
+
+// Esc helper
+function esc(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
-function renderSingleTaskCardHtml(t) {
-  const nowMs = Date.now();
-  const today = new Date(); today.setHours(0,0,0,0);
-  const tomorrowEnd = new Date(today); tomorrowEnd.setDate(today.getDate() + 1); tomorrowEnd.setHours(23,59,59,999);
-  const exactDue = getTaskExactDate(t);
-  const isOverdue = exactDue && exactDue.getTime() < nowMs && !t.completed;
-  const isToday = exactDue && exactDue >= today && exactDue < tomorrowEnd;
-  const dueColor = isOverdue ? '#ef4444' : isToday ? '#10b981' : 'var(--text-tertiary)';
-  const pLabel = { high: '🔴 Yuqori', medium: "🟡 O'rta", low: '🟢 Past' };
+// ── Initialization ───────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  await Promise.all([
+    loadUsersList(),
+    loadClientsList(),
+    loadBoardsList()
+  ]);
+  setupKeyboardShortcuts();
+  setupWebSocketUpdates();
+});
 
-  let dueHtml = 'Sana yo\'q';
-  if (t.dueDate) {
-    const d = new Date(t.dueDate);
-    if (!isNaN(d.getTime())) {
-      const dd = String(d.getDate()).padStart(2, '0');
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const yyyy = d.getFullYear();
-      dueHtml = `${dd}.${mm}.${yyyy} ${t.dueTime || '10:00'}`;
+// ── Keyboard Shortcuts (N, F, /, Esc) ────────────────────────────────────────
+function setupKeyboardShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    // Ignore if typing inside input or textarea
+    const tag = e.target.tagName.toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') {
+      if (e.key === 'Escape') {
+        closeTaskDrawer();
+        closeCreateTaskModal();
+      }
+      return;
     }
-  }
 
-  const clientName = t.client ? _esc(t.client.name) : '<span style="color:var(--text-tertiary)">—</span>';
-  const dealName = t.deal ? _esc(t.deal.productName) : '<span style="color:var(--text-tertiary)">—</span>';
-  const dealLink = t.dealId ? `<a href="/deals?openDealId=${t.dealId}" onclick="event.stopPropagation();" style="color:var(--accent); text-decoration:none; font-weight:600;">${dealName}</a>` : dealName;
-
-  const cardClickAction = t.dealId ? `onclick="window.location.href='/deals?openDealId=${t.dealId}'"` : '';
-
-  return `
-    <div class="task-item" id="task-${t.id}" ${cardClickAction} style="padding: 14px; border: 1px solid var(--border); border-left: 4px solid ${isOverdue ? '#ef4444' : t.completed ? '#10b981' : 'var(--accent)'}; border-radius: 10px; background: var(--bg-secondary); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; gap: 8px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='none'; this.style.boxShadow='none'">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; width:100%;">
-        <div style="display:flex; align-items:flex-start; gap:8px;">
-          <div style="width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px; ${t.completed ? 'background:#10b981; color:#fff;' : isOverdue ? 'background:rgba(239,68,68,0.12); color:#ef4444;' : 'background:rgba(14,165,233,0.1); color:#0ea5e9;'}">
-            ${t.completed ? '<i class="fas fa-check" style="font-size:9px"></i>' : isOverdue ? '<i class="fas fa-exclamation" style="font-size:9px"></i>' : '<i class="fas fa-bell" style="font-size:8px"></i>'}
-          </div>
-          <div>
-            <div style="font-size:13.5px; color:var(--text-primary); line-height:1.4;">
-              <strong>${_esc(t.actionType === 'Связаться' || !t.actionType ? 'Aloqaga chiqish' : t.actionType)}</strong>: ${_esc(t.title || 'Vazifa')}
-            </div>
-            ${(() => {
-              const desc = t.description || '';
-              if (!desc) return '';
-              const isMakeLead = desc.includes('Lead ID:') || desc.includes('Manba:') || desc.length > 120;
-              if (isMakeLead) {
-                return `
-                  <details style="font-size:11px; color:var(--text-secondary); margin-top:4px; border:1px solid var(--border); border-radius:6px; padding:6px; background:var(--bg-tertiary);" onclick="event.stopPropagation();">
-                    <summary style="cursor:pointer; font-weight:700; color:var(--brand); outline:none; font-size:10.5px; list-style:none; display:flex; align-items:center; gap:4px;">
-                      <i class="fas fa-info-circle"></i> <span>Tafsilotlarni ko'rish</span>
-                    </summary>
-                    <div style="margin-top:4px; white-space:pre-wrap; word-break:break-word; line-height:1.3;">${_esc(desc)}</div>
-                  </details>
-                `;
-              }
-              return `<div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">${_esc(desc)}</div>`;
-            })()}
-            ${t.dealId ? `<div style="font-size:10.5px; color:var(--accent); margin-top:4px; display:inline-flex; align-items:center; gap:4px;"><i class="fas fa-external-link-alt" style="font-size:8px;"></i> Sdelkada ochish</div>` : ''}
-          </div>
-        </div>
-      </div>
-
-      <div style="display:flex; flex-direction:column; gap:4px; border-top: 1px solid var(--border-light); padding-top:8px; font-size:12px;">
-        <div style="display:flex; align-items:center; gap:6px;">
-          <span style="color:var(--text-tertiary); width:70px; flex-shrink:0;">Mijoz:</span>
-          <span style="font-weight:600; color:var(--text-primary);">${clientName}</span>
-        </div>
-        <div style="display:flex; align-items:center; gap:6px;">
-          <span style="color:var(--text-tertiary); width:70px; flex-shrink:0;">Bitim:</span>
-          <span>${dealLink}</span>
-        </div>
-      </div>
-
-      <div style="display:flex; justify-content:space-between; align-items:center; border-top: 1px solid var(--border-light); padding-top:8px; margin-top:2px;">
-        <span style="font-size:11px; color:${dueColor}; font-weight:700;">
-          <i class="far fa-calendar-alt"></i> ${dueHtml}
-        </span>
-        <span style="font-size:10px; font-weight:700; color:var(--text-secondary); background: var(--bg-primary); padding:1px 6px; border-radius:3px;">
-          ${pLabel[t.priority] || 'Medium'}
-        </span>
-      </div>
-    </div>
-  `;
-}
-
-function renderTasks() {
-  const tasks = getFilteredTasks();
-  const el = document.getElementById('taskListBody');
-  document.getElementById('taskCount').textContent = tasks.length;
-
-  const titles = { all: 'Barcha vazifalar', day: 'Bugungi vazifalar', week: 'Bu hafta vazifalari', month: 'Bu oy vazifalari', overdue: "Muddati o'tgan", done: 'Bajarilgan vazifalar' };
-  document.getElementById('taskListTitle').textContent = titles[currentFilter] || 'Vazifalar';
-
-  if (!tasks.length) {
-    el.innerHTML = `
-      <div style="text-align:center; padding:48px; background: var(--bg-primary); border-radius: 12px; border: 1px solid var(--border);">
-        <div style="font-size:40px; margin-bottom:12px;">✅</div>
-        <h3 style="font-size:16px; font-weight:700; color:var(--text-primary); margin-bottom:6px;">Vazifalar yo'q</h3>
-        <p style="font-size:13px; color:var(--text-secondary);">Hozircha bu filtrdagi vazifalar mavjud emas</p>
-      </div>`;
-    updateStats();
-    return;
-  }
-
-  const today = new Date(); today.setHours(0,0,0,0);
-  const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
-
-  const overdueTasks = [];
-  const todayTasks = [];
-  const tomorrowTasks = [];
-  const futureTasks = [];
-  const noDateTasks = [];
-  const doneTasks = [];
-
-  tasks.forEach(t => {
-    if (t.completed) { doneTasks.push(t); return; }
-    const due = t.dueDate ? new Date(t.dueDate) : null;
-    if (!due) { noDateTasks.push(t); }
-    else {
-      const d = new Date(due); d.setHours(0,0,0,0);
-      if (d < today) overdueTasks.push(t);
-      else if (d.getTime() === today.getTime()) todayTasks.push(t);
-      else if (d.getTime() === tomorrow.getTime()) tomorrowTasks.push(t);
-      else futureTasks.push(t);
+    if (e.key === 'n' || e.key === 'N') {
+      e.preventDefault();
+      openCreateTaskModal();
+    } else if (e.key === '/') {
+      e.preventDefault();
+      document.getElementById('taskSearchInput')?.focus();
+    } else if (e.key === 'Escape') {
+      closeTaskDrawer();
+      closeCreateTaskModal();
     }
   });
+}
 
-  function renderTaskGroup(groupTasks, title, color, icon) {
-    if (!groupTasks.length) return '';
-    return `
-      <div style="margin-bottom: 4px;">
-        <div style="padding: 5px 14px; font-weight: 700; color: ${color}; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; background: ${color}10; border-radius: 20px; margin-bottom: 10px; border: 1px solid ${color}20;">
-          <i class="fas fa-${icon}" style="font-size:10px;"></i>
-          ${title} <span style="font-weight:800;">${groupTasks.length}</span>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;">
-          ${groupTasks.map(t => renderSingleTaskRowHtml(t)).join('')}
-        </div>
+// ── WebSocket Real-Time Listener ─────────────────────────────────────────────
+function setupWebSocketUpdates() {
+  try {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${protocol}//${window.location.host}`);
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type && data.type.startsWith('task_')) {
+          loadTasks(false); // Reload silently in background
+        }
+      } catch (_) {}
+    };
+  } catch (_) {}
+}
+
+// ── Load Auxiliary Data ──────────────────────────────────────────────────────
+async function loadUsersList() {
+  try {
+    const r = await fetch('/api/settings/users');
+    if (r.ok) {
+      _users = await r.json();
+      populateUserSelectors();
+    }
+  } catch (_) {}
+}
+
+async function loadClientsList() {
+  try {
+    const r = await fetch('/api/clients');
+    if (r.ok) {
+      const data = await r.json();
+      _clients = Array.isArray(data) ? data : (data.clients || []);
+      populateClientSelectors();
+    }
+  } catch (_) {}
+}
+
+function populateUserSelectors() {
+  const options = '<option value="">Mas\'ul tanlanmagan</option>' +
+    _users.map(u => `<option value="${u.id}">${esc(u.fullName || u.email)} (${u.role})</option>`).join('');
+
+  const filterSel = document.getElementById('filterAssigneeSelect');
+  if (filterSel) filterSel.innerHTML = '<option value="">Barcha mas\'ullar</option>' + _users.map(u => `<option value="${u.id}">${esc(u.fullName || u.email)}</option>`).join('');
+
+  const modalSel = document.getElementById('modalTaskAssignee');
+  if (modalSel) modalSel.innerHTML = options;
+
+  const drawerSel = document.getElementById('drawerAssigneeSelect');
+  if (drawerSel) drawerSel.innerHTML = options;
+}
+
+function populateClientSelectors() {
+  const options = '<option value="">Mijoz biriktirilmagan</option>' +
+    _clients.map(c => `<option value="${c.id}">${esc(c.name)} ${c.phone ? '(' + esc(c.phone) + ')' : ''}</option>`).join('');
+
+  const modalSel = document.getElementById('modalTaskClient');
+  if (modalSel) modalSel.innerHTML = options;
+
+  const drawerSel = document.getElementById('drawerClientSelect');
+  if (drawerSel) drawerSel.innerHTML = options;
+}
+
+// ── Board Management ─────────────────────────────────────────────────────────
+async function loadBoardsList() {
+  try {
+    const r = await fetch('/api/tasks/boards');
+    if (!r.ok) throw new Error('Boardlarni yuklab bo\'lmadi');
+    _boards = await r.json();
+
+    if (_boards.length > 0) {
+      if (!_activeBoardId || !_boards.find(b => b.id === _activeBoardId)) {
+        _activeBoardId = _boards[0].id;
+      }
+      renderBoardDropdown();
+      updateActiveBoardDisplay();
+      await loadTasks();
+    }
+  } catch (err) {
+    console.error('loadBoardsList error:', err);
+  }
+}
+
+function renderBoardDropdown() {
+  const listEl = document.getElementById('boardDropdownList');
+  if (!listEl) return;
+  listEl.innerHTML = _boards.map(b => `
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:8px; cursor:pointer; background:${b.id === _activeBoardId ? 'rgba(0,122,255,0.1)' : 'transparent'}; color:${b.id === _activeBoardId ? 'var(--accent)' : 'var(--text-primary)'}; font-weight:700; font-size:13px;" onclick="selectBoard(${b.id})">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <i class="fas ${b.icon || 'fa-clipboard-list'}" style="color:${b.color || '#007AFF'};"></i>
+        <span>${esc(b.name)}</span>
+      </div>
+      <span class="badge" style="font-size:10px;">${b._count?.tasks || 0}</span>
+    </div>
+  `).join('');
+}
+
+function updateActiveBoardDisplay() {
+  const activeBoard = _boards.find(b => b.id === _activeBoardId);
+  if (!activeBoard) return;
+  document.getElementById('activeBoardName').textContent = activeBoard.name;
+  const iconEl = document.getElementById('activeBoardIcon');
+  if (iconEl) {
+    iconEl.className = `fas ${activeBoard.icon || 'fa-clipboard-list'}`;
+    iconEl.style.color = activeBoard.color || '#007AFF';
+  }
+  populateColumnSelectors(activeBoard.columns || []);
+}
+
+function populateColumnSelectors(columns) {
+  const options = columns.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  const modalCol = document.getElementById('modalTaskColumn');
+  if (modalCol) modalCol.innerHTML = options;
+  const drawerCol = document.getElementById('drawerColumnSelect');
+  if (drawerCol) drawerCol.innerHTML = options;
+}
+
+function toggleBoardDropdown() {
+  const menu = document.getElementById('boardDropdownMenu');
+  if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#activeBoardBtn') && !e.target.closest('#boardDropdownMenu')) {
+    const menu = document.getElementById('boardDropdownMenu');
+    if (menu) menu.style.display = 'none';
+  }
+});
+
+function selectBoard(id) {
+  _activeBoardId = id;
+  toggleBoardDropdown();
+  updateActiveBoardDisplay();
+  loadTasks();
+}
+
+// ── Tasks Loading & Rendering ────────────────────────────────────────────────
+async function loadTasks(showLoading = true) {
+  if (!_activeBoardId) return;
+  if (showLoading) {
+    if (_currentView === 'kanban') {
+      document.getElementById('kanbanBoardView').innerHTML = '<div style="padding:40px;text-align:center;width:100%"><div class="spinner"></div></div>';
+    } else {
+      document.getElementById('taskListTableBody').innerHTML = '<tr><td colspan="8" class="tc" style="padding:30px;"><div class="spinner"></div></td></tr>';
+    }
+  }
+
+  try {
+    let url = `/api/tasks?boardId=${_activeBoardId}`;
+
+    if (_currentFilter === 'mine') url += '&mine=true';
+    else if (_currentFilter === 'today') url += '&today=true';
+    else if (_currentFilter === 'overdue') url += '&overdue=true';
+    else if (_currentFilter === 'urgent') url += '&priority=urgent';
+    else if (_currentFilter === 'done') url += '&completed=true';
+
+    const assigneeVal = document.getElementById('filterAssigneeSelect')?.value;
+    if (assigneeVal) url += `&assignedToId=${assigneeVal}`;
+
+    const searchVal = document.getElementById('taskSearchInput')?.value?.trim();
+    if (searchVal) url += `&search=${encodeURIComponent(searchVal)}`;
+
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('Vazifalarni yuklab bo\'lmadi');
+    _tasks = await r.json();
+
+    if (_currentView === 'kanban') {
+      renderKanbanBoard();
+    } else {
+      renderListView();
+    }
+  } catch (err) {
+    console.error('loadTasks error:', err);
+  }
+}
+
+// ── Kanban Board Rendering ───────────────────────────────────────────────────
+function renderKanbanBoard() {
+  const board = _boards.find(b => b.id === _activeBoardId);
+  const container = document.getElementById('kanbanBoardView');
+  if (!container) return;
+
+  if (!board || !board.columns || board.columns.length === 0) {
+    container.innerHTML = `
+      <div style="padding: 60px; text-align: center; width: 100%; color: var(--text-tertiary);">
+        <i class="fas fa-columns" style="font-size: 36px; opacity: 0.3; margin-bottom: 12px;"></i>
+        <div style="font-size: 15px; font-weight: 700;">Ushbu boardda hali ustunlar yo'q</div>
+        <button class="btn btn-primary btn-sm" onclick="openCreateColumnModal()" style="margin-top: 12px;">
+          <i class="fas fa-plus"></i> Birinchi ustunni qo'shish
+        </button>
       </div>
     `;
+    return;
   }
 
   let html = '';
-  // Bugungi birinchi
-  html += renderTaskGroup(todayTasks, "Bugungi", "#007AFF", "sun");
-  html += renderTaskGroup(overdueTasks, "Muddati o'tgan", "#FF3B30", "exclamation-triangle");
-  html += renderTaskGroup(tomorrowTasks, "Ertangi", "#FF9500", "clock");
-  html += renderTaskGroup(futureTasks, "Keyingi kunlar", "#5856D6", "calendar-alt");
-  html += renderTaskGroup(noDateTasks, "Sanasiz", "#8E8E93", "question-circle");
-  html += renderTaskGroup(doneTasks, "Bajarilgan", "#34C759", "check-circle");
+  for (const col of board.columns) {
+    const colTasks = _tasks.filter(t => t.columnId === col.id);
+    colTasks.sort((a, b) => (a.order || 0) - (b.order || 0));
 
-  el.innerHTML = html;
-  updateStats();
-}
-
-let currentView = 'list';
-
-function setTasksView(view) {
-  currentView = view;
-  localStorage.setItem('tasks_view', view);
-
-  document.getElementById('btnList').classList.toggle('active', view === 'list');
-  document.getElementById('btnKanban').classList.toggle('active', view === 'kanban');
-
-  if (view === 'list') {
-    document.getElementById('taskListView').classList.remove('hidden');
-    document.getElementById('taskKanbanView').classList.add('hidden');
-    renderTasks();
-  } else {
-    document.getElementById('taskListView').classList.add('hidden');
-    document.getElementById('taskKanbanView').classList.remove('hidden');
-    renderTasksKanban();
-  }
-}
-window.setTasksView = setTasksView;
-
-function refreshView() {
-  if (currentView === 'list') {
-    renderTasks();
-  } else {
-    renderTasksKanban();
-  }
-}
-window.refreshView = refreshView;
-
-function renderTasksKanban() {
-  const tasks = getFilteredTasks();
-  const board = document.getElementById('taskKanbanBoard');
-  if (!board) return;
-
-  const today = new Date(); today.setHours(0,0,0,0);
-  const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
-
-  const overdueTasks = [];
-  const todayTasks = [];
-  const tomorrowTasks = [];
-
-  tasks.forEach(t => {
-    if (t.completed) return;
-    const due = t.dueDate ? new Date(t.dueDate) : null;
-    if (!due) return;
-    
-    const d = new Date(due); d.setHours(0,0,0,0);
-    if (d < today) {
-      overdueTasks.push(t);
-    } else if (d.getTime() === today.getTime()) {
-      todayTasks.push(t);
-    } else if (d.getTime() === tomorrow.getTime()) {
-      tomorrowTasks.push(t);
-    }
-  });
-
-  const columnsData = [
-    { key: 'overdue', title: "Muddati o'tgan (Просроченные)", color: "#FF3B30", tasks: overdueTasks },
-    { key: 'today', title: "Bugun (Сегодня)", color: "#6366F1", tasks: todayTasks },
-    { key: 'tomorrow', title: "Ertaga (Завтра)", color: "#FF9500", tasks: tomorrowTasks }
-  ];
-
-  board.innerHTML = columnsData.map(col => `
-    <div class="kanban-col" style="flex: 1; display: flex; flex-direction: column; background: var(--bg-primary); border-radius: 12px; border: 1px solid var(--border); max-height: 75vh; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
-      <div class="kanban-col-header" style="padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; background: var(--bg-secondary);">
-        <span style="width: 8px; height: 8px; border-radius: 50%; background: ${col.color};"></span>
-        <h4 style="margin: 0; font-size: 13.5px; font-weight: 700; color: var(--text-primary); flex-grow: 1;">${col.title}</h4>
-        <span class="badge" style="background: ${col.color}1A; color: ${col.color}; font-size: 10.5px; padding: 2px 7px; border-radius: 10px; font-weight: 700;">${col.tasks.length}</span>
-      </div>
-      <div class="kanban-col-body" style="padding: 12px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; flex-grow: 1;">
-        ${col.tasks.length === 0 ? `
-          <div style="padding: 30px 10px; text-align: center; color: var(--text-tertiary); font-size: 12.5px;">
-            <i class="fas fa-clipboard-check" style="font-size: 20px; opacity: 0.4; display: block; margin-bottom: 6px;"></i>
-            Vazifalar yo'q
+    html += `
+      <div class="kanban-column" data-col-id="${col.id}">
+        <!-- Column Header -->
+        <div class="kanban-column-header">
+          <div class="kanban-column-title">
+            <span class="col-dot" style="background: ${col.color || '#007AFF'};"></span>
+            <span>${esc(col.name)}</span>
+            <span class="col-badge">${colTasks.length}</span>
           </div>
-        ` : col.tasks.map(t => renderSingleTaskCardHtml(t)).join('')}
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <button class="btn btn-ghost btn-sm" style="padding: 2px 6px; font-size: 11px;" onclick="openEditColumnModal(${col.id}, '${esc(col.name)}', '${col.color || '#007AFF'}')" title="Ustunni tahrirlash">
+              <i class="fas fa-ellipsis-h"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Cards Container (Drag Drop Zone) -->
+        <div class="kanban-cards-list"
+          data-col-id="${col.id}"
+          ondragover="onCardDragOver(event)"
+          ondragleave="onCardDragLeave(event)"
+          ondrop="onCardDrop(event, ${col.id})">
+          ${colTasks.map(t => renderTaskCard(t)).join('')}
+        </div>
+
+        <!-- Quick Task Creator -->
+        <div class="quick-add-card-wrap">
+          <button class="quick-add-btn" id="quickAddBtn_${col.id}" onclick="showQuickAddForm(${col.id})">
+            <i class="fas fa-plus"></i> Vazifa qo'shish
+          </button>
+          <div class="quick-add-form" id="quickAddForm_${col.id}">
+            <input type="text" class="quick-add-input" id="quickAddInput_${col.id}" placeholder="Vazifa nomi... (Enter)" onkeydown="handleQuickAddKeyDown(event, ${col.id})">
+            <div class="quick-add-actions">
+              <button class="btn btn-ghost btn-sm" onclick="hideQuickAddForm(${col.id})">Bekor</button>
+              <button class="btn btn-primary btn-sm" onclick="submitQuickAdd(${col.id})">Qo'shish</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // "+ Ustun qo'shish" button at end
+  html += `
+    <div class="add-column-btn" onclick="openCreateColumnModal()">
+      <i class="fas fa-plus"></i> Yangi ustun qo'shish
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
+
+// ── Single Task Card Rendering ───────────────────────────────────────────────
+function renderTaskCard(t) {
+  const priorityClass = `priority-badge-${t.priority || 'medium'}`;
+  const priorityLabels = { low: 'Past', medium: 'O\'rta', high: 'Yuqori', urgent: 'Shoshilinch' };
+
+  // Checklist indicator
+  let checklistHtml = '';
+  if (t.checklistProgress && t.checklistProgress.total > 0) {
+    const pct = Math.round((t.checklistProgress.completed / t.checklistProgress.total) * 100);
+    checklistHtml = `
+      <div class="task-card-checklist-bar">
+        <div class="task-card-checklist-fill" style="width: ${pct}%;"></div>
+      </div>
+    `;
+  }
+
+  // Client badge
+  let clientHtml = '';
+  if (t.client && t.client.name) {
+    clientHtml = `
+      <div class="task-card-client" title="${esc(t.client.name)} ${esc(t.client.phone || '')}">
+        <i class="fas fa-user-circle"></i>
+        <span>${esc(t.client.name)}</span>
+      </div>
+    `;
+  }
+
+  // Due date badge
+  let dueHtml = '';
+  if (t.dueDate) {
+    const d = new Date(t.dueDate);
+    const dateStr = d.toLocaleDateString('uz-UZ', { month: 'short', day: 'numeric' });
+    dueHtml = `
+      <span class="task-due-badge ${t.isOverdue ? 'overdue' : ''}" title="${t.isOverdue ? 'Muddati o\'tgan!' : 'Tugash vaqti'}">
+        <i class="far fa-clock"></i> ${dateStr} ${t.dueTime || ''}
+      </span>
+    `;
+  }
+
+  // Assignee avatar
+  let userHtml = '';
+  if (t.assignedTo) {
+    const initials = (t.assignedTo.fullName || t.assignedTo.email || '?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    userHtml = `<span class="task-user-avatar" title="${esc(t.assignedTo.fullName || t.assignedTo.email)}">${initials}</span>`;
+  }
+
+  // Labels
+  let tagsHtml = '';
+  if (t.parsedLabels && t.parsedLabels.length > 0) {
+    tagsHtml = t.parsedLabels.map(l => `<span class="task-tag" style="background:rgba(0,122,255,0.12); color:var(--accent);">${esc(l)}</span>`).join('');
+  }
+
+  return `
+    <div class="task-card ${t.completed ? 'completed' : ''}"
+      id="taskCard_${t.id}"
+      data-task-id="${t.id}"
+      draggable="true"
+      ondragstart="onCardDragStart(event, ${t.id})"
+      ondragend="onCardDragEnd(event)"
+      onclick="openTaskDrawer(${t.id})">
+
+      <!-- Header: Tags + Priority -->
+      <div class="task-card-header">
+        <div class="task-card-tags">
+          <span class="task-tag ${priorityClass}">${priorityLabels[t.priority || 'medium']}</span>
+          ${tagsHtml}
+        </div>
+      </div>
+
+      <!-- Title -->
+      <div class="task-card-title">${esc(t.title)}</div>
+
+      <!-- Client badge -->
+      ${clientHtml}
+
+      <!-- Checklist Bar -->
+      ${checklistHtml}
+
+      <!-- Meta Footer -->
+      <div class="task-card-meta">
+        <div class="task-meta-left">
+          ${dueHtml}
+          ${t.checklistProgress?.total ? `<span style="font-size:10.5px; font-weight:700; color:var(--text-tertiary);"><i class="fas fa-check-square"></i> ${t.checklistProgress.completed}/${t.checklistProgress.total}</span>` : ''}
+          ${t.commentsCount ? `<span style="font-size:10.5px; font-weight:700; color:var(--text-tertiary);"><i class="fas fa-comment"></i> ${t.commentsCount}</span>` : ''}
+          ${t.attachmentsCount ? `<span style="font-size:10.5px; font-weight:700; color:var(--text-tertiary);"><i class="fas fa-paperclip"></i> ${t.attachmentsCount}</span>` : ''}
+        </div>
+        <div>${userHtml}</div>
+      </div>
+    </div>
+  `;
+}
+
+// ── List View Rendering ──────────────────────────────────────────────────────
+function renderListView() {
+  const tbody = document.getElementById('taskListTableBody');
+  if (!tbody) return;
+
+  if (_tasks.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="tc" style="padding:40px; color:var(--text-tertiary);">Vazifalar topilmadi</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = _tasks.map(t => {
+    const priorityLabels = { low: 'Past', medium: 'O\'rta', high: 'Yuqori', urgent: 'Shoshilinch' };
+    const dateStr = t.dueDate ? new Date(t.dueDate).toLocaleDateString('uz-UZ') : '—';
+    const userName = t.assignedTo ? (t.assignedTo.fullName || t.assignedTo.email) : '—';
+    const clientName = t.client ? t.client.name : '—';
+
+    return `
+      <tr style="cursor:pointer;" onclick="openTaskDrawer(${t.id})">
+        <td>
+          <input type="checkbox" ${t.completed ? 'checked' : ''} onclick="event.stopPropagation(); toggleTaskComplete(${t.id}, this.checked)" style="width:16px; height:16px; cursor:pointer;">
+        </td>
+        <td style="font-weight:700; ${t.completed ? 'text-decoration:line-through; opacity:0.6;' : ''}">
+          ${esc(t.title)}
+        </td>
+        <td>
+          <span class="badge" style="background:${t.column?.color || '#007AFF'}20; color:${t.column?.color || '#007AFF'}; border:1px solid ${t.column?.color || '#007AFF'}40;">
+            ${esc(t.column?.name || 'Yangi')}
+          </span>
+        </td>
+        <td>
+          <span class="task-tag priority-badge-${t.priority || 'medium'}">${priorityLabels[t.priority || 'medium']}</span>
+        </td>
+        <td style="font-size:12.5px;">${esc(userName)}</td>
+        <td style="font-size:12px; ${t.isOverdue ? 'color:#ef4444; font-weight:700;' : ''}">${dateStr}</td>
+        <td style="font-size:12px; color:var(--accent);">${esc(clientName)}</td>
+        <td style="text-align:right;" onclick="event.stopPropagation();">
+          <button class="btn btn-ghost btn-sm text-red" onclick="deleteTaskDirect(${t.id})" title="O'chirish">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// ── Drag & Drop Engine (Optimistic UI) ────────────────────────────────────────
+function onCardDragStart(e, id) {
+  _dragTaskId = id;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function onCardDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.kanban-cards-list').forEach(el => el.classList.remove('drag-over'));
+  _dragTaskId = null;
+}
+
+function _dragAfterElement(container, y) {
+  const draggableElements = [...container.querySelectorAll('.task-card:not(.dragging)')];
+  return draggableElements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    if (offset < 0 && offset > closest.offset) {
+      return { offset: offset, element: child };
+    } else {
+      return closest;
+    }
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function onCardDragOver(e) {
+  e.preventDefault();
+  const container = e.currentTarget;
+  container.classList.add('drag-over');
+  const afterElement = _dragAfterElement(container, e.clientY);
+  const draggable = document.querySelector('.task-card.dragging');
+  if (draggable) {
+    if (afterElement == null) {
+      container.appendChild(draggable);
+    } else {
+      container.insertBefore(draggable, afterElement);
+    }
+  }
+}
+
+function onCardDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+async function onCardDrop(e, columnId) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (!_dragTaskId) return;
+
+  const taskId = _dragTaskId;
+  _dragTaskId = null;
+
+  // Calculate new order in target column
+  const container = e.currentTarget;
+  const cards = [...container.querySelectorAll('.task-card')];
+  const newOrder = cards.findIndex(c => Number(c.dataset.taskId) === taskId);
+
+  // Optimistic UI update in local state
+  const task = _tasks.find(t => t.id === taskId);
+  if (task) {
+    task.columnId = columnId;
+    task.order = newOrder >= 0 ? newOrder : 0;
+  }
+
+  // Persist to backend
+  try {
+    const r = await fetch(`/api/tasks/${taskId}/move`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ columnId, order: newOrder >= 0 ? newOrder : 0 })
+    });
+    if (!r.ok) {
+      const errData = await r.json();
+      throw new Error(errData.message || 'Ko\'chirishda xatolik');
+    }
+  } catch (err) {
+    console.error('Task move error:', err);
+    loadTasks(false); // Revert on failure
+  }
+}
+
+// ── Quick Add Task ───────────────────────────────────────────────────────────
+function showQuickAddForm(colId) {
+  document.getElementById(`quickAddBtn_${colId}`).style.display = 'none';
+  const form = document.getElementById(`quickAddForm_${colId}`);
+  form.style.display = 'flex';
+  const input = document.getElementById(`quickAddInput_${colId}`);
+  input.focus();
+}
+
+function hideQuickAddForm(colId) {
+  document.getElementById(`quickAddBtn_${colId}`).style.display = 'flex';
+  const form = document.getElementById(`quickAddForm_${colId}`);
+  form.style.display = 'none';
+  document.getElementById(`quickAddInput_${colId}`).value = '';
+}
+
+function handleQuickAddKeyDown(e, colId) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    submitQuickAdd(colId);
+  } else if (e.key === 'Escape') {
+    hideQuickAddForm(colId);
+  }
+}
+
+async function submitQuickAdd(colId) {
+  const input = document.getElementById(`quickAddInput_${colId}`);
+  const title = input ? input.value.trim() : '';
+  if (!title) return;
+
+  hideQuickAddForm(colId);
+
+  try {
+    const r = await fetch('/api/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title,
+        boardId: _activeBoardId,
+        columnId: colId,
+        priority: 'medium'
+      })
+    });
+    if (r.ok) {
+      const created = await r.json();
+      _tasks.push(created);
+      renderKanbanBoard();
+    }
+  } catch (err) {
+    console.error('Quick add error:', err);
+  }
+}
+
+// ── Task Drawer (Slide-Over Detail) ──────────────────────────────────────────
+async function openTaskDrawer(taskId) {
+  _activeDrawerTaskId = taskId;
+  const overlay = document.getElementById('taskDrawerOverlay');
+  const drawer = document.getElementById('taskDrawer');
+  overlay.classList.add('active');
+  drawer.classList.add('active');
+
+  try {
+    const r = await fetch(`/api/tasks/${taskId}`);
+    if (!r.ok) throw new Error('Vazifani yuklab bo\'lmadi');
+    const task = await r.json();
+
+    document.getElementById('drawerTaskId').textContent = `#${task.id}`;
+    document.getElementById('drawerTaskTitle').value = task.title || '';
+    document.getElementById('drawerDescription').value = task.description || '';
+    document.getElementById('drawerPrioritySelect').value = task.priority || 'medium';
+    document.getElementById('drawerAssigneeSelect').value = task.assignedToId || '';
+    document.getElementById('drawerClientSelect').value = task.clientId || '';
+    document.getElementById('drawerColumnSelect').value = task.columnId || '';
+    document.getElementById('drawerDueDate').value = task.dueDate ? task.dueDate.slice(0, 10) : '';
+    document.getElementById('drawerDueTime').value = task.dueTime || '';
+    document.getElementById('drawerReminderSelect').value = task.reminderMinutes || '';
+
+    const statusBadge = document.getElementById('drawerStatusBadge');
+    if (statusBadge) {
+      statusBadge.textContent = task.column ? task.column.name : (task.completed ? 'Bajarildi' : 'Yangi');
+      statusBadge.style.background = task.column?.color || 'var(--accent)';
+    }
+
+    renderDrawerChecklist(task.checklists || []);
+    renderDrawerAttachments(task.attachments || []);
+    renderDrawerComments(task.comments || []);
+    renderDrawerActivities(task.activities || []);
+  } catch (err) {
+    console.error('openTaskDrawer error:', err);
+  }
+}
+
+function closeTaskDrawer() {
+  const overlay = document.getElementById('taskDrawerOverlay');
+  const drawer = document.getElementById('taskDrawer');
+  overlay.classList.remove('active');
+  drawer.classList.remove('active');
+  _activeDrawerTaskId = null;
+}
+
+async function saveDrawerField(fieldName, value) {
+  if (!_activeDrawerTaskId) return;
+  try {
+    const payload = {};
+    payload[fieldName] = value;
+    const r = await fetch(`/api/tasks/${_activeDrawerTaskId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (r.ok) {
+      const updated = await r.json();
+      const idx = _tasks.findIndex(t => t.id === updated.id);
+      if (idx >= 0) _tasks[idx] = updated;
+      if (_currentView === 'kanban') renderKanbanBoard();
+      else renderListView();
+    }
+  } catch (err) {
+    console.error('saveDrawerField error:', err);
+  }
+}
+
+async function onDrawerColumnChange(colId) {
+  if (!_activeDrawerTaskId) return;
+  await saveDrawerField('columnId', colId);
+  const board = _boards.find(b => b.id === _activeBoardId);
+  const col = board?.columns?.find(c => c.id === Number(colId));
+  const statusBadge = document.getElementById('drawerStatusBadge');
+  if (statusBadge && col) {
+    statusBadge.textContent = col.name;
+    statusBadge.style.background = col.color || 'var(--accent)';
+  }
+}
+
+// ── Checklist in Drawer ──────────────────────────────────────────────────────
+function renderDrawerChecklist(items) {
+  const container = document.getElementById('drawerChecklistContainer');
+  if (!container) return;
+
+  const total = items.length;
+  const completed = items.filter(i => i.isCompleted).length;
+  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  document.getElementById('drawerChecklistCounter').textContent = `${completed} / ${total}`;
+  document.getElementById('drawerChecklistProgressFill').style.width = `${pct}%`;
+
+  container.innerHTML = items.map(item => `
+    <div class="checklist-row ${item.isCompleted ? 'done' : ''}">
+      <input type="checkbox" ${item.isCompleted ? 'checked' : ''} onchange="toggleChecklistItem(${item.id}, this.checked)" style="width:16px; height:16px; cursor:pointer;">
+      <span class="checklist-text" style="flex:1; font-size:13px; color:var(--text-primary);">${esc(item.title)}</span>
+      <button class="btn btn-ghost btn-sm text-red" style="padding:2px 6px; font-size:11px;" onclick="deleteChecklistItem(${item.id})">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  `).join('');
+}
+
+async function addDrawerChecklistItem() {
+  const input = document.getElementById('newChecklistInput');
+  const title = input ? input.value.trim() : '';
+  if (!title || !_activeDrawerTaskId) return;
+  input.value = '';
+
+  try {
+    const r = await fetch(`/api/tasks/${_activeDrawerTaskId}/checklist`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title })
+    });
+    if (r.ok) {
+      openTaskDrawer(_activeDrawerTaskId);
+      loadTasks(false);
+    }
+  } catch (err) {
+    console.error('addChecklist error:', err);
+  }
+}
+
+async function toggleChecklistItem(itemId, isCompleted) {
+  if (!_activeDrawerTaskId) return;
+  try {
+    await fetch(`/api/tasks/${_activeDrawerTaskId}/checklist/${itemId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isCompleted })
+    });
+    openTaskDrawer(_activeDrawerTaskId);
+    loadTasks(false);
+  } catch (err) {
+    console.error('toggleChecklist error:', err);
+  }
+}
+
+async function deleteChecklistItem(itemId) {
+  if (!_activeDrawerTaskId) return;
+  try {
+    await fetch(`/api/tasks/${_activeDrawerTaskId}/checklist/${itemId}`, { method: 'DELETE' });
+    openTaskDrawer(_activeDrawerTaskId);
+    loadTasks(false);
+  } catch (err) {
+    console.error('deleteChecklist error:', err);
+  }
+}
+
+// ── Attachments in Drawer ────────────────────────────────────────────────────
+function renderDrawerAttachments(attachments) {
+  const container = document.getElementById('drawerAttachmentsContainer');
+  if (!container) return;
+
+  if (attachments.length === 0) {
+    container.innerHTML = '<div style="font-size:12px; color:var(--text-tertiary); padding:4px 0;">Biriktirilgan fayllar yo\'q</div>';
+    return;
+  }
+
+  container.innerHTML = attachments.map(a => `
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:var(--bg-secondary); border:1px solid var(--border); border-radius:10px;">
+      <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
+        <i class="fas fa-file-alt" style="color:var(--accent); font-size:16px;"></i>
+        <a href="${esc(a.fileUrl)}" target="_blank" style="font-size:12.5px; font-weight:700; color:var(--text-primary); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+          ${esc(a.fileName)}
+        </a>
+      </div>
+      <button class="btn btn-ghost btn-sm text-red" onclick="deleteDrawerAttachment(${a.id})">
+        <i class="fas fa-trash-alt"></i>
+      </button>
+    </div>
+  `).join('');
+}
+
+async function handleDrawerFileUpload(input) {
+  const file = input.files[0];
+  if (!file || !_activeDrawerTaskId) return;
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const fileData = e.target.result;
+    try {
+      const r = await fetch(`/api/tasks/${_activeDrawerTaskId}/attachments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileData,
+          fileType: file.type,
+          fileSize: file.size
+        })
+      });
+      if (r.ok) {
+        openTaskDrawer(_activeDrawerTaskId);
+        loadTasks(false);
+      }
+    } catch (err) {
+      console.error('File upload error:', err);
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+async function deleteDrawerAttachment(attId) {
+  if (!_activeDrawerTaskId) return;
+  try {
+    await fetch(`/api/tasks/${_activeDrawerTaskId}/attachments/${attId}`, { method: 'DELETE' });
+    openTaskDrawer(_activeDrawerTaskId);
+    loadTasks(false);
+  } catch (err) {
+    console.error('deleteAttachment error:', err);
+  }
+}
+
+// ── Comments in Drawer ───────────────────────────────────────────────────────
+function renderDrawerComments(comments) {
+  const container = document.getElementById('drawerCommentsList');
+  if (!container) return;
+
+  if (comments.length === 0) {
+    container.innerHTML = '<div style="font-size:12px; color:var(--text-tertiary);">Hali sharhlar yo\'q</div>';
+    return;
+  }
+
+  container.innerHTML = comments.map(c => `
+    <div class="comment-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <span style="font-size:12px; font-weight:800; color:var(--text-primary);">${esc(c.user?.fullName || c.user?.email || 'Menejer')}</span>
+        <span style="font-size:10.5px; color:var(--text-tertiary);">${new Date(c.createdAt).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}</span>
+      </div>
+      <div style="font-size:12.5px; color:var(--text-secondary);">${esc(c.content)}</div>
+    </div>
+  `).join('');
+}
+
+async function addDrawerComment() {
+  const input = document.getElementById('newCommentInput');
+  const content = input ? input.value.trim() : '';
+  if (!content || !_activeDrawerTaskId) return;
+  input.value = '';
+
+  try {
+    const r = await fetch(`/api/tasks/${_activeDrawerTaskId}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content })
+    });
+    if (r.ok) {
+      openTaskDrawer(_activeDrawerTaskId);
+      loadTasks(false);
+    }
+  } catch (err) {
+    console.error('addComment error:', err);
+  }
+}
+
+// ── Activity Log in Drawer ───────────────────────────────────────────────────
+function toggleDrawerActivityLog() {
+  const container = document.getElementById('drawerActivityLogContainer');
+  const chevron = document.getElementById('activityChevron');
+  if (container.style.display === 'none') {
+    container.style.display = 'flex';
+    chevron.className = 'fas fa-chevron-up';
+  } else {
+    container.style.display = 'none';
+    chevron.className = 'fas fa-chevron-down';
+  }
+}
+
+function renderDrawerActivities(activities) {
+  const container = document.getElementById('drawerActivityLogContainer');
+  if (!container) return;
+
+  if (activities.length === 0) {
+    container.innerHTML = '<div>Hozircha tarix yo\'q</div>';
+    return;
+  }
+
+  container.innerHTML = activities.map(a => `
+    <div style="display:flex; gap:8px; align-items:flex-start;">
+      <span style="font-size:11px; color:var(--text-tertiary); width:70px; flex-shrink:0;">${new Date(a.createdAt).toLocaleDateString('uz-UZ', { month:'short', day:'numeric' })}</span>
+      <div>
+        <strong style="color:var(--text-primary);">${esc(a.user?.fullName || a.user?.email || 'Tizim')}:</strong>
+        <span>${esc(a.action)}</span> ${a.details ? `<span style="opacity:0.8;">(${esc(a.details)})</span>` : ''}
       </div>
     </div>
   `).join('');
 }
 
-async function toggleTask(id, el) {
-  const completed = !el.classList.contains('done');
+// ── Task Actions ─────────────────────────────────────────────────────────────
+async function archiveCurrentDrawerTask() {
+  if (!_activeDrawerTaskId) return;
+  if (!confirm('Ushbu vazifani arxivlashni xohlaysizmi?')) return;
+  await fetch(`/api/tasks/${_activeDrawerTaskId}/archive`, { method: 'POST' });
+  closeTaskDrawer();
+  loadTasks();
+}
+
+async function deleteCurrentDrawerTask() {
+  if (!_activeDrawerTaskId) return;
+  if (!confirm('Haqiqatan ham bu vazifani butunlay o\'chirmoqchimisiz?')) return;
+  await fetch(`/api/tasks/${_activeDrawerTaskId}`, { method: 'DELETE' });
+  closeTaskDrawer();
+  loadTasks();
+}
+
+async function deleteTaskDirect(taskId) {
+  if (!confirm('Vazifani o\'chirmoqchimisiz?')) return;
+  await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
+  loadTasks();
+}
+
+async function toggleTaskComplete(taskId, completed) {
   try {
-    await fetch('/api/tasks/' + id, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+    await fetch(`/api/tasks/${taskId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ completed })
     });
-    await loadTasks();
-    if (typeof window.updateSidebarTaskBadge === 'function') window.updateSidebarTaskBadge();
-  } catch(e) { showToast('Xato', 'error'); }
+    loadTasks(false);
+  } catch (err) {
+    console.error('toggleComplete error:', err);
+  }
 }
 
-async function onCheckboxClick(taskId, isCompleted) {
-  if (isCompleted) {
-    try {
-      await fetch('/api/tasks/' + taskId, {
+// ── Modals Handling ──────────────────────────────────────────────────────────
+function openCreateTaskModal() {
+  const activeBoard = _boards.find(b => b.id === _activeBoardId);
+  populateColumnSelectors(activeBoard?.columns || []);
+  document.getElementById('createTaskModal').classList.remove('hidden');
+  document.getElementById('modalTaskTitle').focus();
+}
+function closeCreateTaskModal() {
+  document.getElementById('createTaskModal').classList.add('hidden');
+  document.getElementById('createTaskForm').reset();
+}
+
+async function submitCreateTaskForm(e) {
+  e.preventDefault();
+  const title = document.getElementById('modalTaskTitle').value.trim();
+  const columnId = document.getElementById('modalTaskColumn').value;
+  const priority = document.getElementById('modalTaskPriority').value;
+  const assignedToId = document.getElementById('modalTaskAssignee').value;
+  const clientId = document.getElementById('modalTaskClient').value;
+  const dueDate = document.getElementById('modalTaskDueDate').value;
+  const dueTime = document.getElementById('modalTaskDueTime').value;
+  const description = document.getElementById('modalTaskDescription').value;
+
+  try {
+    const r = await fetch('/api/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title,
+        boardId: _activeBoardId,
+        columnId,
+        priority,
+        assignedToId,
+        clientId,
+        dueDate,
+        dueTime,
+        description
+      })
+    });
+    if (r.ok) {
+      closeCreateTaskModal();
+      loadTasks();
+    }
+  } catch (err) {
+    console.error('createTask error:', err);
+  }
+}
+
+function openCreateBoardModal() {
+  toggleBoardDropdown();
+  document.getElementById('boardModal').classList.remove('hidden');
+}
+function closeBoardModal() {
+  document.getElementById('boardModal').classList.add('hidden');
+}
+async function submitBoardForm(e) {
+  e.preventDefault();
+  const name = document.getElementById('boardNameInput').value.trim();
+  const description = document.getElementById('boardDescInput').value.trim();
+  const color = document.getElementById('boardColorInput').value;
+
+  try {
+    const r = await fetch('/api/tasks/boards', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, description, color })
+    });
+    if (r.ok) {
+      closeBoardModal();
+      await loadBoardsList();
+    }
+  } catch (err) {
+    console.error('submitBoardForm error:', err);
+  }
+}
+
+function openCreateColumnModal() {
+  document.getElementById('columnModalTitle').textContent = 'Yangi Ustun';
+  document.getElementById('columnEditId').value = '';
+  document.getElementById('columnNameInput').value = '';
+  document.getElementById('columnColorInput').value = '#007AFF';
+  document.getElementById('columnModal').classList.remove('hidden');
+}
+function openEditColumnModal(id, name, color) {
+  document.getElementById('columnModalTitle').textContent = 'Ustunni Tahrirlash';
+  document.getElementById('columnEditId').value = id;
+  document.getElementById('columnNameInput').value = name;
+  document.getElementById('columnColorInput').value = color;
+  document.getElementById('columnModal').classList.remove('hidden');
+}
+function closeColumnModal() {
+  document.getElementById('columnModal').classList.add('hidden');
+}
+async function submitColumnForm(e) {
+  e.preventDefault();
+  const editId = document.getElementById('columnEditId').value;
+  const name = document.getElementById('columnNameInput').value.trim();
+  const color = document.getElementById('columnColorInput').value;
+
+  try {
+    if (editId) {
+      await fetch(`/api/tasks/columns/${editId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ completed: false })
+        body: JSON.stringify({ name, color })
       });
-      showToast("Vazifa qayta tiklandi!", "success");
-      await loadTasks();
-      if (typeof window.updateSidebarTaskBadge === 'function') window.updateSidebarTaskBadge();
-      if (typeof loadNotifications === 'function') loadNotifications();
-    } catch (e) {
-      showToast('Xato', 'error');
+    } else {
+      await fetch('/api/tasks/columns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ boardId: _activeBoardId, name, color })
+      });
     }
-  } else {
-    const box = document.getElementById('quick-complete-' + taskId);
-    if (box) {
-      const isHidden = box.style.display === 'none';
-      document.querySelectorAll('[id^="quick-complete-"]').forEach(el => el.style.display = 'none');
-      if (isHidden) {
-        box.style.display = 'flex';
-        setTimeout(() => {
-          document.getElementById('quick-res-' + taskId)?.focus();
-        }, 50);
-      }
-    }
-  }
-}
-
-async function submitQuickComplete(taskId) {
-  const input = document.getElementById('quick-res-' + taskId);
-  const result = (input ? input.value.trim() : '') || 'Bajarildi';
-  try {
-    const res = await fetch('/api/tasks/' + taskId + '/complete', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ result })
-    });
-    if (!res.ok) throw new Error("Vazifani yakunlashda xatolik");
-    showToast("Vazifa bajarildi!", "success");
-    await loadTasks();
-    if (typeof window.updateSidebarTaskBadge === 'function') window.updateSidebarTaskBadge();
-    if (typeof loadNotifications === 'function') loadNotifications();
+    closeColumnModal();
+    await loadBoardsList();
   } catch (err) {
-    showToast(err.message, "error");
+    console.error('submitColumnForm error:', err);
   }
 }
 
-async function submitQuickCompleteWithResult(taskId, result) {
-  try {
-    const res = await fetch('/api/tasks/' + taskId + '/complete', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ result })
-    });
-    if (!res.ok) throw new Error("Vazifani yakunlashda xatolik");
-    showToast("Vazifa bajarildi!", "success");
-    await loadTasks();
-    if (typeof window.updateSidebarTaskBadge === 'function') window.updateSidebarTaskBadge();
-    if (typeof loadNotifications === 'function') loadNotifications();
-  } catch (err) {
-    showToast(err.message, "error");
-  }
-}
-window.submitQuickCompleteWithResult = submitQuickCompleteWithResult;
-
-function cancelQuickComplete(taskId) {
-  const box = document.getElementById('quick-complete-' + taskId);
-  if (box) box.style.display = 'none';
+// ── View Switch (Kanban / List) ──────────────────────────────────────────────
+function switchTaskView(view) {
+  _currentView = view;
+  document.getElementById('btnViewKanban').classList.toggle('active', view === 'kanban');
+  document.getElementById('btnViewList').classList.toggle('active', view === 'list');
+  document.getElementById('kanbanBoardView').style.display = view === 'kanban' ? 'flex' : 'none';
+  document.getElementById('taskListView').style.display = view === 'list' ? 'block' : 'none';
+  if (view === 'kanban') renderKanbanBoard();
+  else renderListView();
 }
 
-async function openTaskModal(id, dealId, clientId, dealTitle) {
-  await loadUsers();
-  document.getElementById('taskId').value = id || '';
-  document.getElementById('t-dealId').value = dealId || '';
-  document.getElementById('t-clientId').value = clientId || '';
-  document.getElementById('t-title').value = '';
-  document.getElementById('t-description').value = '';
-  document.getElementById('t-dueDate').value = '';
-  document.getElementById('t-dueTime').value = '';
-  document.getElementById('t-priority').value = 'medium';
-  document.getElementById('t-actionType').value = 'Aloqaga chiqish';
-  document.getElementById('t-assignedTo').value = '';
-  document.getElementById('taskModalTitle').textContent = id ? 'Vazifani tahrirlash' : 'Yangi vazifa';
-
-  // Reset and hide Deal Stage group by default
-  const stageGroup = document.getElementById('taskDealStageGroup');
-  const stageSelect = document.getElementById('t-dealStage');
-  if (stageGroup && stageSelect) {
-    stageGroup.classList.add('hidden');
-    stageSelect.innerHTML = '<option value="">— Bosqichni o\'zgartirmaslik —</option>';
-  }
-
-  let activeDealId = dealId || null;
-  let pipelineId = null;
-  let currentStageId = null;
-
-  if (id) {
-    try {
-      const t = await fetch('/api/tasks/' + id).then(r => r.json());
-      document.getElementById('t-title').value = t.title || '';
-      document.getElementById('t-description').value = t.description || '';
-      document.getElementById('t-dueDate').value = t.dueDate ? t.dueDate.slice(0,10) : '';
-      document.getElementById('t-dueTime').value = t.dueTime || '';
-      document.getElementById('t-priority').value = t.priority || 'medium';
-      document.getElementById('t-actionType').value = t.actionType || 'Aloqaga chiqish';
-      document.getElementById('t-assignedTo').value = t.assignedToId || '';
-      document.getElementById('t-dealId').value = t.dealId || '';
-      document.getElementById('t-clientId').value = t.clientId || '';
-      activeDealId = t.dealId || null;
-      if (t.deal) {
-        pipelineId = t.deal.pipelineId;
-        currentStageId = t.deal.stageId || (t.deal.stage ? t.deal.stage.id : null);
-      }
-    } catch(e) {}
-  } else {
-    if (dealTitle) {
-      document.getElementById('t-title').value = dealTitle + ' bo\'yicha qayta aloqa';
-      document.getElementById('t-description').value = 'Mijoz bilan sdelka bo\'yicha qayta aloqaga chiqish kerak';
-      const today = new Date();
-      const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().slice(0, 10);
-      document.getElementById('t-dueDate').value = localDate;
-      document.getElementById('t-dueTime').value = '10:00';
-    }
-    if (activeDealId) {
-      try {
-        const d = await fetch('/api/deals/' + activeDealId).then(r => r.json());
-        pipelineId = d.pipelineId;
-        currentStageId = d.stageId;
-      } catch(e) {}
-    }
-  }
-
-  // Populate Deal Stage if deal is associated and has a pipeline
-  if (pipelineId && stageGroup && stageSelect) {
-    try {
-      const stages = await fetch(`/api/pipelines/${pipelineId}/stages`).then(r => r.json());
-      if (stages && stages.length > 0) {
-        stageGroup.classList.remove('hidden');
-        stageSelect.innerHTML = '<option value="" selected>— Bosqichni o\'zgartirmaslik —</option>';
-        stages.forEach(stg => {
-          const opt = document.createElement('option');
-          opt.value = stg.id;
-          const isCurrent = currentStageId && Number(currentStageId) === Number(stg.id);
-          opt.textContent = stg.name + (isCurrent ? ' (Hozirgi bosqich)' : '');
-          stageSelect.appendChild(opt);
-        });
-      }
-    } catch(e) {
-      console.error('Failed to load deal stages:', e);
-    }
-  }
-
-  document.getElementById('taskModal').classList.remove('hidden');
+// ── Search & Filter ──────────────────────────────────────────────────────────
+function onTaskSearchInput(val) {
+  clearTimeout(_searchDebounceTimer);
+  _searchDebounceTimer = setTimeout(() => {
+    loadTasks(false);
+  }, 250);
 }
 
-function closeTaskModal() {
-  document.getElementById('taskModal').classList.add('hidden');
-}
-
-async function saveTask() {
-  const id = document.getElementById('taskId').value;
-  const title = document.getElementById('t-title').value.trim();
-  if (!title) { showToast('Sarlavha majburiy', 'error'); return; }
-
-  const btn = document.getElementById('taskSaveBtn');
-  btn.disabled = true;
-
-  const stageSelect = document.getElementById('t-dealStage');
-  const stageId = (stageSelect && !stageSelect.parentElement.classList.contains('hidden') && stageSelect.value) ? Number(stageSelect.value) : null;
-
-  const body = {
-    title,
-    description: document.getElementById('t-description').value || null,
-    dueDate: document.getElementById('t-dueDate').value || null,
-    dueTime: document.getElementById('t-dueTime').value || null,
-    priority: document.getElementById('t-priority').value,
-    actionType: document.getElementById('t-actionType').value || 'Aloqaga chiqish',
-    assignedToId: document.getElementById('t-assignedTo').value || null,
-    dealId: document.getElementById('t-dealId').value ? Number(document.getElementById('t-dealId').value) : null,
-    clientId: document.getElementById('t-clientId').value ? Number(document.getElementById('t-clientId').value) : null,
-    stageId
-  };
-
-  try {
-    const url = id ? '/api/tasks/' + id : '/api/tasks';
-    const r = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    if (!r.ok) throw new Error((await r.json()).message);
-    showToast(id ? 'Vazifa yangilandi' : 'Vazifa qo\'shildi', 'success');
-    closeTaskModal();
-    await loadTasks();
-    if (typeof window.updateSidebarTaskBadge === 'function') window.updateSidebarTaskBadge();
-  } catch(e) {
-    showToast(e.message || 'Xato', 'error');
-  } finally { btn.disabled = false; }
-}
-
-async function deleteTask(id) {
-  if (!confirm('Vazifani o\'chirishni tasdiqlaysizmi?')) return;
-  try {
-    const r = await fetch('/api/tasks/' + id, { method: 'DELETE' });
-    if (!r.ok) throw new Error();
-    showToast('Vazifa o\'chirildi', 'success');
-    await loadTasks();
-    if (typeof window.updateSidebarTaskBadge === 'function') window.updateSidebarTaskBadge();
-  } catch(e) { showToast('O\'chirishda xato', 'error'); }
-}
-
-const fmtMoney = (v) => {
-  return new Intl.NumberFormat('uz-UZ', { style: 'decimal' }).format(v || 0) + ' UZS';
-};
-
-function viewTaskDetails(id) {
-  const t = allTasks.find(x => x.id === id);
-  if (!t) return;
-
-  const pLabel = { high: '🔴 Yuqori', medium: '🟡 O\'rta', low: '🟢 Past' };
-  
-  // Format Date
-  let dateFormatted = 'Belgilanmagan';
-  if (t.dueDate) {
-    const d = new Date(t.dueDate);
-    if (!isNaN(d.getTime())) {
-      const dd = String(d.getDate()).padStart(2, '0');
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const yyyy = d.getFullYear();
-      dateFormatted = `${dd}.${mm}.${yyyy}`;
-    }
-  }
-  
-  // Task fields
-  document.getElementById('v-title').textContent = t.title || '';
-  document.getElementById('v-desc').textContent = t.description || 'Kiritilmagan';
-  document.getElementById('v-due').textContent = dateFormatted + (t.dueTime ? ` Soat: ${t.dueTime}` : '');
-  document.getElementById('v-priority').textContent = pLabel[t.priority] || 'Past';
-  document.getElementById('v-assigned').textContent = t.assignedTo ? (t.assignedTo.fullName || t.assignedTo.email) : 'O\'zim';
-  document.getElementById('v-status').innerHTML = t.completed 
-    ? '<span class="badge badge-green" style="background:#22c55e20; color:#22c55e; font-weight:700; padding:2px 8px; border-radius:4px; font-size:11px;">Bajarilgan</span>' 
-    : '<span class="badge badge-orange" style="background:#ff950020; color:#ff9500; font-weight:700; padding:2px 8px; border-radius:4px; font-size:11px;">Kutilmoqda</span>';
-
-  // Client fields
-  if (t.client) {
-    document.getElementById('v-client-section').classList.remove('hidden');
-    document.getElementById('v-client-name').textContent = t.client.name || '-';
-    const phoneHtml = [
-      t.client.phone ? `<a href="tel:${t.client.phone}" style="color:var(--accent); font-weight:700;">${t.client.phone}</a>` : null,
-      t.client.phone2 ? `<a href="tel:${t.client.phone2}" style="color:var(--text-secondary); font-size:12px; margin-left:8px;">(2: ${t.client.phone2})</a>` : null
-    ].filter(Boolean).join(' ');
-    document.getElementById('v-client-phone').innerHTML = phoneHtml || '-';
-    document.getElementById('v-client-city').textContent = t.client.city || '-';
-    document.getElementById('v-client-company').textContent = t.client.company || '-';
-  } else {
-    document.getElementById('v-client-section').classList.add('hidden');
-  }
-
-  // Deal fields
-  if (t.deal) {
-    document.getElementById('v-deal-section').classList.remove('hidden');
-    document.getElementById('v-deal-product').textContent = t.deal.productName || '-';
-    document.getElementById('v-deal-amount').textContent = t.deal.amount ? fmtMoney(t.deal.amount) : '0 UZS';
-    
-    // Calculate effective paid for display in the view modal
-    const getEffectivePaid = (d) => {
-      const stageName = (d.stage?.name || '').toLowerCase();
-      const isWon = d.status === 'won' || 
-                    stageName.includes('100%') || 
-                    stageName.includes('yutil') || 
-                    stageName.includes('won');
-      return isWon ? (d.amount || 0) : (d.paidAmount || 0);
-    };
-    
-    const effPaid = getEffectivePaid(t.deal);
-    document.getElementById('v-deal-paid').textContent = fmtMoney(effPaid);
-    const debt = Math.max((t.deal.amount || 0) - effPaid, 0);
-    document.getElementById('v-deal-debt').textContent = fmtMoney(debt);
-    
-    const statusLabels = { new: 'Yangi', negotiation: 'Muzokaralar', proposal: 'Taklif', won: 'Yutilgan', lost: "Yo'qotilgan" };
-    document.getElementById('v-deal-status').textContent = statusLabels[t.deal.status] || t.deal.status || 'Yangi';
-    document.getElementById('v-deal-stage').textContent = t.deal.stage?.name || 'Bosqichsiz';
-    document.getElementById('v-deal-notes').innerHTML = t.deal.notes ? `<i>${_esc(t.deal.notes)}</i>` : '<span style="color:var(--text-tertiary)">Izoh yo\'q</span>';
-  } else {
-    document.getElementById('v-deal-section').classList.add('hidden');
-  }
-
-  document.getElementById('viewTaskModal').classList.remove('hidden');
-}
-
-function closeViewTaskModal() {
-  document.getElementById('viewTaskModal').classList.add('hidden');
-}
-
-// ── INIT ──────────────────────────────────────────────────────
-// IMPORTANT: do NOT call loadTasks()/debounce() at the top level of this
-// script. This inline <script> runs while the browser is still parsing
-// the page body, which is BEFORE the later <script src="/js/main.js">
-// tag (in the shared layout) has loaded — so main.js functions like
-// debounce() are not defined yet. Calling debounce() directly here threw
-// "ReferenceError: debounce is not defined", which aborted the rest of
-// this script before loadTasks() ever ran — leaving the static
-// "Yuklanmoqda…" spinner in #taskList frozen forever. Deferring to
-// DOMContentLoaded guarantees main.js has already executed by the time
-// this code runs (DOMContentLoaded only fires after the whole document,
-// including earlier synchronous <script> tags, has been parsed).
-function init() {
-  // Filters initialized
-  const searchEl = document.getElementById('taskSearch');
-  const debounceFn = (typeof debounce === 'function') ? debounce : (fn, delay) => {
-    let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn.apply(null, args), delay); };
-  };
-  searchEl.addEventListener('input', debounceFn(window.refreshView, 300));
+function setTaskFilter(filterName, btnEl) {
+  _currentFilter = filterName;
+  document.querySelectorAll('.task-filter-chip').forEach(el => el.classList.remove('active'));
+  btnEl.classList.add('active');
   loadTasks();
-
-  const savedView = localStorage.getItem('tasks_view') || 'list';
-  window.setTasksView(savedView);
-
-  const params = new URLSearchParams(window.location.search);
-  const dealId = params.get('dealId');
-  const clientId = params.get('clientId');
-  const dealTitle = params.get('dealTitle');
-  if (dealId || clientId || dealTitle) {
-    openTaskModal(null, dealId, clientId, dealTitle);
-  }
-
-  // Real-time synchronization via WebSocket
-  try {
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(wsProtocol + '//' + window.location.host);
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'deal_updated' || data.type === 'deal_created' || data.type === 'deal_deleted') {
-          loadTasks();
-        }
-      } catch (err) { /* ignore */ }
-    };
-  } catch (wsErr) {
-    console.warn('Real-time WS connection failed:', wsErr);
-  }
-}
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
-} else {
-  init();
 }
 </script>
+
 <%- include('../layouts/footer') %>
