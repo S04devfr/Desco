@@ -143,13 +143,8 @@ app.use((req, res, next) => {
 
 // ── SECURITY MIDDLEWARE ──
 const { rateLimiter } = require('./middleware/security');
-const { csrfProtection, csrfTokenProvider } = require('./middleware/csrf');
-const { antiPrototypePollution } = require('./middleware/inputValidator');
 
 app.use('/api', rateLimiter(600, 60000));    // API uchun global rate limit: 600 req/min (bir nechta menejer bir IP dan ishlaganda qotmasligi uchun)
-app.use(antiPrototypePollution);             // SECURITY: Prototype pollution himoyasi
-app.use(csrfTokenProvider);                  // SECURITY: CSRF token ni res.locals ga qo'shish
-app.use(csrfProtection);                     // SECURITY: CSRF token tekshiruvi
 
 // ── API ROUTES ──
 async function ensureDefaultSeed() {
