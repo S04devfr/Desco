@@ -193,8 +193,7 @@ router.get('/', async (req, res, next) => {
       stage: stageSelect,
       installments: { select: { id: true } },
       tasks: {
-        where: { completed: false },
-        select: { id: true, title: true, dueDate: true, dueTime: true, actionType: true }
+        select: { id: true, title: true, dueDate: true, dueTime: true, actionType: true, completed: true, createdAt: true, assignedToId: true }
       }
     };
 
@@ -585,6 +584,12 @@ router.post('/', async (req, res, next) => {
       });
     }
     
+    // Fetch attached tasks so returned deal object has tasks array populated
+    deal.tasks = await prisma.task.findMany({
+      where: { dealId: deal.id },
+      select: { id: true, title: true, dueDate: true, dueTime: true, actionType: true, completed: true, createdAt: true, assignedToId: true }
+    });
+
     const broadcast = req.app.get('broadcast');
     if (broadcast) broadcast({ type: 'deal_created', dealId: deal.id, deal });
     
@@ -1011,8 +1016,9 @@ router.patch('/:id', async (req, res, next) => {
       }
     })
 
-    // Automation: Qayta aloqa yoki Vazifa
-    if (deal.stage && isCallbackStage(deal.stage.name)) {
+    // Automation: Qayta aloqa yoki Vazifa (faqat bosqich o'zgarganda va u qayta aloqa bosqichi bo'lsa)
+    const stageChanged = stageId !== undefined && stageId !== null && Number(stageId) !== existing.stageId;
+    if (stageChanged && deal.stage && isCallbackStage(deal.stage.name)) {
       // Dublikat yaratmaslik: shu deal uchun bajarilmagan vazifa bormi tekshirish
       const existingTask = await prisma.task.findFirst({
         where: { dealId: deal.id, completed: false }
@@ -1043,13 +1049,13 @@ router.patch('/:id', async (req, res, next) => {
           }
         });
       }
-    } else {
-      // Boshqa bosqichga o'tkazilganda bajarilmagan vazifalarni yakunlash (qayta aloqa yopildi)
-      await prisma.task.updateMany({
-        where: { dealId: deal.id, completed: false },
-        data: { completed: true, status: 'completed', result: "Avtomatik yopildi: Sdelka bosqichi o'zgardi" }
-      });
     }
+
+    // Attach tasks so response has full tasks array
+    deal.tasks = await prisma.task.findMany({
+      where: { dealId: deal.id },
+      select: { id: true, title: true, dueDate: true, dueTime: true, actionType: true, completed: true, createdAt: true, assignedToId: true }
+    });
 
     const statusLabels = { new: 'Yangi', negotiation: 'Muzokaralar', proposal: 'Taklif', won: 'Yutilgan', lost: "Yo'qotilgan" }
     if (status && status !== existing.status) {
@@ -1246,12 +1252,6 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
         }
       })
 
-      // Automatically complete all active tasks associated with this deal
-      await tx.task.updateMany({
-        where: { dealId: id, completed: false },
-        data: { completed: true, status: 'completed' }
-      })
-
       // Map contact to client for backwards compatibility
       if (!updated.client && updated.contact) {
         updated.client = {
@@ -1308,12 +1308,18 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
             }
           });
         }
-      } else {
+      } else if (updated.status === 'won' || updated.status === 'lost') {
         await tx.task.updateMany({
           where: { dealId: id, completed: false },
-          data: { completed: true, status: 'completed', result: "Avtomatik yopildi: Sdelka bosqichi o'zgardi" }
+          data: { completed: true, status: 'completed', result: "Avtomatik yopildi: Sdelka yopildi" }
         });
       }
+
+      // Attach tasks so response has full tasks array
+      updated.tasks = await tx.task.findMany({
+        where: { dealId: id },
+        select: { id: true, title: true, dueDate: true, dueTime: true, actionType: true, completed: true, createdAt: true, assignedToId: true }
+      });
 
       return updated
     })

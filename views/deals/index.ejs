@@ -3177,25 +3177,7 @@ async function onDrop(e, stageId) {
       if (idx >= 0) _deals[idx] = updated;
     }
     renderKanban();
-
-    // Auto-trigger Task tab when dropped onto callback stage
-    const isCallback = targetStage && (
-      targetStage.name.toLowerCase().includes('qayta') || 
-      targetStage.name.toLowerCase().includes('vazifa') || 
-      targetStage.name.toLowerCase().includes('ko\'tarmadi') ||
-      targetStage.name.toLowerCase().includes('kotarmadi') ||
-      targetStage.name.toLowerCase().includes('aloqa')
-    );
-    if (isCallback) {
-      await openDetail(dealId);
-      setTimelineInputTab('task');
-      const titleInput = document.getElementById('tl-task-title');
-      if (titleInput && !titleInput.value) {
-        titleInput.value = `${targetStage.name} bo'yicha qayta aloqa`;
-      }
-      setTaskPreset('tomorrow');
-      _toast("📌 Qayta aloqa sana va vaqtini belgilang!", "info");
-    }
+    await loadDeals();
   } catch (err) {
     deal.stageId = previousStageId;
     renderKanban();
@@ -5137,8 +5119,8 @@ window.submitTimelineTask = async function() {
     document.getElementById('tl-task-title').value = '';
     document.getElementById('tl-task-desc').value = '';
     
-    openDetail(_detailId); // Refresh timeline
-    loadDeals(); // Refresh kanban task status immediately
+    await openDetail(_detailId); // Refresh timeline
+    await loadDeals(); // Refresh kanban task status immediately
   } catch (err) {
     _toast(err.message, "error");
   }
@@ -5336,21 +5318,6 @@ async function moveDeal(dealId, stageId) {
     _toast("Bu namuna bosqich — avval voronkani sozlang", 'error');
     return;
   }
-  
-  const targetStage = _stages.find(s => s.id === Number(stageId));
-  const tStageName = targetStage ? targetStage.name.toLowerCase() : '';
-  const isCallback = tStageName.includes('qayta') || tStageName.includes('aloqa') || tStageName.includes('ko\'tarmadi') || tStageName.includes('kotarmadi');
-  
-  if (isCallback) {
-    // Re-render Kanban immediately to reset the card position visually while we prompt the user
-    renderKanban();
-    // Open detail drawer and trigger callback scheduler box
-    openDetail(dealId);
-    setTimeout(() => {
-      changeDrawerStage(stageId);
-    }, 280);
-    return;
-  }
 
   try {
     const updated = await apiFetch('/api/deals/' + dealId + '/stage', {
@@ -5374,7 +5341,7 @@ async function moveDeal(dealId, stageId) {
       if (deal) openNasiyaDescoModal(deal);
     }
 
-    closeDetail();
+    await loadDeals();
   } catch(e) { _toast(e.message, 'error'); }
 }
 
