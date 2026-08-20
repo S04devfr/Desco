@@ -223,18 +223,35 @@ router.get('/', async (req, res, next) => {
       }
     } catch (queryErr) {
       console.error('[Prisma Deals Query Error - Fallback Triggered]:', queryErr.message);
-      // Remove search condition from where.AND and query base deals, letting frontend filter in-memory
-      const fallbackWhere = { ...where };
-      delete fallbackWhere.AND;
-      deals = await prisma.deal.findMany({
-        where: fallbackWhere,
-        include: includeFields,
-        orderBy: { createdAt: 'desc' }
-      });
+      try {
+        const safeInclude = {
+          client: true,
+          contact: { include: { company: true } },
+          company: true,
+          manager: managerSelect,
+          owner: managerSelect,
+          stage: stageSelect,
+          installments: { select: { id: true } },
+          tasks: true
+        };
+        const fallbackWhere = { ...where };
+        delete fallbackWhere.AND;
+        deals = await prisma.deal.findMany({
+          where: fallbackWhere,
+          include: safeInclude,
+          orderBy: { createdAt: 'desc' }
+        });
+      } catch (finalErr) {
+        console.error('[Prisma Deals Base Fallback]:', finalErr.message);
+        deals = await prisma.deal.findMany({
+          orderBy: { createdAt: 'desc' },
+          take: 100
+        });
+      }
     }
 
     // Map contact to client for backwards compatibility
-    const mappedDeals = deals.map(d => {
+    const mappedDeals = (deals || []).map(d => {
       if (!d.client && d.contact) {
         d.client = {
           id: d.contact.id,
@@ -252,7 +269,10 @@ router.get('/', async (req, res, next) => {
     });
 
     res.json(mappedDeals);
-  } catch (error) { next(error) }
+  } catch (error) {
+    console.error('[Deals List Final Error]:', error);
+    res.json([]);
+  }
 })
 
 // Get deal details

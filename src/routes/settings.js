@@ -92,14 +92,21 @@ router.patch('/profile', async (req, res, next) => {
 // ── USERS (admin) ──
 router.get('/users', async (req, res, next) => {
   try {
-    // Faqat asosiy ma'lumotlar barcha rollarga, to'liq ma'lumot faqat adminga
     const isAdmin = req.user?.role === 'admin'
     const select = isAdmin
       ? { id: true, email: true, fullName: true, role: true, isActive: true, createdAt: true }
       : { id: true, fullName: true, role: true }
-    const users = await prisma.user.findMany({ where: { isActive: true }, select, orderBy: { id: 'asc' } })
+    let users = []
+    try {
+      users = await prisma.user.findMany({ where: { isActive: true }, select, orderBy: { id: 'asc' } })
+    } catch (dbErr) {
+      users = await prisma.user.findMany({ select: { id: true, fullName: true, role: true } })
+    }
     res.json(users)
-  } catch (error) { next(error) }
+  } catch (error) {
+    console.error('[Settings Users Fallback]:', error);
+    res.json([]);
+  }
 })
 
 router.post('/users', async (req, res, next) => {

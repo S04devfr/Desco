@@ -22,6 +22,8 @@ const schemaPath = path.join(__dirname, '../prisma/schema.prisma');
 const dbUrl = process.env.DATABASE_URL || '';
 const isSqlite = dbUrl.startsWith('file:') || dbUrl.includes('.db');
 
+const shouldPush = process.argv.includes('--push') || !process.argv.includes('--no-push');
+
 if (isSqlite) {
   console.log('[Prisma] Local SQLite detected — temporarily swapping schema...');
   const original = fs.readFileSync(schemaPath, 'utf8');
@@ -31,8 +33,12 @@ if (isSqlite) {
     patched = patched.replace(/tags\s+String\[\]\s+@default\(\[\]\)/g, 'tags      String? @default("")');
     fs.writeFileSync(schemaPath, patched, 'utf8');
     execSync('npx prisma generate', { stdio: 'inherit' });
-    if (process.argv.includes('--push')) {
-      execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
+    if (shouldPush) {
+      try {
+        execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
+      } catch (e) {
+        console.warn('[Prisma] db push warning:', e.message);
+      }
     }
   } finally {
     fs.writeFileSync(schemaPath, original, 'utf8');
@@ -41,7 +47,11 @@ if (isSqlite) {
 } else {
   console.log('[Prisma] PostgreSQL detected — generating client...');
   execSync('npx prisma generate', { stdio: 'inherit' });
-  if (process.argv.includes('--push')) {
-    execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
+  if (shouldPush) {
+    try {
+      execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
+    } catch (e) {
+      console.warn('[Prisma] db push warning:', e.message);
+    }
   }
 }

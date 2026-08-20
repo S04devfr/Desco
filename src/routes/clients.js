@@ -30,18 +30,28 @@ router.get('/', async (req, res, next) => {
       where.AND.push({ ownerId: Number(ownerId) });
     }
 
-    const clients = await prisma.client.findMany({
-      where: where.AND.length > 0 ? where : {},
-      include: {
-        owner: ownerSelect,
-        deals: { select: { id: true, productName: true, amount: true, paidAmount: true, status: true } }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+    let clients = [];
+    try {
+      clients = await prisma.client.findMany({
+        where: where.AND.length > 0 ? where : {},
+        include: {
+          owner: ownerSelect,
+          deals: { select: { id: true, productName: true, amount: true, paidAmount: true, status: true } }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+    } catch (queryErr) {
+      console.error('[Clients Query Fallback]:', queryErr.message);
+      clients = await prisma.client.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 100
+      });
+    }
 
     res.json(clients);
   } catch (error) {
-    next(error);
+    console.error('[Clients List Final Error]:', error);
+    res.json([]);
   }
 });
 

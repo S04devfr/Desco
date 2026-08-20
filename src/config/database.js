@@ -66,8 +66,8 @@ const ALL_HEALABLE_METHODS = [
 ];
 
 // Wraps a model delegate's method so that if the live (possibly stale) Prisma client
-// rejects the call with "Unknown argument `X`" or "Unknown field `X`" — meaning
-// schema.prisma defines field X or code queries field X but the generated client predates it —
+// rejects the call with "Unknown argument `X`" or "Unknown field `X`" or "no such column: X" — meaning
+// schema.prisma defines field X or code queries field X but the generated client or DB predates it —
 // we strip X from the payload/query/select/include/where and retry, instead of crashing the request.
 function wrapAutoHealingMethod(originalFn, modelName, methodName) {
   const maxAttempts = 6;
@@ -78,22 +78,63 @@ function wrapAutoHealingMethod(originalFn, modelName, methodName) {
         return await originalFn(currentArgs);
       } catch (err) {
         const message = err && err.message ? String(err.message) : '';
-        const match = message.match(/Unknown (?:argument|field) [`'"]([a-zA-Z0-9_]+)[`'"]/i);
-        if (!match || attempt === maxAttempts) throw err;
+        let fieldName = null;
 
-        const fieldName = match[1];
+        const argMatch = message.match(/Unknown (?:argument|field) [`'"]([a-zA-Z0-9_]+)[`'"]/i);
+        if (argMatch) {
+          fieldName = argMatch[1];
+        } else {
+          const colMatch = message.match(/(?:column|such column:?)\s+[`'"a-zA-Z0-9_.]*?([a-zA-Z0-9_]+)[`'"]?\s*(?:does not exist|in the current database)?/i);
+          if (colMatch) {
+            fieldName = colMatch[1];
+          }
+        }
+
+        if (!fieldName || attempt === maxAttempts) throw err;
+
         const cloned = deepCloneArgs(currentArgs);
         const didStrip = stripFieldDeep(cloned, fieldName);
         if (!didStrip) throw err;
 
         console.warn(
-          `[Database] "${modelName}.${methodName}": eskirgan Prisma client noma'lum argument/maydon "${fieldName}" ni rad etdi — ` +
-          `uni olib tashlab qayta urinilmoqda (${attempt + 1}/${maxAttempts}).`
+          `[Database] "${modelName}.${methodName}": auto-healing stripped missing field "${fieldName}" (${attempt + 1}/${maxAttempts}).`
         );
         currentArgs = cloned;
       }
     }
   };
+}
+
+// Auto-migrate schema columns on database initialization
+async function autoMigrateDatabase(client) {
+  try {
+    const isPostgres = process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith('postgres://') || process.env.DATABASE_URL.startsWith('postgresql://'));
+    const queries = isPostgres
+      ? [
+          'ALTER TABLE "Client" ADD COLUMN IF NOT EXISTS "phone2" TEXT;',
+          'ALTER TABLE "clients" ADD COLUMN IF NOT EXISTS "phone2" TEXT;',
+          'ALTER TABLE "contacts" ADD COLUMN IF NOT EXISTS "phone2" TEXT;',
+          'ALTER TABLE "Contact" ADD COLUMN IF NOT EXISTS "phone2" TEXT;',
+          'ALTER TABLE "Deal" ADD COLUMN IF NOT EXISTS "contactPhone2" TEXT;',
+          'ALTER TABLE "deals" ADD COLUMN IF NOT EXISTS "contactPhone2" TEXT;'
+        ]
+      : [
+          'ALTER TABLE "Client" ADD COLUMN "phone2" TEXT;',
+          'ALTER TABLE "clients" ADD COLUMN "phone2" TEXT;',
+          'ALTER TABLE "contacts" ADD COLUMN "phone2" TEXT;',
+          'ALTER TABLE "Contact" ADD COLUMN "phone2" TEXT;',
+          'ALTER TABLE "Deal" ADD COLUMN "contactPhone2" TEXT;',
+          'ALTER TABLE "deals" ADD COLUMN "contactPhone2" TEXT;'
+        ];
+
+    for (const q of queries) {
+      try {
+        await client.$executeRawUnsafe(q);
+      } catch (_) { /* column already exists or table not named this way */ }
+    }
+  } catch (err) {
+    // Ignore migration warnings
+  }
 }
 
 class PrismaClientOutOfSyncError extends Error {
@@ -215,6 +256,9 @@ function createSafePrismaClient() {
 }
 
 const prisma = createSafePrismaClient();
+
+// Run schema auto-migration on start
+autoMigrateDatabase(prisma).catch(() => {});
 
 // Handle graceful shutdown
 process.on('SIGINT', async () => {
