@@ -788,7 +788,7 @@ document.getElementById('endDate').addEventListener('change', () => {
   if (document.getElementById('startDate').value) loadDashboard();
 });
 
-async function dashFetch(url, timeoutMs = 8000) {
+async function dashFetch(url, timeoutMs = 15000) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
   let r;
@@ -1180,10 +1180,10 @@ async function loadDashboard() {
       dashFetch('/api/activity/stats').catch(() => ({ managers: [], daily: [] }))
     ]);
 
-    window.pipelineStats = pipelineStats;
-    const safeKpis = kpis || {};
-    if (safeKpis.error) {
-      throw new Error(safeKpis.error);
+    window.pipelineStats = pipelineStats || [];
+    const safeKpis = (kpis && !kpis.error) ? kpis : (kpis || {});
+    if (kpis && kpis.error) {
+      console.warn('[Dashboard KPI Notice]:', kpis.error);
     }
     const cplVal = mktSummary?.cpl || safeKpis.cpl || 0;
     const roiVal = mktSummary?.roi || safeKpis.marketingRoi || 0;

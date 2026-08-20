@@ -105,32 +105,25 @@ function wrapAutoHealingMethod(originalFn, modelName, methodName) {
   };
 }
 
-// Auto-migrate schema columns on database initialization
 async function autoMigrateDatabase(client) {
   try {
     const isPostgres = process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith('postgres://') || process.env.DATABASE_URL.startsWith('postgresql://'));
     const queries = isPostgres
       ? [
           'ALTER TABLE "Client" ADD COLUMN IF NOT EXISTS "phone2" TEXT;',
-          'ALTER TABLE "clients" ADD COLUMN IF NOT EXISTS "phone2" TEXT;',
           'ALTER TABLE "contacts" ADD COLUMN IF NOT EXISTS "phone2" TEXT;',
-          'ALTER TABLE "Contact" ADD COLUMN IF NOT EXISTS "phone2" TEXT;',
-          'ALTER TABLE "Deal" ADD COLUMN IF NOT EXISTS "contactPhone2" TEXT;',
-          'ALTER TABLE "deals" ADD COLUMN IF NOT EXISTS "contactPhone2" TEXT;'
+          'ALTER TABLE "Deal" ADD COLUMN IF NOT EXISTS "contactPhone2" TEXT;'
         ]
       : [
           'ALTER TABLE "Client" ADD COLUMN "phone2" TEXT;',
-          'ALTER TABLE "clients" ADD COLUMN "phone2" TEXT;',
           'ALTER TABLE "contacts" ADD COLUMN "phone2" TEXT;',
-          'ALTER TABLE "Contact" ADD COLUMN "phone2" TEXT;',
-          'ALTER TABLE "Deal" ADD COLUMN "contactPhone2" TEXT;',
-          'ALTER TABLE "deals" ADD COLUMN "contactPhone2" TEXT;'
+          'ALTER TABLE "Deal" ADD COLUMN "contactPhone2" TEXT;'
         ];
 
     for (const q of queries) {
       try {
         await client.$executeRawUnsafe(q);
-      } catch (_) { /* column already exists or table not named this way */ }
+      } catch (_) { /* column already exists */ }
     }
   } catch (err) {
     // Ignore migration warnings

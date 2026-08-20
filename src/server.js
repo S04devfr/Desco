@@ -715,12 +715,21 @@ async function autoMigrateDatabase() {
   try {
     const prisma = require('./config/database');
     const isPostgres = process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith('postgres://') || process.env.DATABASE_URL.startsWith('postgresql://'));
-    if (isPostgres) {
-      await prisma.$executeRawUnsafe(`ALTER TABLE "clients" ADD COLUMN IF NOT EXISTS "phone2" TEXT;`).catch(() => {});
-      await prisma.$executeRawUnsafe(`ALTER TABLE "contacts" ADD COLUMN IF NOT EXISTS "phone2" TEXT;`).catch(() => {});
-    } else {
-      await prisma.$executeRawUnsafe(`ALTER TABLE "clients" ADD COLUMN "phone2" TEXT;`).catch(() => {});
-      await prisma.$executeRawUnsafe(`ALTER TABLE "contacts" ADD COLUMN "phone2" TEXT;`).catch(() => {});
+    const queries = isPostgres
+      ? [
+          'ALTER TABLE "Client" ADD COLUMN IF NOT EXISTS "phone2" TEXT;',
+          'ALTER TABLE "contacts" ADD COLUMN IF NOT EXISTS "phone2" TEXT;',
+          'ALTER TABLE "Deal" ADD COLUMN IF NOT EXISTS "contactPhone2" TEXT;'
+        ]
+      : [
+          'ALTER TABLE "Client" ADD COLUMN "phone2" TEXT;',
+          'ALTER TABLE "contacts" ADD COLUMN "phone2" TEXT;',
+          'ALTER TABLE "Deal" ADD COLUMN "contactPhone2" TEXT;'
+        ];
+    for (const q of queries) {
+      try {
+        await prisma.$executeRawUnsafe(q);
+      } catch (_) {}
     }
     console.log('[Database] Auto-migration check completed.');
   } catch (err) {

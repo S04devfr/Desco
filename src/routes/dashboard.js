@@ -7,6 +7,9 @@ const router = express.Router()
 // Protect routes - require authentication
 router.use(protect)
 
+const isPostgres = process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith('postgres://') || process.env.DATABASE_URL.startsWith('postgresql://'));
+const mode = isPostgres ? 'insensitive' : undefined;
+
 // Helper for dates
 function buildWhere(filter, req) {
   if (!filter || filter === 'all') return {};
@@ -64,31 +67,21 @@ router.get('/kpis', async (req, res, next) => {
     
     const deals = await prisma.deal.findMany({
       where,
-      include: {
-        stage: true,
-        client: true,
-        contact: { include: { company: true } },
-        company: true,
-        manager: { select: { id: true, fullName: true, email: true, role: true, isActive: true } }
+      select: {
+        id: true,
+        amount: true,
+        paidAmount: true,
+        costPrice: true,
+        status: true,
+        source: true,
+        createdAt: true,
+        updatedAt: true,
+        managerId: true,
+        stageId: true,
+        stage: { select: { id: true, name: true, pipelineId: true } },
+        client: { select: { id: true, name: true, phone: true } }
       }
     });
-
-    // Map contact to client for backwards compatibility
-    for (const d of deals) {
-      if (!d.client && d.contact) {
-        d.client = {
-          id: d.contact.id,
-          name: `${d.contact.firstName} ${d.contact.lastName || ''}`.trim(),
-          phone: d.contact.phone,
-          city: d.contact.city,
-          email: d.contact.email,
-          company: d.contact.company ? d.contact.company.name : null,
-          companyAddress: d.contact.company ? d.contact.company.address : null,
-          companyPhone: d.contact.company ? d.contact.company.phone : null,
-          companyWebsite: d.contact.company ? d.contact.company.website : null
-        };
-      }
-    }
 
     // Calculate real-time counts from DB
     const startOfMonth = new Date();
@@ -125,14 +118,14 @@ router.get('/kpis', async (req, res, next) => {
             {
               stage: {
                 OR: [
-                  { name: { contains: '100%', mode: 'insensitive' } },
-                  { name: { contains: 'yutil', mode: 'insensitive' } },
-                  { name: { contains: 'won', mode: 'insensitive' } },
-                  { name: { contains: 'olindi', mode: 'insensitive' } },
-                  { name: { contains: 'shopir', mode: 'insensitive' } },
-                  { name: { contains: 'desco', mode: 'insensitive' } },
-                  { name: { contains: 'ishonch', mode: 'insensitive' } },
-                  { name: { contains: 'baraka', mode: 'insensitive' } }
+                  { name: { contains: '100%', mode } },
+                  { name: { contains: 'yutil', mode } },
+                  { name: { contains: 'won', mode } },
+                  { name: { contains: 'olindi', mode } },
+                  { name: { contains: 'shopir', mode } },
+                  { name: { contains: 'desco', mode } },
+                  { name: { contains: 'ishonch', mode } },
+                  { name: { contains: 'baraka', mode } }
                 ]
               }
             }
@@ -178,7 +171,7 @@ router.get('/kpis', async (req, res, next) => {
     };
 
     const dlvPipeline = await prisma.pipeline.findFirst({
-      where: { name: { contains: 'zakaz', mode: 'insensitive' } },
+      where: { name: { contains: 'zakaz', mode } },
       select: { id: true }
     });
     const dlvPipelineId = dlvPipeline ? dlvPipeline.id : null;
@@ -591,8 +584,7 @@ router.get('/kpis', async (req, res, next) => {
         instagram: { leads: 0, wonCount: 0, wonAmount: 0 },
         phone: { leads: 0, wonCount: 0, wonAmount: 0 },
         office: { leads: 0, wonCount: 0, wonAmount: 0 }
-      },
-      error: error.message + "\n" + error.stack
+      }
     });
   }
 })
@@ -720,8 +712,7 @@ router.get('/product-popularity', async (req, res, next) => {
               'Nasiya Baraka',
               'mahsulot shopirda',
               '100% Zakaz'
-            ],
-            mode: 'insensitive'
+            ]
           }
         }
       },
@@ -1149,7 +1140,7 @@ router.get('/pipeline-stats', async (req, res) => {
     const where = buildWhere(req.query.filter, req);
     if (req.user?.role !== 'admin') where.managerId = req.userId;
     const pipeline = await prisma.pipeline.findFirst({
-      where: { name: { contains: 'zakaz', mode: 'insensitive' } }
+      where: { name: { contains: 'zakaz', mode } }
     });
     const stages = await prisma.pipelineStage.findMany({
       where: { pipelineId: pipeline ? pipeline.id : -1 },
@@ -1302,22 +1293,22 @@ router.get('/operator-presence', async (req, res) => {
     today.setHours(0, 0, 0, 0);
     const dateStr = today.toISOString().split('T')[0];
 
-    const [todayCalls, todayTasks, todayDeals, todayActivities, activityLogsRaw] = await Promise.all([
+    const [todayCalls, todayTasks, todayDeals, todayActivities] = await Promise.all([
       prisma.callLog.findMany({ where: { createdAt: { gte: today } } }).catch(() => []),
       prisma.task.findMany({ where: { updatedAt: { gte: today } } }).catch(() => []),
       prisma.deal.findMany({ where: { updatedAt: { gte: today } } }).catch(() => []),
-      prisma.activityLog.findMany({ where: { createdAt: { gte: today } } }).catch(() => []),
-      prisma.$queryRaw`
-        SELECT "userId", MIN("sessionStart") AS "firstLogin", MAX("lastPing") AS "lastPing", SUM("durationMin") AS "totalMin"
-        FROM "UserActivityLog"
-        WHERE "date" = ${dateStr}
-        GROUP BY "userId"
-      `.catch(() => [])
+      prisma.activityLog.findMany({ where: { createdAt: { gte: today } } }).catch(() => [])
     ]);
 
     const activityLogMap = {};
-    (activityLogsRaw || []).forEach(r => {
-      activityLogMap[Number(r.userId)] = r;
+    todayActivities.forEach(a => {
+      if (a.userId) {
+        if (!activityLogMap[a.userId]) {
+          activityLogMap[a.userId] = { firstLogin: a.createdAt, lastPing: a.createdAt, totalMin: 0 };
+        } else {
+          activityLogMap[a.userId].lastPing = a.createdAt;
+        }
+      }
     });
 
     const now = new Date();
