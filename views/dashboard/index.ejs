@@ -1031,6 +1031,10 @@ async function loadOperatorPresenceStats() {
       `;
     }).join('');
   } catch (e) {
+    console.error('Operator presence load error:', e);
+  }
+}
+
 async function loadOperatorDailyLeads(urlParams) {
   const tbody = document.getElementById('operatorDailyLeadsTableBody');
   if (!tbody) return;
