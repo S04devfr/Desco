@@ -148,7 +148,7 @@ const { csrfProtection, csrfTokenProvider } = require('./middleware/csrf');
 const { antiPrototypePollution } = require('./middleware/inputValidator');
 
 app.use('/api', sanitizeResponse);          // Barcha API javoblardan sensitive ma'lumotlarni tozalash
-app.use('/api', rateLimiter(200, 60000));    // API uchun global rate limit: 200 req/min
+app.use('/api', rateLimiter(600, 60000));    // API uchun global rate limit: 600 req/min (bir nechta menejer bir IP dan ishlaganda qotmasligi uchun)
 app.use(antiPrototypePollution);             // SECURITY: Prototype pollution himoyasi
 app.use(csrfTokenProvider);                  // SECURITY: CSRF token ni res.locals ga qo'shish
 app.use(csrfProtection);                     // SECURITY: CSRF token tekshiruvi
