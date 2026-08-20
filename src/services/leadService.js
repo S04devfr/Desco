@@ -217,51 +217,41 @@ async function handleMetaWebhook(body, broadcast) {
             continue;
           }
 
-          let rawName = 'Nomsiz Lead';
-          let rawPhone = '';
-          let rawEmail = '';
-          let rawProduct = 'Instagram Orqali Murojaat';
-
+          // Smart phone extraction from leadData.field_data
+          const fieldMap = {};
           leadData.field_data.forEach(field => {
             console.log(`[Meta Webhook]   field: ${field.name} = ${JSON.stringify(field.values)}`);
-            if (field.name === 'full_name' || field.name === 'first_name') {
-              rawName = field.values[0];
-            }
-            if (field.name === 'phone_number') {
-              rawPhone = field.values[0];
-            }
-            if (field.name === 'email') {
-              rawEmail = field.values[0];
-            }
-            if (field.name === 'product_name' || field.name === 'mahsulot') {
-              rawProduct = field.values[0];
-            }
+            fieldMap[field.name] = (field.values && field.values[0]) || '';
           });
 
-          console.log(`[Meta Webhook] Ajratilgan ma'lumotlar — Ism: ${rawName}, Tel: ${rawPhone}, Email: ${rawEmail}, Mahsulot: ${rawProduct}`);
+          const phoneInfo = extractBestPhone(fieldMap);
+          const rawName = fieldMap.full_name || fieldMap.first_name || 'Nomsiz Lead';
+          const rawPhone = phoneInfo.cleanPhone || phoneInfo.rawPhone || fieldMap.phone_number || '';
+          const rawEmail = fieldMap.email || '';
+          const rawProduct = fieldMap.product_name || fieldMap.mahsulot || 'Instagram Orqali Murojaat';
+          const cleanPhone = phoneInfo.cleanPhone || null;
+
+          console.log(`[Meta Webhook] Ajratilgan ma'lumotlar — Ism: ${rawName}, Tel: ${rawPhone} (Clean: ${cleanPhone}), Email: ${rawEmail}, Mahsulot: ${rawProduct}`);
 
           let client = null;
           let contact = null;
-          let cleanPhone = null;
 
-          if (rawPhone && rawPhone.trim() !== '') {
+          if (cleanPhone || (rawPhone && rawPhone.trim() !== '')) {
             try {
-              const upsertRes = await upsertClientByPhone(rawName, rawPhone, rawEmail, 'Instagram Webhook');
+              const upsertRes = await upsertClientByPhone(rawName, cleanPhone || rawPhone, rawEmail, 'Instagram Webhook');
               client = upsertRes.client;
               contact = upsertRes.contact;
-              cleanPhone = rawPhone.replace(/[\s-]/g, '');
             } catch (phoneErr) {
               console.warn(`[Meta Webhook] upsertClientByPhone failed: ${phoneErr.message}`);
-              cleanPhone = null;
             }
           }
 
           if (!client) {
-            // Create client without phone
+            // Create client without phone or with fallback
             client = await prisma.client.create({
               data: {
                 name: rawName || "Noma'lum Mijoz",
-                phone: null,
+                phone: cleanPhone || rawPhone || null,
                 email: rawEmail || null,
                 notes: null
               }
@@ -271,86 +261,84 @@ async function handleMetaWebhook(body, broadcast) {
               data: {
                 firstName: rawName ? rawName.split(/\s+/)[0] : "Nomsiz",
                 lastName: rawName ? rawName.split(/\s+/).slice(1).join(' ') : null,
-                phone: null,
+                phone: cleanPhone || rawPhone || null,
                 email: rawEmail || null
               }
             });
-            console.log(`[Meta Webhook] Raqamsiz mijoz/kontakt yaratildi. Client ID: ${client.id}`);
+            console.log(`[Meta Webhook] Yangi mijoz/kontakt yaratildi. Client ID: ${client.id}`);
           }
 
-          if (cleanPhone) {
-            // 4. Voronka va Bosqichni topish
-            const { pipelineId, stageId } = await getDefaultPipelineAndStage();
-            console.log(`[Meta Webhook] Pipeline: ${pipelineId}, Stage: ${stageId}`);
+          // 4. Voronka va Bosqichni topish
+          const { pipelineId, stageId } = await getDefaultPipelineAndStage();
+          console.log(`[Meta Webhook] Pipeline: ${pipelineId}, Stage: ${stageId}`);
 
-            const formId = change.value.form_id || '';
-            const adId = change.value.ad_id || '';
+          const formId = change.value.form_id || '';
+          const adId = change.value.ad_id || '';
 
-            if (pipelineId && stageId) {
-              // 5. Sdelkani (Deal) yaratish
-              console.log(`[Meta Webhook] Sdelka yaratilmoqda. Pipeline=${pipelineId}, Stage=${stageId}, Client=${client.id}`);
-              const deal = await prisma.deal.create({
+          if (pipelineId && stageId) {
+            // 5. Sdelkani (Deal) yaratish — HAR DOIM yaratiladi
+            console.log(`[Meta Webhook] Sdelka yaratilmoqda. Pipeline=${pipelineId}, Stage=${stageId}, Client=${client.id}`);
+            const dealNote = !cleanPhone && rawPhone ? `[⚠️ Telefon raqami tekshirish talab etiladi: ${rawPhone}]` : null;
+
+            const deal = await prisma.deal.create({
+              data: {
+                productName: extractProductName(String(rawProduct).trim()).substring(0, 200),
+                amount: 0,
+                status: 'new',
+                clientId: client.id,
+                contactId: contact.id,
+                pipelineId,
+                stageId,
+                notes: dealNote,
+                source: 'target'
+              }
+            });
+            console.log(`[Meta Webhook] ✓ Sdelka muvaffaqiyatli saqlandi! Deal ID: ${deal.id}`);
+
+            // 5.5. Telegram botga xabar yuborish
+            try {
+              await sendTelegramNotificationWithRetry({
+                name: rawName,
+                phone: cleanPhone || rawPhone,
+                formId: formId,
+                pageName: `Meta (Ad ID: ${adId})`,
+                leadId: leadgenId
+              }, deal.id);
+            } catch (tgErr) {
+              console.warn(`[Telegram] Xabar yuborishda xato (muhim emas): ${tgErr.message}`);
+            }
+
+            // Activity Log ga yozish
+            try {
+              await prisma.activityLog.create({
                 data: {
-                  productName: extractProductName(String(rawProduct).trim()).substring(0, 200),
-                  amount: 0,
-                  status: 'new',
-                  clientId: client.id,
-                  contactId: contact.id,
-                  pipelineId,
-                  stageId,
-                  notes: null,
-                  source: 'target'
+                  action: 'Sdelka yaratildi',
+                  details: `Meta Webhook orqali "${deal.productName}" sdelkasi yaratildi (LeadGen ID: ${leadgenId})`,
+                  dealId: deal.id
                 }
               });
-              console.log(`[Meta Webhook] \u2713 Sdelka muvaffaqiyatli saqlandi! Deal ID: ${deal.id}`);
-
-              // 5.5. Telegram botga xabar yuborish (alohida try/catch — CRM ga ta'sir qilmaydi)
-              try {
-                await sendTelegramNotificationWithRetry({
-                  name: rawName,
-                  phone: rawPhone,
-                  formId: formId,
-                  pageName: `Meta (Ad ID: ${adId})`,
-                  leadId: leadgenId
-                }, deal.id);
-              } catch (tgErr) {
-                console.warn(`[Telegram] Xabar yuborishda xato (muhim emas): ${tgErr.message}`);
-              }
-
-              // Activity Log ga yozish
-              try {
-                await prisma.activityLog.create({
-                  data: {
-                    action: 'Sdelka yaratildi',
-                    details: `Meta Webhook orqali "${deal.productName}" sdelkasi yaratildi (LeadGen ID: ${leadgenId})`,
-                    dealId: deal.id
-                  }
-                });
-              } catch (e) {
-                console.warn(`[Meta Webhook Warn] Activity log yozishda xato (muhim emas): ${e.message}`);
-              }
-
-              // 6. UI ni real-vaqtda yangilash (Socket)
-              if (broadcast) {
-                const fullDeal = await prisma.deal.findUnique({
-                  where: { id: deal.id },
-                  include: {
-                    client: { select: { id: true, name: true, company: true, phone: true, city: true } },
-                    manager: { select: { id: true, fullName: true, email: true, role: true } },
-                    stage: { select: { id: true, name: true, color: true, order: true } },
-                    installments: { select: { id: true } }
-                  }
-                });
-                broadcast({ type: 'deal_created', dealId: deal.id, deal: fullDeal });
-                console.log(`[Meta Webhook] ✓ WebSocket broadcast yuborildi. deal_created: ${deal.id}`);
-              }
-
-              console.log(`[Meta Webhook] ====== Lead muvaffaqiyatli qayta ishlandi: ${rawName} / ${rawPhone} ======`);
-            } else {
-              console.error(`[Meta Webhook Error] ✗ Pipeline yoki Stage topilmadi! Pipeline: ${pipelineId}, Stage: ${stageId}. Deals jadvaliga yozib bo'lmadi.`);
+            } catch (e) {
+              console.warn(`[Meta Webhook Warn] Activity log yozishda xato (muhim emas): ${e.message}`);
             }
+
+            // 6. UI ni real-vaqtda yangilash (Socket)
+            if (broadcast) {
+              const fullDeal = await prisma.deal.findUnique({
+                where: { id: deal.id },
+                include: {
+                  client: { select: { id: true, name: true, company: true, phone: true, city: true } },
+                  manager: { select: { id: true, fullName: true, email: true, role: true } },
+                  stage: { select: { id: true, name: true, color: true, order: true } },
+                  installments: { select: { id: true } }
+                }
+              });
+              broadcast({ type: 'deal_created', dealId: deal.id, deal: fullDeal });
+              console.log(`[Meta Webhook] ✓ WebSocket broadcast yuborildi. deal_created: ${deal.id}`);
+            }
+
+            console.log(`[Meta Webhook] ====== Lead muvaffaqiyatli qayta ishlandi: ${rawName} / ${rawPhone} ======`);
           } else {
-            console.log(`[Meta Webhook] ====== Raqamsiz lead qayta ishlandi (sdelkasiz): ${rawName} ======`);
+            console.error(`[Meta Webhook Error] ✗ Pipeline yoki Stage topilmadi! Pipeline: ${pipelineId}, Stage: ${stageId}. Deals jadvaliga yozib bo'lmadi.`);
           }
 
         } catch (error) {
@@ -361,6 +349,27 @@ async function handleMetaWebhook(body, broadcast) {
       }
     }
   }
+}
+
+/**
+ * Dummy yoki noto'g'ri (fake) telefon raqamlarini aniqlaydi.
+ * Masalan: "66666", "000000000", "111111111", "123456789"
+ */
+function isDummyOrInvalidPhone(raw) {
+  if (!raw) return true;
+  const digits = String(raw).replace(/\D/g, '');
+  if (!digits || digits.length < 7) return true;
+  
+  // Bir xil takrorlanuvchi raqamlar: "66666", "000000000", "111111111", "999999999"
+  if (/^(\d)\1+$/.test(digits)) return true;
+  
+  // Oddiy ketma-ketlik: "123456789", "987654321", "1234567"
+  if ('01234567890123456789'.includes(digits) || '98765432109876543210'.includes(digits)) return true;
+  
+  // Test/dummy raqamlar
+  if (digits === '998000000000' || digits === '998999999999' || digits === '998111111111') return true;
+  
+  return false;
 }
 
 /**
@@ -376,7 +385,6 @@ function normalizeUniversalPhone(raw) {
 
   // Faqat raqamlar va plus belgisini saqlab qolamiz (nuqta, chiziq, qavs, bo'shliqlarni butunlay tozalaymiz)
   const digits = String(raw).replace(/\D/g, '');
-  const hasPlus = String(raw).trim().startsWith('+');
 
   if (!digits || digits.length < 7) {
     throw new Error(`Telefon raqami juda qisqa yoki yaroqsiz: "${raw}"`);
@@ -399,6 +407,96 @@ function normalizeUniversalPhone(raw) {
   }
 
   throw new Error(`Telefon raqami formati noto'g'ri yoki yaroqsiz: "${raw}"`);
+}
+
+/**
+ * Payload'ning barcha maydonlarini (jumladan savolnomalar, maxsus textlar, izohlar)
+ * to'liq tahlil qilib, eng to'g'ri va haqiqiy ishlaydigan telefon raqamini topadi.
+ * Agar asosiy "phone" maydonida dummy (masalan 66666) yozilgan bo'lsa-yu, pastdagi
+ * "Telefon raqamingiz (Iltimos ishlaydigan...): 996268124" maydonida haqiqiy raqam bo'lsa,
+ * avtomatik ravishda haqiqiy raqamni tanlaydi!
+ */
+function extractBestPhone(rawData) {
+  if (!rawData || typeof rawData !== 'object') return { rawPhone: null, cleanPhone: null, isDummy: true };
+
+  const flatData = flattenObject(rawData);
+  const candidates = [];
+
+  const evaluateCandidate = (key, val) => {
+    if (!val || typeof val === 'object') return;
+    const strVal = String(val).trim();
+    if (!strVal || strVal.length < 5) return;
+
+    // To'g'ridan-to'g'ri raqamlar
+    const digits = strVal.replace(/\D/g, '');
+    
+    // Matn ichidan telefon raqami andozalarini izlash (masalan: "996268124", "+998 99 626 81 24")
+    const phoneMatches = strVal.match(/(?:(?:\+?998)|0)?\s*(?:9[0-9]|88|33|77|99)\s*\d{3}\s*\d{2}\s*\d{2}|\b\d{9,13}\b/g) || [];
+    
+    const allToCheck = [strVal, digits, ...phoneMatches];
+    for (const item of allToCheck) {
+      const itemDigits = String(item).replace(/\D/g, '');
+      if (!itemDigits || itemDigits.length < 5) continue;
+
+      const isDummy = isDummyOrInvalidPhone(itemDigits);
+      let normalized = null;
+      try {
+        normalized = normalizeUniversalPhone(itemDigits);
+      } catch(e) {
+        normalized = null;
+      }
+
+      let score = 0;
+      const lowerKey = String(key).toLowerCase();
+      const isPhoneKey = lowerKey.includes('phone') || 
+                         lowerKey.includes('tel') || 
+                         lowerKey.includes('raqam') || 
+                         lowerKey.includes('nomer') || 
+                         lowerKey.includes('aloqa') || 
+                         lowerKey.includes('contact');
+
+      if (isPhoneKey) score += 30;
+      if (!isDummy && itemDigits.length >= 7) score += 50;
+      if (normalized) {
+        score += 40;
+        if (normalized.startsWith('+998') && normalized.length === 13) {
+          score += 30; // O'zbekiston mobil raqami (+998XXXXXXXXX)
+        }
+      }
+
+      // Agar maydon nomi "ishlaydigan", "haqiqiy", "aloqa" kabi so'zlarni o'z ichiga olsa, qo'shimcha ustunlik
+      if (lowerKey.includes('ishlaydigan') || lowerKey.includes('haqiqiy') || lowerKey.includes('boshqa')) {
+        score += 25;
+      }
+
+      candidates.push({
+        key,
+        raw: strVal,
+        digits: itemDigits,
+        cleanPhone: normalized,
+        isDummy,
+        score
+      });
+    }
+  };
+
+  for (const [key, val] of Object.entries(flatData)) {
+    evaluateCandidate(key, val);
+  }
+
+  // Balli bo'yicha eng yuqori kandidatni tanlaymiz
+  candidates.sort((a, b) => b.score - a.score);
+
+  if (candidates.length > 0) {
+    const best = candidates[0];
+    return {
+      rawPhone: best.raw,
+      cleanPhone: best.cleanPhone,
+      isDummy: best.isDummy
+    };
+  }
+
+  return { rawPhone: null, cleanPhone: null, isDummy: true };
 }
 
 /**
@@ -499,7 +597,14 @@ function parseLeadPayload(source, rawData) {
   const src = String(source).toLowerCase().trim();
 
   const name = findFuzzyValue(rawData, ['full_name', 'first_name', 'name', 'ism', 'user', 'client', 'mijoz', 'fio', 'f.i.o', 'buyurtmachi', 'customer', 'username'], ['campaign', 'product', 'form', 'ad', 'source', 'page', 'site', 'id']) || "Noma'lum";
-  const phone = findFuzzyValue(rawData, ['phone_number', 'phone', 'telefon_raqami', 'telefon', 'tel', 'raqam', 'number', 'nomer', 'aloqa', 'contact'], ['form', 'ad', 'id', 'page', 'campaign']);
+  
+  // Smart Multi-Field Phone Extractor (har qanday maydon va savolnomadan eng to'g'ri ishlaydigan raqamni topadi)
+  const phoneInfo = extractBestPhone(rawData);
+  const rawFallbackPhone = findFuzzyValue(rawData, ['phone_number', 'phone', 'telefon_raqami', 'telefon', 'tel', 'raqam', 'number', 'nomer', 'aloqa', 'contact'], ['form', 'ad', 'id', 'page', 'campaign']);
+  
+  const chosenPhone = phoneInfo.cleanPhone || phoneInfo.rawPhone || (rawFallbackPhone ? String(rawFallbackPhone).trim() : null);
+  const cleanPhone = phoneInfo.cleanPhone || null;
+
   const formId = findFuzzyValue(rawData, ['form_name', 'forma_nomi', 'form_id', 'form', 'forma', 'formId']) || (src === 'yuboraman' ? "Yuboraman Lead Form" : src === 'make' ? "Make Lead Form" : "General Lead Form");
   const pageName = findFuzzyValue(rawData, ['campaign_name', 'campaign', 'page_name', 'sahifa_nomi', 'page', 'sahifa', 'source', 'manba']) || (src === 'yuboraman' ? "Yuboraman.uz" : src === 'make' ? "Make.com" : "Webhook");
   const leadId = findFuzzyValue(rawData, ['lead_id', 'leadid', 'id']) || null;
@@ -528,14 +633,6 @@ function parseLeadPayload(source, rawData) {
     const compoundTechKeys = ['formid', 'leadid', 'adid', 'adset', 'platform', 'campaign', 'pagename', 'sourcetype'];
     if (compoundTechKeys.some(tk => k.includes(tk))) return true;
 
-    // 3. Telefon va ism maydonlarini tarkibiy tekshirish
-    const cleanWordList = key.toLowerCase().split(/[\s_()\-?]+/);
-    const techWords = [
-      'phone', 'telefon', 'tel', 'raqam', 'nomer', 'number', 'contact',
-      'name', 'ism', 'fullname', 'firstname', 'lastname'
-    ];
-    if (cleanWordList.some(w => techWords.includes(w))) return true;
-
     return false;
   };
 
@@ -546,9 +643,15 @@ function parseLeadPayload(source, rawData) {
     }
   }
 
+  // Agar asosiy va topilgan raqamlar farq qilsa, izohga yozib qo'yamiz
+  if (phoneInfo.rawPhone && rawFallbackPhone && String(phoneInfo.rawPhone).trim() !== String(rawFallbackPhone).trim()) {
+    additionalNotes.unshift(`[Kiritilgan boshqa raqam]: ${rawFallbackPhone}`);
+  }
+
   return {
     name: String(name).trim().substring(0, 200),
-    phone: phone ? String(phone).trim() : null,
+    phone: chosenPhone ? String(chosenPhone).trim() : null,
+    cleanPhone: cleanPhone,
     formId: String(formId).trim().substring(0, 200),
     pageName: String(pageName).trim().substring(0, 200),
     productName: String(productName).trim().substring(0, 200),
@@ -885,63 +988,63 @@ async function handleUniversalLead(source, rawData, broadcast) {
         }
       }
 
-      // Sdelkani (Deal) yaratamiz
-      let deal = null;
-      if (cleanPhone) {
-        const rawNotes = cleanLeadNotes(parsed.notes);
-        const targetProductName = parsed.productName || parsed.formId || 'Universal Lead';
+      // Sdelkani (Deal) yaratamiz — HAR DOIM sdelka ochiladi (leadlar bekorga uvol bo'lmasligi uchun)
+      const rawNotes = cleanLeadNotes(parsed.notes);
+      const targetProductName = parsed.productName || parsed.formId || 'Universal Lead';
 
-        // Mijoz ilgari ham sdelka ochganligini tekshiramiz (eslatma/ogohlantirish uchun)
-        const previousDealCount = await tx.deal.count({
-          where: { clientId: client.id }
-        });
-        const isRepeatedLead = previousDealCount > 0;
+      // Mijoz ilgari ham sdelka ochganligini tekshiramiz (eslatma/ogohlantirish uchun)
+      const previousDealCount = await tx.deal.count({
+        where: { clientId: client.id }
+      });
+      const isRepeatedLead = previousDealCount > 0;
 
-        const finalNotes = isRepeatedLead
-          ? (rawNotes ? `[⚠️ Takroriy murojaat]\n${rawNotes}` : `[⚠️ Takroriy murojaat]`)
-          : rawNotes;
+      let finalNotes = isRepeatedLead
+        ? (rawNotes ? `[⚠️ Takroriy murojaat]\n${rawNotes}` : `[⚠️ Takroriy murojaat]`)
+        : rawNotes;
 
-        deal = await tx.deal.create({
-          data: {
-            productName: targetProductName,
-            amount: 0,
-            status: 'new',
-            clientId: client.id,
-            contactId: contact.id,
-            pipelineId: targetPipelineId,
-            stageId: targetStageId,
-            notes: finalNotes,
-            source: (function() {
-              let resolvedSource = 'target';
-              const rawSourceField = String(rawData.source || rawData.Source || rawData.source_type || rawData.manba || parsed.pageName || '').toLowerCase();
-              if (rawSourceField.includes('instagram') || rawSourceField.includes('insta') || rawSourceField.includes('ig')) {
-                resolvedSource = 'instagram';
-              } else if (rawSourceField.includes('telegram') || rawSourceField.includes('tg')) {
-                resolvedSource = 'telegram';
-              } else if (rawSourceField.includes('target') || rawSourceField.includes('fb') || rawSourceField.includes('facebook') || rawSourceField.includes('ads')) {
-                resolvedSource = 'target';
-              } else if (rawSourceField.includes('oddiy') || rawSourceField.includes('manual')) {
-                resolvedSource = 'oddiy';
-              }
-              return resolvedSource;
-            })()
-          }
-        });
-        console.log(`[Universal Lead Transaction] Sdelka yaratildi. ID: ${deal.id} ${isRepeatedLead ? '(⚠️ Takroriy lead)' : ''}`);
-
-        // ActivityLog
-        await tx.activityLog.create({
-          data: {
-            action: isRepeatedLead ? '⚠️ Takroriy sdelka yaratildi' : 'Sdelka yaratildi',
-            details: isRepeatedLead
-              ? `Universal Webhook (${source}) orqali takroriy sdelka yaratildi (Mijozning ${previousDealCount + 1}-murojaati)`
-              : `Universal Webhook (${source}) orqali sdelka yaratildi (Lead ID: ${parsed.leadId || 'N/A'})`,
-            dealId: deal.id
-          }
-        });
-      } else {
-        console.log(`[Universal Lead Transaction] Telefon raqamsiz lead. Sdelka yaratilishi chetlab o'tildi.`);
+      if (!cleanPhone && parsed.phone) {
+        const warning = `[⚠️ Telefon raqami tekshirish talab etiladi: ${parsed.phone}]`;
+        finalNotes = finalNotes ? `${warning}\n${finalNotes}` : warning;
       }
+
+      const deal = await tx.deal.create({
+        data: {
+          productName: targetProductName,
+          amount: 0,
+          status: 'new',
+          clientId: client.id,
+          contactId: contact ? contact.id : null,
+          pipelineId: targetPipelineId,
+          stageId: targetStageId,
+          notes: finalNotes,
+          source: (function() {
+            let resolvedSource = 'target';
+            const rawSourceField = String(rawData.source || rawData.Source || rawData.source_type || rawData.manba || parsed.pageName || '').toLowerCase();
+            if (rawSourceField.includes('instagram') || rawSourceField.includes('insta') || rawSourceField.includes('ig')) {
+              resolvedSource = 'instagram';
+            } else if (rawSourceField.includes('telegram') || rawSourceField.includes('tg')) {
+              resolvedSource = 'telegram';
+            } else if (rawSourceField.includes('target') || rawSourceField.includes('fb') || rawSourceField.includes('facebook') || rawSourceField.includes('ads')) {
+              resolvedSource = 'target';
+            } else if (rawSourceField.includes('oddiy') || rawSourceField.includes('manual')) {
+              resolvedSource = 'oddiy';
+            }
+            return resolvedSource;
+          })()
+        }
+      });
+      console.log(`[Universal Lead Transaction] Sdelka yaratildi. ID: ${deal.id} ${isRepeatedLead ? '(⚠️ Takroriy lead)' : ''}`);
+
+      // ActivityLog
+      await tx.activityLog.create({
+        data: {
+          action: isRepeatedLead ? '⚠️ Takroriy sdelka yaratildi' : 'Sdelka yaratildi',
+          details: isRepeatedLead
+            ? `Universal Webhook (${source}) orqali takroriy sdelka yaratildi (Mijozning ${previousDealCount + 1}-murojaati)`
+            : `Universal Webhook (${source}) orqali sdelka yaratildi (Lead ID: ${parsed.leadId || 'N/A'})`,
+          dealId: deal.id
+        }
+      });
 
       return { client, deal };
     }, { timeout: 15000 });
