@@ -16,7 +16,7 @@ const dealInclude = {
       paidAmount: true,
       status: true,
       createdAt: true,
-      client: { select: { id: true, name: true, phone: true, city: true, company: true } },
+      client: { select: { id: true, name: true, phone: true, phone2: true, city: true, company: true } },
       manager: { select: { id: true, fullName: true, email: true } },
       stage:   { select: { name: true, color: true } }
     }

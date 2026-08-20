@@ -346,19 +346,27 @@ async function deleteTaskRow(id) {
 window.deleteTaskRow = deleteTaskRow;
 
 async function autoCleanupDoneDealTasks() {
-  const stale = allTasks.filter(t => !t.completed && t.deal && (t.deal.status === 'won' || t.deal.status === 'lost' || (t.deal.stage && (t.deal.stage.name.toLowerCase().includes('yutil') || t.deal.stage.name.toLowerCase().includes('100%')))));
+  const isCallback = (name) => {
+    const n = (name || '').toLowerCase();
+    return n.includes('qayta') || n.includes('aloqa') || n.includes('ko\'tarmadi') || n.includes('kotarmadi') || n.includes('vazifa');
+  };
+  const stale = allTasks.filter(t => !t.completed && t.deal && (
+    t.deal.status === 'won' || 
+    t.deal.status === 'lost' || 
+    (t.deal.stage && !isCallback(t.deal.stage.name))
+  ));
   if (!stale.length) {
-    _safeToast("Yopilgan sdelka eslatmalari topilmadi. Barcha eslatmalar dolzarb! ✨", 'info');
+    _safeToast("Eskirgan yoki bosqichi o'zgargan sdelka eslatmalari topilmadi. Barcha eslatmalar dolzarb! ✨", 'info');
     return;
   }
-  if (!confirm(`${stale.length} ta yopilgan sdelkaga tegishli eslatmalarni bajarildi deb belgilamoqchimisiz?`)) return;
+  if (!confirm(`${stale.length} ta bosqichi o'zgargan / yopilgan sdelkalarga tegishli eski eslatmalarni bajarildi deb belgilamoqchimisiz?`)) return;
 
   for (const task of stale) {
     try {
       await fetch(`/api/tasks/${task.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ completed: true })
+        body: JSON.stringify({ completed: true, result: "Avtomatik tozalash: Bosqich o'zgargan" })
       });
       task.completed = true;
     } catch(e) {}
@@ -468,7 +476,7 @@ function updateStats() {
   const tomorrowEnd = new Date(today); tomorrowEnd.setDate(today.getDate() + 1); tomorrowEnd.setHours(23,59,59,999);
   const endOfWeek = new Date(today); endOfWeek.setDate(today.getDate() + 7); endOfWeek.setHours(23,59,59,999);
 
-  const active = allTasks.filter(t => !t.completed && !isKotarmadiStage(t));
+  const active = allTasks.filter(t => !t.completed);
   const todayCount = active.filter(t => { const d = getTaskExactDate(t); return !d || d <= tomorrowEnd; }).length;
   const overdueCount = active.filter(t => { const d = getTaskExactDate(t); return d && d.getTime() < nowMs; }).length;
   const weekCount = active.filter(t => { const d = getTaskExactDate(t); return !d || d <= endOfWeek; }).length;
@@ -533,6 +541,7 @@ function renderSingleTaskRowHtml(t) {
     clientHtml = `
       <div style="font-weight:600; color:var(--text-primary); font-size:13px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${_esc(t.client.name)}</div>
       ${t.client.phone ? `<a href="tel:${_esc(t.client.phone)}" style="font-size:11.5px; color:var(--brand); font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:4px; margin-top:2px;"><i class="fas fa-phone-alt" style="font-size:9.5px;"></i> ${_esc(t.client.phone)}</a>` : ''}
+      ${t.client.phone2 ? `<div style="font-size:11px; margin-top:1px;"><a href="tel:${_esc(t.client.phone2)}" style="color:var(--text-secondary); text-decoration:none; display:inline-flex; align-items:center; gap:4px;"><i class="fas fa-phone-volume" style="font-size:9px;"></i> 2: ${_esc(t.client.phone2)}</a></div>` : ''}
     `;
   }
 
@@ -983,13 +992,12 @@ async function openTaskModal(id, dealId, clientId, dealTitle) {
       const stages = await fetch(`/api/pipelines/${pipelineId}/stages`).then(r => r.json());
       if (stages && stages.length > 0) {
         stageGroup.classList.remove('hidden');
+        stageSelect.innerHTML = '<option value="" selected>— Bosqichni o\'zgartirmaslik —</option>';
         stages.forEach(stg => {
           const opt = document.createElement('option');
           opt.value = stg.id;
-          opt.textContent = stg.name;
-          if (currentStageId && Number(currentStageId) === Number(stg.id)) {
-            opt.selected = true;
-          }
+          const isCurrent = currentStageId && Number(currentStageId) === Number(stg.id);
+          opt.textContent = stg.name + (isCurrent ? ' (Hozirgi bosqich)' : '');
           stageSelect.appendChild(opt);
         });
       }
@@ -1089,7 +1097,11 @@ function viewTaskDetails(id) {
   if (t.client) {
     document.getElementById('v-client-section').classList.remove('hidden');
     document.getElementById('v-client-name').textContent = t.client.name || '-';
-    document.getElementById('v-client-phone').innerHTML = t.client.phone ? `<a href="tel:${t.client.phone}" style="color:var(--accent); font-weight:700;">${t.client.phone}</a>` : '-';
+    const phoneHtml = [
+      t.client.phone ? `<a href="tel:${t.client.phone}" style="color:var(--accent); font-weight:700;">${t.client.phone}</a>` : null,
+      t.client.phone2 ? `<a href="tel:${t.client.phone2}" style="color:var(--text-secondary); font-size:12px; margin-left:8px;">(2: ${t.client.phone2})</a>` : null
+    ].filter(Boolean).join(' ');
+    document.getElementById('v-client-phone').innerHTML = phoneHtml || '-';
     document.getElementById('v-client-city').textContent = t.client.city || '-';
     document.getElementById('v-client-company').textContent = t.client.company || '-';
   } else {

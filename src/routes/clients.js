@@ -19,6 +19,7 @@ router.get('/', async (req, res, next) => {
         OR: [
           { name: { contains: q, mode: 'insensitive' } },
           { phone: { contains: q } },
+          { phone2: { contains: q } },
           { email: { contains: q, mode: 'insensitive' } },
           { city: { contains: q, mode: 'insensitive' } }
         ]
@@ -77,13 +78,13 @@ router.get('/:id', async (req, res, next) => {
 // Create client
 router.post('/', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
-    const { name, phone, email, notes, city, debt, debtDate, debtNotes } = req.body;
+    const { name, phone, phone2, email, notes, city, debt, debtDate, debtNotes } = req.body;
     if (!name) return res.status(400).json({ message: 'Mijoz ismi majburiy' });
 
     // Duplicate check by phone
     if (phone) {
       const existing = await prisma.client.findFirst({
-        where: { phone: phone.trim() }
+        where: { OR: [{ phone: phone.trim() }, { phone2: phone.trim() }] }
       });
       if (existing) {
         return res.status(400).json({ message: 'Ushbu telefon raqamiga ega mijoz allaqachon mavjud!' });
@@ -94,6 +95,7 @@ router.post('/', requireRole('admin', 'manager'), async (req, res, next) => {
       data: {
         name: name.trim(),
         phone: phone ? phone.trim() : null,
+        phone2: phone2 ? phone2.trim() : null,
         email: email ? email.trim().toLowerCase() : null,
         notes: notes || null,
         city: city || null,
@@ -116,14 +118,14 @@ router.post('/', requireRole('admin', 'manager'), async (req, res, next) => {
 // Update client
 router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
-    const { name, phone, email, notes, city, debt, debtDate, debtNotes } = req.body;
+    const { name, phone, phone2, email, notes, city, debt, debtDate, debtNotes } = req.body;
     const clientId = Number(req.params.id);
 
     // Duplicate check if phone changes
     if (phone) {
       const existing = await prisma.client.findFirst({
         where: {
-          phone: phone.trim(),
+          OR: [{ phone: phone.trim() }, { phone2: phone.trim() }],
           id: { not: clientId }
         }
       });
@@ -135,6 +137,7 @@ router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => 
     const data = {};
     if (name !== undefined) data.name = name.trim();
     if (phone !== undefined) data.phone = phone ? phone.trim() : null;
+    if (phone2 !== undefined) data.phone2 = phone2 ? phone2.trim() : null;
     if (email !== undefined) data.email = email ? email.trim().toLowerCase() : null;
     if (notes !== undefined) data.notes = notes || null;
     if (city !== undefined) data.city = city || null;

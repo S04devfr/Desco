@@ -43,6 +43,7 @@ model Client {
   id        Int      @id @default(autoincrement())
   name      String
   phone     String?
+  phone2    String?
   email     String?
   company   String?
   companyAddress String?
@@ -78,6 +79,7 @@ model Client {
   @@index([createdAt])
   @@index([name])
   @@index([phone])
+  @@index([phone2])
   @@index([city])
   @@index([debt])
 }
@@ -109,6 +111,7 @@ model Contact {
   lastName  String?
   email     String?
   phone     String?
+  phone2    String?
   position  String?
   city      String?
   source    String?

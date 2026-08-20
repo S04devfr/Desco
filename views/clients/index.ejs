@@ -234,8 +234,12 @@
           <input type="text" id="c-name" class="form-control" placeholder="Ism va familiya">
         </div>
         <div class="form-group">
-          <label class="form-label">Telefon</label>
+          <label class="form-label">1-chi Telefon</label>
           <input type="text" id="c-phone" class="form-control" placeholder="+998 90 000 00 00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">2-chi Telefon</label>
+          <input type="text" id="c-phone2" class="form-control" placeholder="+998 90 000 00 00">
         </div>
         <div class="form-group">
           <label class="form-label">Shahar / Hudud</label>
@@ -433,7 +437,10 @@ function renderContacts() {
             </div>
           </div>
         </td>
-        <td>${c.phone ? escHtml(c.phone) : '—'}</td>
+        <td>
+          <div style="font-weight:600; color:var(--text-primary);">${c.phone ? escHtml(c.phone) : '—'}</div>
+          ${c.phone2 ? `<div style="font-size:11.5px; color:var(--text-secondary); margin-top:2px;" title="2-chi telefon"><i class="fas fa-phone-volume" style="font-size:10px; color:var(--text-tertiary);"></i> 2: ${escHtml(c.phone2)}</div>` : ''}
+        </td>
         <td>${c.email ? escHtml(c.email) : '—'}</td>
         <td>${escHtml(companyName)}</td>
         <td><span class="badge badge-gray" style="font-size: 11.5px; padding: 2px 6px;">${escHtml(manager)}</span></td>
@@ -452,6 +459,7 @@ async function openContactModal(id) {
   document.getElementById('clientId').value = id || '';
   document.getElementById('c-name').value = '';
   document.getElementById('c-phone').value = '';
+  document.getElementById('c-phone2').value = '';
   document.getElementById('c-city').value = '';
   document.getElementById('c-email').value = '';
   document.getElementById('c-companyId').value = '';
@@ -468,6 +476,7 @@ async function openContactModal(id) {
       const fullName = c.name || `${c.firstName || ''} ${c.lastName || ''}`.trim();
       document.getElementById('c-name').value = fullName;
       document.getElementById('c-phone').value = c.phone || '';
+      document.getElementById('c-phone2').value = c.phone2 || '';
       document.getElementById('c-city').value = c.city || '';
       document.getElementById('c-email').value = c.email || '';
       document.getElementById('c-companyId').value = c.companyId || '';
@@ -553,6 +562,7 @@ async function saveContact() {
     const body = {
       name,
       phone: document.getElementById('c-phone').value || null,
+      phone2: document.getElementById('c-phone2').value || null,
       city: document.getElementById('c-city').value || null,
       email: document.getElementById('c-email').value || null,
       companyId: companyId ? Number(companyId) : null,

@@ -355,31 +355,25 @@ function parseTelegramMessage(text) {
 
   let name = null;
   let phone = null;
+  let phone2 = null;
   let product = null;
   let city = null;
 
   // Agar kalit-qiymat tuzilishi topilgan bo'lsa, fuzzy qidiruv orqali maydonlarni ajratamiz
   if (keyValFound) {
     name = leadService.findFuzzyValue(details, ['full_name', 'first_name', 'name', 'ism', 'user', 'client', 'mijoz', 'fio', 'f.i.o', 'buyurtmachi', 'customer', 'username'], ['campaign', 'product', 'form', 'ad', 'source', 'page', 'site', 'id']);
-    phone = leadService.findFuzzyValue(details, ['phone_number', 'phone', 'telefon_raqami', 'telefon', 'tel', 'raqam', 'number', 'nomer', 'aloqa', 'contact'], ['form', 'ad', 'id', 'page', 'campaign']);
+    const phones = leadService.extractAllPhones(details);
+    phone = phones.phone;
+    phone2 = phones.phone2;
     product = leadService.findFuzzyValue(details, ['product_name', 'product', 'mahsulot', 'tovar', 'kurs', 'tarif', 'buyurtma', 'nomi', 'campaign_name', 'campaign', 'forma_nomi', 'form_name', 'form_id']);
     city = leadService.findFuzzyValue(details, ['city', 'shahar', 'manzil', 'hudud', 'address', 'viloyat', 'rayon', 'qayerga', 'location'], ['campaign', 'product', 'form', 'ad', 'id']);
   }
 
-  // Raqamlar uchun fallback: matn ichidan telefon raqami formatiga mos keladigan birinchi qiymatni qidiramiz
+  // Raqamlar uchun fallback: matn ichidan telefon raqami formatiga mos keladigan qiymatlarni qidiramiz
   if (!phone) {
-    // 9 va 12 xonali telefon formatlariga mos tushadigan, ammo 14+ xonali Lead/Ad ID-larni chetlab o'tadigan regex
-    const phoneRegex = /(?:\+?998\s*\(?\d{2}\)?\s*\d{3}[\s.-]*\d{2}[\s.-]*\d{2})|(?:\b998\d{9}\b)|(?:\b\d{2}\s*\(?\d{2}\)?\s*\d{3}[\s.-]*\d{2}[\s.-]*\d{2}\b)|(?:\b8\s*\(?\d{2}\)?\s*\d{3}[\s.-]*\d{2}[\s.-]*\d{2}\b)|(?:\b\d{9}\b)/g;
-    const matches = text.match(phoneRegex);
-    if (matches && matches.length > 0) {
-      for (const m of matches) {
-        const cleanDigitLength = m.replace(/\D/g, '').length;
-        if (cleanDigitLength >= 9 && cleanDigitLength <= 13) {
-          phone = m.trim();
-          break;
-        }
-      }
-    }
+    const phonesFromText = leadService.extractAllPhones({ text });
+    phone = phonesFromText.phone;
+    phone2 = phonesFromText.phone2;
   }
 
   // Ism uchun fallback: telefon raqami yoki mahsulot so'zlari ishtirok etmagan normal uzunlikdagi qatorni ism deb olamiz
@@ -488,6 +482,7 @@ function parseTelegramMessage(text) {
   return {
     name,
     phone: phone || "Noma'lum",
+    phone2: phone2 || null,
     product,
     city: city || null,
     notes,

@@ -68,7 +68,7 @@ router.get('/', async (req, res) => {
       include: {
         assignedTo: userSelect,
         client: {
-          select: { id: true, name: true, company: true, phone: true, city: true }
+          select: { id: true, name: true, company: true, phone: true, phone2: true, city: true }
         },
         contact: {
           include: { company: true }
@@ -85,7 +85,7 @@ router.get('/', async (req, res) => {
             stageId: true,
             stage: { select: { id: true, name: true } },
             client: {
-              select: { id: true, name: true, company: true, phone: true, city: true }
+              select: { id: true, name: true, company: true, phone: true, phone2: true, city: true }
             },
             contact: {
               include: { company: true }
@@ -113,7 +113,7 @@ router.get('/:id', async (req, res, next) => {
       include: {
         assignedTo: userSelect,
         client: {
-          select: { id: true, name: true, company: true, phone: true, city: true }
+          select: { id: true, name: true, company: true, phone: true, phone2: true, city: true }
         },
         contact: {
           include: { company: true }
@@ -122,7 +122,7 @@ router.get('/:id', async (req, res, next) => {
           include: {
             stage: { select: { id: true, name: true } },
             client: {
-              select: { id: true, name: true, company: true, phone: true, city: true }
+              select: { id: true, name: true, company: true, phone: true, phone2: true, city: true }
             },
             contact: {
               include: { company: true }
@@ -159,7 +159,7 @@ router.post('/', async (req, res, next) => {
       include: {
         assignedTo: userSelect,
         client: {
-          select: { id: true, name: true, company: true, phone: true, city: true }
+          select: { id: true, name: true, company: true, phone: true, phone2: true, city: true }
         },
         contact: {
           include: { company: true }
@@ -169,7 +169,7 @@ router.post('/', async (req, res, next) => {
             id: true,
             productName: true,
             client: {
-              select: { id: true, name: true, company: true, phone: true, city: true }
+              select: { id: true, name: true, company: true, phone: true, phone2: true, city: true }
             },
             contact: {
               include: { company: true }
@@ -181,17 +181,83 @@ router.post('/', async (req, res, next) => {
 
     if (task.dealId) {
       const dealUpdate = {};
-      if (stageId) dealUpdate.stageId = Number(stageId);
-      const targetDeal = await prisma.deal.findUnique({ where: { id: task.dealId } });
-      if (targetDeal && targetDeal.managerId === null && req.userId) {
-        dealUpdate.managerId = req.userId;
+      const targetDeal = await prisma.deal.findUnique({ where: { id: task.dealId }, include: { stage: true } });
+      if (targetDeal) {
+        if (targetDeal.managerId === null && req.userId) {
+          dealUpdate.managerId = req.userId;
+        }
+        if (stageId && Number(stageId) !== targetDeal.stageId) {
+          const newStage = await prisma.pipelineStage.findUnique({ where: { id: Number(stageId) } });
+          if (newStage) {
+            dealUpdate.stageId = newStage.id;
+            dealUpdate.stageUpdatedAt = new Date();
+
+            let finalStatus = targetDeal.status;
+            if (newStage.statusType === 'won') finalStatus = 'won';
+            else if (newStage.statusType === 'lost') finalStatus = 'lost';
+            else {
+              const stName = newStage.name.toLowerCase();
+              if (stName.includes('yutil') || stName.includes('100%') || stName.includes('olindi')) finalStatus = 'won';
+              else if (stName.includes('rad') || stName.includes('otkaz') || stName.includes('lost')) finalStatus = 'lost';
+            }
+            dealUpdate.status = finalStatus;
+
+            await prisma.dealStageHistory.create({
+              data: {
+                dealId: targetDeal.id,
+                fromStageId: targetDeal.stageId,
+                toStageId: newStage.id,
+                changedById: req.userId,
+                changedAt: new Date()
+              }
+            });
+
+            await prisma.activityLog.create({
+              data: {
+                action: "Bosqich o'zgartirildi",
+                details: `Vazifalar bo'limidan: ${targetDeal.stage?.name || 'Bosqichsiz'} → ${newStage.name}`,
+                dealId: targetDeal.id,
+                userId: req.userId
+              }
+            });
+
+            // If moved to a non-callback stage, complete open tasks
+            const isCallback = newStage.name.toLowerCase().includes('qayta') || newStage.name.toLowerCase().includes('aloqa') || newStage.name.toLowerCase().includes('ko\'tarmadi') || newStage.name.toLowerCase().includes('kotarmadi') || newStage.name.toLowerCase().includes('vazifa');
+            if (!isCallback || finalStatus === 'won' || finalStatus === 'lost') {
+              await prisma.task.updateMany({
+                where: { dealId: targetDeal.id, completed: false, id: { not: task.id } },
+                data: { completed: true, status: 'completed', result: `Avtomatik yopildi: Bosqich "${newStage.name}"ga o'zgartirildi` }
+              });
+            }
+          }
+        }
+        if (Object.keys(dealUpdate).length > 0) {
+          await prisma.deal.update({
+            where: { id: task.dealId },
+            data: dealUpdate
+          }).catch(() => {});
+
+          const broadcast = req.app.get('broadcast');
+          if (broadcast) {
+            const fullDeal = await prisma.deal.findUnique({
+              where: { id: task.dealId },
+              include: {
+                client: { select: { id: true, name: true, company: true, phone: true, phone2: true, city: true } },
+                manager: userSelect,
+                stage: { select: { id: true, name: true, color: true, order: true } },
+                installments: { select: { id: true } },
+                tasks: { select: { id: true, title: true, dueDate: true, dueTime: true, actionType: true, completed: true, createdAt: true, assignedToId: true } }
+              }
+            });
+            if (fullDeal) broadcast({ type: 'deal_updated', dealId: task.dealId, deal: fullDeal });
+          }
+        }
       }
-      if (Object.keys(dealUpdate).length > 0) {
-        await prisma.deal.update({
-          where: { id: task.dealId },
-          data: dealUpdate
-        }).catch(() => {});
-      }
+    }
+
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) {
+      broadcast({ type: 'task_created', taskId: task.id, task: formatTaskClient(task) });
     }
 
     res.status(201).json(formatTaskClient(task))
@@ -212,11 +278,8 @@ router.patch('/:id', async (req, res, next) => {
     if (actionType !== undefined) data.actionType = actionType
     if (result !== undefined) data.result = result
     if (completed !== undefined) {
-      data.completed = completed
-      data.status = completed ? 'completed' : 'todo'
-    } else if (stageId !== undefined && stageId !== null && stageId !== '') {
-      data.completed = true
-      data.status = 'completed'
+      data.completed = Boolean(completed)
+      data.status = Boolean(completed) ? 'completed' : 'todo'
     }
     if (dealId !== undefined) data.dealId = dealId ? Number(dealId) : null
     if (assignedToId !== undefined) data.assignedToId = assignedToId ? Number(assignedToId) : null
@@ -233,17 +296,16 @@ router.patch('/:id', async (req, res, next) => {
       include: {
         assignedTo: userSelect,
         client: {
-          select: { id: true, name: true, company: true, phone: true, city: true }
+          select: { id: true, name: true, company: true, phone: true, phone2: true, city: true }
         },
         contact: {
           include: { company: true }
         },
         deal: {
-          select: {
-            id: true,
-            productName: true,
+          include: {
+            stage: true,
             client: {
-              select: { id: true, name: true, company: true, phone: true, city: true }
+              select: { id: true, name: true, company: true, phone: true, phone2: true, city: true }
             },
             contact: {
               include: { company: true }
@@ -251,13 +313,102 @@ router.patch('/:id', async (req, res, next) => {
           }
         }
       }
-    })
+    });
 
+    // If stageId was provided and dealId exists, check if stage actually changed
     if (stageId && task.dealId) {
-      await prisma.deal.update({
+      const newStageIdNum = Number(stageId);
+      const targetDeal = await prisma.deal.findUnique({
         where: { id: task.dealId },
-        data: { stageId: Number(stageId) }
+        include: { stage: true }
       });
+
+      if (targetDeal && targetDeal.stageId !== newStageIdNum) {
+        const newStage = await prisma.pipelineStage.findUnique({ where: { id: newStageIdNum } });
+        if (newStage) {
+          let finalStatus = targetDeal.status;
+          if (newStage.statusType === 'won') {
+            finalStatus = 'won';
+          } else if (newStage.statusType === 'lost') {
+            finalStatus = 'lost';
+          } else {
+            const stName = newStage.name.toLowerCase();
+            if (stName.includes('yutil') || stName.includes('100%') || stName.includes('olindi')) finalStatus = 'won';
+            else if (stName.includes('rad') || stName.includes('otkaz') || stName.includes('lost')) finalStatus = 'lost';
+          }
+
+          // Update deal with stage history
+          await prisma.dealStageHistory.create({
+            data: {
+              dealId: targetDeal.id,
+              fromStageId: targetDeal.stageId,
+              toStageId: newStage.id,
+              changedById: req.userId,
+              changedAt: new Date()
+            }
+          });
+
+          await prisma.deal.update({
+            where: { id: targetDeal.id },
+            data: {
+              stageId: newStage.id,
+              status: finalStatus,
+              stageUpdatedAt: new Date()
+            }
+          });
+
+          await prisma.activityLog.create({
+            data: {
+              action: "Bosqich o'zgartirildi",
+              details: `Vazifalar bo'limidan: ${targetDeal.stage?.name || 'Bosqichsiz'} → ${newStage.name}`,
+              dealId: targetDeal.id,
+              userId: req.userId
+            }
+          });
+
+          // If moved to a non-callback stage or won/lost, complete open tasks
+          const isCallback = newStage.name.toLowerCase().includes('qayta') || newStage.name.toLowerCase().includes('aloqa') || newStage.name.toLowerCase().includes('ko\'tarmadi') || newStage.name.toLowerCase().includes('kotarmadi') || newStage.name.toLowerCase().includes('vazifa');
+          if (!isCallback || finalStatus === 'won' || finalStatus === 'lost') {
+            await prisma.task.updateMany({
+              where: { dealId: targetDeal.id, completed: false },
+              data: { completed: true, status: 'completed', result: `Avtomatik yopildi: Bosqich "${newStage.name}"ga o'zgartirildi` }
+            });
+          }
+
+          const broadcast = req.app.get('broadcast');
+          if (broadcast) {
+            const fullDeal = await prisma.deal.findUnique({
+              where: { id: targetDeal.id },
+              include: {
+                client: { select: { id: true, name: true, company: true, phone: true, phone2: true, city: true } },
+                manager: userSelect,
+                stage: { select: { id: true, name: true, color: true, order: true } },
+                installments: { select: { id: true } },
+                tasks: { select: { id: true, title: true, dueDate: true, dueTime: true, actionType: true, completed: true, createdAt: true, assignedToId: true } }
+              }
+            });
+            if (fullDeal) broadcast({ type: 'deal_updated', dealId: targetDeal.id, deal: fullDeal });
+          }
+        }
+      }
+    }
+
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) {
+      broadcast({ type: 'task_updated', taskId: task.id, task: formatTaskClient(task) });
+      if (task.dealId) {
+        const fullDeal = await prisma.deal.findUnique({
+          where: { id: task.dealId },
+          include: {
+            client: { select: { id: true, name: true, company: true, phone: true, phone2: true, city: true } },
+            manager: userSelect,
+            stage: { select: { id: true, name: true, color: true, order: true } },
+            installments: { select: { id: true } },
+            tasks: { select: { id: true, title: true, dueDate: true, dueTime: true, actionType: true, completed: true, createdAt: true, assignedToId: true } }
+          }
+        });
+        if (fullDeal) broadcast({ type: 'deal_updated', dealId: task.dealId, deal: fullDeal });
+      }
     }
 
     res.json(formatTaskClient(task))
@@ -273,9 +424,40 @@ router.patch('/:id/complete', async (req, res, next) => {
     const { result } = req.body
     const task = await prisma.task.update({
       where: { id: Number(req.params.id) },
-      data: { completed: true, status: 'completed', result: result || null }
-    })
-    res.json(task)
+      data: { completed: true, status: 'completed', result: result || 'Bajarildi' },
+      include: {
+        assignedTo: userSelect,
+        client: { select: { id: true, name: true, company: true, phone: true, phone2: true, city: true } },
+        deal: {
+          select: {
+            id: true,
+            productName: true,
+            stageId: true,
+            client: { select: { id: true, name: true, company: true, phone: true, phone2: true, city: true } }
+          }
+        }
+      }
+    });
+
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) {
+      broadcast({ type: 'task_updated', taskId: task.id, task: formatTaskClient(task) });
+      if (task.dealId) {
+        const fullDeal = await prisma.deal.findUnique({
+          where: { id: task.dealId },
+          include: {
+            client: { select: { id: true, name: true, company: true, phone: true, phone2: true, city: true } },
+            manager: userSelect,
+            stage: { select: { id: true, name: true, color: true, order: true } },
+            installments: { select: { id: true } },
+            tasks: { select: { id: true, title: true, dueDate: true, dueTime: true, actionType: true, completed: true, createdAt: true, assignedToId: true } }
+          }
+        });
+        if (fullDeal) broadcast({ type: 'deal_updated', dealId: task.dealId, deal: fullDeal });
+      }
+    }
+
+    res.json(formatTaskClient(task))
   } catch (error) {
     if (error.code === 'P2025') return res.status(404).json({ message: 'Vazifa topilmadi' })
     next(error)
@@ -285,7 +467,27 @@ router.patch('/:id/complete', async (req, res, next) => {
 // Delete task
 router.delete('/:id', async (req, res, next) => {
   try {
-    await prisma.task.delete({ where: { id: Number(req.params.id) } })
+    const task = await prisma.task.findUnique({ where: { id: Number(req.params.id) } });
+    await prisma.task.delete({ where: { id: Number(req.params.id) } });
+
+    const broadcast = req.app.get('broadcast');
+    if (broadcast) {
+      broadcast({ type: 'task_deleted', taskId: Number(req.params.id) });
+      if (task && task.dealId) {
+        const fullDeal = await prisma.deal.findUnique({
+          where: { id: task.dealId },
+          include: {
+            client: { select: { id: true, name: true, company: true, phone: true, phone2: true, city: true } },
+            manager: userSelect,
+            stage: { select: { id: true, name: true, color: true, order: true } },
+            installments: { select: { id: true } },
+            tasks: { select: { id: true, title: true, dueDate: true, dueTime: true, actionType: true, completed: true, createdAt: true, assignedToId: true } }
+          }
+        });
+        if (fullDeal) broadcast({ type: 'deal_updated', dealId: task.dealId, deal: fullDeal });
+      }
+    }
+
     res.json({ message: "Vazifa o'chirildi" })
   } catch (error) {
     if (error.code === 'P2025') return res.status(404).json({ message: 'Vazifa topilmadi' })

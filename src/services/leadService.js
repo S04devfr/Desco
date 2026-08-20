@@ -30,43 +30,69 @@ function cleanLeadNotes(notes) {
  * Telefon raqami bo'yicha mijozni qidiradi yoki tranzaksiya orqali xavfsiz yaratadi.
  * Bu ma'lumotlar dublikati hosil bo'lishining (race condition) oldini oladi.
  */
-async function upsertClientByPhone(name, phone, email = null, source = 'webhook') {
-  const cleanPhoneRaw = String(phone).replace(/[\s-]/g, '').trim();
-  if (!cleanPhoneRaw) {
+async function upsertClientByPhone(name, phone, phone2 = null, email = null, source = 'webhook') {
+  const cleanPhoneRaw = phone ? String(phone).replace(/[\s-]/g, '').trim() : null;
+  const cleanPhone2Raw = phone2 ? String(phone2).replace(/[\s-]/g, '').trim() : null;
+
+  if (!cleanPhoneRaw && !cleanPhone2Raw) {
     throw new Error('Mijoz telefon raqami kiritilmagan.');
   }
 
   const executeUpsertTx = async () => {
     return await prisma.$transaction(async (tx) => {
       let searchPhone = cleanPhoneRaw;
-      if (!searchPhone.startsWith('+') && searchPhone.length === 12 && searchPhone.startsWith('998')) {
+      if (searchPhone && !searchPhone.startsWith('+') && searchPhone.length === 12 && searchPhone.startsWith('998')) {
         searchPhone = '+' + searchPhone;
+      }
+      let searchPhone2 = cleanPhone2Raw;
+      if (searchPhone2 && !searchPhone2.startsWith('+') && searchPhone2.length === 12 && searchPhone2.startsWith('998')) {
+        searchPhone2 = '+' + searchPhone2;
+      }
+
+      const orConditions = [];
+      if (cleanPhoneRaw) {
+        orConditions.push({ phone: { contains: cleanPhoneRaw } });
+        orConditions.push({ phone2: { contains: cleanPhoneRaw } });
+      }
+      if (cleanPhone2Raw) {
+        orConditions.push({ phone: { contains: cleanPhone2Raw } });
+        orConditions.push({ phone2: { contains: cleanPhone2Raw } });
       }
 
       let client = await tx.client.findFirst({
-        where: { phone: { contains: cleanPhoneRaw } }
+        where: { OR: orConditions }
       });
 
       if (!client) {
         client = await tx.client.create({
           data: {
             name: String(name).trim().substring(0, 200),
-            phone: searchPhone,
+            phone: searchPhone || null,
+            phone2: searchPhone2 || null,
             email: email || null,
             notes: null
           }
         });
-      } else if (email && !client.email) {
-        // Agar mijoz topilsa va uning emaili bo'lmasa, uni yangilab qo'yamiz
-        client = await tx.client.update({
-          where: { id: client.id },
-          data: { email: email }
-        });
+      } else {
+        const updateData = {};
+        if (email && !client.email) updateData.email = email;
+        if (searchPhone2 && !client.phone2 && client.phone !== searchPhone2) {
+          updateData.phone2 = searchPhone2;
+        }
+        if (searchPhone && !client.phone && client.phone2 !== searchPhone) {
+          updateData.phone = searchPhone;
+        }
+        if (Object.keys(updateData).length > 0) {
+          client = await tx.client.update({
+            where: { id: client.id },
+            data: updateData
+          });
+        }
       }
 
       // ALSO upsert Contact
       let contact = await tx.contact.findFirst({
-        where: { phone: { contains: cleanPhone } }
+        where: { OR: orConditions }
       });
 
       if (!contact) {
@@ -79,10 +105,26 @@ async function upsertClientByPhone(name, phone, email = null, source = 'webhook'
           data: {
             firstName,
             lastName,
-            phone: cleanPhone,
+            phone: searchPhone || null,
+            phone2: searchPhone2 || null,
             email: email || null
           }
         });
+      } else {
+        const cUpdateData = {};
+        if (email && !contact.email) cUpdateData.email = email;
+        if (searchPhone2 && !contact.phone2 && contact.phone !== searchPhone2) {
+          cUpdateData.phone2 = searchPhone2;
+        }
+        if (searchPhone && !contact.phone && contact.phone2 !== searchPhone) {
+          cUpdateData.phone = searchPhone;
+        }
+        if (Object.keys(cUpdateData).length > 0) {
+          contact = await tx.contact.update({
+            where: { id: contact.id },
+            data: cUpdateData
+          });
+        }
       }
 
       return { client, contact };
@@ -217,28 +259,30 @@ async function handleMetaWebhook(body, broadcast) {
             continue;
           }
 
-          // Smart phone extraction from leadData.field_data
+          // Smart multi-phone extraction from leadData.field_data
           const fieldMap = {};
           leadData.field_data.forEach(field => {
             console.log(`[Meta Webhook]   field: ${field.name} = ${JSON.stringify(field.values)}`);
             fieldMap[field.name] = (field.values && field.values[0]) || '';
           });
 
-          const phoneInfo = extractBestPhone(fieldMap);
+          const phoneInfo = extractAllPhones(fieldMap);
           const rawName = fieldMap.full_name || fieldMap.first_name || 'Nomsiz Lead';
           const rawPhone = phoneInfo.cleanPhone || phoneInfo.rawPhone || fieldMap.phone_number || '';
+          const rawPhone2 = phoneInfo.cleanPhone2 || phoneInfo.rawPhone2 || null;
           const rawEmail = fieldMap.email || '';
           const rawProduct = fieldMap.product_name || fieldMap.mahsulot || 'Instagram Orqali Murojaat';
           const cleanPhone = phoneInfo.cleanPhone || null;
+          const cleanPhone2 = phoneInfo.cleanPhone2 || null;
 
-          console.log(`[Meta Webhook] Ajratilgan ma'lumotlar — Ism: ${rawName}, Tel: ${rawPhone} (Clean: ${cleanPhone}), Email: ${rawEmail}, Mahsulot: ${rawProduct}`);
+          console.log(`[Meta Webhook] Ajratilgan ma'lumotlar — Ism: ${rawName}, Tel 1: ${rawPhone} (Clean: ${cleanPhone}), Tel 2: ${rawPhone2} (Clean: ${cleanPhone2}), Email: ${rawEmail}, Mahsulot: ${rawProduct}`);
 
           let client = null;
           let contact = null;
 
-          if (cleanPhone || (rawPhone && rawPhone.trim() !== '')) {
+          if (cleanPhone || cleanPhone2 || (rawPhone && rawPhone.trim() !== '')) {
             try {
-              const upsertRes = await upsertClientByPhone(rawName, cleanPhone || rawPhone, rawEmail, 'Instagram Webhook');
+              const upsertRes = await upsertClientByPhone(rawName, cleanPhone || rawPhone, cleanPhone2 || rawPhone2, rawEmail, 'Instagram Webhook');
               client = upsertRes.client;
               contact = upsertRes.contact;
             } catch (phoneErr) {
@@ -252,6 +296,7 @@ async function handleMetaWebhook(body, broadcast) {
               data: {
                 name: rawName || "Noma'lum Mijoz",
                 phone: cleanPhone || rawPhone || null,
+                phone2: cleanPhone2 || rawPhone2 || null,
                 email: rawEmail || null,
                 notes: null
               }
@@ -262,6 +307,7 @@ async function handleMetaWebhook(body, broadcast) {
                 firstName: rawName ? rawName.split(/\s+/)[0] : "Nomsiz",
                 lastName: rawName ? rawName.split(/\s+/).slice(1).join(' ') : null,
                 phone: cleanPhone || rawPhone || null,
+                phone2: cleanPhone2 || rawPhone2 || null,
                 email: rawEmail || null
               }
             });
@@ -383,7 +429,7 @@ function normalizeUniversalPhone(raw) {
     throw new Error('Telefon raqami kiritilishi shart (telefon/phone kiritilmagan).');
   }
 
-  // Faqat raqamlar va plus belgisini saqlab qolamiz (nuqta, chiziq, qavs, bo'shliqlarni butunlay tozalaymiz)
+  // Faqat raqamlar va plus belgisini saqlab qolamiz
   const digits = String(raw).replace(/\D/g, '');
 
   if (!digits || digits.length < 7) {
@@ -391,14 +437,21 @@ function normalizeUniversalPhone(raw) {
   }
 
   // 1. O'zbekiston telefon formatlari
+  // 9 xonali: 901234567 -> +998901234567
   if (digits.length === 9) {
     return '+998' + digits;
   }
+  // 12 xonali: 998901234567 -> +998901234567
   if (digits.length === 12 && digits.startsWith('998')) {
     return '+' + digits;
   }
-  if (digits.length === 10 && digits.startsWith('8')) {
+  // 10 xonali 8 yoki 0 bilan: 8901234567 yoki 0901234567 -> +998901234567
+  if (digits.length === 10 && (digits.startsWith('8') || digits.startsWith('0'))) {
     return '+998' + digits.substring(1);
+  }
+  // 13 xonali 998 bilan: 998901234567X -> +998901234567
+  if (digits.length === 13 && digits.startsWith('998')) {
+    return '+' + digits.substring(0, 12);
   }
 
   // 2. Boshqa xalqaro formatlar (7 tadan 16 tagacha raqamdan iborat)
@@ -410,14 +463,21 @@ function normalizeUniversalPhone(raw) {
 }
 
 /**
- * Payload'ning barcha maydonlarini (jumladan savolnomalar, maxsus textlar, izohlar)
- * to'liq tahlil qilib, eng to'g'ri va haqiqiy ishlaydigan telefon raqamini topadi.
- * Agar asosiy "phone" maydonida dummy (masalan 66666) yozilgan bo'lsa-yu, pastdagi
- * "Telefon raqamingiz (Iltimos ishlaydigan...): 996268124" maydonida haqiqiy raqam bo'lsa,
- * avtomatik ravishda haqiqiy raqamni tanlaydi!
+ * Payload'dagi barcha maydonlardan (standart telefon, maxsus savolnomalar,
+ * ishlaydigan raqam, qo'shimcha telefon va h.k.) 1-chi va 2-chi telefon raqamlarini ajratib oladi.
  */
-function extractBestPhone(rawData) {
-  if (!rawData || typeof rawData !== 'object') return { rawPhone: null, cleanPhone: null, isDummy: true };
+function extractAllPhones(rawData) {
+  if (!rawData || typeof rawData !== 'object') {
+    return {
+      phone: null,
+      phone2: null,
+      cleanPhone: null,
+      cleanPhone2: null,
+      rawPhone: null,
+      rawPhone2: null,
+      isDummy: true
+    };
+  }
 
   const flatData = flattenObject(rawData);
   const candidates = [];
@@ -427,36 +487,68 @@ function extractBestPhone(rawData) {
     const strVal = String(val).trim();
     if (!strVal || strVal.length < 5) return;
 
-    // To'g'ridan-to'g'ri raqamlar
-    const digits = strVal.replace(/\D/g, '');
-    
-    // Matn ichidan telefon raqami andozalarini izlash (masalan: "996268124", "+998 99 626 81 24")
-    const phoneMatches = strVal.match(/(?:(?:\+?998)|0)?\s*(?:9[0-9]|88|33|77|99)\s*\d{3}\s*\d{2}\s*\d{2}|\b\d{9,13}\b/g) || [];
-    
-    const allToCheck = [strVal, digits, ...phoneMatches];
-    for (const item of allToCheck) {
-      const itemDigits = String(item).replace(/\D/g, '');
-      if (!itemDigits || itemDigits.length < 5) continue;
+    const lowerKey = String(key).toLowerCase();
+    // Ad ID, Lead ID, Timestamp kabi 14+ xonali texnik ID larni e'tibordan chetda qoldiramiz
+    if (lowerKey.includes('lead_id') || lowerKey.includes('leadid') || lowerKey.includes('ad_id') || lowerKey.includes('form_id') || lowerKey.includes('created_time') || lowerKey.includes('timestamp')) {
+      return;
+    }
 
+    const digits = strVal.replace(/\D/g, '');
+    let checkItems = [];
+
+    // Agar butun qiymat asosan raqamdan iborat bo'lsa
+    if (digits.length >= 7 && digits.length <= 15) {
+      checkItems.push(digits);
+    } else {
+      // Agar qator matn ichida bo'lsa, regex orqali telefonlarni ajratib olamiz
+      const phoneMatches = strVal.match(/(?:\+?998\s*\(?\d{2}\)?\s*\d{3}[\s.-]*\d{2}[\s.-]*\d{2})|(?:\b998\d{9}\b)|(?:\b\d{2}\s*\(?\d{2}\)?\s*\d{3}[\s.-]*\d{2}[\s.-]*\d{2}\b)|(?:\b8\s*\(?\d{2}\)?\s*\d{3}[\s.-]*\d{2}[\s.-]*\d{2}\b)|(?:\b\d{9,13}\b)/g) || [];
+      checkItems = phoneMatches.map(m => m.replace(/\D/g, '')).filter(d => d.length >= 7 && d.length <= 15);
+    }
+
+    for (const itemDigits of checkItems) {
+      if (!itemDigits || itemDigits.length < 5 || itemDigits.length > 15) continue;
       const isDummy = isDummyOrInvalidPhone(itemDigits);
+      if (isDummy) continue;
+
       let normalized = null;
       try {
         normalized = normalizeUniversalPhone(itemDigits);
-      } catch(e) {
+      } catch (e) {
         normalized = null;
       }
 
       let score = 0;
-      const lowerKey = String(key).toLowerCase();
-      const isPhoneKey = lowerKey.includes('phone') || 
-                         lowerKey.includes('tel') || 
-                         lowerKey.includes('raqam') || 
-                         lowerKey.includes('nomer') || 
-                         lowerKey.includes('aloqa') || 
-                         lowerKey.includes('contact');
+      let isSecondaryHint = false;
 
-      if (isPhoneKey) score += 30;
-      if (!isDummy && itemDigits.length >= 7) score += 50;
+      const isStandardPhoneKey = (
+        lowerKey === 'phone' ||
+        lowerKey === 'phone_number' ||
+        lowerKey === 'phonenumber' ||
+        lowerKey === 'telefon' ||
+        lowerKey === 'tel' ||
+        lowerKey === 'raqam' ||
+        lowerKey.endsWith('.phone') ||
+        lowerKey.endsWith('.phone_number')
+      );
+
+      const isSecondaryKey = (
+        lowerKey.includes('2') ||
+        lowerKey.includes('ishlaydigan') ||
+        lowerKey.includes('boshqa') ||
+        lowerKey.includes('qoshimcha') ||
+        lowerKey.includes('qo\'shimcha') ||
+        lowerKey.includes('secondary') ||
+        lowerKey.includes('extra') ||
+        lowerKey.includes('ikkinchi') ||
+        lowerKey.includes('telefon raqamingiz') ||
+        lowerKey.includes('telefon_raqamingiz')
+      );
+
+      if (isStandardPhoneKey) score += 50;
+      if (isSecondaryKey) {
+        score += 45;
+        isSecondaryHint = true;
+      }
       if (normalized) {
         score += 40;
         if (normalized.startsWith('+998') && normalized.length === 13) {
@@ -464,18 +556,14 @@ function extractBestPhone(rawData) {
         }
       }
 
-      // Agar maydon nomi "ishlaydigan", "haqiqiy", "aloqa" kabi so'zlarni o'z ichiga olsa, qo'shimcha ustunlik
-      if (lowerKey.includes('ishlaydigan') || lowerKey.includes('haqiqiy') || lowerKey.includes('boshqa')) {
-        score += 25;
-      }
-
       candidates.push({
         key,
         raw: strVal,
         digits: itemDigits,
-        cleanPhone: normalized,
+        cleanPhone: normalized || (itemDigits ? `+${itemDigits}` : null),
         isDummy,
-        score
+        score,
+        isSecondaryHint
       });
     }
   };
@@ -484,19 +572,62 @@ function extractBestPhone(rawData) {
     evaluateCandidate(key, val);
   }
 
-  // Balli bo'yicha eng yuqori kandidatni tanlaymiz
+  // Saralash: Eng yuqori ballga ega nomzodlar oldinda
   candidates.sort((a, b) => b.score - a.score);
 
-  if (candidates.length > 0) {
-    const best = candidates[0];
-    return {
-      rawPhone: best.raw,
-      cleanPhone: best.cleanPhone,
-      isDummy: best.isDummy
-    };
+  // Unikal raqamlarni ajratib olish
+  const uniqueList = [];
+  const seenKeys = new Set();
+
+  for (const c of candidates) {
+    if (c.isDummy) continue;
+    const identifier = c.cleanPhone || c.digits;
+    if (!seenKeys.has(identifier)) {
+      seenKeys.add(identifier);
+      uniqueList.push(c);
+    }
   }
 
-  return { rawPhone: null, cleanPhone: null, isDummy: true };
+  let first = null;
+  let second = null;
+
+  if (uniqueList.length === 1) {
+    first = uniqueList[0];
+  } else if (uniqueList.length >= 2) {
+    // Agar ikkita raqam bo'lsa: standart 'phone' birinchi bo'lsin, ikkinchi savolnomadagi raqam 'phone2' bo'lsin
+    const standardCandidate = uniqueList.find(c => !c.isSecondaryHint);
+    const secondaryCandidate = uniqueList.find(c => c !== standardCandidate);
+
+    if (standardCandidate && secondaryCandidate) {
+      first = standardCandidate;
+      second = secondaryCandidate;
+    } else {
+      first = uniqueList[0];
+      second = uniqueList[1];
+    }
+  }
+
+  return {
+    phone: first ? (first.cleanPhone || first.raw) : null,
+    cleanPhone: first ? first.cleanPhone : null,
+    rawPhone: first ? first.raw : null,
+    phone2: second ? (second.cleanPhone || second.raw) : null,
+    cleanPhone2: second ? second.cleanPhone : null,
+    rawPhone2: second ? second.raw : null,
+    isDummy: !first
+  };
+}
+
+/**
+ * Universal extractor wrapper (backward compatibility)
+ */
+function extractBestPhone(rawData) {
+  const res = extractAllPhones(rawData);
+  return {
+    rawPhone: res.rawPhone,
+    cleanPhone: res.cleanPhone,
+    isDummy: res.isDummy
+  };
 }
 
 /**
@@ -598,12 +729,14 @@ function parseLeadPayload(source, rawData) {
 
   const name = findFuzzyValue(rawData, ['full_name', 'first_name', 'name', 'ism', 'user', 'client', 'mijoz', 'fio', 'f.i.o', 'buyurtmachi', 'customer', 'username'], ['campaign', 'product', 'form', 'ad', 'source', 'page', 'site', 'id']) || "Noma'lum";
   
-  // Smart Multi-Field Phone Extractor (har qanday maydon va savolnomadan eng to'g'ri ishlaydigan raqamni topadi)
-  const phoneInfo = extractBestPhone(rawData);
+  // Smart Multi-Field Phone Extractor (1-chi va 2-chi telefon raqamlarini to'liq ajratib oladi)
+  const phoneInfo = extractAllPhones(rawData);
   const rawFallbackPhone = findFuzzyValue(rawData, ['phone_number', 'phone', 'telefon_raqami', 'telefon', 'tel', 'raqam', 'number', 'nomer', 'aloqa', 'contact'], ['form', 'ad', 'id', 'page', 'campaign']);
   
   const chosenPhone = phoneInfo.cleanPhone || phoneInfo.rawPhone || (rawFallbackPhone ? String(rawFallbackPhone).trim() : null);
   const cleanPhone = phoneInfo.cleanPhone || null;
+  const chosenPhone2 = phoneInfo.cleanPhone2 || phoneInfo.rawPhone2 || null;
+  const cleanPhone2 = phoneInfo.cleanPhone2 || null;
 
   const formId = findFuzzyValue(rawData, ['form_name', 'forma_nomi', 'form_id', 'form', 'forma', 'formId']) || (src === 'yuboraman' ? "Yuboraman Lead Form" : src === 'make' ? "Make Lead Form" : "General Lead Form");
   const pageName = findFuzzyValue(rawData, ['campaign_name', 'campaign', 'page_name', 'sahifa_nomi', 'page', 'sahifa', 'source', 'manba']) || (src === 'yuboraman' ? "Yuboraman.uz" : src === 'make' ? "Make.com" : "Webhook");
@@ -643,15 +776,12 @@ function parseLeadPayload(source, rawData) {
     }
   }
 
-  // Agar asosiy va topilgan raqamlar farq qilsa, izohga yozib qo'yamiz
-  if (phoneInfo.rawPhone && rawFallbackPhone && String(phoneInfo.rawPhone).trim() !== String(rawFallbackPhone).trim()) {
-    additionalNotes.unshift(`[Kiritilgan boshqa raqam]: ${rawFallbackPhone}`);
-  }
-
   return {
     name: String(name).trim().substring(0, 200),
     phone: chosenPhone ? String(chosenPhone).trim() : null,
     cleanPhone: cleanPhone,
+    phone2: chosenPhone2 ? String(chosenPhone2).trim() : null,
+    cleanPhone2: cleanPhone2,
     formId: String(formId).trim().substring(0, 200),
     pageName: String(pageName).trim().substring(0, 200),
     productName: String(productName).trim().substring(0, 200),
@@ -668,97 +798,6 @@ async function sendTelegramNotificationWithRetry(leadData, dealId) {
   // Foydalanuvchi talabiga ko'ra CRM Telegram boti orqali xabar yuborish vaqtincha o'chirib qo'yilgan
   console.log('[Telegram Notification] CRM Telegram boti yuborish to\'xtatilgan (skip).');
   return;
-
-  const message = `
-🔔 Yangi Lead (Universal Webhook)!
-
-👤 Ism: ${leadData.name || "Noma'lum"}
-📞 Telefon: ${leadData.phone || "Noma'lum"}
-📋 Forma: ${leadData.formId || '-'}
-🌐 Sahifa: ${leadData.pageName || '-'}
-🆔 Lead ID: ${leadData.leadId || '-'}
-🕒 Vaqt: ${new Date().toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' })}
-  `.trim();
-
-  let attempt = 0;
-  const maxAttempts = 3;
-  let success = false;
-  let lastError = '';
-
-  while (attempt < maxAttempts && !success) {
-    try {
-      console.log(`[Telegram Notification] Xabar yuborish urinishi ${attempt + 1}/${maxAttempts} (Deal ID: ${dealId})...`);
-      
-      const response = await fetch(
-        `https://api.telegram.org/bot${token}/sendMessage`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: chatId,
-            text: message
-          })
-        }
-      );
-
-      const result = await response.json();
-      
-      if (response.status === 429) {
-        // Rate limit xatosi bo'lsa, Retry-After header'ni tekshiramiz yoki kutamiz
-        const retryAfter = result.parameters?.retry_after || 5;
-        console.warn(`[Telegram Rate Limit] 429 received. Waiting ${retryAfter} seconds...`);
-        await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
-        attempt++;
-        continue;
-      }
-
-      if (result.ok) {
-        console.log(`[Telegram Notification] ✓ Xabar muvaffaqiyatli yuborildi (Deal ID: ${dealId})`);
-        success = true;
-      } else {
-        throw new Error(result.description || 'Noma\'lum Telegram xatosi');
-      }
-    } catch (error) {
-      attempt++;
-      lastError = error.message;
-      console.error(`[Telegram Error] Chaqiruvda xatolik (Urinish ${attempt}/${maxAttempts}):`, error.message);
-      
-      if (attempt < maxAttempts) {
-        const delay = Math.pow(2, attempt) * 1000; // Exponential backoff (2s, 4s)
-        console.log(`[Telegram Retry] Waiting ${delay}ms before next retry...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-    }
-  }
-
-  // Agar barcha urinishlar muvaffaqiyatsiz tugasa, Deal'ni yangilaymiz va log yozamiz
-  if (!success) {
-    console.error(`[Telegram Notification Failure] Barcha urinishlar tugadi. Xato: ${lastError}`);
-    
-    try {
-      // Sdelkani update qilish (notes maydoniga prepend qilish)
-      const existingDeal = await prisma.deal.findUnique({ where: { id: dealId } });
-      const currentNotes = existingDeal?.notes || '';
-      await prisma.deal.update({
-        where: { id: dealId },
-        data: {
-          notes: `[TELEGRAM YUBORILMADI (Xato: ${lastError})]\n${currentNotes}`
-        }
-      });
-
-      // ActivityLog ga yozish
-      await prisma.activityLog.create({
-        data: {
-          action: 'Telegram xabari yuborilmadi',
-          details: `Sdelka #${dealId} uchun Telegram xabari yuborish 3 ta urinishda ham muvaffaqiyatsiz bo'ldi. Xato: ${lastError}`,
-          dealId: dealId
-        }
-      });
-      console.log(`[Telegram Notification Failure Logged] Sdelka va ActivityLog yangilandi.`);
-    } catch (dbErr) {
-      console.error('[Telegram Notification Failure Logger Error] DB ga yozishda xatolik:', dbErr.message);
-    }
-  }
 }
 
 /**
@@ -793,7 +832,6 @@ async function handleUniversalLead(source, rawData, broadcast) {
     console.log(`[Universal Lead TEST] Test lead aniqlandi (Source: "${sourceVal}"). CRM ga yozish uchun sozlangan.`);
     
     // Test lead'lardagi dummy telefon raqamini to'g'ri formatdagi tasodifiy raqam bilan almashtiramiz
-    // Bu orqali validatsiyadan o'tadi va 5 daqiqalik dublikat himoyasiga bloklanmaydi
     const randomDigits = Math.floor(1000000 + Math.random() * 9000000);
     parsed.phone = `+99899${randomDigits}`;
     
@@ -802,9 +840,10 @@ async function handleUniversalLead(source, rawData, broadcast) {
     }
   }
 
-  // 2. Validatsiya & Spam-Leadlarni butunlay to'sish (Senior solution)
+  // 2. Validatsiya & Spam-Leadlarni butunlay to'sish
   const isNameUnknown = !parsed.name || parsed.name.trim() === "" || parsed.name.trim() === "Noma'lum" || parsed.name.trim() === "Noma'lum Mijoz";
-  const isPhoneEmpty = !parsed.phone || parsed.phone.trim() === "" || parsed.phone.trim().toLowerCase() === "noma'lum" || parsed.phone.trim().toLowerCase() === "undefined";
+  const isPhoneEmpty = (!parsed.phone || parsed.phone.trim() === "" || parsed.phone.trim().toLowerCase() === "noma'lum" || parsed.phone.trim().toLowerCase() === "undefined") &&
+                       (!parsed.phone2 || parsed.phone2.trim() === "" || parsed.phone2.trim().toLowerCase() === "noma'lum" || parsed.phone2.trim().toLowerCase() === "undefined");
   
   if (isNameUnknown && isPhoneEmpty) {
     console.warn(`[Universal Lead Blocked] Spam/bo'sh lead rad etildi (ism va telefon bo'sh). RawData:`, JSON.stringify(rawData));
@@ -817,19 +856,31 @@ async function handleUniversalLead(source, rawData, broadcast) {
     parsed.name = "Noma'lum Mijoz";
   }
 
-  // Telefon normalizatsiyasi (Fail-safe: agar xato bo'lsa yoki bo'sh bo'lsa ham sdelkani barbir yaratadi)
+  // Telefon normalizatsiyasi (Fail-safe)
   let cleanPhone = null;
   if (parsed.phone && parsed.phone.trim() !== '') {
     try {
       cleanPhone = normalizeUniversalPhone(parsed.phone);
     } catch (phoneErr) {
-      console.warn(`[Universal Lead Fail-safe] Telefon raqamini normalizatsiya qilishda ogohlantirish: ${phoneErr.message}`);
-      // Xato tashlamaymiz, shunchaki xom raqamni notes tarkibiga yozamiz
-      parsed.notes = `[Yaroqsiz Telefon: ${parsed.phone}]\n${parsed.notes}`;
+      console.warn(`[Universal Lead Fail-safe] Telefon 1 ni normalizatsiya qilishda ogohlantirish: ${phoneErr.message}`);
+      parsed.notes = `[Yaroqsiz Telefon 1: ${parsed.phone}]\n${parsed.notes || ''}`;
       cleanPhone = null;
     }
-  } else {
-    parsed.notes = `[Telefon raqami kiritilmagan]\n${parsed.notes}`;
+  }
+
+  let cleanPhone2 = null;
+  if (parsed.phone2 && parsed.phone2.trim() !== '') {
+    try {
+      cleanPhone2 = normalizeUniversalPhone(parsed.phone2);
+    } catch (phoneErr2) {
+      console.warn(`[Universal Lead Fail-safe] Telefon 2 ni normalizatsiya qilishda ogohlantirish: ${phoneErr2.message}`);
+      parsed.notes = `[Yaroqsiz Telefon 2: ${parsed.phone2}]\n${parsed.notes || ''}`;
+      cleanPhone2 = null;
+    }
+  }
+
+  if (!cleanPhone && !cleanPhone2) {
+    parsed.notes = `[Telefon raqami kiritilmagan]\n${parsed.notes || ''}`;
   }
 
   // 3. Dublikat va Idempotency tekshiruvi (DB o'qish)
@@ -854,10 +905,19 @@ async function handleUniversalLead(source, rawData, broadcast) {
   let duplicateRecentDeal = null;
   const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
+  const phoneSearchFilters = [];
   if (cleanPhone) {
-    // 1. Qidiruv telefon bo'yicha
+    phoneSearchFilters.push({ phone: cleanPhone });
+    phoneSearchFilters.push({ phone2: cleanPhone });
+  }
+  if (cleanPhone2) {
+    phoneSearchFilters.push({ phone: cleanPhone2 });
+    phoneSearchFilters.push({ phone2: cleanPhone2 });
+  }
+
+  if (phoneSearchFilters.length > 0) {
     const matchingClient = await prisma.client.findFirst({
-      where: { phone: cleanPhone }
+      where: { OR: phoneSearchFilters }
     });
     if (matchingClient) {
       duplicateRecentDeal = await prisma.deal.findFirst({
@@ -867,17 +927,9 @@ async function handleUniversalLead(source, rawData, broadcast) {
         }
       });
     }
-  } else if (parsed.phone && parsed.phone.trim() !== '') {
-    // 2. Qidiruv raw phone bo'yicha
-    duplicateRecentDeal = await prisma.deal.findFirst({
-      where: {
-        notes: { contains: parsed.phone.trim() },
-        createdAt: { gte: fiveMinutesAgo }
-      }
-    });
   }
 
-  // 3. Fallback: ism va mahsulot nomi bo'yicha (agar telefon bo'lmasa yoki telefon topilmasa, lekin ismi valid bo'lsa)
+  // Fallback: ism va mahsulot nomi bo'yicha
   if (!duplicateRecentDeal && parsed.name && parsed.name !== "Noma'lum Mijoz") {
     duplicateRecentDeal = await prisma.deal.findFirst({
       where: {
@@ -901,14 +953,24 @@ async function handleUniversalLead(source, rawData, broadcast) {
     throw err;
   }
 
-  // 4. Tranzaksiya: Client va Deal yozuvlarini yaratish/topish (latency yuqori bo'lsa timeout bo'lmasligi uchun 15s)
+  // 4. Tranzaksiya: Client va Deal yozuvlarini yaratish/topish
   const executeWebhookLeadTx = async () => {
     return await prisma.$transaction(async (tx) => {
-      // Mijozni qidiramiz
+      // Mijozni qidiramiz (phone yoki phone2 bo'yicha)
       let client = null;
+      const clientSearchOr = [];
       if (cleanPhone) {
+        clientSearchOr.push({ phone: { contains: cleanPhone } });
+        clientSearchOr.push({ phone2: { contains: cleanPhone } });
+      }
+      if (cleanPhone2) {
+        clientSearchOr.push({ phone: { contains: cleanPhone2 } });
+        clientSearchOr.push({ phone2: { contains: cleanPhone2 } });
+      }
+
+      if (clientSearchOr.length > 0) {
         client = await tx.client.findFirst({
-          where: { phone: { contains: cleanPhone } }
+          where: { OR: clientSearchOr }
         });
       }
 
@@ -916,28 +978,33 @@ async function handleUniversalLead(source, rawData, broadcast) {
         client = await tx.client.create({
           data: {
             name: parsed.name,
-            phone: cleanPhone,
+            phone: cleanPhone || parsed.phone || null,
+            phone2: cleanPhone2 || parsed.phone2 || null,
             city: parsed.city || null,
             notes: `Manba: ${parsed.pageName} (Universal Webhook)`
           }
         });
-        console.log(`[Universal Lead Transaction] Yangi mijoz yaratildi. ID: ${client.id}`);
+        console.log(`[Universal Lead Transaction] Yangi mijoz yaratildi. ID: ${client.id}, Tel1: ${cleanPhone}, Tel2: ${cleanPhone2}`);
       } else {
-        // Agar mijoz topilsa va uning shahri bo'lmasa, uni yangilab qo'yamiz
-        if (parsed.city && !client.city) {
+        const clientUpdates = {};
+        if (parsed.city && !client.city) clientUpdates.city = parsed.city;
+        if (cleanPhone2 && !client.phone2 && client.phone !== cleanPhone2) clientUpdates.phone2 = cleanPhone2;
+        if (cleanPhone && !client.phone && client.phone2 !== cleanPhone) clientUpdates.phone = cleanPhone;
+
+        if (Object.keys(clientUpdates).length > 0) {
           client = await tx.client.update({
             where: { id: client.id },
-            data: { city: parsed.city }
+            data: clientUpdates
           });
         }
-        console.log(`[Universal Lead Transaction] Mavjud mijoz topildi. ID: ${client.id}`);
+        console.log(`[Universal Lead Transaction] Mavjud mijoz topildi/yangilandi. ID: ${client.id}`);
       }
 
       // ALSO upsert Contact
       let contact = null;
-      if (cleanPhone) {
+      if (clientSearchOr.length > 0) {
         contact = await tx.contact.findFirst({
-          where: { phone: { contains: cleanPhone } }
+          where: { OR: clientSearchOr }
         });
       }
 
@@ -951,19 +1018,24 @@ async function handleUniversalLead(source, rawData, broadcast) {
           data: {
             firstName,
             lastName,
-            phone: cleanPhone,
+            phone: cleanPhone || parsed.phone || null,
+            phone2: cleanPhone2 || parsed.phone2 || null,
             city: parsed.city || null
           }
         });
         console.log(`[Universal Lead Transaction] Yangi kontakt yaratildi. ID: ${contact.id}`);
       } else {
-        if (parsed.city && !contact.city) {
+        const contactUpdates = {};
+        if (parsed.city && !contact.city) contactUpdates.city = parsed.city;
+        if (cleanPhone2 && !contact.phone2 && contact.phone !== cleanPhone2) contactUpdates.phone2 = cleanPhone2;
+        if (cleanPhone && !contact.phone && contact.phone2 !== cleanPhone) contactUpdates.phone = cleanPhone;
+
+        if (Object.keys(contactUpdates).length > 0) {
           contact = await tx.contact.update({
             where: { id: contact.id },
-            data: { city: parsed.city }
+            data: contactUpdates
           });
         }
-        console.log(`[Universal Lead Transaction] Mavjud kontakt topildi. ID: ${contact.id}`);
       }
 
       // Voronka va Bosqichni topamiz
@@ -988,11 +1060,10 @@ async function handleUniversalLead(source, rawData, broadcast) {
         }
       }
 
-      // Sdelkani (Deal) yaratamiz — HAR DOIM sdelka ochiladi (leadlar bekorga uvol bo'lmasligi uchun)
+      // Sdelkani (Deal) yaratamiz
       const rawNotes = cleanLeadNotes(parsed.notes);
       const targetProductName = parsed.productName || parsed.formId || 'Universal Lead';
 
-      // Mijoz ilgari ham sdelka ochganligini tekshiramiz (eslatma/ogohlantirish uchun)
       const previousDealCount = await tx.deal.count({
         where: { clientId: client.id }
       });
@@ -1002,8 +1073,8 @@ async function handleUniversalLead(source, rawData, broadcast) {
         ? (rawNotes ? `[⚠️ Takroriy murojaat]\n${rawNotes}` : `[⚠️ Takroriy murojaat]`)
         : rawNotes;
 
-      if (!cleanPhone && parsed.phone) {
-        const warning = `[⚠️ Telefon raqami tekshirish talab etiladi: ${parsed.phone}]`;
+      if (!cleanPhone && !cleanPhone2 && (parsed.phone || parsed.phone2)) {
+        const warning = `[⚠️ Telefon raqami tekshirish talab etiladi: ${parsed.phone || parsed.phone2}]`;
         finalNotes = finalNotes ? `${warning}\n${finalNotes}` : warning;
       }
 
@@ -1041,7 +1112,7 @@ async function handleUniversalLead(source, rawData, broadcast) {
           action: isRepeatedLead ? '⚠️ Takroriy sdelka yaratildi' : 'Sdelka yaratildi',
           details: isRepeatedLead
             ? `Universal Webhook (${source}) orqali takroriy sdelka yaratildi (Mijozning ${previousDealCount + 1}-murojaati)`
-            : `Universal Webhook (${source}) orqali sdelka yaratildi (Lead ID: ${parsed.leadId || 'N/A'})`,
+            : `Universal Webhook (${source}) orqali sdelka yaratildi (Lead ID: ${parsed.leadId || 'N/A'}, Tel1: ${cleanPhone || 'yo\'q'}, Tel2: ${cleanPhone2 || 'yo\'q'})`,
           dealId: deal.id
         }
       });
@@ -1098,7 +1169,7 @@ async function handleUniversalLead(source, rawData, broadcast) {
         const fullDeal = await prisma.deal.findUnique({
           where: { id: result.deal.id },
           include: {
-            client: { select: { id: true, name: true, company: true, phone: true, city: true } },
+            client: { select: { id: true, name: true, company: true, phone: true, phone2: true, city: true } },
             manager: { select: { id: true, fullName: true, email: true, role: true } },
             stage: { select: { id: true, name: true, color: true, order: true } },
             installments: { select: { id: true } }
@@ -1125,5 +1196,7 @@ module.exports = {
   findFuzzyValue,
   extractProductName,
   parseLeadPayload,
-  handleUniversalLead
+  handleUniversalLead,
+  extractAllPhones,
+  extractBestPhone
 };

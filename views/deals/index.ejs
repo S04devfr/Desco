@@ -1319,13 +1319,17 @@
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
             <div class="form-group" style="margin-bottom:0">
-              <label class="form-label">Telefon raqami <span style="color:var(--danger)">*</span></label>
+              <label class="form-label">1-chi Telefon <span style="color:var(--danger)">*</span></label>
               <input type="text" id="f-contactPhone" class="form-control" placeholder="+998 90 123 45 67">
             </div>
             <div class="form-group" style="margin-bottom:0">
-              <label class="form-label">Shahri</label>
-              <input type="text" id="f-city" class="form-control" placeholder="Masalan: Toshkent">
+              <label class="form-label">2-chi Telefon</label>
+              <input type="text" id="f-contactPhone2" class="form-control" placeholder="+998 90 123 45 67">
             </div>
+          </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label class="form-label">Shahri</label>
+            <input type="text" id="f-city" class="form-control" placeholder="Masalan: Toshkent">
           </div>
           <input type="hidden" id="f-driverPhone">
         </div>
@@ -1548,10 +1552,18 @@
             </div>
 
             <div class="drawer-inline-row">
-              <span class="drawer-inline-label">Raqami</span>
+              <span class="drawer-inline-label">1-chi raqam</span>
               <div class="drawer-inline-value" style="display:flex; align-items:center; gap:6px;">
-                <input type="text" id="dw-contactPhone" class="drawer-inline-input" placeholder="Telefon raqami...">
+                <input type="text" id="dw-contactPhone" class="drawer-inline-input" placeholder="1-chi telefon raqami...">
                 <button class="drawer-inline-dial-btn" onclick="dialNumber(document.getElementById('dw-contactPhone').value)" title="Qo'ng'iroq" style="background: none; border: none; color: var(--primary); cursor: pointer; padding: 4px;"><i class="fas fa-phone-alt"></i></button>
+              </div>
+            </div>
+
+            <div class="drawer-inline-row">
+              <span class="drawer-inline-label">2-chi raqam</span>
+              <div class="drawer-inline-value" style="display:flex; align-items:center; gap:6px;">
+                <input type="text" id="dw-contactPhone2" class="drawer-inline-input" placeholder="2-chi telefon raqami...">
+                <button class="drawer-inline-dial-btn" onclick="dialNumber(document.getElementById('dw-contactPhone2').value)" title="Qo'ng'iroq" style="background: none; border: none; color: var(--primary); cursor: pointer; padding: 4px;"><i class="fas fa-phone-alt"></i></button>
               </div>
             </div>
 
@@ -2386,6 +2398,7 @@ async function loadDeals() {
         const pName = String(d.productName || '').toLowerCase();
         const cName = String(d.client?.name || d.contactName || (d.contact ? `${d.contact.firstName} ${d.contact.lastName||''}` : '')).toLowerCase();
         const cPhone = String(d.client?.phone || d.contactPhone || d.contact?.phone || '').replace(/\D/g, '');
+        const cPhone2 = String(d.client?.phone2 || d.contactPhone2 || d.contact?.phone2 || '').replace(/\D/g, '');
         const city = String(d.city || d.client?.city || '').toLowerCase();
         const notes = String(d.notes || '').toLowerCase();
         const manager = String(d.manager?.fullName || d.owner?.fullName || '').toLowerCase();
@@ -2398,7 +2411,7 @@ async function loadDeals() {
                notes.includes(qLower) ||
                manager.includes(qLower) ||
                tags.includes(qLower) ||
-               (qDigits.length >= 3 && cPhone.includes(qDigits));
+               (qDigits.length >= 3 && (cPhone.includes(qDigits) || cPhone2.includes(qDigits)));
       });
     }
   } catch(e) {
@@ -2764,6 +2777,7 @@ function dcardHtml(d) {
   
   const clientName = d.client ? _esc(d.client.name) : '<span style="color:var(--text-tertiary); font-weight:500; font-style:italic;">Kiritilmagan</span>';
   const clientPhone = (d.client && d.client.phone) ? _esc(d.client.phone) : '<span style="color:var(--text-tertiary); font-weight:500; font-style:italic;">Kiritilmagan</span>';
+  const clientPhone2 = (d.client && d.client.phone2) ? _esc(d.client.phone2) : '';
   const clientCity = (d.client && d.client.city) ? _esc(d.client.city) : '<span style="color:var(--text-tertiary); font-weight:500; font-style:italic;">Kiritilmagan</span>';
   const pColorText = (d.productColor && d.productColor.toLowerCase() !== 'oddiy') ? `<span style="font-size:10px; padding:2px 6px; border-radius:4px; background:var(--brand-soft); color:var(--brand); margin-left:6px; font-weight:700;">${_esc(d.productColor)}</span>` : '';
   const productName = _esc(d.productName || d.name || 'Belgilanmagan') + pColorText;
@@ -2818,11 +2832,17 @@ function dcardHtml(d) {
             <i class="far fa-user" style="color:var(--text-tertiary); font-size:11px; width:12px; text-align:center;"></i>
             <span style="font-weight:600;">${clientName}</span>
           </div>
-          <!-- Phone Number -->
+          <!-- Phone Number 1 -->
           <div style="font-size:12px; color:var(--accent); display:flex; align-items:center; gap:6px;">
             <i class="fas fa-phone-alt" style="color:var(--text-tertiary); font-size:11px; width:12px; text-align:center;"></i>
-            <span style="font-weight:700; letter-spacing:0.2px;">${clientPhone}</span>
+            <span style="font-weight:700; letter-spacing:0.2px;">1: ${clientPhone}</span>
           </div>
+          ${clientPhone2 ? `
+          <!-- Phone Number 2 -->
+          <div style="font-size:11.5px; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
+            <i class="fas fa-phone-volume" style="color:var(--text-tertiary); font-size:11px; width:12px; text-align:center;"></i>
+            <span style="font-weight:600; letter-spacing:0.2px;">2: ${clientPhone2}</span>
+          </div>` : ''}
           <!-- Address (City) -->
           <div style="font-size:12px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
             <i class="fas fa-map-marker-alt" style="color:var(--text-tertiary); font-size:11px; width:12px; text-align:center;"></i>
@@ -2994,8 +3014,13 @@ function dcardHtml(d) {
           <div style="font-size:13px; font-weight:600; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${clientName}</div>
           <div style="font-size:12px; color:var(--accent); font-weight:700; display:flex; align-items:center; gap:4px;">
             <i class="fas fa-phone-alt" style="font-size:9px; color:var(--text-tertiary);"></i>
-            ${clientPhone}
+            <span>${clientPhone}</span>
           </div>
+          ${clientPhone2 ? `
+          <div style="font-size:11px; color:var(--text-secondary); font-weight:600; display:flex; align-items:center; gap:4px;" title="2-chi telefon raqami">
+            <i class="fas fa-phone-volume" style="font-size:8.5px; color:var(--text-tertiary);"></i>
+            <span style="color:var(--text-primary);">2: ${clientPhone2}</span>
+          </div>` : ''}
         </div>
       </div>
 
@@ -3503,6 +3528,7 @@ function openDealModal(defaultStageId, editId) {
   setVal('f-notes', '');
   setVal('f-contactName', '');
   setVal('f-contactPhone', '');
+  setVal('f-contactPhone2', '');
   setVal('f-city', '');
   setVal('f-warehouse', '');
   setVal('f-color', 'oddiy');
@@ -3529,6 +3555,7 @@ function openDealModal(defaultStageId, editId) {
       setVal('f-name', deal?.productName || deal?.name || '');
       setVal('f-contactName', deal?.client?.name || '');
       setVal('f-contactPhone', deal?.client?.phone || '');
+      setVal('f-contactPhone2', deal?.client?.phone2 || '');
       setVal('f-city', deal?.client?.city || '');
       setVal('f-amount', deal?.amount || '');
       setVal('f-paidAmount', deal?.paidAmount || '');
@@ -3569,7 +3596,7 @@ function openDealModal(defaultStageId, editId) {
   const banner = document.getElementById('yangiLeadLockBanner');
   const saveBtn = document.getElementById('dealSaveBtn');
   const inputsToLock = [
-    'f-name', 'f-contactName', 'f-contactPhone', 'f-city',
+    'f-name', 'f-contactName', 'f-contactPhone', 'f-contactPhone2', 'f-city',
     'f-amount', 'f-paidAmount', 'f-notes', 'f-warehouse',
     'f-color', 'f-driverPhone', 'f-source', 'f-deadline'
   ];
@@ -3677,6 +3704,7 @@ async function saveDeal() {
     productName: name,
     contactName: document.getElementById('f-contactName').value.trim() || null,
     contactPhone: document.getElementById('f-contactPhone').value.trim() || null,
+    contactPhone2: document.getElementById('f-contactPhone2').value.trim() || null,
     city:        document.getElementById('f-city').value.trim() || null,
     amount:      Number(document.getElementById('f-amount').value) || 0,
     paidAmount:  Number(document.getElementById('f-paidAmount').value) || 0,
@@ -3882,6 +3910,7 @@ async function openDetail(id) {
     const contactName = deal.client ? deal.client.name || '' : '';
     document.getElementById('dw-contactName').value = contactName;
     document.getElementById('dw-contactPhone').value = deal.client ? deal.client.phone || '' : '';
+    document.getElementById('dw-contactPhone2').value = deal.client ? deal.client.phone2 || '' : '';
     document.getElementById('dw-contactEmail').value = deal.client ? deal.client.email || '' : '';
 
     // Set contact avatar text
@@ -3957,6 +3986,7 @@ function applyDrawerPermissions() {
     'dw-productName',
     'dw-contactName',
     'dw-contactPhone',
+    'dw-contactPhone2',
     'dw-contactCity',
     'dw-contactEmail',
     'dw-companyName',
@@ -4575,6 +4605,7 @@ async function saveAllDrawerFields(event) {
   const productName = (document.getElementById('dw-productName').value || document.getElementById('drawerDealTitle').value).trim();
   const contactName = document.getElementById('dw-contactName').value.trim();
   const contactPhone = document.getElementById('dw-contactPhone').value.trim();
+  const contactPhone2 = document.getElementById('dw-contactPhone2').value.trim();
   const city = document.getElementById('dw-contactCity').value.trim();
   const notes = document.getElementById('dw-notes').value.trim();
 
@@ -4588,6 +4619,7 @@ async function saveAllDrawerFields(event) {
     productName,
     contactName,
     contactPhone,
+    contactPhone2,
     city,
     notes,
     companyName,
@@ -5597,7 +5629,8 @@ async function openNasiyaDescoModal(deal) {
 
   document.getElementById('ndModalDealId').value = deal.id;
   document.getElementById('ndClientName').textContent = deal.client?.name || "Noma'lum";
-  document.getElementById('ndClientPhone').textContent = deal.client?.phone || '—';
+  const phones = [deal.client?.phone, deal.client?.phone2].filter(Boolean).join(' | ');
+  document.getElementById('ndClientPhone').textContent = phones || '—';
   document.getElementById('ndProduct').textContent = deal.productName || '—';
   document.getElementById('ndTotal').textContent = Number(deal.amount || 0).toLocaleString() + ' so\'m';
 

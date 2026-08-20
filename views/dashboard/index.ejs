@@ -103,6 +103,120 @@
 
 <% if (isAdmin) { %>
 <!-- ═══════════════════════════════════════════════════════
+     OPERATORLARNING KUNLIK LEADLAR BILAN ISHLASH TAHLILI
+     ════════════════════════════════════════════════════════ -->
+<style>
+.daily-lead-summary-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 14px !important;
+  margin-bottom: 20px !important;
+}
+@media (max-width: 1024px) {
+  .daily-lead-summary-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+@media (max-width: 580px) {
+  .daily-lead-summary-grid { grid-template-columns: 1fr !important; }
+}
+</style>
+
+<div class="card mb-6" id="operatorDailyLeadsSection" style="border: 1px solid var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+  <div class="card-header flex justify-between items-center" style="border-bottom: 1px solid var(--border); padding: 16px 20px;">
+    <div class="flex items-center gap-3">
+      <div style="width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, rgba(0,122,255,0.15), rgba(88,86,214,0.15)); display: flex; align-items: center; justify-content: center; color: var(--accent);">
+        <i class="fas fa-headset" style="font-size: 18px;"></i>
+      </div>
+      <div>
+        <h3 class="section-title" style="margin: 0; font-size: 16px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+          Operatorlarning Kunlik Leadlar Bilan Ishlash Tahlili
+          <span class="badge badge-brand" id="dailyLeadsPeriodBadge" style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px;">Bugun</span>
+        </h3>
+        <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-secondary);">Har bir operatorning yangi leadlar bilan ishlashi, peregovorga o'tkazishi va natijalari</p>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span class="badge" style="background: rgba(0, 122, 255, 0.1); color: var(--accent); border: 1px solid rgba(0,122,255,0.2); padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700;" id="badgeTotalHandledLeads">⚡ 0 ta ishlangan lead</span>
+      <button class="btn btn-secondary btn-sm" onclick="loadOperatorDailyLeads()" title="Yangilash" style="height: 30px; padding: 0 10px;">
+        <i class="fas fa-sync-alt" style="font-size: 11px;"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="card-body" style="padding: 20px;">
+    <!-- 4 Summary KPI Mini-Cards -->
+    <div class="daily-lead-summary-grid">
+      <!-- 1. Jami tushgan yangi leadlar -->
+      <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px;">
+        <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(0, 122, 255, 0.12); color: #007AFF; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+          <i class="fas fa-inbox"></i>
+        </div>
+        <div>
+          <div style="font-size: 11px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.3px;">Yangi tushgan leadlar</div>
+          <div style="font-size: 20px; font-weight: 800; color: var(--text-primary); line-height: 1.2;" id="sumNewLeads">0</div>
+          <div style="font-size: 11px; color: var(--text-secondary);">Tizimga kelib tushgan</div>
+        </div>
+      </div>
+
+      <!-- 2. Ishlangan leadlar -->
+      <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px;">
+        <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(245, 158, 11, 0.12); color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+          <i class="fas fa-user-check"></i>
+        </div>
+        <div>
+          <div style="font-size: 11px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.3px;">Operatorlar ishlagan</div>
+          <div style="font-size: 20px; font-weight: 800; color: #f59e0b; line-height: 1.2;" id="sumHandledLeads">0</div>
+          <div style="font-size: 11px; color: var(--text-secondary);">Noyob leadlar soni</div>
+        </div>
+      </div>
+
+      <!-- 3. Peregovor / Muzokaraga o'tgan -->
+      <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px;">
+        <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(139, 92, 246, 0.12); color: #8b5cf6; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+          <i class="fas fa-comments"></i>
+        </div>
+        <div>
+          <div style="font-size: 11px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.3px;">Peregovorga olingan</div>
+          <div style="font-size: 20px; font-weight: 800; color: #8b5cf6; line-height: 1.2;" id="sumPeregovorLeads">0</div>
+          <div style="font-size: 11px; color: var(--text-secondary);">Muzokara jarayonida</div>
+        </div>
+      </div>
+
+      <!-- 4. Sotuvga aylangan (Won) -->
+      <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px;">
+        <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(16, 185, 129, 0.12); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+          <i class="fas fa-check-circle"></i>
+        </div>
+        <div>
+          <div style="font-size: 11px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.3px;">Sotildi (Won)</div>
+          <div style="font-size: 20px; font-weight: 800; color: #10b981; line-height: 1.2;" id="sumWonLeads">0</div>
+          <div style="font-size: 11px; color: var(--text-secondary);" id="sumConversionText">Konversiya: 0%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Operators Table -->
+    <div class="table-wrap" style="border: 1px solid var(--border); border-radius: 10px; overflow: hidden;">
+      <table class="deals-tbl" style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background: var(--bg-tertiary);">
+            <th style="padding: 12px 14px; font-size: 12px; font-weight: 700;">Operator / Menejer</th>
+            <th class="tc" style="padding: 12px 10px; font-size: 12px; font-weight: 700; width: 150px;">Ishlangan jami lead</th>
+            <th class="tc" style="padding: 12px 10px; font-size: 12px; font-weight: 700; width: 150px;">Yangi → Peregovor</th>
+            <th class="tc" style="padding: 12px 10px; font-size: 12px; font-weight: 700; width: 150px;">Ko'tarmadi / Qayta aloqa</th>
+            <th class="tc" style="padding: 12px 10px; font-size: 12px; font-weight: 700; width: 120px;">Sotildi (Won)</th>
+            <th class="tc" style="padding: 12px 10px; font-size: 12px; font-weight: 700; width: 110px;">Rad (Lost)</th>
+            <th class="tc" style="padding: 12px 10px; font-size: 12px; font-weight: 700; width: 140px;">Konversiya (%)</th>
+          </tr>
+        </thead>
+        <tbody id="operatorDailyLeadsTableBody">
+          <tr><td colspan="7" class="tc" style="padding:30px;"><div class="spinner" style="margin:auto;"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
      MENEJERLAR — SAVDO GRAFIGI + OYLIK/KPI (yonma-yon)
 ════════════════════════════════════════════════════════ -->
 <div class="card mb-6" id="salesAndProductSection">
@@ -917,9 +1031,128 @@ async function loadOperatorPresenceStats() {
       `;
     }).join('');
   } catch (e) {
-    console.error('Operator presence load error:', e);
+async function loadOperatorDailyLeads(urlParams) {
+  const tbody = document.getElementById('operatorDailyLeadsTableBody');
+  if (!tbody) return;
+  try {
+    const filterEl = document.getElementById('dashFilter');
+    const filterVal = filterEl ? filterEl.value : 'today';
+    const params = urlParams || ('filter=' + filterVal);
+    
+    // Update badge text
+    const badgeEl = document.getElementById('dailyLeadsPeriodBadge');
+    if (badgeEl) {
+      const labels = {
+        'today': 'Bugun',
+        'yesterday': 'Kecha',
+        'day-before-yesterday': 'Kuni kecha',
+        'month': 'Shu oy',
+        'range': 'Sana oralig\'i',
+        'all': 'Barcha vaqt'
+      };
+      badgeEl.textContent = labels[filterVal] || 'Bugun';
+    }
+
+    const res = await dashFetch('/api/dashboard/operator-daily-leads?' + params).catch(() => ({ summary: {}, operators: [] }));
+    const summary = res.summary || {};
+    const operators = res.operators || [];
+
+    // Update Mini-Card counters
+    if (document.getElementById('sumNewLeads')) document.getElementById('sumNewLeads').textContent = summary.totalNewLeads || 0;
+    if (document.getElementById('sumHandledLeads')) document.getElementById('sumHandledLeads').textContent = summary.totalHandled || 0;
+    if (document.getElementById('sumPeregovorLeads')) document.getElementById('sumPeregovorLeads').textContent = summary.totalPeregovor || 0;
+    if (document.getElementById('sumWonLeads')) document.getElementById('sumWonLeads').textContent = summary.totalWon || 0;
+    if (document.getElementById('sumConversionText')) document.getElementById('sumConversionText').textContent = `Konversiya: ${summary.overallConversion || 0}%`;
+    if (document.getElementById('badgeTotalHandledLeads')) document.getElementById('badgeTotalHandledLeads').textContent = `⚡ ${summary.totalHandled || 0} ta ishlangan lead`;
+
+    if (!operators.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="tc" style="padding:24px; color:var(--text-tertiary);">Operatorlar faoliyati bo\'yicha ma\'lumot topilmadi</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = operators.map(op => {
+      const initials = (op.name || '?').split(' ').slice(0,2).map(w => w[0] || '').join('').toUpperCase();
+      const winRate = Number(op.conversionRate) || 0;
+      const roleName = op.role === 'admin' ? 'Admin' : 'Operator';
+      const isTop = winRate >= 50 && op.wonCount > 0;
+
+      return `
+        <tr style="transition: background 0.15s;">
+          <td style="font-weight:700; padding: 12px 14px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg, var(--brand-soft), rgba(88,86,214,0.15)); color:var(--brand); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0; border: 1px solid rgba(0,122,255,0.2);">
+                ${initials}
+              </div>
+              <div style="overflow:hidden;">
+                <div style="font-size:13.5px; color:var(--text-primary); font-weight:700; display:flex; align-items:center; gap:6px;">
+                  <span>${escHtml(op.name)}</span>
+                  ${isTop ? '<span title="Yuqori konversiya" style="font-size:12px;">🌟</span>' : ''}
+                </div>
+                <div style="font-size:11px; color:var(--text-tertiary); font-weight:600; margin-top:1px;">
+                  <span class="badge ${op.role === 'admin' ? 'badge-blue' : 'badge-gray'}" style="font-size:9.5px; padding:1px 5px; border-radius:4px;">${roleName}</span>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="tc" style="padding: 12px 10px;">
+            <div style="font-size:16px; font-weight:800; color:var(--text-primary);">${op.totalHandled}</div>
+            <div style="font-size:10.5px; color:var(--text-tertiary); font-weight:600;">${op.totalActions} ta amal</div>
+          </td>
+          <td class="tc" style="padding: 12px 10px;">
+            <div style="display:inline-flex; align-items:center; gap:4px; font-size:13px; font-weight:800; color:#8b5cf6; background:rgba(139,92,246,0.1); padding:4px 10px; border-radius:6px; border:1px solid rgba(139,92,246,0.2);">
+              <i class="fas fa-comments" style="font-size:11px;"></i> ${op.peregovorCount} ta
+            </div>
+          </td>
+          <td class="tc" style="padding: 12px 10px;">
+            <div style="display:inline-flex; align-items:center; gap:4px; font-size:13px; font-weight:700; color:#f59e0b; background:rgba(245,158,11,0.1); padding:4px 10px; border-radius:6px; border:1px solid rgba(245,158,11,0.2);">
+              <i class="fas fa-phone-slash" style="font-size:11px;"></i> ${op.callbackCount} ta
+            </div>
+          </td>
+          <td class="tc" style="padding: 12px 10px;">
+            <div style="display:inline-flex; align-items:center; gap:4px; font-size:13px; font-weight:800; color:#10b981; background:rgba(16,185,129,0.12); padding:4px 10px; border-radius:6px; border:1px solid rgba(16,185,129,0.3);">
+              <i class="fas fa-check-circle" style="font-size:11px;"></i> ${op.wonCount} ta
+            </div>
+          </td>
+          <td class="tc" style="padding: 12px 10px;">
+            <div style="display:inline-flex; align-items:center; gap:4px; font-size:12.5px; font-weight:600; color:#ef4444; background:rgba(239,68,68,0.08); padding:3px 8px; border-radius:6px;">
+              ${op.lostCount} ta
+            </div>
+          </td>
+          <td class="tc" style="padding: 12px 10px;">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+              <div style="font-size:13px; font-weight:800; color:${winRate >= 50 ? '#10b981' : winRate >= 20 ? '#f59e0b' : 'var(--text-secondary)'};">
+                ${winRate}%
+              </div>
+              <div style="width:70px; height:5px; background:var(--bg-secondary); border-radius:3px; overflow:hidden;">
+                <div style="width:${Math.min(100, winRate)}%; height:100%; background:${winRate >= 50 ? '#10b981' : winRate >= 20 ? '#f59e0b' : 'var(--accent)'}; border-radius:3px;"></div>
+              </div>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    // Jami yig'indi qatori
+    const totalRow = `
+      <tr style="background:var(--bg-tertiary); font-weight:800; border-top:2px solid var(--border);">
+        <td style="padding:12px 14px; font-size:13px; color:var(--text-primary);">
+          <i class="fas fa-calculator" style="margin-right:6px; color:var(--accent);"></i> Jami Yig'indi
+        </td>
+        <td class="tc" style="padding:12px 10px; font-size:15px; color:var(--text-primary);">${summary.totalHandled || 0}</td>
+        <td class="tc" style="padding:12px 10px; font-size:14px; color:#8b5cf6;">${summary.totalPeregovor || 0}</td>
+        <td class="tc" style="padding:12px 10px; font-size:14px; color:#f59e0b;">${summary.totalCallback || 0}</td>
+        <td class="tc" style="padding:12px 10px; font-size:14px; color:#10b981;">${summary.totalWon || 0}</td>
+        <td class="tc" style="padding:12px 10px; font-size:13px; color:#ef4444;">${summary.totalLost || 0}</td>
+        <td class="tc" style="padding:12px 10px; font-size:14px; color:var(--accent);">${summary.overallConversion || 0}%</td>
+      </tr>
+    `;
+    tbody.innerHTML += totalRow;
+
+  } catch (e) {
+    console.error('Operator daily leads load error:', e);
   }
 }
+window.loadOperatorDailyLeads = loadOperatorDailyLeads;
 
 // Main loader
 async function loadDashboard() {
@@ -934,6 +1167,7 @@ async function loadDashboard() {
         urlParams += '&startDate=' + start + '&endDate=' + end;
       }
     }
+    loadOperatorDailyLeads(urlParams);
     updateExportUrl();
     const [kpis, salesData, productData, igStats, pipelineStats, clientInsights, mktSummary, activityStats] = await Promise.all([
       dashFetch('/api/dashboard/kpis?' + urlParams).catch(err => ({ error: err.message })),
@@ -2025,6 +2259,7 @@ function renderProfitTable() {
           ${d.client ? `
             <div style="font-weight:600; color:var(--text-primary)">${escHtml(d.client.name)}</div>
             ${d.client.phone ? `<a href="tel:${escHtml(d.client.phone)}" style="font-size:11px; color:var(--accent); font-weight:500">${escHtml(d.client.phone)}</a>` : ''}
+            ${d.client.phone2 ? `<div style="font-size:10.5px; color:var(--text-secondary);"><a href="tel:${escHtml(d.client.phone2)}" style="color:var(--text-secondary); text-decoration:none;"><i class="fas fa-phone-volume" style="font-size:9px;"></i> 2: ${escHtml(d.client.phone2)}</a></div>` : ''}
           ` : '<span style="color:var(--text-tertiary)">-</span>'}
         </td>
         <td style="padding:10px 14px; font-size:12.5px; font-weight:600; text-align:right">${fmtMoney(d.amount)}</td>

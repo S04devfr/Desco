@@ -32,7 +32,8 @@ router.get('/', async (req, res, next) => {
       { clientName: { contains: q, mode } },
       { clientPhone: { contains: q, mode } },
       { client: { name: { contains: q, mode } } },
-      { client: { phone: { contains: q, mode } } }
+      { client: { phone: { contains: q, mode } } },
+      { client: { phone2: { contains: q, mode } } }
     ];
 
     if (isNum && possibleId > 0) {
@@ -42,25 +43,28 @@ router.get('/', async (req, res, next) => {
     if (cleanDigits.length >= 3) {
       dealOrConditions.push({ clientPhone: { contains: cleanDigits, mode } });
       dealOrConditions.push({ client: { phone: { contains: cleanDigits, mode } } });
+      dealOrConditions.push({ client: { phone2: { contains: cleanDigits, mode } } });
     }
 
     // Search conditions for Clients
     const clientOrConditions = [
       { name: { contains: q, mode } },
       { phone: { contains: q, mode } },
+      { phone2: { contains: q, mode } },
       { city: { contains: q, mode } },
       { email: { contains: q, mode } }
     ];
 
     if (cleanDigits.length >= 3) {
       clientOrConditions.push({ phone: { contains: cleanDigits, mode } });
+      clientOrConditions.push({ phone2: { contains: cleanDigits, mode } });
     }
 
     const [deals, clients] = await Promise.all([
       prisma.deal.findMany({
         where: { OR: dealOrConditions },
         include: {
-          client: { select: { id: true, name: true, phone: true, city: true } },
+          client: { select: { id: true, name: true, phone: true, phone2: true, city: true } },
           stage: { select: { id: true, name: true, color: true } }
         },
         orderBy: { updatedAt: 'desc' },
@@ -83,6 +87,7 @@ router.get('/', async (req, res, next) => {
       amount: d.amount || 0,
       clientName: d.clientName || d.client?.name || 'Mijoz',
       clientPhone: d.clientPhone || d.client?.phone || '',
+      clientPhone2: d.client?.phone2 || '',
       city: d.city || d.client?.city || '',
       stageName: d.stage?.name || 'Bosqichsiz',
       stageColor: d.stage?.color || '#007AFF',
@@ -93,6 +98,7 @@ router.get('/', async (req, res, next) => {
       id: c.id,
       name: c.name || 'Mijoz',
       phone: c.phone || '',
+      phone2: c.phone2 || '',
       city: c.city || '',
       dealCount: c.deals ? c.deals.length : 0
     }));
