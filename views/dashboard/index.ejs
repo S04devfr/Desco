@@ -17,12 +17,14 @@
       <input type="date" id="endDate" class="form-control" style="width:130px;height:32px;font-size:12px;padding:0 8px;">
     </div>
     <select id="dashFilter" class="form-control" style="width:auto;display:inline-block;height:32px;font-size:13px;" onchange="onFilterChange()">
-      <option value="all">Barcha vaqt</option>
       <option value="today">Bugun</option>
       <option value="yesterday">Kecha</option>
       <option value="day-before-yesterday">Kuni kecha</option>
+      <option value="week">Shu hafta</option>
       <option value="month" selected>Shu oy</option>
+      <option value="last-month">O'tgan oy</option>
       <option value="range">Sana oralig'i</option>
+      <option value="all">Barcha vaqt</option>
     </select>
     <button class="btn btn-secondary btn-sm" onclick="loadDashboard()">
       <i class="fas fa-sync-alt"></i> Yangilash
@@ -128,10 +130,10 @@
       </div>
       <div>
         <h3 class="section-title" style="margin: 0; font-size: 16px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-          Operatorlarning Kunlik Leadlar Bilan Ishlash Tahlili
-          <span class="badge badge-brand" id="dailyLeadsPeriodBadge" style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px;">Bugun</span>
+          Operatorlarning Leadlar Bilan Ishlash Tahlili
+          <span class="badge badge-brand" id="dailyLeadsPeriodBadge" style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px;">Shu oy</span>
         </h3>
-        <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-secondary);">Har bir operatorning yangi leadlar bilan ishlashi, peregovorga o'tkazishi va natijalari</p>
+        <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-secondary);">Har bir operatorning tanlangan davrda yangi leadlar bilan ishlashi, peregovorga o'tkazishi va natijalari</p>
       </div>
     </div>
     <div style="display: flex; align-items: center; gap: 8px;">
@@ -1040,21 +1042,29 @@ async function loadOperatorDailyLeads(urlParams) {
   if (!tbody) return;
   try {
     const filterEl = document.getElementById('dashFilter');
-    const filterVal = filterEl ? filterEl.value : 'today';
+    const filterVal = filterEl ? filterEl.value : 'month';
     const params = urlParams || ('filter=' + filterVal);
     
-    // Update badge text
+    // Update badge text dynamically
     const badgeEl = document.getElementById('dailyLeadsPeriodBadge');
     if (badgeEl) {
       const labels = {
         'today': 'Bugun',
         'yesterday': 'Kecha',
         'day-before-yesterday': 'Kuni kecha',
+        'week': 'Shu hafta',
         'month': 'Shu oy',
+        'last-month': 'O\'tgan oy',
         'range': 'Sana oralig\'i',
         'all': 'Barcha vaqt'
       };
-      badgeEl.textContent = labels[filterVal] || 'Bugun';
+      let badgeText = labels[filterVal] || 'Shu oy';
+      if (filterVal === 'range') {
+        const start = document.getElementById('startDate') ? document.getElementById('startDate').value : '';
+        const end = document.getElementById('endDate') ? document.getElementById('endDate').value : '';
+        if (start && end) badgeText = `${start} — ${end}`;
+      }
+      badgeEl.textContent = badgeText;
     }
 
     const res = await dashFetch('/api/dashboard/operator-daily-leads?' + params).catch(() => ({ summary: {}, operators: [] }));

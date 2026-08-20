@@ -30,6 +30,19 @@ function buildWhere(filter, req) {
     start.setHours(0,0,0,0);
     end.setDate(end.getDate() - 2);
     end.setHours(23,59,59,999);
+  } else if (filter === 'week') {
+    const day = now.getDay();
+    const diff = (day === 0 ? -6 : 1) - day;
+    start.setDate(now.getDate() + diff);
+    start.setHours(0,0,0,0);
+    end = new Date(now);
+    end.setHours(23,59,59,999);
+  } else if (filter === 'month') {
+    start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  } else if (filter === 'last-month') {
+    start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
+    end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
   } else if (filter === 'range') {
     if (req && req.query.startDate && req.query.endDate) {
       start = new Date(req.query.startDate);
@@ -39,9 +52,6 @@ function buildWhere(filter, req) {
     } else {
       return {};
     }
-  } else if (filter === 'month') {
-    start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-    end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
   }
 
   // Validate dates to prevent Prisma crash
@@ -1416,14 +1426,24 @@ router.get('/operator-daily-leads', async (req, res) => {
       start.setHours(0, 0, 0, 0);
       end.setDate(end.getDate() - 2);
       end.setHours(23, 59, 59, 999);
+    } else if (filter === 'week') {
+      const day = now.getDay();
+      const diff = (day === 0 ? -6 : 1) - day;
+      start.setDate(now.getDate() + diff);
+      start.setHours(0, 0, 0, 0);
+      end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+    } else if (filter === 'month') {
+      start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    } else if (filter === 'last-month') {
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
+      end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
     } else if (filter === 'range' && req.query.startDate && req.query.endDate) {
       start = new Date(req.query.startDate);
       start.setHours(0, 0, 0, 0);
       end = new Date(req.query.endDate);
       end.setHours(23, 59, 59, 999);
-    } else if (filter === 'month') {
-      start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-      end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
     } else {
       // all time
       start = new Date(2020, 0, 1);
