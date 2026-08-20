@@ -1128,18 +1128,13 @@ async function loadOperatorDailyLeads(urlParams) {
             </div>
           </td>
           <td class="tc" style="padding: 12px 10px;">
-            <div style="display:inline-flex; align-items:center; gap:4px; font-size:12.5px; font-weight:600; color:#ef4444; background:rgba(239,68,68,0.08); padding:3px 8px; border-radius:6px;">
-              ${op.lostCount} ta
+            <div style="display:inline-flex; align-items:center; gap:4px; font-size:13px; font-weight:700; color:#ef4444; background:rgba(239,68,68,0.1); padding:4px 10px; border-radius:6px; border:1px solid rgba(239,68,68,0.25);">
+              <i class="fas fa-times-circle" style="font-size:11px;"></i> ${op.lostCount} ta
             </div>
           </td>
           <td class="tc" style="padding: 12px 10px;">
-            <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
-              <div style="font-size:13px; font-weight:800; color:${winRate >= 50 ? '#10b981' : winRate >= 20 ? '#f59e0b' : 'var(--text-secondary)'};">
-                ${winRate}%
-              </div>
-              <div style="width:70px; height:5px; background:var(--bg-secondary); border-radius:3px; overflow:hidden;">
-                <div style="width:${Math.min(100, winRate)}%; height:100%; background:${winRate >= 50 ? '#10b981' : winRate >= 20 ? '#f59e0b' : 'var(--accent)'}; border-radius:3px;"></div>
-              </div>
+            <div style="display:inline-flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:800; padding:4px 10px; border-radius:6px; background:${winRate >= 20 ? 'rgba(16,185,129,0.12)' : winRate > 0 ? 'rgba(0,122,255,0.1)' : 'rgba(150,150,150,0.08)'}; color:${winRate >= 20 ? '#10b981' : winRate > 0 ? '#007AFF' : 'var(--text-secondary)'}; border: 1px solid ${winRate >= 20 ? 'rgba(16,185,129,0.25)' : winRate > 0 ? 'rgba(0,122,255,0.2)' : 'rgba(150,150,150,0.15)'};">
+              ${winRate}%
             </div>
           </td>
         </tr>
@@ -1148,16 +1143,26 @@ async function loadOperatorDailyLeads(urlParams) {
 
     // Jami yig'indi qatori
     const totalRow = `
-      <tr style="background:var(--bg-tertiary); font-weight:800; border-top:2px solid var(--border);">
-        <td style="padding:12px 14px; font-size:13px; color:var(--text-primary);">
-          <i class="fas fa-calculator" style="margin-right:6px; color:var(--accent);"></i> Jami Yig'indi
+      <tr style="background:var(--bg-secondary); font-weight:800; border-top:2px solid var(--border);">
+        <td style="padding:14px 16px; font-size:13.5px; color:var(--text-primary);">
+          <i class="fas fa-calculator" style="margin-right:6px; color:var(--accent);"></i> <strong>JAMI YIG'INDI</strong>
         </td>
-        <td class="tc" style="padding:12px 10px; font-size:15px; color:var(--text-primary);">${summary.totalHandled || 0}</td>
-        <td class="tc" style="padding:12px 10px; font-size:14px; color:#8b5cf6;">${summary.totalPeregovor || 0}</td>
-        <td class="tc" style="padding:12px 10px; font-size:14px; color:#f59e0b;">${summary.totalCallback || 0}</td>
-        <td class="tc" style="padding:12px 10px; font-size:14px; color:#10b981;">${summary.totalWon || 0}</td>
-        <td class="tc" style="padding:12px 10px; font-size:13px; color:#ef4444;">${summary.totalLost || 0}</td>
-        <td class="tc" style="padding:12px 10px; font-size:14px; color:var(--accent);">${summary.overallConversion || 0}%</td>
+        <td class="tc" style="padding:14px 10px; font-size:16px; font-weight:800; color:var(--text-primary);">${summary.totalHandled || 0}</td>
+        <td class="tc" style="padding:14px 10px;">
+          <span style="font-size:13px; font-weight:800; color:#8b5cf6; background:rgba(139,92,246,0.15); padding:4px 10px; border-radius:6px;">${summary.totalPeregovor || 0} ta</span>
+        </td>
+        <td class="tc" style="padding:14px 10px;">
+          <span style="font-size:13px; font-weight:800; color:#f59e0b; background:rgba(245,158,11,0.15); padding:4px 10px; border-radius:6px;">${summary.totalCallback || 0} ta</span>
+        </td>
+        <td class="tc" style="padding:14px 10px;">
+          <span style="font-size:13px; font-weight:800; color:#10b981; background:rgba(16,185,129,0.18); padding:4px 10px; border-radius:6px;">${summary.totalWon || 0} ta</span>
+        </td>
+        <td class="tc" style="padding:14px 10px;">
+          <span style="font-size:13px; font-weight:800; color:#ef4444; background:rgba(239,68,68,0.15); padding:4px 10px; border-radius:6px;">${summary.totalLost || 0} ta</span>
+        </td>
+        <td class="tc" style="padding:14px 10px;">
+          <span style="font-size:13.5px; font-weight:800; color:var(--accent); background:rgba(0,122,255,0.12); padding:4px 10px; border-radius:6px;">${summary.overallConversion || 0}%</span>
+        </td>
       </tr>
     `;
     tbody.innerHTML += totalRow;
