@@ -407,12 +407,6 @@ function isKotarmadiStage(task) {
   return name.includes("ko'tarmadi") || name.includes('kotarmadi') || name.includes('javob bermadi');
 }
 
-function getFilteredTasks() {
-  const q = document.getElementById('taskSearch').value.toLowerCase();
-  const today = new Date(); today.setHours(0,0,0,0);
-  const tomorrowEnd = new Date(today); tomorrowEnd.setDate(today.getDate() + 1);
-  tomorrowEnd.setHours(23,59,59,999);
-
 function getTaskExactDate(t) {
   if (!t || !t.dueDate) return null;
   let d = new Date(t.dueDate);
