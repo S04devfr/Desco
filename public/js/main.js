@@ -128,9 +128,7 @@ window.getCsrfToken = getCsrfToken;
 // Intercept window.fetch to automatically include CSRF token for mutating methods
 const _originalFetch = window.fetch;
 window.fetch = function (resource, init) {
-  init = init || {};
-  const method = (init.method || 'GET').toUpperCase();
-  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+  if (init && ['POST', 'PUT', 'PATCH', 'DELETE'].includes((init.method || '').toUpperCase())) {
     init.headers = init.headers || {};
     const token = getCsrfToken();
     if (token) {
@@ -147,7 +145,7 @@ window.fetch = function (resource, init) {
       }
     }
   }
-  return _originalFetch.call(this, resource, init);
+  return _originalFetch.apply(this, arguments);
 };
 
 // ── FETCH WITH TIMEOUT (Zero Freeze Policy) ──

@@ -90,7 +90,6 @@ let sessionConfig = {
   secret: SESSION_SECRET || crypto.randomBytes(64).toString('hex'),
   resave: false,
   saveUninitialized: false,
-  name: '__desco_sid',
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
@@ -143,11 +142,10 @@ app.use((req, res, next) => {
 });
 
 // ── SECURITY MIDDLEWARE ──
-const { rateLimiter, sanitizeResponse } = require('./middleware/security');
+const { rateLimiter } = require('./middleware/security');
 const { csrfProtection, csrfTokenProvider } = require('./middleware/csrf');
 const { antiPrototypePollution } = require('./middleware/inputValidator');
 
-app.use('/api', sanitizeResponse);          // Barcha API javoblardan sensitive ma'lumotlarni tozalash
 app.use('/api', rateLimiter(600, 60000));    // API uchun global rate limit: 600 req/min (bir nechta menejer bir IP dan ishlaganda qotmasligi uchun)
 app.use(antiPrototypePollution);             // SECURITY: Prototype pollution himoyasi
 app.use(csrfTokenProvider);                  // SECURITY: CSRF token ni res.locals ga qo'shish

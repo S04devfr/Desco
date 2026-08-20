@@ -21,12 +21,14 @@ const protect = async (req, res, next) => {
 
       if (!user || !user.isActive) {
         req.session.destroy(() => {});
+        res.clearCookie('connect.sid');
         res.clearCookie('__desco_sid');
         return res.status(401).json({ message: 'Unauthorized - Sessiya tugagan' });
       }
 
       if (req.session.passwordHash && req.session.passwordHash !== user.password) {
         req.session.destroy(() => {});
+        res.clearCookie('connect.sid');
         res.clearCookie('__desco_sid');
         return res.status(401).json({ message: 'Unauthorized - Parol o\'zgargan' });
       }
