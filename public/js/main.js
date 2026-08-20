@@ -116,12 +116,41 @@ function debounce(fn, delay) {
   };
 }
 
+// ── CSRF PROTECTION HELPER ──
+function getCsrfToken() {
+  const meta = document.querySelector('meta[name="csrf-token"]');
+  if (meta && meta.content) return meta.content;
+  const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : '';
+}
+window.getCsrfToken = getCsrfToken;
+
+// Intercept window.fetch to automatically include CSRF token for mutating methods
+const _originalFetch = window.fetch;
+window.fetch = function (resource, init) {
+  init = init || {};
+  const method = (init.method || 'GET').toUpperCase();
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+    init.headers = init.headers || {};
+    const token = getCsrfToken();
+    if (token) {
+      if (init.headers instanceof Headers) {
+        if (!init.headers.has('X-CSRF-Token')) init.headers.set('X-CSRF-Token', token);
+      } else if (Array.isArray(init.headers)) {
+        if (!init.headers.some(h => h[0].toLowerCase() === 'x-csrf-token')) {
+          init.headers.push(['X-CSRF-Token', token]);
+        }
+      } else {
+        if (!init.headers['X-CSRF-Token'] && !init.headers['x-csrf-token']) {
+          init.headers['X-CSRF-Token'] = token;
+        }
+      }
+    }
+  }
+  return _originalFetch.call(this, resource, init);
+};
+
 // ── FETCH WITH TIMEOUT (Zero Freeze Policy) ──
-// Page-level data loads should use this instead of raw fetch() so a slow
-// or hanging backend can never leave a page stuck on its loading
-// skeleton/spinner forever. Aborts after `timeoutMs` (default 5s) and
-// throws a friendly, pre-translated error so callers can show a toast
-// instead of hanging indefinitely.
 function fetchWithTimeout(url, options, timeoutMs) {
   options = options || {};
   timeoutMs = timeoutMs || 5000;

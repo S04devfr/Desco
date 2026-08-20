@@ -1,5 +1,13 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const prisma = require('../config/database');
+
+// SECURITY: JWT secret ni markazlashtirilgan holda boshqarish
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET || JWT_SECRET.length < 32) {
+  console.warn('[⚠ SECURITY] auth middleware: JWT_SECRET is missing or weak.');
+}
+const EFFECTIVE_JWT_SECRET = JWT_SECRET || crypto.randomBytes(64).toString('hex');
 
 // Protect routes - require authentication
 const protect = async (req, res, next) => {
@@ -13,13 +21,13 @@ const protect = async (req, res, next) => {
 
       if (!user || !user.isActive) {
         req.session.destroy(() => {});
-        res.clearCookie('connect.sid');
+        res.clearCookie('__desco_sid');
         return res.status(401).json({ message: 'Unauthorized - Sessiya tugagan' });
       }
 
       if (req.session.passwordHash && req.session.passwordHash !== user.password) {
         req.session.destroy(() => {});
-        res.clearCookie('connect.sid');
+        res.clearCookie('__desco_sid');
         return res.status(401).json({ message: 'Unauthorized - Parol o\'zgargan' });
       }
 
@@ -45,8 +53,7 @@ const protect = async (req, res, next) => {
   }
 
   try {
-    const secretKey = process.env.JWT_SECRET || 'desco-jwt-default-secret-key-2026';
-    const decoded = jwt.verify(token, secretKey);
+    const decoded = jwt.verify(token, EFFECTIVE_JWT_SECRET);
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
       select: { id: true, email: true, password: true, fullName: true, role: true, isActive: true }

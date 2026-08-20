@@ -108,11 +108,13 @@ router.post('/users', async (req, res, next) => {
     const { fullName, email, password, role, isActive } = req.body
     if (!email || !password) return res.status(400).json({ message: "Email va parol majburiy" })
     if (password.length < 8) return res.status(400).json({ message: "Parol kamida 8 ta belgi bo'lishi kerak" })
+    if (!/[A-Z]/.test(password)) return res.status(400).json({ message: "Parolda kamida 1 ta katta harf kerak" })
+    if (!/[0-9]/.test(password)) return res.status(400).json({ message: "Parolda kamida 1 ta raqam kerak" })
     
     const existing = await prisma.user.findUnique({ where: { email } })
     if (existing) return res.status(400).json({ message: "Bu email band" })
     
-    const hashedPassword = await bcrypt.hash(password, 10)
+    const hashedPassword = await bcrypt.hash(password, 12)
     const user = await prisma.user.create({
       data: {
         fullName,
@@ -140,7 +142,9 @@ router.patch('/users/:id', async (req, res, next) => {
     }
     if (password) {
       if (password.length < 8) return res.status(400).json({ message: "Parol kamida 8 ta belgi bo'lishi kerak" })
-      data.password = await bcrypt.hash(password, 10)
+      if (!/[A-Z]/.test(password)) return res.status(400).json({ message: "Parolda kamida 1 ta katta harf kerak" })
+      if (!/[0-9]/.test(password)) return res.status(400).json({ message: "Parolda kamida 1 ta raqam kerak" })
+      data.password = await bcrypt.hash(password, 12)
     }
     if (role && ['admin', 'manager', 'operator'].includes(role)) data.role = role
     if (isActive !== undefined) data.isActive = isActive === true || isActive === 'true'

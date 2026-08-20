@@ -61,34 +61,27 @@ async function ensureAuditTable() {
  */
 async function logAudit(action, details = '', userId = null, userEmail = null, ipAddress = null, userAgent = null) {
   try {
-    // Details ni 2000 belgiga cheklash
+    // SECURITY: Input sanitization — uzunlik cheklash
+    const safeAction = action ? String(action).substring(0, 100) : 'UNKNOWN';
     const safeDetails = details ? String(details).substring(0, 2000) : '';
+    const safeEmail = userEmail ? String(userEmail).substring(0, 255) : null;
+    const safeIP = ipAddress ? String(ipAddress).substring(0, 50) : '';
     const safeAgent = userAgent ? String(userAgent).substring(0, 500) : '';
+    const safeUserId = userId ? Number(userId) || null : null;
 
     const isSQLite = process.env.DATABASE_URL && (process.env.DATABASE_URL.includes('.db') || process.env.DATABASE_URL.startsWith('file:'));
 
     if (isSQLite) {
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO "audit_logs" ("action", "details", "userId", "userEmail", "ipAddress", "userAgent")
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        action,
-        safeDetails,
-        userId,
-        userEmail,
-        ipAddress || '',
-        safeAgent
-      );
+      // SECURITY: $executeRaw (tagged template) — SQL injection xavfini bartaraf etadi
+      await prisma.$executeRaw`
+        INSERT INTO "audit_logs" ("action", "details", "userId", "userEmail", "ipAddress", "userAgent")
+        VALUES (${safeAction}, ${safeDetails}, ${safeUserId}, ${safeEmail}, ${safeIP}, ${safeAgent})
+      `;
     } else {
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO "audit_logs" ("action", "details", "userId", "userEmail", "ipAddress", "userAgent")
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        action,
-        safeDetails,
-        userId,
-        userEmail,
-        ipAddress || '',
-        safeAgent
-      );
+      await prisma.$executeRaw`
+        INSERT INTO "audit_logs" ("action", "details", "userId", "userEmail", "ipAddress", "userAgent")
+        VALUES (${safeAction}, ${safeDetails}, ${safeUserId}, ${safeEmail}, ${safeIP}, ${safeAgent})
+      `;
     }
   } catch (err) {
     // Audit log xatosi tizimni to'xtatmasligi kerak

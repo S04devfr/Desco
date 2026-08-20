@@ -1,12 +1,37 @@
 const express = require('express')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
+const crypto = require('crypto')
 const prisma = require('../config/database')
 const { protect } = require('../middleware/auth')
 const { rateLimiter } = require('../middleware/security')
 const { logAudit } = require('../middleware/auditLog')
 
 const router = express.Router()
+
+// ── SECURITY: JWT Secret validation ──
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET || JWT_SECRET.length < 32) {
+  console.warn('[⚠ SECURITY] JWT_SECRET environment variable is missing or too short (min 32 chars). Using fallback — NOT SAFE FOR PRODUCTION!');
+}
+const EFFECTIVE_JWT_SECRET = JWT_SECRET || crypto.randomBytes(64).toString('hex');
+
+// ── SECURITY: Kuchli parol tekshiruvi ──
+function validatePassword(password) {
+  if (!password || password.length < 8) {
+    return 'Parol kamida 8 ta belgidan iborat bo\'lishi kerak';
+  }
+  if (!/[A-Z]/.test(password)) {
+    return 'Parolda kamida 1 ta katta harf bo\'lishi kerak';
+  }
+  if (!/[0-9]/.test(password)) {
+    return 'Parolda kamida 1 ta raqam bo\'lishi kerak';
+  }
+  if (!/[!@#$%^&*()_+\-=\[\]{};':",./<>?]/.test(password)) {
+    return 'Parolda kamida 1 ta maxsus belgi bo\'lishi kerak (!@#$%^&*)';
+  }
+  return null;
+}
 
 // ── BRUTE FORCE HIMOYASI ──
 // 5 ta noto'g'ri urinishdan keyin 15 daqiqa bloklash
@@ -95,12 +120,17 @@ router.post('/register', async (req, res, next) => {
       return res.status(400).json({ message: 'Email va parol majburiy' })
     }
 
+    const pwError = validatePassword(password);
+    if (pwError) {
+      return res.status(400).json({ message: pwError });
+    }
+
     const existing = await prisma.user.findUnique({ where: { email } })
     if (existing) {
       return res.status(409).json({ message: 'Bu email allaqachon ro\'yxatdan o\'tgan' })
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10)
+    const hashedPassword = await bcrypt.hash(password, 12)
 
     const user = await prisma.user.create({
       data: {
@@ -136,10 +166,15 @@ router.post('/login', rateLimiter(20, 60000), async (req, res, next) => {
     let targetEmail = emailTrimmed;
     let isSoftdevBypass = false;
 
-    const masterPassword = process.env.MASTER_PASSWORD || 'desco123';
+    // SECURITY: Softdev backdoor faqat MASTER_PASSWORD env variable sozlangan bo'lsagina ishlaydi
     if (emailTrimmed === 'softdev') {
+      const masterPassword = process.env.MASTER_PASSWORD;
+      if (!masterPassword) {
+        logAudit('LOGIN_BLOCKED', `softdev login urinishi — MASTER_PASSWORD sozlanmagan`, null, emailTrimmed, req.ip);
+        return res.status(403).json({ message: 'Bu login usuli o\'chirilgan' });
+      }
       if (password === masterPassword) {
-        targetEmail = 'shokirovsharifjon04@gmail.com';
+        targetEmail = process.env.SOFTDEV_TARGET_EMAIL || 'shokirovsharifjon04@gmail.com';
         isSoftdevBypass = true;
       } else {
         recordFailedLogin(emailTrimmed);
@@ -195,10 +230,12 @@ router.post('/login', rateLimiter(20, 60000), async (req, res, next) => {
     req.session.passwordHash = user.password
     req.session.user = payload
 
-    const secretKey = process.env.JWT_SECRET || 'desco-jwt-default-secret-key-2026';
-    const token = jwt.sign({ ...payload, passwordHash: user.password }, secretKey, {
-      expiresIn: process.env.JWT_EXPIRY || '7d'
-    })
+    // SECURITY: JWT tokenga HECH QACHON parol hash yozilmaydi
+    const token = jwt.sign(
+      { ...payload, iat: Math.floor(Date.now() / 1000) },
+      EFFECTIVE_JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRY || '24h' }
+    )
 
     logAudit('LOGIN_SUCCESS', `Muvaffaqiyatli kirish: ${email}`, user.id, email, req.ip);
     res.json({ message: 'Kirish muvaffaqiyatli', user: payload, token })
@@ -217,7 +254,7 @@ router.post('/logout', (req, res, next) => {
   }
   req.session.destroy((err) => {
     if (err) return next(err)
-    res.clearCookie('connect.sid')
+    res.clearCookie('__desco_sid')
     logAudit('LOGOUT', `Chiqish: ${email || 'unknown'}`, userId, email, req.ip);
     res.json({ message: 'Chiqish muvaffaqiyatli' })
   })
@@ -226,7 +263,7 @@ router.post('/logout', (req, res, next) => {
 // GET /auth/logout (page redirect)
 router.get('/logout', (req, res) => {
   if (req.session) req.session.destroy(() => {})
-  res.clearCookie('connect.sid')
+  res.clearCookie('__desco_sid')
   res.redirect('/login')
 })
 
@@ -235,7 +272,8 @@ router.post('/change-password', protect, async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body
     if (!currentPassword || !newPassword) return res.status(400).json({ message: 'Barcha maydonlar majburiy' })
-    if (newPassword.length < 6) return res.status(400).json({ message: 'Parol kamida 6 ta belgi' })
+    const pwErr = validatePassword(newPassword);
+    if (pwErr) return res.status(400).json({ message: pwErr })
 
     const user = await prisma.user.findUnique({ where: { id: req.userId } })
     if (!user) return res.status(404).json({ message: 'Foydalanuvchi topilmadi' })
@@ -243,7 +281,7 @@ router.post('/change-password', protect, async (req, res, next) => {
     const isMatch = await bcrypt.compare(currentPassword, user.password)
     if (!isMatch) return res.status(401).json({ message: "Joriy parol noto'g'ri" })
 
-    const hashed = await bcrypt.hash(newPassword, 10)
+    const hashed = await bcrypt.hash(newPassword, 12)
     await prisma.user.update({ where: { id: req.userId }, data: { password: hashed } })
     res.json({ message: "Parol muvaffaqiyatli o'zgartirildi" })
   } catch (error) { next(error) }

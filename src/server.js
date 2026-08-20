@@ -3,6 +3,8 @@ const dotenv = require('dotenv');
 const helmet = require('helmet');
 const cors = require('cors');
 const compression = require('compression');
+const crypto = require('crypto');
+const hpp = require('hpp');
 const path = require('path');
 const fs = require('fs');
 const session = require('express-session');
@@ -20,49 +22,95 @@ const app = express();
 
 app.use(compression());
 
-// ── SECURITY HEADERS (Helmet) ──
+// ── SECURITY: Har request uchun CSP nonce generatsiya ──
+app.use((req, res, next) => {
+  res.locals.cspNonce = crypto.randomBytes(16).toString('base64');
+  next();
+});
+
+// ── SECURITY HEADERS (Helmet) — Production-grade ──
 app.use(helmet({
-  contentSecurityPolicy: false,  // EJS templates uchun
-  hsts: { maxAge: 31536000, includeSubDomains: true },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "https://unpkg.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net"],
+      fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "https://fonts.gstatic.com", "https://cdn.jsdelivr.net"],
+      imgSrc: ["'self'", "data:", "blob:", "https:"],
+      connectSrc: ["'self'", "wss:", "ws:", "https://api.wazzup24.com", "https://api.deepseek.com"],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      upgradeInsecureRequests: []
+    }
+  },
+  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
   frameguard: { action: 'deny' },
   xssFilter: true,
   noSniff: true,
-  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  permittedCrossDomainPolicies: { permittedPolicies: 'none' }
 }));
 
-// ── CORS — faqat ruxsat etilgan domenlar ──
+// ── SECURITY: HTTP Parameter Pollution himoyasi ──
+app.use(hpp());
+
+// ── CORS — FAQAT ruxsat etilgan domenlar (WHITELIST) ──
+const ALLOWED_ORIGINS = [
+  'https://desco.uz',
+  'https://www.desco.uz',
+  'https://desco.up.railway.app',
+  ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map(s => s.trim()) : []),
+  ...(process.env.NODE_ENV !== 'production' ? ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000', 'http://127.0.0.1:3001'] : [])
+];
+
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || origin.includes('ondigitalocean.app') || origin.includes('digitalocean.app') || origin.includes('railway.app') || origin.includes('localhost')) {
+    // Server-to-server (no origin) yoki ruxsat etilgan domenlar
+    if (!origin || ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed))) {
       return callback(null, true);
     }
-    return callback(null, true);
+    console.warn(`[CORS] ⛔ Ruxsatsiz domen bloklandi: ${origin}`);
+    return callback(new Error('CORS: Bu domen ruxsat etilmagan'), false);
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-Requested-With'],
+  maxAge: 86400 // 24 soat preflight cache
 }));
+
+// ── SECURITY: Request body size limiti ──
 app.use(express.json({
-  limit: '20mb',
+  limit: '5mb',
   verify: (req, res, buf) => {
     req.rawBody = buf;
   }
 }));
-app.use(express.urlencoded({ extended: true, limit: '20mb' }));
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
 // Railway reverse proxy ortida ishlaydi — cookie va IP to'g'ri ishlashi uchun
 if (process.env.NODE_ENV === 'production') {
   app.set('trust proxy', 1);
 }
 
-// ── SESSION STORE CONFIGURATION ──
+// ── SECURITY: Session Secret validation ──
+const SESSION_SECRET = process.env.SESSION_SECRET;
+if (!SESSION_SECRET || SESSION_SECRET.length < 32) {
+  console.warn('[⚠ SECURITY] SESSION_SECRET is missing or too short. Using random fallback.');
+}
+
 let sessionConfig = {
-  secret: process.env.SESSION_SECRET || 'dev-secret',
+  secret: SESSION_SECRET || crypto.randomBytes(64).toString('hex'),
   resave: false,
   saveUninitialized: false,
+  name: '__desco_sid', // SECURITY: Default 'connect.sid' o'rniga nomi o'zgartirildi
   cookie: {
-    secure: 'auto',
+    secure: process.env.NODE_ENV === 'production', // SECURITY: Production'da faqat HTTPS
     httpOnly: true,
-    sameSite: 'lax',
-    maxAge: 1000 * 60 * 60 * 24 * 30 // 30 kun
+    sameSite: 'strict', // SECURITY: 'lax' dan 'strict' ga kuchaytirildi
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 kun (30 kundan qisqartirildi)
+    path: '/'
   }
 };
 
@@ -110,8 +158,14 @@ app.use((req, res, next) => {
 
 // ── SECURITY MIDDLEWARE ──
 const { rateLimiter, sanitizeResponse } = require('./middleware/security');
+const { csrfProtection, csrfTokenProvider } = require('./middleware/csrf');
+const { antiPrototypePollution } = require('./middleware/inputValidator');
+
 app.use('/api', sanitizeResponse);          // Barcha API javoblardan sensitive ma'lumotlarni tozalash
 app.use('/api', rateLimiter(200, 60000));    // API uchun global rate limit: 200 req/min
+app.use(antiPrototypePollution);             // SECURITY: Prototype pollution himoyasi
+app.use(csrfTokenProvider);                  // SECURITY: CSRF token ni res.locals ga qo'shish
+app.use(csrfProtection);                     // SECURITY: CSRF token tekshiruvi
 
 // ── API ROUTES ──
 async function ensureDefaultSeed() {
@@ -136,8 +190,9 @@ async function ensureDefaultSeed() {
     if (!existingAdmin) {
       console.log('⚡ Seeding default admin & pipeline into database...');
       const bcrypt = require('bcryptjs');
-      const adminPass = await bcrypt.hash('Admin@Desco2026!', 10);
-      const muhammadPass = await bcrypt.hash('Muhammad@Desco2026!', 10);
+      // SECURITY: Admin parollarni environment variable'dan olish
+      const adminPass = await bcrypt.hash(process.env.DEFAULT_ADMIN_PASSWORD || 'Admin@Desco2026!', 12);
+      const muhammadPass = await bcrypt.hash(process.env.DEFAULT_ADMIN2_PASSWORD || 'Muhammad@Desco2026!', 12);
 
       await prisma.user.createMany({
         data: [
@@ -207,13 +262,13 @@ async function requireAuth(req, res, next) {
 
     if (!user || !user.isActive) {
       req.session.destroy(() => {});
-      res.clearCookie('connect.sid');
+      res.clearCookie('__desco_sid');
       return res.redirect('/login');
     }
 
     if (req.session.passwordHash && req.session.passwordHash !== user.password) {
       req.session.destroy(() => {});
-      res.clearCookie('connect.sid');
+      res.clearCookie('__desco_sid');
       return res.redirect('/login');
     }
 
@@ -287,12 +342,23 @@ app.get('/register', (req, res) => { res.redirect('/login?msg=' + encodeURICompo
 // ── ERROR HANDLING ──
 app.use((req, res) => res.status(404).json({ message: 'Route not found' }));
 
+// ── SECURITY: Error handler — production'da hech qachon stack trace bermaydi ──
 app.use((err, req, res, next) => {
-  console.error('[ERROR]', err);
-  res.status(err.status || 500).json({
-    message: err.message || 'Internal Server Error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-  });
+  const statusCode = err.status || 500;
+  
+  // SECURITY: Production'da faqat umumiy xabar, development'da to'liq xato
+  if (process.env.NODE_ENV === 'production') {
+    console.error(`[ERROR] ${req.method} ${req.path}:`, err.message);
+    res.status(statusCode).json({
+      message: statusCode >= 500 ? 'Ichki server xatosi' : err.message
+    });
+  } else {
+    console.error('[ERROR]', err);
+    res.status(statusCode).json({
+      message: err.message || 'Internal Server Error',
+      stack: err.stack
+    });
+  }
 });
 
 const PORT = process.env.PORT || 3000;
@@ -431,7 +497,12 @@ function runUploadsCleanup() {
 async function syncWazzupUsers() {
   try {
     const prisma = require('./config/database');
-    const DEFAULT_WAZZUP_KEY = '1b138429551c4790abf78f8b039f00b4';
+    // SECURITY: Wazzup API keyni environment variabledan olish
+    const DEFAULT_WAZZUP_KEY = process.env.WAZZUP_API_KEY || process.env.DEFAULT_WAZZUP_KEY;
+    if (!DEFAULT_WAZZUP_KEY) {
+      console.warn('[⚠ SECURITY] WAZZUP_API_KEY environment variable sozlanmagan. Wazzup sync o\'tkazib yuborildi.');
+      return;
+    }
     
     // Auto-seed CompanySettings in DB with Wazzup API Key if missing or unconfigured
     let settings = await prisma.companySettings.findFirst();
