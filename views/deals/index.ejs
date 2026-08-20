@@ -2858,49 +2858,64 @@ function dcardHtml(d) {
   let taskHtml = '';
   const allTasks = d.tasks || [];
   const pendingTasks = allTasks.filter(t => !t.completed);
+  const now = new Date();
+  const nowMs = now.getTime();
+  const todayStart = new Date().setHours(0,0,0,0);
+  const tomorrowStart = todayStart + (24 * 60 * 60 * 1000);
+  const pad = n => String(n).padStart(2, '0');
+
   if (pendingTasks.length === 0) {
-    taskHtml = '';
+    if (d.status === 'won') {
+      taskHtml = `<div style="display:inline-flex; align-items:center; gap:4px; font-size:10px; color:#10b981; font-weight:700; background:rgba(16,185,129,0.1); padding:2px 6px; border-radius:4px;"><i class="fas fa-check-circle"></i> Yutilgan</div>`;
+    } else if (d.status === 'lost') {
+      taskHtml = `<div style="display:inline-flex; align-items:center; gap:4px; font-size:10px; color:#64748b; font-weight:700; background:rgba(100,116,139,0.1); padding:2px 6px; border-radius:4px;"><i class="fas fa-times-circle"></i> Yo'qotilgan</div>`;
+    } else if (allTasks.length > 0) {
+      taskHtml = `<div style="display:inline-flex; align-items:center; gap:4px; font-size:10px; color:#10b981; font-weight:700; background:rgba(16,185,129,0.1); padding:2px 6px; border-radius:4px;" title="Barcha vazifalar bajarilgan"><i class="fas fa-check-double"></i> Vazifalar bajarildi</div>`;
+    } else {
+      taskHtml = `<div style="display:inline-flex; align-items:center; gap:4px; font-size:10px; color:var(--text-tertiary); font-weight:600; background:var(--bg-secondary); padding:2px 6px; border-radius:4px; border:1px dashed var(--border);" title="Ushbu sdelkaga vazifa belgilanmagan"><i class="far fa-bell-slash"></i> Vazifa yo'q</div>`;
+    }
   } else {
     pendingTasks.sort((a, b) => new Date(a.dueDate || a.createdAt) - new Date(b.dueDate || b.createdAt));
     const nextTask = pendingTasks[0];
-    const taskDate = new Date(nextTask.dueDate || nextTask.createdAt);
-    const pad = n => String(n).padStart(2, '0');
-    const taskDateFormatted = `${pad(taskDate.getDate())}.${pad(taskDate.getMonth()+1)}`;
     
+    // Aniq sana va vaqt ob'ektini hisoblash
+    let taskDateObj = nextTask.dueDate ? new Date(nextTask.dueDate) : new Date(nextTask.createdAt);
     let taskTimeFormatted = nextTask.dueTime;
     if (!taskTimeFormatted || taskTimeFormatted === 'null') {
-      const h = taskDate.getHours();
-      const m = taskDate.getMinutes();
+      const h = taskDateObj.getHours();
+      const m = taskDateObj.getMinutes();
       taskTimeFormatted = `${pad(h)}:${pad(m)}`;
+    } else if (taskTimeFormatted.includes(':')) {
+      const parts = taskTimeFormatted.split(':');
+      taskDateObj = new Date(taskDateObj);
+      taskDateObj.setHours(Number(parts[0]) || 0, Number(parts[1]) || 0, 0, 0);
     }
 
-    const todayStart = new Date().setHours(0,0,0,0);
-    const tomorrowStart = todayStart + (24 * 60 * 60 * 1000);
-    const taskDayStart = new Date(taskDate).setHours(0,0,0,0);
-
-    const isOverdue = taskDayStart < todayStart;
+    const taskDateFormatted = `${pad(taskDateObj.getDate())}.${pad(taskDateObj.getMonth()+1)}`;
+    const taskDayStart = new Date(taskDateObj).setHours(0,0,0,0);
+    const isExactOverdue = taskDateObj.getTime() < nowMs;
     const isToday = taskDayStart === todayStart;
     const isTomorrow = taskDayStart === tomorrowStart;
+    const isYesterday = (todayStart - taskDayStart) === (24 * 60 * 60 * 1000);
 
-    if (isOverdue) {
-      const isYesterday = (todayStart - taskDayStart) === (24 * 60 * 60 * 1000);
-      const label = isYesterday ? `Kecha (${taskTimeFormatted})` : `${taskDateFormatted} (${taskTimeFormatted})`;
+    if (isExactOverdue) {
+      const label = isToday ? `Bugun (${taskTimeFormatted})` : isYesterday ? `Kecha (${taskTimeFormatted})` : `${taskDateFormatted} (${taskTimeFormatted})`;
       taskHtml = `
-        <div style="display:inline-flex; align-items:center; gap:4px; font-size:10.5px; color:#ef4444; font-weight:800; background:rgba(239,68,68,0.12); padding:2px 7px; border-radius:4px; border:1px solid rgba(239,68,68,0.3);" title="${_esc(nextTask.title || '')}">
+        <div style="display:inline-flex; align-items:center; gap:4px; font-size:10.5px; color:#ef4444; font-weight:800; background:rgba(239,68,68,0.12); padding:2px 7px; border-radius:4px; border:1px solid rgba(239,68,68,0.3);" title="${_esc(nextTask.title || 'Muddati o\'tgan vazifa')}">
           <span style="width:6px; height:6px; border-radius:50%; background:#ef4444; display:inline-block; box-shadow:0 0 6px #ef4444;"></span>
           🔴 ${label}
         </div>
       `;
     } else if (isToday) {
       taskHtml = `
-        <div style="display:inline-flex; align-items:center; gap:4px; font-size:10.5px; color:#d97706; font-weight:800; background:rgba(245,158,11,0.12); padding:2px 7px; border-radius:4px; border:1px solid rgba(245,158,11,0.3);" title="${_esc(nextTask.title || '')}">
+        <div style="display:inline-flex; align-items:center; gap:4px; font-size:10.5px; color:#d97706; font-weight:800; background:rgba(245,158,11,0.12); padding:2px 7px; border-radius:4px; border:1px solid rgba(245,158,11,0.3);" title="${_esc(nextTask.title || 'Bugungi vazifa')}">
           <span style="width:6px; height:6px; border-radius:50%; background:#f59e0b; display:inline-block;"></span>
           🟡 Bugun (${taskTimeFormatted})
         </div>
       `;
     } else if (isTomorrow) {
       taskHtml = `
-        <div style="display:inline-flex; align-items:center; gap:4px; font-size:10.5px; color:#10b981; font-weight:800; background:rgba(16,185,129,0.12); padding:2px 7px; border-radius:4px; border:1px solid rgba(16,185,129,0.3);" title="${_esc(nextTask.title || '')}">
+        <div style="display:inline-flex; align-items:center; gap:4px; font-size:10.5px; color:#10b981; font-weight:800; background:rgba(16,185,129,0.12); padding:2px 7px; border-radius:4px; border:1px solid rgba(16,185,129,0.3);" title="${_esc(nextTask.title || 'Ertangi vazifa')}">
           <span style="width:6px; height:6px; border-radius:50%; background:#10b981; display:inline-block;"></span>
           🟢 Ertaga (${taskTimeFormatted})
         </div>
@@ -2925,27 +2940,28 @@ function dcardHtml(d) {
   const callbackT = (d.tasks || []).find(t => !t.completed && (t.actionType === 'Qayta aloqa' || (t.title || '').toLowerCase().includes('qayta aloqa')));
   let callbackHtml = '';
   if (callbackT) {
-    const cbDate = new Date(callbackT.dueDate);
-    const pad = n => String(n).padStart(2, '0');
-    const cbFmt = `${pad(cbDate.getDate())}.${pad(cbDate.getMonth()+1)}.${cbDate.getFullYear()}`;
+    let cbDateObj = new Date(callbackT.dueDate || callbackT.createdAt);
     let cbTimeFmt = callbackT.dueTime;
     if (!cbTimeFmt || cbTimeFmt === 'null') {
-      const h = cbDate.getHours();
-      const m = cbDate.getMinutes();
+      const h = cbDateObj.getHours();
+      const m = cbDateObj.getMinutes();
       cbTimeFmt = `${pad(h)}:${pad(m)}`;
+    } else if (cbTimeFmt.includes(':')) {
+      const parts = cbTimeFmt.split(':');
+      cbDateObj = new Date(cbDateObj);
+      cbDateObj.setHours(Number(parts[0]) || 0, Number(parts[1]) || 0, 0, 0);
     }
-    const cbTodayStart = new Date().setHours(0,0,0,0);
-    const cbTomorrowStart = cbTodayStart + (24 * 60 * 60 * 1000);
-    const cbDayStart = new Date(cbDate).setHours(0,0,0,0);
+    const cbFmt = `${pad(cbDateObj.getDate())}.${pad(cbDateObj.getMonth()+1)}.${cbDateObj.getFullYear()}`;
+    const cbDayStart = new Date(cbDateObj).setHours(0,0,0,0);
     
     let dayLabel = cbFmt;
-    if (cbDayStart === cbTodayStart) dayLabel = `Bugun (${cbTimeFmt})`;
-    else if (cbDayStart === cbTomorrowStart) dayLabel = `Ertaga (${cbTimeFmt})`;
+    if (cbDayStart === todayStart) dayLabel = `Bugun (${cbTimeFmt})`;
+    else if (cbDayStart === tomorrowStart) dayLabel = `Ertaga (${cbTimeFmt})`;
     else dayLabel = `${cbFmt} (${cbTimeFmt})`;
 
-    const cbIsOverdue = cbDayStart < cbTodayStart;
+    const cbIsOverdue = cbDateObj.getTime() < nowMs;
     callbackHtml = `
-      <div class="dcard-callback-banner${cbIsOverdue ? ' overdue' : ''}" style="margin: 4px -14px -12px; padding: 6px 14px; background: rgba(124, 58, 237, 0.07); border-top: 1px dashed rgba(124, 58, 237, 0.15); display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: #7c3aed; font-weight: 700; border-radius: 0 0 10px 10px;">
+      <div class="dcard-callback-banner${cbIsOverdue ? ' overdue' : ''}" style="margin: 4px -14px -12px; padding: 6px 14px; background: ${cbIsOverdue ? 'rgba(239,68,68,0.08)' : 'rgba(124, 58, 237, 0.07)'}; border-top: 1px dashed ${cbIsOverdue ? 'rgba(239,68,68,0.3)' : 'rgba(124, 58, 237, 0.15)'}; display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: ${cbIsOverdue ? '#ef4444' : '#7c3aed'}; font-weight: 700; border-radius: 0 0 10px 10px;">
         <i class="fas fa-phone-alt" style="font-size:9px;"></i>
         <span>Qayta aloqa: ${dayLabel}</span>
       </div>
@@ -4251,33 +4267,40 @@ function renderTimelineAndTasks(deal) {
   // ── 1. TOP ACTIVELY PENDING TASK BANNER (amoCRM Style) ──
   if (pendingTasks.length > 0) {
     const mostUrgent = pendingTasks[0];
+    const now = new Date();
+    const nowMs = now.getTime();
     const todayStart = new Date().setHours(0,0,0,0);
+    const tomorrowStart = todayStart + (24 * 60 * 60 * 1000);
     const taskDayStart = new Date(mostUrgent.date).setHours(0,0,0,0);
     const diffDays = Math.round((taskDayStart - todayStart) / (1000 * 60 * 60 * 24));
     
-    const isOverdue = taskDayStart < todayStart;
+    const isExactOverdue = mostUrgent.date.getTime() < nowMs;
     const isToday = taskDayStart === todayStart;
+    const isTomorrow = taskDayStart === tomorrowStart;
 
-    const dayText = isToday ? 'Bugun' : diffDays === 1 ? 'Ertaga' : diffDays === -1 ? 'Kecha' : isOverdue ? `${Math.abs(diffDays)} KUN MUDDAT O'TDI` : `${diffDays} kun qoldi`;
-    
     const isoDate = mostUrgent.date.getFullYear() + '-' + String(mostUrgent.date.getMonth() + 1).padStart(2, '0') + '-' + String(mostUrgent.date.getDate()).padStart(2, '0');
     const isoTime = String(mostUrgent.date.getHours()).padStart(2, '0') + ':' + String(mostUrgent.date.getMinutes()).padStart(2, '0');
 
     let bannerBg = 'rgba(99,102,241,0.06)';
     let bannerBorder = '1.5px solid #6366f1';
     let headerColor = '#6366f1';
-    let headerText = `📅 KELGUSI VAZIFA (${dayText})`;
+    let headerText = `📅 KELGUSI VAZIFA (${isoDate} ${isoTime})`;
 
-    if (isOverdue) {
+    if (isExactOverdue) {
       bannerBg = 'rgba(239,68,68,0.08)';
       bannerBorder = '2px solid #ef4444';
       headerColor = '#ef4444';
-      headerText = `🔴 MUDDATI O'TGAN VAZIFA (${dayText})`;
+      headerText = isToday ? `🔴 MUDDATI O'TDI (Bugun ${isoTime})` : `🔴 MUDDATI O'TGAN VAZIFA (${isoDate} ${isoTime})`;
     } else if (isToday) {
       bannerBg = 'rgba(245,158,11,0.08)';
       bannerBorder = '2px solid #f59e0b';
       headerColor = '#d97706';
       headerText = `🟡 BUGUNGI VAZIFA (${isoTime})`;
+    } else if (isTomorrow) {
+      bannerBg = 'rgba(16,185,129,0.08)';
+      bannerBorder = '2px solid #10b981';
+      headerColor = '#10b981';
+      headerText = `🟢 ERTANGI VAZIFA (${isoTime})`;
     }
 
     html += `
@@ -5116,6 +5139,7 @@ window.submitTimelineTask = async function() {
     document.getElementById('tl-task-desc').value = '';
     
     openDetail(_detailId); // Refresh timeline
+    loadDeals(); // Refresh kanban task status immediately
   } catch (err) {
     _toast(err.message, "error");
   }

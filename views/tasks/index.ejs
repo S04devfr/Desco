@@ -413,6 +413,24 @@ function getFilteredTasks() {
   const tomorrowEnd = new Date(today); tomorrowEnd.setDate(today.getDate() + 1);
   tomorrowEnd.setHours(23,59,59,999);
 
+function getTaskExactDate(t) {
+  if (!t || !t.dueDate) return null;
+  let d = new Date(t.dueDate);
+  if (isNaN(d.getTime())) return null;
+  if (t.dueTime && typeof t.dueTime === 'string' && t.dueTime.includes(':')) {
+    const parts = t.dueTime.split(':');
+    d = new Date(d);
+    d.setHours(Number(parts[0]) || 0, Number(parts[1]) || 0, 0, 0);
+  }
+  return d;
+}
+
+function getFilteredTasks() {
+  const q = (document.getElementById('taskSearch')?.value || '').toLowerCase().trim();
+  const nowMs = Date.now();
+  const today = new Date(); today.setHours(0,0,0,0);
+  const tomorrowEnd = new Date(today); tomorrowEnd.setDate(today.getDate() + 1); tomorrowEnd.setHours(23,59,59,999);
+
   return allTasks.filter(t => {
     if (q && !(
       (t.title || '').toLowerCase().includes(q) ||
@@ -422,26 +440,26 @@ function getFilteredTasks() {
       (t.deal && t.deal.productName && t.deal.productName.toLowerCase().includes(q))
     )) return false;
 
-    const due = t.dueDate ? new Date(t.dueDate) : today;
+    const exactDue = getTaskExactDate(t);
     const filter = window._dateFilterMode || 'day';
 
     if (filter === 'day') {
-      return due <= tomorrowEnd && !t.completed;
+      return (!exactDue || exactDue <= tomorrowEnd) && !t.completed;
     }
     if (filter === 'week') {
       const endOfWeek = new Date(today);
       endOfWeek.setDate(today.getDate() + 7);
       endOfWeek.setHours(23,59,59,999);
-      return due <= endOfWeek && !t.completed;
+      return (!exactDue || exactDue <= endOfWeek) && !t.completed;
     }
     if (filter === 'month') {
       const endOfMonth = new Date(today);
       endOfMonth.setDate(today.getDate() + 30);
       endOfMonth.setHours(23,59,59,999);
-      return due <= endOfMonth && !t.completed;
+      return (!exactDue || exactDue <= endOfMonth) && !t.completed;
     }
     if (filter === 'overdue') {
-      return t.dueDate && new Date(t.dueDate) < today && !t.completed;
+      return exactDue && exactDue.getTime() < nowMs && !t.completed;
     }
     if (filter === 'done') {
       return t.completed;
@@ -451,14 +469,15 @@ function getFilteredTasks() {
 }
 
 function updateStats() {
+  const nowMs = Date.now();
   const today = new Date(); today.setHours(0,0,0,0);
   const tomorrowEnd = new Date(today); tomorrowEnd.setDate(today.getDate() + 1); tomorrowEnd.setHours(23,59,59,999);
   const endOfWeek = new Date(today); endOfWeek.setDate(today.getDate() + 7); endOfWeek.setHours(23,59,59,999);
 
   const active = allTasks.filter(t => !t.completed && !isKotarmadiStage(t));
-  const todayCount = active.filter(t => { const d = t.dueDate ? new Date(t.dueDate) : null; return d && d <= tomorrowEnd; }).length;
-  const overdueCount = active.filter(t => { const d = t.dueDate ? new Date(t.dueDate) : null; return d && d < today; }).length;
-  const weekCount = active.filter(t => { const d = t.dueDate ? new Date(t.dueDate) : null; return d && d <= endOfWeek; }).length;
+  const todayCount = active.filter(t => { const d = getTaskExactDate(t); return !d || d <= tomorrowEnd; }).length;
+  const overdueCount = active.filter(t => { const d = getTaskExactDate(t); return d && d.getTime() < nowMs; }).length;
+  const weekCount = active.filter(t => { const d = getTaskExactDate(t); return !d || d <= endOfWeek; }).length;
   const doneCount = allTasks.filter(t => t.completed).length;
 
   const el = (id) => document.getElementById(id);
@@ -469,13 +488,14 @@ function updateStats() {
 }
 
 function renderSingleTaskRowHtml(t) {
+  const nowMs = Date.now();
   const today = new Date(); today.setHours(0,0,0,0);
-  const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
-  const due = t.dueDate ? new Date(t.dueDate) : null;
-  const isOverdue = due && due < today && !t.completed;
-  const isToday = due && due >= today && due < tomorrow;
+  const tomorrowEnd = new Date(today); tomorrowEnd.setDate(today.getDate() + 1); tomorrowEnd.setHours(23,59,59,999);
+  const exactDue = getTaskExactDate(t);
+  const isOverdue = exactDue && exactDue.getTime() < nowMs && !t.completed;
+  const isToday = exactDue && exactDue >= today && exactDue < tomorrowEnd;
   const dueClass = isOverdue ? 'overdue' : isToday ? 'today' : '';
-  const pLabel = { high: '🔴 Yuqori', medium: "🟡 O'ta", low: 'Past' };
+  const pLabel = { high: '🔴 Yuqori', medium: "🟡 O'rta", low: '🟢 Past' };
   const pColors = { high: '#ef4444', medium: '#eab308', low: '#22c55e' };
   const pBg = { high: 'rgba(239, 68, 68, 0.08)', medium: 'rgba(234, 179, 8, 0.08)', low: 'rgba(34, 197, 94, 0.08)' };
 
@@ -584,13 +604,14 @@ function renderSingleTaskRowHtml(t) {
 }
 
 function renderSingleTaskCardHtml(t) {
+  const nowMs = Date.now();
   const today = new Date(); today.setHours(0,0,0,0);
-  const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
-  const due = t.dueDate ? new Date(t.dueDate) : null;
-  const isOverdue = due && due < today && !t.completed;
-  const isToday = due && due >= today && due < tomorrow;
+  const tomorrowEnd = new Date(today); tomorrowEnd.setDate(today.getDate() + 1); tomorrowEnd.setHours(23,59,59,999);
+  const exactDue = getTaskExactDate(t);
+  const isOverdue = exactDue && exactDue.getTime() < nowMs && !t.completed;
+  const isToday = exactDue && exactDue >= today && exactDue < tomorrowEnd;
   const dueColor = isOverdue ? '#ef4444' : isToday ? '#10b981' : 'var(--text-tertiary)';
-  const pLabel = { high: '🔴 Yuqori', medium: '🟡 O\'rta', low: '🟢 Past' };
+  const pLabel = { high: '🔴 Yuqori', medium: "🟡 O'rta", low: '🟢 Past' };
 
   let dueHtml = 'Sana yo\'q';
   if (t.dueDate) {
