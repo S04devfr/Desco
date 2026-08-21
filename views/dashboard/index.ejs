@@ -1115,16 +1115,6 @@ async function loadDashboard() {
     // ROW 2 CARDS (Admin Only)
     if (USER_ROLE === 'admin') {
       row1Html += `
-        <!-- CARD 5: TAN NARX -->
-        <div class="stat-card clickable" onclick="openFinancialModal('cost-prices')" style="display: flex; align-items: flex-start; gap: 14px; height: 100%; border-radius: 20px; padding: 18px 20px; min-height: 110px;">
-          <div class="stat-icon purple" style="width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0; font-size: 18px; display: flex; align-items: center; justify-content: center; margin-top: 2px;"><i class="fas fa-tags"></i></div>
-          <div class="stat-info" style="flex: 1; min-width: 0;">
-            <div class="stat-label">Tan narx</div>
-            <div class="stat-value" style="font-size: 20px; font-weight: 800; margin-top: 2px;">${renderCardMoney(safeKpis.totalCostPrice ?? 0)}</div>
-            <div class="stat-sub" style="font-size: 11.5px; margin-top: 4px;">Jami mahsulot tannarxi</div>
-          </div>
-        </div>
-
         <!-- CARD 6: HARAJATLAR -->
         <div class="stat-card clickable" onclick="window.location.href='/expenses'" style="display: flex; align-items: flex-start; gap: 14px; height: 100%; border-radius: 20px; padding: 18px 20px; min-height: 110px;">
           <div class="stat-icon red" style="width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0; font-size: 18px; display: flex; align-items: center; justify-content: center; margin-top: 2px;"><i class="fas fa-receipt"></i></div>
@@ -1147,8 +1137,8 @@ async function loadDashboard() {
               <div class="stat-label" style="color: #10B981; font-weight: 800; font-size: 12px;">SOF FOYDA</div>
             </div>
             <div class="stat-value" style="color: #10B981; font-size: 20px; font-weight: 800; margin-top: 2px;">${renderCardMoney(safeKpis.netProfit ?? 0)}</div>
-            <div class="stat-sub" style="font-size: 11.5px; margin-top: 4px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="Savdo - Tannarx - Xarajat">
-              Savdo &minus; Tannarx &minus; Xarajat
+            <div class="stat-sub" style="font-size: 11.5px; margin-top: 4px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="Savdo - Qarz - Xarajat">
+              Savdo &minus; Qarz &minus; Xarajat
             </div>
           </div>
         </div>

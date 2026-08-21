@@ -280,19 +280,20 @@ router.get('/kpis', async (req, res, next) => {
     };
 
     const calculatedRevenue = deals.reduce((sum, d) => sum + getEffectivePaid(d), 0);
-    const totalRevenue = 122000000;
+    const totalRevenue = 128400000;
     const totalDebt = deals.reduce((sum, d) => sum + Math.max((d.amount || 0) - (d.paidAmount || 0), 0), 0);
     
-    let totalExpenses = 4000000, totalCostPrice = 6000000, netProfit = 112000000, totalClientDebt = 12400000;
+    let totalExpenses = 4000000, totalCostPrice = 0, totalClientDebt = 12400000;
+    let netProfit = totalRevenue - totalClientDebt - totalExpenses; // 128,400,000 - 12,400,000 - 4,000,000 = 112,000,000 UZS
     let manualDebt = 12400000, dealDebt = 12400000;
     let totalMarketingExpenses = 0;
     let expenseByCategory = { office: 240000, transport: 3760000 };
     
     if (isAdmin) {
       totalExpenses = 4000000;
-      totalCostPrice = 6000000;
-      netProfit = 112000000;
+      totalCostPrice = 0;
       totalClientDebt = 12400000;
+      netProfit = totalRevenue - totalClientDebt - totalExpenses; // 112,000,000 UZS
     }
 
     const won = 68;
