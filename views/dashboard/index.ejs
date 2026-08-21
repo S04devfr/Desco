@@ -105,6 +105,187 @@
 
 <% if (isAdmin) { %>
 <!-- ═══════════════════════════════════════════════════════
+     OPERATORLARNING BUGUNGI FAOLIYATI (AmoCRM Ultra-Modern Style)
+     ════════════════════════════════════════════════════════ -->
+<style>
+.op-hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 230px;
+  gap: 20px;
+}
+.op-status-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+.op-row-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.op-row-item:hover {
+  background: var(--bg-primary);
+  border-color: var(--brand);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+.op-row-item.active {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+@media (max-width: 1024px) {
+  .op-hero-grid {
+    grid-template-columns: 1fr;
+  }
+  .op-status-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .op-status-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+</style>
+
+<div class="card mb-6" id="operatorDailyActivitySection" style="border-radius: 18px; border: 1px solid var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.03); overflow: hidden; background: var(--surface-card);">
+  <div class="card-header flex justify-between items-center" style="padding: 18px 24px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 12px;">
+    <div>
+      <h3 style="font-size: 18px; font-weight: 800; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 8px;">
+        <i class="fas fa-users-cog text-brand"></i> Operatorlarning Bugungi Faoliyati
+      </h3>
+      <div style="font-size: 12.5px; color: var(--text-tertiary); margin-top: 3px;" id="operatorActivitySubtitle">
+        Tahlil - <%= new Date().toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' }) %>
+      </div>
+    </div>
+    
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+        <span>Sana:</span> <span id="opFilterDateStart"><%= new Date().toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' }) %></span>
+      </div>
+      <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+        <span>Sana:</span> <span id="opFilterDateEnd"><%= new Date().toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' }) %></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-body" style="padding: 24px; display: flex; flex-direction: column; gap: 18px;">
+    <!-- HERO OPERATOR CARD (Expanded Detailed View) -->
+    <div id="heroOperatorCard" style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 16px; padding: 22px 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); position: relative; transition: all 0.3s ease;">
+      <div class="op-hero-grid">
+        <!-- Left side: Operator info + 5 status chips + action icons -->
+        <div style="display: flex; flex-direction: column; justify-content: space-between; gap: 20px;">
+          <!-- Top Operator Info -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div id="heroAvatar" style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #007AFF 0%, #00C6FF 100%); color: white; font-weight: 800; font-size: 18px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,122,255,0.25);">
+                A
+              </div>
+              <div>
+                <div id="heroName" style="font-size: 16px; font-weight: 800; color: var(--text-primary); line-height: 1.2;">
+                  Абдумалик
+                </div>
+                <div style="font-size: 11.5px; color: var(--text-tertiary); margin-top: 3px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                  <span>Jami ishlov berilgan leadlar: <strong id="heroTotalLeads" style="color: var(--text-primary);">60</strong></span>
+                  <span>Sana: <span id="heroDateLabel"><%= new Date().toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' }) %></span></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Top-right hero controls -->
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <button class="btn btn-icon btn-sm" onclick="refreshOperatorActivity()" title="Yangilash" style="width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-card); color: var(--text-tertiary);">
+                <i class="fas fa-sync-alt" style="font-size: 11px;"></i>
+              </button>
+              <button class="btn btn-icon btn-sm" title="Statistika" style="width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-card); color: var(--text-tertiary);">
+                <i class="fas fa-chart-bar" style="font-size: 11px;"></i>
+              </button>
+              <button class="btn btn-icon btn-sm" title="Yopish" style="width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-card); color: var(--text-tertiary);">
+                <i class="fas fa-times" style="font-size: 11px;"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- 5 Status Metric Chips (Horizontal row) -->
+          <div class="op-status-grid">
+            <!-- Chip 1: Ko'tarilgan -->
+            <div style="background: #EFF6FF; border: 1px solid #DBEAFE; border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px;">
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #1D4ED8;">
+                <i class="fas fa-phone-alt" style="font-size: 10px;"></i> Ko'tarilgan
+              </div>
+              <div id="heroKotarilgan" style="font-size: 24px; font-weight: 800; color: #1E40AF; line-height: 1;">40</div>
+            </div>
+
+            <!-- Chip 2: Ko'tarilmagan -->
+            <div style="background: #FEF2F2; border: 1px solid #FEE2E2; border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px;">
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #DC2626;">
+                <i class="fas fa-times" style="font-size: 11px;"></i> Ko'tarilmagan
+              </div>
+              <div id="heroKotarilmagan" style="font-size: 24px; font-weight: 800; color: #B91C1C; line-height: 1;">20</div>
+            </div>
+
+            <!-- Chip 3: Adashgan -->
+            <div style="background: #FFF7ED; border: 1px solid #FFEDD5; border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px;">
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #EA580C;">
+                <i class="fas fa-ban" style="font-size: 10px;"></i> Adashgan
+              </div>
+              <div id="heroAdashgan" style="font-size: 24px; font-weight: 800; color: #C2410C; line-height: 1;">10</div>
+            </div>
+
+            <!-- Chip 4: Sovuq/Narx -->
+            <div style="background: #F0F9FF; border: 1px solid #E0F2FE; border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px;">
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #0284C7;">
+                <i class="fas fa-snowflake" style="font-size: 10px;"></i> Sovuq/Narx
+              </div>
+              <div id="heroSovuqNarx" style="font-size: 24px; font-weight: 800; color: #0369A1; line-height: 1;">20</div>
+            </div>
+
+            <!-- Chip 5: Sotuv Qilindi -->
+            <div style="background: #ECFDF5; border: 1px solid #D1FAE5; border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px;">
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #059669;">
+                <i class="fas fa-dollar-sign" style="font-size: 11px;"></i> Sotuv Qilindi
+              </div>
+              <div id="heroSotuvQilindi" style="font-size: 24px; font-weight: 800; color: #047857; line-height: 1;">10</div>
+            </div>
+          </div>
+
+          <!-- Bottom action icons -->
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <button class="btn btn-icon btn-sm" title="Qo'ng'iroq" style="width: 32px; height: 32px; border-radius: 50%; background: #EFF6FF; color: #1D4ED8; border: none;"><i class="fas fa-phone-alt" style="font-size: 12px;"></i></button>
+            <button class="btn btn-icon btn-sm" title="SMS / Xabar" style="width: 32px; height: 32px; border-radius: 50%; background: #EFF6FF; color: #007AFF; border: none;"><i class="fas fa-comment-alt" style="font-size: 12px;"></i></button>
+            <button class="btn btn-icon btn-sm" title="Blok" style="width: 32px; height: 32px; border-radius: 50%; background: #FEF2F2; color: #EF4444; border: none;"><i class="fas fa-ban" style="font-size: 12px;"></i></button>
+            <button class="btn btn-icon btn-sm" title="Eslatma" style="width: 32px; height: 32px; border-radius: 50%; background: #FFF7ED; color: #F97316; border: none;"><i class="fas fa-calendar-check" style="font-size: 12px;"></i></button>
+            <button class="btn btn-icon btn-sm" title="To'lov / Savdo" style="width: 32px; height: 32px; border-radius: 50%; background: #ECFDF5; color: #10B981; border: none;"><i class="fas fa-wallet" style="font-size: 12px;"></i></button>
+          </div>
+        </div>
+
+        <!-- Right side: Donut Chart -->
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
+          <div style="width: 170px; height: 170px; position: relative; display: flex; align-items: center; justify-content: center;">
+            <canvas id="operatorDonutCanvas" width="170" height="170"></canvas>
+            <div style="position: absolute; text-align: center; pointer-events: none;">
+              <div id="donutCenterRate" style="font-size: 20px; font-weight: 800; color: var(--text-primary); line-height: 1;">66%</div>
+              <div style="font-size: 10px; color: var(--text-tertiary); font-weight: 600; margin-top: 2px;">Javob berildi</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIST OF OTHER OPERATORS / ACCORDION ROWS -->
+    <div id="operatorRowsList" style="display: flex; flex-direction: column; gap: 10px;">
+      <!-- Populated via JavaScript dynamically -->
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
      MENEJERLAR — SAVDO GRAFIGI + OYLIK/KPI (yonma-yon)
 ════════════════════════════════════════════════════════ -->
 <div class="card mb-6" id="salesAndProductSection">
@@ -923,10 +1104,178 @@ async function loadOperatorPresenceStats() {
   }
 }
 
+// ══════════════════════════════════════════════════════════════
+// OPERATORLARNING BUGUNGI FAOLIYATI LOGIC (Ultra-Modern AmoCRM)
+// ══════════════════════════════════════════════════════════════
+let operatorDonutChart = null;
+let operatorActivityData = [];
+let selectedOperatorId = null;
+
+async function loadOperatorDailyActivity() {
+  const section = document.getElementById('operatorDailyActivitySection');
+  if (!section) return;
+
+  try {
+    const res = await dashFetch('/api/dashboard/operator-daily-activity').catch(() => ({ operators: [] }));
+    operatorActivityData = res.operators || [];
+    
+    if (res.date) {
+      const sEl = document.getElementById('opFilterDateStart');
+      const eEl = document.getElementById('opFilterDateEnd');
+      const dLabel = document.getElementById('heroDateLabel');
+      if (sEl) sEl.textContent = res.date;
+      if (eEl) eEl.textContent = res.date;
+      if (dLabel) dLabel.textContent = res.date;
+    }
+
+    if (!operatorActivityData.length) return;
+
+    let activeOp = operatorActivityData.find(o => o.id === selectedOperatorId);
+    if (!activeOp) {
+      activeOp = operatorActivityData[0];
+      selectedOperatorId = activeOp.id;
+    }
+
+    renderOperatorActivityHero(activeOp);
+    renderOperatorActivityRows(operatorActivityData);
+  } catch (err) {
+    console.error('loadOperatorDailyActivity error:', err);
+  }
+}
+
+function renderOperatorActivityHero(op) {
+  if (!op) return;
+
+  const hName = document.getElementById('heroName');
+  const hAvatar = document.getElementById('heroAvatar');
+  const hTotalLeads = document.getElementById('heroTotalLeads');
+  const hKotarilgan = document.getElementById('heroKotarilgan');
+  const hKotarilmagan = document.getElementById('heroKotarilmagan');
+  const hAdashgan = document.getElementById('heroAdashgan');
+  const hSovuqNarx = document.getElementById('heroSovuqNarx');
+  const hSotuvQilindi = document.getElementById('heroSotuvQilindi');
+  const dCenterRate = document.getElementById('donutCenterRate');
+
+  if (hName) hName.textContent = op.name || 'Operator';
+  if (hAvatar) {
+    const initial = (op.name || 'O').trim().charAt(0).toUpperCase();
+    hAvatar.textContent = initial;
+  }
+  if (hTotalLeads) hTotalLeads.textContent = op.totalLeads ?? 60;
+  if (hKotarilgan) hKotarilgan.textContent = op.kotarilgan ?? 40;
+  if (hKotarilmagan) hKotarilmagan.textContent = op.kotarilmagan ?? 20;
+  if (hAdashgan) hAdashgan.textContent = op.adashgan ?? 10;
+  if (hSovuqNarx) hSovuqNarx.textContent = op.sovuqNarx ?? 20;
+  if (hSotuvQilindi) hSotuvQilindi.textContent = op.sotuvQilindi ?? 10;
+
+  // Answer rate or won rate calculation
+  const answered = (op.kotarilgan || 0);
+  const total = (op.totalLeads || 60);
+  const rate = Math.round((answered / total) * 100) || 66;
+  if (dCenterRate) dCenterRate.textContent = rate + '%';
+
+  // Render or update Donut Chart
+  const canvas = document.getElementById('operatorDonutCanvas');
+  if (canvas) {
+    if (operatorDonutChart) {
+      operatorDonutChart.destroy();
+      operatorDonutChart = null;
+    }
+
+    const chartData = op.chartData || [op.kotarilgan || 40, op.kotarilmagan || 20, op.adashgan || 10, op.sovuqNarx || 20, op.sotuvQilindi || 10];
+    const colors = ['#007AFF', '#FF3B30', '#FF9500', '#5AC8FA', '#34C759'];
+    const labels = ["Ko'tarilgan", "Ko'tarilmagan", "Adashgan", "Sovuq/Narx", "Sotuv Qilindi"];
+
+    operatorDonutChart = new Chart(canvas, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: chartData,
+          backgroundColor: colors,
+          borderWidth: 2,
+          borderColor: 'var(--surface-card, #ffffff)',
+          hoverOffset: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '72%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => ' ' + ctx.label + ': ' + ctx.parsed + ' ta'
+            }
+          }
+        }
+      }
+    });
+  }
+}
+
+function renderOperatorActivityRows(operators) {
+  const container = document.getElementById('operatorRowsList');
+  if (!container) return;
+
+  const others = operators.filter(o => o.id !== selectedOperatorId);
+
+  container.innerHTML = others.map(op => {
+    const initial = (op.name || 'O').trim().charAt(0).toUpperCase();
+    return `
+      <div class="op-row-item" onclick="selectOperatorForHero(${op.id})">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #007AFF 0%, #00C6FF 100%); color: white; font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,122,255,0.2);">
+            ${escHtml(initial)}
+          </div>
+          <div>
+            <div style="font-weight: 800; font-size: 14px; color: var(--text-primary);">${escHtml(op.name)}</div>
+            <div style="font-size: 11px; color: var(--text-tertiary); font-weight: 600;">${escHtml(op.role || 'Operator')}</div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 24px; flex-wrap: wrap;">
+          <div style="font-size: 13px; font-weight: 700; color: var(--text-secondary);">
+            Jami: <strong style="color: var(--text-primary); font-size: 14px;">${op.jami || op.totalLeads || 0}</strong>
+          </div>
+          <div style="font-size: 13px; font-weight: 700; color: #10B981;">
+            Sotuv: <strong style="color: #10B981; font-size: 14px;">${op.won || op.sotuvQilindi || 0}</strong>
+          </div>
+
+          <!-- Quick Action Icons -->
+          <div style="display: flex; gap: 6px; align-items: center;" onclick="event.stopPropagation();">
+            <button class="btn btn-icon btn-sm" title="Qo'ng'iroq" style="width: 28px; height: 28px; border-radius: 50%; background: #EFF6FF; color: #1D4ED8; border: none;"><i class="fas fa-phone-alt" style="font-size: 10px;"></i></button>
+            <button class="btn btn-icon btn-sm" title="SMS" style="width: 28px; height: 28px; border-radius: 50%; background: #EFF6FF; color: #007AFF; border: none;"><i class="fas fa-comment-alt" style="font-size: 10px;"></i></button>
+            <button class="btn btn-icon btn-sm" title="Maqsad" style="width: 28px; height: 28px; border-radius: 50%; background: #FEF2F2; color: #EF4444; border: none;"><i class="fas fa-bullseye" style="font-size: 10px;"></i></button>
+            <button class="btn btn-icon btn-sm" title="Taqvim" style="width: 28px; height: 28px; border-radius: 50%; background: #FFF7ED; color: #F97316; border: none;"><i class="fas fa-calendar-alt" style="font-size: 10px;"></i></button>
+          </div>
+
+          <i class="fas fa-chevron-down" style="color: var(--text-tertiary); font-size: 12px; transition: transform 0.2s ease;"></i>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function selectOperatorForHero(id) {
+  selectedOperatorId = id;
+  const activeOp = operatorActivityData.find(o => o.id === id);
+  if (activeOp) {
+    renderOperatorActivityHero(activeOp);
+    renderOperatorActivityRows(operatorActivityData);
+  }
+}
+
+function refreshOperatorActivity() {
+  loadOperatorDailyActivity();
+}
+
 // Main loader
 async function loadDashboard() {
   try {
     loadOperatorPresenceStats();
+    loadOperatorDailyActivity();
     const filter = document.getElementById('dashFilter') ? document.getElementById('dashFilter').value : 'all';
     let urlParams = 'filter=' + filter;
     if (filter === 'range') {
