@@ -47,11 +47,6 @@
       <span id="sidebar-task-badge" class="nav-badge hidden">0</span>
     </a>
 
-    <a href="/kanban" class="<%= activePage === 'kanban' ? 'active' : '' %>">
-      <span class="nav-icon"><i class="fas fa-columns" style="color:var(--brand);"></i></span>
-      <span class="nav-label">Kanban Doska</span>
-    </a>
-
     <a href="/expenses" class="<%= activePage === 'expenses' ? 'active' : '' %>">
       <span class="nav-icon"><i class="fas fa-receipt"></i></span>
       <span class="nav-label">Xarajatlar</span>
@@ -97,14 +92,17 @@
       <span class="nav-label">Telefoniya</span>
     </a>
 
-    <!-- Qo'shimcha Submenu (Mijozlar, Rejalar, Shopirlar, Ishonch filiallari) -->
+    <!-- Qo'shimcha Submenu (Mijozlar, Rejalar, Shopirlar, Ishonch filiallari, Kanban) -->
     <div class="sidebar-submenu-container">
-      <div class="sidebar-submenu-header <%= (activePage.startsWith('extra') || activePage === 'clients' || activePage === 'plans') ? 'active' : '' %>" onclick="toggleSubmenu(this)">
+      <div class="sidebar-submenu-header <%= (activePage.startsWith('extra') || activePage === 'clients' || activePage === 'plans' || activePage === 'kanban') ? 'active' : '' %>" onclick="toggleSubmenu(this)">
         <span class="nav-icon"><i class="fas fa-plus-circle"></i></span>
         <span class="nav-label">Qo'shimcha</span>
         <i class="fas fa-chevron-right arrow-icon"></i>
       </div>
       <div class="sidebar-submenu-items">
+        <a href="/kanban" class="sub-item <%= activePage === 'kanban' ? 'active' : '' %>">
+          <span class="sub-dot" style="background:#007AFF"></span> Kanban Doska
+        </a>
         <a href="/clients" class="sub-item <%= activePage === 'clients' ? 'active' : '' %>">
           <span class="sub-dot" style="background:#10B981"></span> Mijozlar
         </a>

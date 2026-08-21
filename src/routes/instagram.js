@@ -4,7 +4,7 @@ const prisma = require('../config/database');
 const { protect } = require('../middleware/auth');
 
 function getWazzupApiKey(settings) {
-  const DEFAULT_WAZZUP_KEY = '1b138429551c4790abf78f8b039f00b4';
+  const DEFAULT_WAZZUP_KEY = '5ac00cdba83342748b4396624d6c4a7e';
   const envKey = process.env.WAZZUP_API_KEY;
   if (envKey && envKey.trim()) return envKey.trim();
   if (settings?.wazzupApiKey && settings.wazzupApiKey.trim()) return settings.wazzupApiKey.trim();

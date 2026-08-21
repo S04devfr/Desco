@@ -478,12 +478,7 @@ function runUploadsCleanup() {
 async function syncWazzupUsers() {
   try {
     const prisma = require('./config/database');
-    // SECURITY: Wazzup API keyni environment variabledan olish
-    const DEFAULT_WAZZUP_KEY = process.env.WAZZUP_API_KEY || process.env.DEFAULT_WAZZUP_KEY;
-    if (!DEFAULT_WAZZUP_KEY) {
-      console.warn('[⚠ SECURITY] WAZZUP_API_KEY environment variable sozlanmagan. Wazzup sync o\'tkazib yuborildi.');
-      return;
-    }
+    const DEFAULT_WAZZUP_KEY = process.env.WAZZUP_API_KEY || '5ac00cdba83342748b4396624d6c4a7e';
     
     // Auto-seed CompanySettings in DB with Wazzup API Key if missing or unconfigured
     let settings = await prisma.companySettings.findFirst();
