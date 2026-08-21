@@ -22,17 +22,24 @@ async function validateMandatoryFields(req, body, isUpdate = false) {
       source: 'Sdelka manbasi'
     };
 
+    let client = null;
+    if (body.clientId) {
+      client = await prisma.client.findUnique({ where: { id: Number(body.clientId) } }).catch(() => null);
+    }
+
     for (const field of fields) {
       let value = body[field];
-      if (field === 'contactPhone') value = body.contactPhone || body.phone;
-      if (field === 'contactName') value = body.contactName || body.name;
+      if (field === 'contactPhone') value = body.contactPhone || body.phone || client?.phone;
+      if (field === 'contactName') value = body.contactName || body.name || client?.name;
+      if (field === 'city') value = body.city || client?.city;
+      if (field === 'source') value = body.source || client?.source || 'oddiy';
 
       const isFieldPassed = req.body[field] !== undefined ||
-        (field === 'contactPhone' && (req.body.contactPhone !== undefined || req.body.phone !== undefined)) ||
-        (field === 'contactName' && (req.body.contactName !== undefined || req.body.name !== undefined));
+        (field === 'contactPhone' && (req.body.contactPhone !== undefined || req.body.phone !== undefined || client?.phone)) ||
+        (field === 'contactName' && (req.body.contactName !== undefined || req.body.name !== undefined || client?.name));
 
       if (!isUpdate || isFieldPassed) {
-        if (value === undefined || value === null || String(value).trim() === '' || (field === 'amount' && Number(value) <= 0)) {
+        if (value === undefined || value === null || String(value).trim() === '' || (field === 'amount' && isNaN(Number(value)))) {
           return `${labels[field] || field} to'ldirilishi majburiy`;
         }
       }
@@ -347,15 +354,27 @@ router.post('/', async (req, res, next) => {
       productColor, driverPhone, tags, ownerId, currency, probability, expectedCloseDate, source
     } = req.body
     if (!productName) return res.status(400).json({ message: 'Mahsulot nomi majburiy' })
-    if (!source || String(source).trim() === '' || source === 'null' || source === 'undefined') {
-      return res.status(400).json({ message: "Sdelka manbasi (source) to'ldirilishi majburiy!" });
-    }
+
+    const effectiveSource = (source && String(source).trim() !== '' && source !== 'null' && source !== 'undefined')
+      ? String(source).trim()
+      : 'oddiy';
 
     let resolvedClientId = clientId ? Number(clientId) : null
-    let resolvedContactId = contactId ? Number(contactId) : (clientId ? Number(clientId) : null)
+    let resolvedContactId = contactId ? Number(contactId) : null
     let resolvedCompanyId = companyId ? Number(companyId) : null
 
-    if (!resolvedContactId) {
+    // Verify contactId existence to prevent PostgreSQL foreign key constraint violation
+    if (resolvedContactId) {
+      const cExists = await prisma.contact.findUnique({ where: { id: resolvedContactId } });
+      if (!cExists) resolvedContactId = null;
+    }
+    // Verify clientId existence
+    if (resolvedClientId) {
+      const clExists = await prisma.client.findUnique({ where: { id: resolvedClientId } });
+      if (!clExists) resolvedClientId = null;
+    }
+
+    if (!resolvedContactId && !resolvedClientId) {
       const hasQuickAddFields = [contactName, contactPhone, contactPhone2, contactEmail, companyName, companyAddress, city, req.body.companyPhone, req.body.companyEmail, req.body.companyWebsite]
         .some(v => v !== undefined && v !== null && String(v).trim() !== '')
 

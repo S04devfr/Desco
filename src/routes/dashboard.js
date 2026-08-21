@@ -321,8 +321,7 @@ router.get('/kpis', async (req, res, next) => {
       } catch (e) {
         const allDeals = await prisma.deal.findMany({ select: { amount: true, paidAmount: true } });
         dealDebt = allDeals.reduce((sum, d) => sum + Math.max((d.amount || 0) - (d.paidAmount || 0), 0), 0);
-      }
-      totalClientDebt = manualDebt + dealDebt;
+      totalClientDebt = manualDebt > 0 ? manualDebt : dealDebt;
     }
 
     const won = deals.filter(isWonDeal).length;

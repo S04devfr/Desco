@@ -239,26 +239,55 @@ router.post('/webhook', async (req, res) => {
         const recipientId = isEcho ? clientIgId : 'CRM';
 
         if (msg.chatType === 'telegram') {
-          // Save the message in database
-          const savedMsg = await prisma.telegramMessage.upsert({
-            where: { messageId },
-            update: {
-              text,
-              attachmentType,
-              attachmentUrl
-            },
-            create: {
-              messageId,
-              text,
-              senderId,
-              recipientId,
-              timestamp: msg.dateTime ? new Date(msg.dateTime) : (msg.timestamp ? new Date(msg.timestamp * 1000) : new Date()),
-              isOutgoing: isEcho,
-              clientId: client.id,
-              attachmentType,
-              attachmentUrl
-            }
-          });
+          let savedMsg = null;
+          let isExisting = false;
+
+          // 1. Check if message already exists by crmMessageId or messageId
+          if (msg.crmMessageId) {
+            savedMsg = await prisma.telegramMessage.findUnique({ where: { messageId: msg.crmMessageId } });
+          }
+          if (!savedMsg) {
+            savedMsg = await prisma.telegramMessage.findUnique({ where: { messageId } });
+          }
+          // 2. If echo, match by recent outgoing message within 60s
+          if (!savedMsg && isEcho) {
+            const oneMinAgo = new Date(Date.now() - 60000);
+            savedMsg = await prisma.telegramMessage.findFirst({
+              where: {
+                clientId: client.id,
+                isOutgoing: true,
+                createdAt: { gte: oneMinAgo }
+              },
+              orderBy: { createdAt: 'desc' }
+            });
+          }
+
+          if (savedMsg) {
+            isExisting = true;
+            savedMsg = await prisma.telegramMessage.update({
+              where: { id: savedMsg.id },
+              data: {
+                messageId,
+                text: text || savedMsg.text,
+                attachmentType: attachmentType || savedMsg.attachmentType,
+                attachmentUrl: attachmentUrl || savedMsg.attachmentUrl
+              }
+            });
+          } else {
+            savedMsg = await prisma.telegramMessage.create({
+              data: {
+                messageId,
+                text,
+                senderId,
+                recipientId,
+                timestamp: msg.dateTime ? new Date(msg.dateTime) : (msg.timestamp ? new Date(msg.timestamp * 1000) : new Date()),
+                isOutgoing: isEcho,
+                clientId: client.id,
+                attachmentType,
+                attachmentUrl
+              }
+            });
+          }
 
           // Increment telegram unread count if incoming
           if (!isEcho) {
@@ -274,39 +303,70 @@ router.post('/webhook', async (req, res) => {
             }).catch(err => console.error('Error resetting telegram unread count in echo webhook:', err));
           }
 
-          // Broadcast to client-side UI
-          const broadcast = req.app.get('broadcast');
-          if (broadcast) {
-            broadcast({
-              type: 'telegram_message',
-              clientId: client.id,
-              message: {
-                ...savedMsg,
-                timestamp: savedMsg.timestamp.toISOString()
+          // Broadcast to client-side UI only if not existing
+          if (!isExisting) {
+            const broadcast = req.app.get('broadcast');
+            if (broadcast) {
+              broadcast({
+                type: 'telegram_message',
+                clientId: client.id,
+                message: {
+                  ...savedMsg,
+                  timestamp: savedMsg.timestamp.toISOString()
+                }
+              });
+            }
+          }
+        } else {
+          let savedMsg = null;
+          let isExisting = false;
+
+          // 1. Check if message already exists by crmMessageId or messageId
+          if (msg.crmMessageId) {
+            savedMsg = await prisma.instagramMessage.findUnique({ where: { messageId: msg.crmMessageId } });
+          }
+          if (!savedMsg) {
+            savedMsg = await prisma.instagramMessage.findUnique({ where: { messageId } });
+          }
+          // 2. If echo, match by recent outgoing message within 60s
+          if (!savedMsg && isEcho) {
+            const oneMinAgo = new Date(Date.now() - 60000);
+            savedMsg = await prisma.instagramMessage.findFirst({
+              where: {
+                clientId: client.id,
+                isOutgoing: true,
+                createdAt: { gte: oneMinAgo }
+              },
+              orderBy: { createdAt: 'desc' }
+            });
+          }
+
+          if (savedMsg) {
+            isExisting = true;
+            savedMsg = await prisma.instagramMessage.update({
+              where: { id: savedMsg.id },
+              data: {
+                messageId,
+                text: text || savedMsg.text,
+                attachmentType: attachmentType || savedMsg.attachmentType,
+                attachmentUrl: attachmentUrl || savedMsg.attachmentUrl
+              }
+            });
+          } else {
+            savedMsg = await prisma.instagramMessage.create({
+              data: {
+                messageId,
+                text,
+                senderId,
+                recipientId,
+                timestamp: msg.dateTime ? new Date(msg.dateTime) : (msg.timestamp ? new Date(msg.timestamp * 1000) : new Date()),
+                isOutgoing: isEcho,
+                clientId: client.id,
+                attachmentType,
+                attachmentUrl
               }
             });
           }
-        } else {
-          // Save the message in database
-          const savedMsg = await prisma.instagramMessage.upsert({
-            where: { messageId },
-            update: {
-              text,
-              attachmentType,
-              attachmentUrl
-            },
-            create: {
-              messageId,
-              text,
-              senderId,
-              recipientId,
-              timestamp: msg.dateTime ? new Date(msg.dateTime) : (msg.timestamp ? new Date(msg.timestamp * 1000) : new Date()),
-              isOutgoing: isEcho,
-              clientId: client.id,
-              attachmentType,
-              attachmentUrl
-            }
-          });
 
           // Increment instagram unread count if incoming
           if (!isEcho) {
@@ -322,17 +382,19 @@ router.post('/webhook', async (req, res) => {
             }).catch(err => console.error('Error resetting instagram unread count in echo webhook:', err));
           }
 
-          // Broadcast to client-side UI
-          const broadcast = req.app.get('broadcast');
-          if (broadcast) {
-            broadcast({
-              type: 'instagram_message',
-              clientId: client.id,
-              message: {
-                ...savedMsg,
-                timestamp: savedMsg.timestamp.toISOString()
-              }
-            });
+          // Broadcast to client-side UI only if not existing
+          if (!isExisting) {
+            const broadcast = req.app.get('broadcast');
+            if (broadcast) {
+              broadcast({
+                type: 'instagram_message',
+                clientId: client.id,
+                message: {
+                  ...savedMsg,
+                  timestamp: savedMsg.timestamp.toISOString()
+                }
+              });
+            }
           }
         }
       } catch (err) {
