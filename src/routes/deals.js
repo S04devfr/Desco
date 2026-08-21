@@ -486,7 +486,7 @@ router.post('/', async (req, res, next) => {
         }
         resolvedContactId = contact.id;
       }
-    } else {
+    } else if (resolvedContactId) {
       // If contactId is provided, ensure resolvedClientId matches that contact's client or find/create a Client with same phone
       const contactObj = await prisma.contact.findUnique({
         where: { id: resolvedContactId }
