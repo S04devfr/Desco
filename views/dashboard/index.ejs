@@ -848,12 +848,11 @@ document.addEventListener('click', function() {
 });
 
 function fmtDuration(sec) {
-  if (!sec) return '0s';
+  if (!sec) return '0m';
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60);
-  const s = sec % 60;
   if (h > 0) return `${h}s ${m}m`;
-  return m > 0 ? `${m}m ${s}s` : `${s}s`;
+  return `${m}m`;
 }
 
 async function loadOperatorPresenceStats() {
