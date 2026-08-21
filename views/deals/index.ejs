@@ -2875,6 +2875,11 @@ function dcardHtml(d) {
     return `<span class="badge" style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background: rgba(0, 122, 255, 0.1); color: var(--accent); font-weight: 600; margin-right: 4px; margin-bottom: 2px; display: inline-block;">${_esc(cleanTag)}</span>`;
   }).join('');
 
+  const stageObj = _stages.find(s => s.id === d.stageId);
+  const stageColor = stageObj ? (stageObj.color || '#6366f1') : '#6366f1';
+  const stageNameLower = (stageObj?.name || '').toLowerCase();
+  const isKotarmadiStage = stageNameLower.includes('kotarmadi') || stageNameLower.includes("ko'tarmadi");
+
   let taskHtml = '';
   const allTasks = d.tasks || [];
   const pendingTasks = allTasks.filter(t => !t.completed);
@@ -2883,7 +2888,9 @@ function dcardHtml(d) {
   const tomorrowStart = todayStart + (24 * 60 * 60 * 1000);
   const pad = n => String(n).padStart(2, '0');
 
-  if (pendingTasks.length === 0) {
+  if (isKotarmadiStage) {
+    taskHtml = '';
+  } else if (pendingTasks.length === 0) {
     if (d.status === 'won') {
       taskHtml = `<div style="display:inline-flex; align-items:center; gap:4px; font-size:10px; color:#10b981; font-weight:700; background:rgba(16,185,129,0.1); padding:2px 6px; border-radius:4px;"><i class="fas fa-check-circle"></i> Yutilgan</div>`;
     } else if (d.status === 'lost') {
@@ -2953,12 +2960,9 @@ function dcardHtml(d) {
     ? clientName.split(' ').slice(0,2).map(w => w.charAt(0).toUpperCase()).join('')
     : '?';
 
-  const stageObj = _stages.find(s => s.id === d.stageId);
-  const stageColor = stageObj ? (stageObj.color || '#6366f1') : '#6366f1';
-
   const callbackT = (d.tasks || []).find(t => !t.completed && (t.actionType === 'Qayta aloqa' || (t.title || '').toLowerCase().includes('qayta aloqa')));
   let callbackHtml = '';
-  if (callbackT) {
+  if (callbackT && !isKotarmadiStage) {
     let cbDateObj = new Date(callbackT.dueDate || callbackT.createdAt);
     let cbTimeFmt = callbackT.dueTime;
     if (!cbTimeFmt || cbTimeFmt === 'null') {

@@ -561,8 +561,8 @@ async function fixStuckUnreadCounts() {
     const prisma = require('./config/database');
     console.log('[Unread Sync] Fixing stuck unread counts...');
 
-    // Reset all unread counts for messages sent before July 30, 2026 16:00 Tashkent time (one-time history reset)
-    const thresholdDate = new Date('2026-07-30T11:00:00Z');
+    // Reset unread counts for messages sent before last 24h or inactive
+    const thresholdDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     // 1. Reset counts for clients whose last Instagram message was outgoing (meaning we replied), before threshold, or have no messages or no Instagram ID
     const igUnreadClients = await prisma.client.findMany({
@@ -667,40 +667,21 @@ async function cleanExistingLeadNotes() {
 async function consolidateDriverExpenses() {
   try {
     const prisma = require('./config/database');
-    const driverExpenses = await prisma.expense.findMany({
-      where: {
-        OR: [
-          { description: { contains: 'Shofyor' } },
-          { description: { contains: 'Shopir' } },
-          { description: { contains: 'yo\'l kirdi' } }
-        ]
-      }
+    const existingTransport = await prisma.expense.findFirst({
+      where: { category: 'transport' }
     });
 
-    if (driverExpenses.length > 0) {
-      console.log(`[Expense Sync] Cleaning ${driverExpenses.length} auto driver expenses...`);
-      await prisma.expense.deleteMany({
-        where: {
-          id: { in: driverExpenses.map(e => e.id) }
-        }
-      });
-    }
-
-    const existingConsolidated = await prisma.expense.findFirst({
-      where: { description: '1 kundan boshlab shopir pullar' }
-    });
-
-    if (!existingConsolidated) {
-      console.log('[Expense Sync] Creating consolidated driver expense record...');
+    if (!existingTransport) {
+      console.log('[Expense Sync] Creating default transport expense record...');
       await prisma.expense.create({
         data: {
-          description: '1 kundan boshlab shopir pullar',
-          amount: 3610000,
+          description: 'Viloyatlararo transport va shopir yetkazib berish to\'lovlari',
+          amount: 10000000,
           category: 'transport',
           date: new Date('2026-08-01T00:00:00.000Z')
         }
       });
-      console.log('[Expense Sync] Consolidated expense created successfully!');
+      console.log('[Expense Sync] Default transport expense created successfully!');
     }
   } catch (err) {
     console.error('[Expense Sync] Error:', err);
