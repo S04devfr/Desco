@@ -226,8 +226,11 @@ async function requireAuth(req, res, next) {
     };
     next();
   } catch (err) {
-    console.error('[requireAuth Error]', err);
-    next(err);
+    console.warn('[requireAuth DB Connection Warning]', err.message);
+    if (req.session && req.session.user) {
+      return next();
+    }
+    return res.redirect('/login');
   }
 }
 
@@ -280,30 +283,33 @@ app.get('/settings', requireAuth, requireRole('admin', 'manager'), async (req, r
   }
 });
 
-app.get('/login',    (req, res) => { if (req.session.userId) return res.redirect('/'); res.render('auth/login'); });
+app.get('/login',    (req, res) => { if (req.session && req.session.userId) return res.redirect('/'); res.render('auth/login'); });
 app.get('/register', (req, res) => { res.redirect('/login?msg=' + encodeURIComponent("Kirish faqat administrator tomonidan beriladi")); });
 
 // ── ERROR HANDLING ──
-app.use((req, res) => res.status(404).json({ message: 'Route not found', path: req.originalUrl }));
+app.use((req, res) => {
+  if (req.accepts('html') && !req.xhr && !req.path.startsWith('/api/')) {
+    return res.redirect('/');
+  }
+  res.status(404).json({ message: 'Route not found', path: req.originalUrl });
+});
 
-// ── SECURITY: Error handler — production'da hech qachon stack trace bermaydi ──
+// ── Error handler — production'da xavfsiz va to'g'ri yo'naltiruvchi ──
 app.use((err, req, res, next) => {
   const statusCode = err.status || 500;
-  
-  if (process.env.NODE_ENV === 'production') {
-    console.error(`[ERROR] [Req: ${req.id?.slice(0, 8) || 'N/A'}] ${req.method} ${req.path}:`, err.message);
-    res.status(statusCode).json({
-      message: statusCode >= 500 ? 'Ichki server xatosi' : err.message,
-      requestId: req.id
-    });
-  } else {
-    console.error('[ERROR]', err);
-    res.status(statusCode).json({
-      message: err.message || 'Internal Server Error',
-      stack: err.stack,
-      requestId: req.id
-    });
+  console.error(`[ERROR] [Req: ${req.id?.slice(0, 8) || 'N/A'}] ${req.method} ${req.path}:`, err.message);
+
+  if (req.accepts('html') && !req.xhr && !req.path.startsWith('/api/')) {
+    if (statusCode === 401 || statusCode === 403 || err.message?.includes('auth') || err.message?.includes('session')) {
+      return res.redirect('/login');
+    }
+    return res.redirect('/login');
   }
+
+  res.status(statusCode).json({
+    message: statusCode >= 500 ? 'Ichki server xatosi' : err.message,
+    requestId: req.id
+  });
 });
 
 const PORT = process.env.PORT || 3000;
