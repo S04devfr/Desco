@@ -2984,17 +2984,8 @@ function dcardHtml(d) {
   const tomorrowStart = todayStart + (24 * 60 * 60 * 1000);
   const pad = n => String(n).padStart(2, '0');
 
-  if (isKotarmadiStage) {
+  if (isKotarmadiStage || pendingTasks.length === 0) {
     taskHtml = '';
-  } else if (pendingTasks.length === 0) {
-    if (d.status === 'won') {
-      taskHtml = `<div style="display:inline-flex; align-items:center; gap:4px; font-size:10px; color:#10b981; font-weight:700; background:rgba(16,185,129,0.1); padding:2px 6px; border-radius:4px;"><i class="fas fa-check-circle"></i> Yutilgan</div>`;
-    } else if (d.status === 'lost') {
-      taskHtml = `<div style="display:inline-flex; align-items:center; gap:4px; font-size:10px; color:#64748b; font-weight:700; background:rgba(100,116,139,0.1); padding:2px 6px; border-radius:4px;"><i class="fas fa-times-circle"></i> Yo'qotilgan</div>`;
-    } else {
-      // AmoCRM Active deal with NO TASK -> prominent red warning badge
-      taskHtml = `<div onclick="event.stopPropagation(); openQuickTaskModal(${d.id});" style="display:inline-flex; align-items:center; gap:4px; font-size:10.5px; color:#ef4444; font-weight:700; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.28); padding:2px 8px; border-radius:6px; cursor:pointer;" title="Ushbu sdelkada rejalashtirilgan vazifa yo'q! Vazifa qo'yish uchun bosing"><i class="fas fa-exclamation-circle" style="color:#ef4444;"></i> Vazifasiz +</div>`;
-    }
   } else {
     pendingTasks.sort((a, b) => new Date(a.dueDate || a.createdAt) - new Date(b.dueDate || b.createdAt));
     const nextTask = pendingTasks[0];
