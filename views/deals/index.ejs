@@ -4475,9 +4475,39 @@ function renderTimelineAndTasks(deal) {
   }
 
   // ── 2. IZOHLAR DAFTARI (Unified Word-style Continuous Document Notepad) ──
-  let docContent = deal.notes || '';
+  function filterLeadFormBoilerplate(rawText) {
+    if (!rawText) return '';
+    const lines = rawText.split('\n');
+    const filtered = lines.filter(line => {
+      const trimmed = line.trim();
+      if (!trimmed) return false;
+      const lower = trimmed.toLowerCase();
+      // Remove repetitive customer demographics already shown on the left panel
+      if (lower.startsWith('ismi:') || 
+          lower.startsWith('mahsulot:') || 
+          lower.startsWith('mahsulot nomi:') || 
+          lower.startsWith('telefon') || 
+          lower.startsWith('1-chi raqam') || 
+          lower.startsWith('2-chi raqam') || 
+          lower.startsWith('qayerga') || 
+          lower.startsWith('manzil') || 
+          lower.startsWith('shahri') || 
+          lower.startsWith('qaysi reklama') || 
+          lower.startsWith('kim uchun') || 
+          lower.startsWith('[tizim]')) {
+        return false;
+      }
+      return true;
+    });
+    return filtered.join('\n').trim();
+  }
+
+  let docContent = filterLeadFormBoilerplate(deal.notes || '');
   if (!docContent && comments.length > 0) {
-    docContent = comments.map(c => `[${c.date.toLocaleString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} • ${c.author}]:\n${c.details}`).join('\n\n');
+    const realComments = comments.filter(c => !c.details.includes('[Tizim]') && !c.details.startsWith('Ismi:'));
+    if (realComments.length > 0) {
+      docContent = realComments.map(c => c.details.trim()).filter(Boolean).join('\n\n');
+    }
   }
 
   html += `
