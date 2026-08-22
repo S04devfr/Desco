@@ -1,3 +1,4 @@
+require('dotenv').config();
 const prisma = require('../src/config/database');
 
 async function applyPresentationData() {
@@ -140,6 +141,7 @@ async function applyPresentationData() {
 
   let totalCreatedDeals = 0;
   let totalCreatedSum = 0;
+  const allDeals = [];
 
   for (const plan of stagePlans) {
     if (!plan.stageId) continue;
@@ -158,33 +160,33 @@ async function applyPresentationData() {
       const min = (i * 7) % 60;
       const dealDate = new Date(2026, 7, day, hour, min, 0);
 
-      const deal = await prisma.deal.create({
-        data: {
-          productName: prod,
-          title: `${prod} - ${client ? client.name : 'Mijoz'}`,
-          amount: amt,
-          paidAmount: amt,
-          costPrice: 0,
-          currency: 'UZS',
-          status: plan.status,
-          notes: `${plan.prefix} orqali buyurtma rasmiylashtirildi`,
-          createdAt: dealDate,
-          updatedAt: dealDate,
-          clientId: client ? client.id : null,
-          managerId: mgr ? mgr.id : adminUser.id,
-          ownerId: mgr ? mgr.id : adminUser.id,
-          stageId: plan.stageId,
-          pipelineId: pipeline.id,
-          warehouse: 'Asosiy Ombor',
-          source: (i % 3 === 0) ? 'target' : (i % 3 === 1) ? 'instagram' : 'phone',
-          tags: '#sotuv,#rasmiy'
-        }
+      allDeals.push({
+        productName: prod,
+        title: `${prod} - ${client ? client.name : 'Mijoz'}`,
+        amount: amt,
+        paidAmount: amt,
+        costPrice: 0,
+        currency: 'UZS',
+        status: plan.status,
+        notes: `${plan.prefix} orqali buyurtma rasmiylashtirildi`,
+        createdAt: dealDate,
+        updatedAt: dealDate,
+        clientId: client ? client.id : null,
+        managerId: mgr ? mgr.id : adminUser.id,
+        ownerId: mgr ? mgr.id : adminUser.id,
+        stageId: plan.stageId,
+        pipelineId: pipeline.id,
+        warehouse: 'Asosiy Ombor',
+        source: (i % 3 === 0) ? 'target' : (i % 3 === 1) ? 'instagram' : 'phone',
+        tags: '#sotuv,#rasmiy'
       });
 
       totalCreatedDeals++;
       totalCreatedSum += amt;
     }
   }
+
+  await prisma.deal.createMany({ data: allDeals });
 
   console.log(`✅ 68 ta zakaz yaratildi:`);
   console.log(`   Soni: ${totalCreatedDeals} ta zakaz`);
