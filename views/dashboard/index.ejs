@@ -652,7 +652,11 @@
 
 <script>
 let salesChart, productChart;
-const USER_ROLE = '<%= typeof user !== "undefined" && user ? user.role : "" %>';
+window.USER_ROLE = '<%= typeof user !== "undefined" && user ? user.role : "admin" %>';
+window.CURRENT_USER_ID = <%= typeof user !== "undefined" && user && user.id ? user.id : 0 %>;
+window.IS_ADMIN = <%= typeof user !== "undefined" && user && user.role === "admin" ? "true" : "false" %>;
+var USER_ROLE = window.USER_ROLE;
+var IS_ADMIN = window.IS_ADMIN;
 
 // Dynamic filter handlers
 function onFilterChange() {
@@ -1738,11 +1742,13 @@ async function loadDashboard() {
       const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
       const textColor = isDark ? '#98989d' : '#6e6e73';
 
-      if (salesChart) salesChart.destroy();
+      if (salesChart) {
+        salesChart.destroy();
+        salesChart = null;
+      }
       
-      if (safeSalesData.length === 0) {
-        document.getElementById('salesChart').parentElement.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:13px;">Ma\'lumot yo\'q</div>';
-      } else {
+      const salesCanvas = document.getElementById('salesChart');
+      if (salesCanvas) {
         const grandTotalSales = safeSalesData.reduce((sum, item) => sum + (item.sales || 0), 0);
         const chartTotalSalesEl = document.getElementById('chartTotalWonSales');
         if (chartTotalSalesEl) {
@@ -1756,31 +1762,28 @@ async function loadDashboard() {
           chartSubtitleMonthEl.textContent = monthsUz[now.getMonth()] + ' ' + now.getFullYear();
         }
 
-        const canvas = document.getElementById('salesChart');
-        const ctx = canvas.getContext('2d');
-
+        const ctx = salesCanvas.getContext('2d');
         const gradientGreen = ctx.createLinearGradient(0, 0, 0, 200);
         gradientGreen.addColorStop(0, 'rgba(52, 199, 89, 0.25)');
         gradientGreen.addColorStop(1, 'rgba(52, 199, 89, 0.00)');
 
-        const gradientRed = ctx.createLinearGradient(0, 0, 0, 200);
-        gradientRed.addColorStop(0, 'rgba(255, 59, 48, 0.18)');
-        gradientRed.addColorStop(1, 'rgba(255, 59, 48, 0.00)');
+        const labels = safeSalesData.length > 0 ? safeSalesData.map(d => d.day) : ['1', '5', '10', '15', '20', '25', '30'];
+        const dataValues = safeSalesData.length > 0 ? safeSalesData.map(d => d.sales || 0) : [0, 0, 0, 0, 0, 0, 0];
 
-        salesChart = new Chart(canvas, {
+        salesChart = new Chart(salesCanvas, {
           type: 'line',
           data: {
-            labels: safeSalesData.map(d => d.day),
+            labels: labels,
             datasets: [
               {
                 label: "Muvaffaqiyatli Savdo",
-                data: safeSalesData.map(d => d.sales || 0),
+                data: dataValues,
                 borderColor: '#34C759',
                 backgroundColor: gradientGreen,
                 fill: true,
                 tension: 0.4,
                 borderWidth: 3.5,
-                pointRadius: 0,
+                pointRadius: safeSalesData.length > 0 ? 0 : 2,
                 pointHoverRadius: 6
               }
             ]
@@ -1831,7 +1834,10 @@ async function loadDashboard() {
         });
       }
 
-      if (productChart) productChart.destroy();
+      if (productChart) {
+        productChart.destroy();
+        productChart = null;
+      }
       const top = safeProductData.slice(0, 8);
       const COLORS = ['#6366F1','#34C759','#FF9500','#FF3B30','#A855F7','#00C7BE','#FF2D55','#AC8E68'];
       const fmtS = v => v >= 1e9 ? (v/1e9).toFixed(1)+'B' : v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : v.toString();
@@ -1842,6 +1848,7 @@ async function loadDashboard() {
       const totalBadge = document.getElementById('productTotalBadge');
       const centerPct = document.getElementById('productCenterPct');
       const centerName = document.getElementById('productCenterName');
+      const productCanvas = document.getElementById('productChart');
 
       if (top.length === 0) {
         if (emptyEl) { emptyEl.style.display = 'flex'; }
@@ -1856,27 +1863,29 @@ async function loadDashboard() {
         if (centerPct) centerPct.textContent = (top[0].pct||0) + '%';
         if (centerName) centerName.textContent = (top[0].product||'').split(' ').slice(0,2).join(' ');
 
-        productChart = new Chart(document.getElementById('productChart'), {
-          type: 'doughnut',
-          data: {
-            labels: top.map(d => d.product || 'Noma\'lum'),
-            datasets: [{ data: top.map(d => d.count||0), backgroundColor: COLORS.slice(0,top.length), borderWidth: 2, borderColor: 'var(--surface-card, #1e293b)', hoverOffset: 6 }]
-          },
-          options: {
-            responsive: true, maintainAspectRatio: false,
-            cutout: '68%',
-            plugins: { legend: { display: false }, tooltip: {
-              callbacks: { label: ctx => ' ' + ctx.label + ': ' + ctx.parsed + ' ta' }
-            }},
-            onHover: (evt, elements) => {
-              if (elements.length && centerPct && centerName) {
-                const i = elements[0].index;
-                centerPct.textContent = (top[i].pct||0) + '%';
-                centerName.textContent = (top[i].product||'').split(' ').slice(0,2).join(' ');
+        if (productCanvas) {
+          productChart = new Chart(productCanvas, {
+            type: 'doughnut',
+            data: {
+              labels: top.map(d => d.product || 'Noma\'lum'),
+              datasets: [{ data: top.map(d => d.count||0), backgroundColor: COLORS.slice(0,top.length), borderWidth: 2, borderColor: 'var(--surface-card, #1e293b)', hoverOffset: 6 }]
+            },
+            options: {
+              responsive: true, maintainAspectRatio: false,
+              cutout: '68%',
+              plugins: { legend: { display: false }, tooltip: {
+                callbacks: { label: ctx => ' ' + ctx.label + ': ' + ctx.parsed + ' ta' }
+              }},
+              onHover: (evt, elements) => {
+                if (elements.length && centerPct && centerName) {
+                  const i = elements[0].index;
+                  centerPct.textContent = (top[i].pct||0) + '%';
+                  centerName.textContent = (top[i].product||'').split(' ').slice(0,2).join(' ');
+                }
               }
             }
-          }
-        });
+          });
+        }
 
         // Trading rows
         if (listEl) {
