@@ -1502,11 +1502,7 @@
           </div>
         </div>
 
-        <!-- Tags Area -->
-        <div style="margin-bottom:12px; padding-left:22px;" id="drawerTagsContainer"></div>
-
-        <!-- Progress/Stages indicator -->
-        <div class="drawer-progress-bar" id="drawerProgressBar" style="margin-left: 22px;"></div>
+        <!-- Top clean transition directly to tabs -->
 
         <!-- Tabs -->
         <div class="drawer-tabs" style="margin-left: 22px;">
@@ -1525,11 +1521,11 @@
               </select>
             </div>
           </div>
-          <div class="drawer-inline-row">
-            <span class="drawer-inline-label">Narxi</span>
-            <div class="drawer-inline-value" style="display:flex; align-items:center; gap:4px; justify-content:flex-end;">
-              <input type="number" id="dw-amount" class="drawer-inline-input">
-              <span style="font-size:12px; color:var(--text-tertiary); font-weight:600;">so'm</span>
+          <div class="drawer-inline-row" style="padding: 10px 4px;">
+            <span class="drawer-inline-label" style="font-weight:700; color:var(--text-primary);">Summa / Narxi</span>
+            <div class="drawer-inline-value" style="display:flex; align-items:center; gap:8px;">
+              <input type="number" id="dw-amount" class="form-control" style="height:36px; font-size:13.5px; font-weight:800; width:100%; max-width:200px; padding:6px 12px; border-radius:8px; border:1.5px solid var(--border); background:var(--bg-primary); color:var(--text-primary); box-shadow:0 1px 2px rgba(0,0,0,0.05);" placeholder="0" min="0" step="1000">
+              <span style="font-size:12.5px; color:var(--text-secondary); font-weight:700;">so'm</span>
             </div>
           </div>
 
@@ -3819,28 +3815,11 @@ async function openDetail(id) {
     }
 
     // Populate tags
+    // Safe tags handling
     const tagsContainer = document.getElementById('drawerTagsContainer');
-    tagsContainer.innerHTML = '';
-    const tags = (deal.tags || '').split(/[,\s]+/).filter(t => t.trim() !== '');
-    if (tags.length === 0) {
-      tagsContainer.innerHTML = '<span style="font-size:11px; color:var(--text-tertiary)">Teglar yo\'q. Qo\'shish uchun bosing</span>';
-    } else {
-      tags.forEach(t => {
-        tagsContainer.innerHTML += `
-          <span class="badge" style="font-size:11px; padding:3px 8px; border-radius:6px; background:rgba(0,122,255,0.1); color:var(--accent); font-weight:600; margin-right:6px; margin-bottom:4px; display:inline-flex; align-items:center; gap:4px;">
-            #${_esc(t)}
-            <i class="fas fa-times" style="font-size:9px; cursor:pointer;" onclick="removeDrawerTag('${_esc(t)}')"></i>
-          </span>
-        `;
-      });
-    }
-    tagsContainer.innerHTML += `
-      <button class="btn btn-secondary btn-xs" onclick="addDrawerTagPrompt()" style="padding:2px 6px; font-size:10px; border-radius:4px; margin-top:2px;">+ Teg qo'shish</button>
-    `;
-
-    // Progress Bar & Stage Select Dropdown
+    if (tagsContainer) tagsContainer.innerHTML = '';
     const progressBar = document.getElementById('drawerProgressBar');
-    progressBar.innerHTML = '';
+    if (progressBar) progressBar.innerHTML = '';
     const stageSelect = document.getElementById('drawerStageSelect');
     if (stageSelect) stageSelect.innerHTML = '';
     
@@ -4239,9 +4218,17 @@ function renderTimelineAndTasks(deal) {
 
   if (deal.tasks) {
     deal.tasks.forEach(t => {
+      let taskDate = new Date(t.dueDate || t.createdAt);
+      if (t.dueDate) {
+        const dStr = typeof t.dueDate === 'string' ? t.dueDate.split('T')[0] : new Date(t.dueDate).toISOString().split('T')[0];
+        const timePart = (t.dueTime && t.dueTime.trim()) ? t.dueTime.trim() : (typeof t.dueDate === 'string' && t.dueDate.includes('T') ? t.dueDate.split('T')[1].slice(0, 5) : '18:00');
+        taskDate = new Date(dStr + 'T' + timePart + ':00');
+        if (isNaN(taskDate.getTime())) taskDate = new Date(t.dueDate);
+      }
       const item = {
         type: 'task',
-        date: new Date(t.dueDate || t.createdAt),
+        date: taskDate,
+        dueTime: t.dueTime || null,
         completed: t.completed,
         assignedTo: t.assignedTo ? (t.assignedTo.fullName || t.assignedTo.email) : 'Menejer',
         actionType: (t.actionType === 'Связаться' || !t.actionType) ? 'Aloqaga chiqish' : t.actionType,
@@ -4290,7 +4277,7 @@ function renderTimelineAndTasks(deal) {
     const isTomorrow = taskDayStart === tomorrowStart;
 
     const isoDate = mostUrgent.date.getFullYear() + '-' + String(mostUrgent.date.getMonth() + 1).padStart(2, '0') + '-' + String(mostUrgent.date.getDate()).padStart(2, '0');
-    const isoTime = String(mostUrgent.date.getHours()).padStart(2, '0') + ':' + String(mostUrgent.date.getMinutes()).padStart(2, '0');
+    const isoTime = mostUrgent.dueTime || (String(mostUrgent.date.getHours()).padStart(2, '0') + ':' + String(mostUrgent.date.getMinutes()).padStart(2, '0'));
 
     let bannerBg = 'rgba(99,102,241,0.06)';
     let bannerBorder = '1.5px solid #6366f1';

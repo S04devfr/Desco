@@ -146,8 +146,14 @@ router.post('/', async (req, res, next) => {
       data: {
         title,
         description: description || null,
-        dueDate: (dueDate && !isNaN(new Date(dueDate))) ? new Date(dueDate) : null,
-        dueTime: dueTime || null,
+        dueDate: (() => {
+          if (!dueDate) return null;
+          const timeStr = (dueTime && dueTime.trim()) ? dueTime.trim() : '18:00';
+          const rawDateStr = typeof dueDate === 'string' ? (dueDate.includes('T') ? dueDate.split('T')[0] : dueDate) : new Date(dueDate).toISOString().split('T')[0];
+          const parsed = new Date(rawDateStr + 'T' + timeStr + ':00+05:00');
+          return !isNaN(parsed.getTime()) ? parsed : new Date(dueDate);
+        })(),
+        dueTime: dueTime || '18:00',
         priority: priority || 'medium',
         actionType: actionType || 'Aloqaga chiqish',
         result: result || null,
@@ -272,8 +278,19 @@ router.patch('/:id', async (req, res, next) => {
     const data = {}
     if (title !== undefined) data.title = title
     if (description !== undefined) data.description = description
-    if (dueDate !== undefined) data.dueDate = (dueDate && !isNaN(new Date(dueDate))) ? new Date(dueDate) : null
-    if (dueTime !== undefined) data.dueTime = dueTime
+    if (dueDate !== undefined || dueTime !== undefined) {
+      const rawDate = dueDate !== undefined ? dueDate : null;
+      const rawTime = dueTime !== undefined ? dueTime : '18:00';
+      if (rawDate) {
+        const rawDateStr = typeof rawDate === 'string' ? (rawDate.includes('T') ? rawDate.split('T')[0] : rawDate) : new Date(rawDate).toISOString().split('T')[0];
+        const timeStr = (rawTime && rawTime.trim()) ? rawTime.trim() : '18:00';
+        const parsed = new Date(rawDateStr + 'T' + timeStr + ':00+05:00');
+        data.dueDate = !isNaN(parsed.getTime()) ? parsed : new Date(rawDate);
+        data.dueTime = timeStr;
+      } else if (dueTime !== undefined) {
+        data.dueTime = dueTime;
+      }
+    }
     if (priority !== undefined) data.priority = priority
     if (actionType !== undefined) data.actionType = actionType
     if (result !== undefined) data.result = result

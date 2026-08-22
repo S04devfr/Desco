@@ -1477,11 +1477,7 @@ router.post('/:id/activity', requireRole('admin', 'manager'), async (req, res, n
       include: { user: managerSelect }
     })
     
-    // Auto-complete active tasks for this deal when manager posts a comment/note
-    await prisma.task.updateMany({
-      where: { dealId: Number(req.params.id), completed: false },
-      data: { completed: true, status: 'completed', result: details }
-    });
+// Active tasks are preserved when posting a note/comment
     
     res.status(201).json(activity)
   } catch (error) { next(error) }
