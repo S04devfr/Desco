@@ -106,8 +106,9 @@ async function getTenantUsage(tenantId = 1) {
   const [dealCount, userCount, pipelineCount, tenant] = await Promise.all([
     prisma.deal.count().catch(() => 0),
     prisma.user.count({ where: { isActive: true } }).catch(() => 0),
-    prisma.pipeline.count().catch(() => 0),
-    prisma.tenant?.findFirst({ where: { id: tenantId } }).catch(() => null)
+    (prisma.tenant && typeof prisma.tenant.findFirst === 'function') 
+      ? prisma.tenant.findFirst({ where: { id: tenantId } }).catch(() => null)
+      : Promise.resolve(null)
   ]);
 
   const planId = tenant?.plan || 'pro';

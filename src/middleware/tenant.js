@@ -19,26 +19,41 @@ async function resolveTenant(req, res, next) {
       tenantIdentifier = { slug: req.headers['x-tenant-slug'].toString().toLowerCase().trim() };
     }
 
-    // 2. Check Subdomain (if on custom host)
+    // 2. Check Subdomain (if on custom host, ignoring railway/render/vercel/localhost/desco)
     if (!tenantIdentifier && req.hostname) {
-      const parts = req.hostname.split('.');
-      if (parts.length >= 3 && parts[0] !== 'www' && parts[0] !== 'api') {
-        tenantIdentifier = { slug: parts[0].toLowerCase() };
+      const host = req.hostname.toLowerCase();
+      const isPlatformHost = host.includes('railway.app') || 
+                             host.includes('render.com') || 
+                             host.includes('vercel.app') || 
+                             host.includes('localhost') || 
+                             host === 'desco.uz' || 
+                             host === 'www.desco.uz';
+
+      if (!isPlatformHost) {
+        const parts = host.split('.');
+        if (parts.length >= 3 && parts[0] !== 'www' && parts[0] !== 'api') {
+          tenantIdentifier = { slug: parts[0] };
+        }
       }
     }
 
     // 3. Check Session / User tenantId
-    if (!tenantIdentifier && req.user?.tenantId) {
+    if (!tenantIdentifier && req.user && req.user.tenantId) {
       tenantIdentifier = { id: req.user.tenantId };
-    } else if (!tenantIdentifier && req.session?.user?.tenantId) {
+    } else if (!tenantIdentifier && req.session && req.session.user && req.session.user.tenantId) {
       tenantIdentifier = { id: req.session.user.tenantId };
     }
 
     let tenant = null;
-    if (tenantIdentifier) {
-      tenant = await prisma.tenant?.findFirst({
-        where: tenantIdentifier
-      }).catch(() => null);
+    if (tenantIdentifier && prisma.tenant && typeof prisma.tenant.findFirst === 'function') {
+      try {
+        tenant = await prisma.tenant.findFirst({
+          where: tenantIdentifier
+        });
+      } catch (dbErr) {
+        // Fallback safely if table doesn't exist yet
+        tenant = null;
+      }
     }
 
     // 4. Default System Tenant Fallback (ensures backward compatibility)
@@ -58,9 +73,10 @@ async function resolveTenant(req, res, next) {
     res.locals.currentTenant = req.tenant;
     next();
   } catch (err) {
-    console.error('[Tenant Middleware Error]', err);
+    console.warn('[Tenant Middleware Warning]', err.message);
     // Continue with default fallback so app never crashes
-    req.tenant = { id: 1, slug: 'default', plan: 'enterprise', status: 'active' };
+    req.tenant = { id: 1, name: 'DESCO', slug: 'default', plan: 'enterprise', status: 'active', currency: 'UZS' };
+    res.locals.currentTenant = req.tenant;
     next();
   }
 }

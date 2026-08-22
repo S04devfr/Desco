@@ -39,41 +39,49 @@ async function recordHeartbeat({ userId, isIdle = false, action = null, ipAddres
   const OFFLINE_CUTOFF_MS = 3 * 60 * 1000; // 3 min threshold to detect offline/disconnected
 
   try {
-    let session = await prisma.userSessionLog?.findUnique({
-      where: { userId_date: { userId: Number(userId), date: today } }
-    }).catch(() => null);
+    let session = null;
+    if (prisma.userSessionLog && typeof prisma.userSessionLog.findUnique === 'function') {
+      session = await prisma.userSessionLog.findUnique({
+        where: { userId_date: { userId: Number(userId), date: today } }
+      }).catch(() => null);
+    }
 
     let previousStatus = session ? session.status : 'offline';
     let newStatus = isIdle ? 'idle' : 'active';
 
     if (!session) {
       // First login of the day
-      session = await prisma.userSessionLog?.create({
-        data: {
-          userId: Number(userId),
-          date: today,
-          firstLogin: now,
-          lastPing: now,
-          activeSeconds: isIdle ? 0 : 30,
-          idleSeconds: isIdle ? 30 : 0,
-          status: newStatus,
-          totalActions: action ? 1 : 0,
-          ipAddress: ipAddress || null,
-          device: device || null
-        }
-      }).catch(async () => {
-        // Fallback in case raw SQL is needed
-        try {
-          await prisma.$executeRaw`
-            INSERT INTO "user_session_logs" ("userId", "date", "firstLogin", "lastPing", "activeSeconds", "idleSeconds", "status", "totalActions", "ipAddress", "device", "createdAt", "updatedAt")
-            VALUES (${Number(userId)}, ${today}, ${now}, ${now}, ${isIdle ? 0 : 30}, ${isIdle ? 30 : 0}, ${newStatus}, ${action ? 1 : 0}, ${ipAddress}, ${device}, ${now}, ${now})
-            ON CONFLICT ("userId", "date") DO UPDATE SET "lastPing" = ${now}, "status" = ${newStatus}
-          `;
-          return prisma.userSessionLog?.findUnique({ where: { userId_date: { userId: Number(userId), date: today } } });
-        } catch (e) {
-          return null;
-        }
-      });
+      if (prisma.userSessionLog && typeof prisma.userSessionLog.create === 'function') {
+        session = await prisma.userSessionLog.create({
+          data: {
+            userId: Number(userId),
+            date: today,
+            firstLogin: now,
+            lastPing: now,
+            activeSeconds: isIdle ? 0 : 30,
+            idleSeconds: isIdle ? 30 : 0,
+            status: newStatus,
+            totalActions: action ? 1 : 0,
+            ipAddress: ipAddress || null,
+            device: device || null
+          }
+        }).catch(async () => {
+          // Fallback in case raw SQL is needed
+          try {
+            await prisma.$executeRaw`
+              INSERT INTO "user_session_logs" ("userId", "date", "firstLogin", "lastPing", "activeSeconds", "idleSeconds", "status", "totalActions", "ipAddress", "device", "createdAt", "updatedAt")
+              VALUES (${Number(userId)}, ${today}, ${now}, ${now}, ${isIdle ? 0 : 30}, ${isIdle ? 30 : 0}, ${newStatus}, ${action ? 1 : 0}, ${ipAddress}, ${device}, ${now}, ${now})
+              ON CONFLICT ("userId", "date") DO UPDATE SET "lastPing" = ${now}, "status" = ${newStatus}
+            `;
+            if (prisma.userSessionLog && typeof prisma.userSessionLog.findUnique === 'function') {
+              return prisma.userSessionLog.findUnique({ where: { userId_date: { userId: Number(userId), date: today } } }).catch(() => null);
+            }
+            return null;
+          } catch (e) {
+            return null;
+          }
+        });
+      }
     } else {
       // Calculate delta seconds since last ping (clamped between 1s and 120s to handle sleep/wake)
       const lastPingTime = new Date(session.lastPing).getTime();
@@ -89,31 +97,44 @@ async function recordHeartbeat({ userId, isIdle = false, action = null, ipAddres
       const idleIncrement = isIdle ? deltaSeconds : 0;
       const actionIncrement = action ? 1 : 0;
 
-      session = await prisma.userSessionLog?.update({
-        where: { id: session.id },
-        data: {
-          lastPing: now,
-          status: newStatus,
-          activeSeconds: { increment: activeIncrement },
-          idleSeconds: { increment: idleIncrement },
-          totalActions: { increment: actionIncrement },
-          ipAddress: ipAddress || session.ipAddress,
-          device: device || session.device
-        }
-      }).catch(async () => {
-        try {
-          await prisma.$executeRaw`
-            UPDATE "user_session_logs"
-            SET "lastPing" = ${now},
-                "status" = ${newStatus},
-                "activeSeconds" = "activeSeconds" + ${activeIncrement},
-                "idleSeconds" = "idleSeconds" + ${idleIncrement},
-                "totalActions" = "totalActions" + ${actionIncrement},
-                "updatedAt" = ${now}
-            WHERE "id" = ${session.id}
-          `;
-        } catch (e) {}
-      });
+      if (prisma.userSessionLog && typeof prisma.userSessionLog.update === 'function') {
+        session = await prisma.userSessionLog.update({
+          where: { id: session.id },
+          data: {
+            lastPing: now,
+            status: newStatus,
+            activeSeconds: { increment: activeIncrement },
+            idleSeconds: { increment: idleIncrement },
+            totalActions: { increment: actionIncrement },
+            ipAddress: ipAddress || session.ipAddress,
+            device: device || session.device
+          }
+        }).catch(async () => {
+          try {
+            await prisma.$executeRaw`
+              UPDATE "user_session_logs"
+              SET "lastPing" = ${now},
+                  "status" = ${newStatus},
+                  "activeSeconds" = "activeSeconds" + ${activeIncrement},
+                  "idleSeconds" = "idleSeconds" + ${idleIncrement},
+                  "totalActions" = "totalActions" + ${actionIncrement},
+                  "ipAddress" = COALESCE(${ipAddress}, "ipAddress"),
+                  "device" = COALESCE(${device}, "device"),
+                  "updatedAt" = ${now}
+              WHERE "id" = ${session.id}
+            `;
+            return {
+              ...session,
+              lastPing: now,
+              status: newStatus,
+              activeSeconds: session.activeSeconds + activeIncrement,
+              idleSeconds: session.idleSeconds + idleIncrement
+            };
+          } catch (e) {
+            return session;
+          }
+        });
+      }
     }
 
     // Broadcast if status transitioned (e.g. offline -> online, active -> idle)
