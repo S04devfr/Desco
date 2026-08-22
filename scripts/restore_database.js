@@ -59,16 +59,24 @@ async function runRestore(targetFile = null) {
     const items = data[t];
     if (items && Array.isArray(items) && items.length > 0 && prisma[t]) {
       try {
-        // Insert items one by one or createMany to preserve IDs
-        for (const item of items) {
-          // Format Date objects
-          const cleanItem = { ...item };
-          for (const key of Object.keys(cleanItem)) {
-            if (typeof cleanItem[key] === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(cleanItem[key])) {
-              cleanItem[key] = new Date(cleanItem[key]);
+        const batchSize = 500;
+        for (let i = 0; i < items.length; i += batchSize) {
+          const chunk = items.slice(i, i + batchSize).map(item => {
+            const cleanItem = { ...item };
+            for (const key of Object.keys(cleanItem)) {
+              if (typeof cleanItem[key] === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(cleanItem[key])) {
+                cleanItem[key] = new Date(cleanItem[key]);
+              }
+            }
+            return cleanItem;
+          });
+          if (typeof prisma[t].createMany === 'function') {
+            await prisma[t].createMany({ data: chunk, skipDuplicates: true });
+          } else {
+            for (const ci of chunk) {
+              await prisma[t].create({ data: ci }).catch(() => {});
             }
           }
-          await prisma[t].create({ data: cleanItem });
         }
         console.log(`  ✓ ${t}: ${items.length} ta yozuv tiklandi`);
       } catch (err) {

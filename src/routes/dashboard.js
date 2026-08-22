@@ -280,24 +280,42 @@ router.get('/kpis', async (req, res, next) => {
     };
 
     const calculatedRevenue = deals.reduce((sum, d) => sum + getEffectivePaid(d), 0);
-    const totalRevenue = 128400000;
+    const totalRevenue = calculatedRevenue;
     const totalDebt = deals.reduce((sum, d) => sum + Math.max((d.amount || 0) - (d.paidAmount || 0), 0), 0);
     
-    let totalExpenses = 4000000, totalCostPrice = 0, totalClientDebt = 12400000;
-    let netProfit = totalRevenue - totalClientDebt - totalExpenses; // 128,400,000 - 12,400,000 - 4,000,000 = 112,000,000 UZS
-    let manualDebt = 12400000, dealDebt = 12400000;
+    const wonDeals = deals.filter(isWonDeal);
+    const won = wonDeals.length;
+    const lost = deals.filter(isDealCanceled).length;
+
+    let totalExpenses = 0, totalCostPrice = 0, totalClientDebt = 0;
+    let manualDebt = 0, dealDebt = totalDebt;
     let totalMarketingExpenses = 0;
-    let expenseByCategory = { office: 240000, transport: 3760000 };
-    
+    let expenseByCategory = {};
+
     if (isAdmin) {
-      totalExpenses = 4000000;
-      totalCostPrice = 0;
-      totalClientDebt = 12400000;
-      netProfit = totalRevenue - totalClientDebt - totalExpenses; // 112,000,000 UZS
+      totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+      totalCostPrice = wonDeals.reduce((sum, d) => sum + (d.costPrice || 0), 0);
+      
+      for (const exp of expenses) {
+        const cat = exp.category || 'boshqa';
+        expenseByCategory[cat] = (expenseByCategory[cat] || 0) + (exp.amount || 0);
+        if (cat === 'marketing' || cat === 'reklama') {
+          totalMarketingExpenses += (exp.amount || 0);
+        }
+      }
+
+      try {
+        const clientDebtAgg = await prisma.client.aggregate({
+          _sum: { debt: true },
+          where: { debt: { gt: 0 } }
+        });
+        manualDebt = clientDebtAgg._sum.debt || 0;
+      } catch(e) {}
+
+      totalClientDebt = manualDebt > 0 ? manualDebt : dealDebt;
     }
 
-    const won = 68;
-    const lost = deals.filter(isDealCanceled).length;
+    const netProfit = totalRevenue - totalCostPrice - totalExpenses;
 
     // ── 1. Marketing Ads Spent, CPL, ROI ──
     // CPL uchun to'g'ri denominator: marketing log'laridan leads summasi
@@ -324,21 +342,21 @@ router.get('/kpis', async (req, res, next) => {
     // ── 3. Nasiya Tariffs Breakdown ──
     const getDebtBalance = (d) => Math.max(0, (d.amount || 0) - (d.paidAmount || 0));
 
-    const countNasiyaDesco = 18;
-    const amountNasiyaDesco = 7500000;
+    const countNasiyaDesco = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('desco')).length;
+    const amountNasiyaDesco = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('desco')).reduce((sum, d) => sum + (d.amount || 0), 0);
     
-    const countNasiyaIshonch = 12;
-    const amountNasiyaIshonch = 4500000;
+    const countNasiyaIshonch = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('ishonch')).length;
+    const amountNasiyaIshonch = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('ishonch')).reduce((sum, d) => sum + (d.amount || 0), 0);
 
-    const countNasiyaBaraka = 0;
-    const amountNasiyaBaraka = 0;
+    const countNasiyaBaraka = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('baraka')).length;
+    const amountNasiyaBaraka = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('baraka')).reduce((sum, d) => sum + (d.amount || 0), 0);
 
-    const countShopir = deals.filter(d => d.stage?.name.toLowerCase().includes('shopir')).length;
-    const amountShopir = deals.filter(d => d.stage?.name.toLowerCase().includes('shopir')).reduce((sum, d) => sum + (d.amount || 0), 0);
+    const countShopir = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('shopir')).length;
+    const amountShopir = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('shopir')).reduce((sum, d) => sum + (d.amount || 0), 0);
 
-    const count100Zakaz = 38;
-    const amount100Zakaz = 62000000;
-    const shopirDeals = deals.filter(d => d.stage?.name.toLowerCase().includes('shopir')).map(d => ({
+    const count100Zakaz = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('100%')).length;
+    const amount100Zakaz = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('100%')).reduce((sum, d) => sum + (d.amount || 0), 0);
+    const shopirDeals = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('shopir')).map(d => ({
       id: d.id,
       productName: d.productName || 'Noma\'lum',
       amount: d.amount || 0,
@@ -599,10 +617,6 @@ router.get('/sales-by-manager', async (req, res, next) => {
       endDate = new Date(req.query.endDate);
     } else if (req.query.filter === 'week') {
       startDate = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000);
-      endDate = new Date();
-    } else if (req.query.filter === 'yesterday') {
-      startDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      endDate = new Date();
     } else if (req.query.filter === 'today') {
       startDate = new Date();
       endDate = new Date();
@@ -621,18 +635,16 @@ router.get('/sales-by-manager', async (req, res, next) => {
       temp.setDate(temp.getDate() + 1);
     }
 
-    // Realistic monthly distribution matching 128,400,000 UZS total sales
-    const sampleDailyPattern = {
-      1: 0, 2: 0, 3: 0, 4: 8000000, 5: 3000000, 6: 13600000, 7: 0,
-      8: 3000000, 9: 6000000, 10: 11200000, 11: 3000000, 12: 6000000, 13: 1800000,
-      14: 6000000, 15: 16800000, 16: 3000000, 17: 0, 18: 3000000, 19: 8000000,
-      20: 0, 21: 33000000
-    };
-
-    for (const key of Object.keys(dailyData)) {
-      const dNum = dailyData[key].day;
-      if (sampleDailyPattern[dNum] !== undefined) {
-        dailyData[key].sales = sampleDailyPattern[dNum];
+    for (const d of deals) {
+      if (!d.createdAt) continue;
+      const dateStr = new Date(d.createdAt).toISOString().slice(0, 10);
+      if (dailyData[dateStr]) {
+        const stageName = (d.stage?.name || '').toLowerCase();
+        const isWon = d.status === 'won' || stageName.includes('100%') || stageName.includes('yutil') || stageName.includes('won') || stageName.includes('desco') || stageName.includes('ishonch') || stageName.includes('baraka') || stageName.includes('shopir');
+        if (isWon) {
+          dailyData[dateStr].sales += (d.amount || 0);
+          dailyData[dateStr].debt += Math.max(0, (d.amount || 0) - (d.paidAmount || 0));
+        }
       }
     }
 
@@ -661,13 +673,15 @@ function parseProduct(productName) {
   const lower = baseName.toLowerCase();
   
   if (/6-funksiyalik|6-funksiya|6 talik|6-talik|6 lik|6lik|6 ta|olti talik|6-ta|massajor 6|е6/i.test(lower)) {
-    normalized = '6-funksiyalik';
+    normalized = '6-funksiyalik massajor';
   } else if (/3-funksiyalik|3-funkiyalik|3-funksiya|3 talik|3-talik|3 lik|3lik|3 ta|uch talik|3-ta/i.test(lower)) {
-    normalized = '3-funksiyalik';
+    normalized = '3-funksiyalik massajor';
   } else if (/oyoq|nog|stup|tavon/i.test(lower)) {
     normalized = 'Oyoq massajor';
-  } else if (/hadiya|hadya|sovg'a|sovga|toplam|to'plam|хадия|хадя|совға|совга/i.test(lower)) {
-    normalized = 'Хадия';
+  } else if (/hadiya|hadya|sovg'a|sovga|toplam|to'plam|хадия|хадя|совға|совga/i.test(lower)) {
+    normalized = 'hadiya';
+  } else if (/boyin|bo'yin|bo`yin/i.test(lower)) {
+    normalized = "bo'yin massajor";
   } else {
     // Default fallback to trimmed version of the base name
     normalized = baseName.trim();
@@ -679,32 +693,46 @@ function parseProduct(productName) {
 // Product popularity
 router.get('/product-popularity', async (req, res, next) => {
   try {
-    const result = [
-      {
-        product: '6-funksiyalik massajor',
-        count: 38,
-        totalAmount: 72000000,
-        pct: 56
+    const isAdmin = req.user && req.user.role === 'admin';
+    const where = buildWhere(req.query.filter, req);
+    if (!isAdmin) where.managerId = req.userId;
+    const deals = await prisma.deal.findMany({
+      where: {
+        ...where,
+        stage: {
+          name: {
+            in: [
+              'Nasiya Desco',
+              'Nasiya Ishonch',
+              'Nasiya Baraka',
+              'mahsulot shopirda',
+              '100% Zakaz'
+            ]
+          }
+        }
       },
-      {
-        product: 'hadiya',
-        count: 14,
-        totalAmount: 26400000,
-        pct: 21
-      },
-      {
-        product: '3-funksiyalik massajor',
-        count: 12,
-        totalAmount: 24000000,
-        pct: 18
-      },
-      {
-        product: "bo'yin massajor",
-        count: 4,
-        totalAmount: 6000000,
-        pct: 5
-      }
-    ];
+      select: { productName: true, amount: true }
+    });
+
+    const map = {};
+    for (const d of deals) {
+      const { name, qty } = parseProduct(d.productName);
+      if (!name) continue;
+
+      if (!map[name]) map[name] = { count: 0, totalAmount: 0 };
+      map[name].count += qty;
+      map[name].totalAmount += d.amount || 0;
+    }
+
+    const totalQty = Object.values(map).reduce((s, v) => s + v.count, 0);
+    const result = Object.entries(map)
+      .map(([product, v]) => ({
+        product,
+        count: v.count,
+        totalAmount: v.totalAmount,
+        pct: totalQty > 0 ? Math.round((v.count / totalQty) * 100) : 0
+      }))
+      .sort((a, b) => b.count - a.count);
 
     res.json(result);
   } catch (error) {
