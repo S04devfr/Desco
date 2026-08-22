@@ -6,7 +6,8 @@ const EXPECTED_MODELS = [
   'user', 'client', 'pipeline', 'pipelineStage', 'deal',
   'activityLog', 'expense', 'task', 'companySettings',
   'installment', 'shopir', 'ishonchFilial',
-  'company', 'contact', 'dealStageHistory', 'activity'
+  'company', 'contact', 'dealStageHistory', 'activity',
+  'tenant', 'subscription', 'invoice', 'userSessionLog'
 ];
 
 // Query methods we stub on a "broken" model delegate so any call site

@@ -136,67 +136,31 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '../views'));
 app.use(express.static(path.join(__dirname, '../public'), { maxAge: '1d', etag: true }));
 
+const requestIdMiddleware = require('./middleware/requestId');
+const healthRouter = require('./routes/health');
+const { initializeDatabase } = require('./startup/initDb');
+const { startBackgroundJobs, stopBackgroundJobs } = require('./startup/backgroundJobs');
+
+app.use(requestIdMiddleware);
+
+// ── HEALTH & READINESS PROBES (Cloud & Container Orchestration) ──
+app.use(healthRouter);
+
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  console.log(`[${new Date().toISOString()}] [Req: ${req.id?.slice(0, 8)}] ${req.method} ${req.path}`);
   next();
 });
 
 // ── SECURITY MIDDLEWARE ──
 const { rateLimiter } = require('./middleware/security');
 
-app.use('/api', rateLimiter(600, 60000));    // API uchun global rate limit: 600 req/min (bir nechta menejer bir IP dan ishlaganda qotmasligi uchun)
+app.use('/api', rateLimiter(600, 60000));    // API uchun global rate limit: 600 req/min
+
+const { resolveTenant } = require('./middleware/tenant');
+
+app.use(resolveTenant);
 
 // ── API ROUTES ──
-async function ensureDefaultSeed() {
-  const prisma = require('./config/database');
-
-  try {
-    // ⚡ ALWAYS CHECK IF RAILWAY DB IS EMPTY (0 DEALS)
-    const dealCount = await prisma.deal.count().catch(() => 0);
-    console.log(`[Database Audit] Current deal count: ${dealCount}`);
-    if (dealCount === 0) {
-      console.log('⚡ Railway Database has 0 deals. Executing instant bulk seed of 492 deals & 4,167 clients...');
-      const runFastSeed = require(path.join(__dirname, '../prisma/seed.js'));
-      if (typeof runFastSeed === 'function') {
-        await runFastSeed();
-      }
-    }
-
-    const existingAdmin = await prisma.user.findFirst({
-      where: { email: 'admin@desco.com' }
-    }).catch(() => null);
-
-    if (!existingAdmin) {
-      console.log('⚡ Seeding default admin & pipeline into database...');
-      const bcrypt = require('bcryptjs');
-      // SECURITY: Admin parollarni environment variable'dan olish
-      const adminPass = await bcrypt.hash(process.env.DEFAULT_ADMIN_PASSWORD || 'Admin@Desco2026!', 12);
-      const muhammadPass = await bcrypt.hash(process.env.DEFAULT_ADMIN2_PASSWORD || 'Muhammad@Desco2026!', 12);
-
-      await prisma.user.createMany({
-        data: [
-          { fullName: 'Administrator', email: 'admin@desco.com', password: adminPass, role: 'admin' },
-          { fullName: 'Muhammadyusuf', email: 'muhammad@desco.com', password: muhammadPass, role: 'admin' }
-        ],
-        skipDuplicates: true
-      }).catch(() => {});
-
-      let pipeline = await prisma.pipeline.findFirst({ where: { isDefault: true } });
-      if (!pipeline) {
-        pipeline = await prisma.pipeline.create({
-          data: { name: 'Asosiy voronka', isDefault: true, color: '#007AFF', order: 1 }
-        }).catch(() => null);
-      }
-      console.log('✅ Default admin & pipeline verified.');
-    }
-  } catch (err) {
-    console.warn('[Seed Check Notice]', err.message || err);
-  }
-}
-
-// autoMigrateAndSeedIfNeeded is executed asynchronously after server.listen(PORT)
-
-
 app.use('/api/auth',            require('./routes/auth'));
 app.use('/api/dashboard',       require('./routes/dashboard'));
 app.use('/api/deals',           require('./routes/deals'));
@@ -227,6 +191,7 @@ app.use('/api/telephony',       require('./routes/telephony'));
 app.use('/api/push',            require('./routes/push'));
 app.use('/api/settings/backups',require('./routes/backups'));
 app.use('/api/tools',           require('./routes/tools'));
+app.use('/api/billing',         require('./routes/billing'));
 
 // ── PUBLIC LEGAL PAGES (no auth required — Meta App Review uchun) ──
 app.use('/', require('./routes/legal'));
@@ -267,7 +232,6 @@ async function requireAuth(req, res, next) {
 }
 
 const { requireRole } = require('./middleware/auth');
-const { getStages } = require('./routes/pipeline');
 const { getCompanySettings } = require('./routes/settings');
 
 app.get('/', requireAuth, requireRole('admin', 'manager', 'operator'), (req, res) => res.render('dashboard/index', { user: req.session.user, activePage: 'dashboard' }));
@@ -295,7 +259,6 @@ app.get('/design-system', requireAuth, requireRole('admin', 'manager'), (req, re
 
 app.get('/settings', requireAuth, requireRole('admin', 'manager'), async (req, res) => {
   try {
-    const prisma = require('./config/database');
     const [pipelines, company] = await Promise.all([
       prisma.pipeline.findMany({
         include: { stages: { orderBy: [{ order: 'asc' }, { id: 'asc' }] } },
@@ -321,36 +284,33 @@ app.get('/login',    (req, res) => { if (req.session.userId) return res.redirect
 app.get('/register', (req, res) => { res.redirect('/login?msg=' + encodeURIComponent("Kirish faqat administrator tomonidan beriladi")); });
 
 // ── ERROR HANDLING ──
-app.use((req, res) => res.status(404).json({ message: 'Route not found' }));
+app.use((req, res) => res.status(404).json({ message: 'Route not found', path: req.originalUrl }));
 
 // ── SECURITY: Error handler — production'da hech qachon stack trace bermaydi ──
 app.use((err, req, res, next) => {
   const statusCode = err.status || 500;
   
-  // SECURITY: Production'da faqat umumiy xabar, development'da to'liq xato
   if (process.env.NODE_ENV === 'production') {
-    console.error(`[ERROR] ${req.method} ${req.path}:`, err.message);
+    console.error(`[ERROR] [Req: ${req.id?.slice(0, 8) || 'N/A'}] ${req.method} ${req.path}:`, err.message);
     res.status(statusCode).json({
-      message: statusCode >= 500 ? 'Ichki server xatosi' : err.message
+      message: statusCode >= 500 ? 'Ichki server xatosi' : err.message,
+      requestId: req.id
     });
   } else {
     console.error('[ERROR]', err);
     res.status(statusCode).json({
       message: err.message || 'Internal Server Error',
-      stack: err.stack
+      stack: err.stack,
+      requestId: req.id
     });
   }
 });
 
 const PORT = process.env.PORT || 3000;
-const runMigrations = require('./db-migrate');
-const prisma = require('./config/database');
-
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 wss.on('connection', (ws, req) => {
-  // Session cookie'dan userId ni tekshirish
   const cookieHeader = req.headers.cookie || '';
   const sessionIdMatch = cookieHeader.match(/connect\.sid=([^;]+)/);
   if (!sessionIdMatch) {
@@ -370,410 +330,55 @@ app.set('broadcast', (data) => {
   });
 });
 
-// Audit log jadvalini yaratish
-const { ensureAuditTable } = require('./middleware/auditLog');
-
-// Haqiqiy dublikatlarni tozalash: bir xil title va dealId bo'lgan faqat takroriy vazifalarni o'chirish
-// (Har restartda BARCHA vazifalarni o'chirish o'rniga faqat nomi va deali bir xil bo'lgan takroriylarni o'chiradi)
-async function cleanupDuplicateTasks() {
-  try {
-    console.log('[Cleanup] Dublikat vazifalarni tekshirish...');
-
-    const activeTasks = await prisma.task.findMany({
-      where: { completed: false, NOT: { dealId: null } },
-      orderBy: { id: 'desc' },
-      select: { id: true, dealId: true, title: true }
-    });
-
-    // Bir xil dealId + title kombinatsiyasi uchun dublikatlarni topish
-    const seen = new Set();
-    const toDeleteIds = [];
-
-    for (const task of activeTasks) {
-      const key = `${task.dealId}:${task.title}`;
-      if (seen.has(key)) {
-        toDeleteIds.push(task.id);
-      } else {
-        seen.add(key);
-      }
-    }
-
-    if (toDeleteIds.length > 0) {
-      const result = await prisma.task.deleteMany({
-        where: { id: { in: toDeleteIds } }
-      });
-      console.log(`[Cleanup] ${result.count} ta haqiqiy dublikat vazifa o'chirildi.`);
-    } else {
-      console.log('[Cleanup] Dublikat vazifalar topilmadi.');
-    }
-  } catch (e) {
-    console.error('[Cleanup] Dublikatlarni tozalashda xato:', e);
-  }
-}
-
-// Start HTTP server INSTANTLY so Railway/DigitalOcean health check succeeds in < 1 second!
+// Start HTTP server INSTANTLY
 server.listen(PORT, () => {
   console.log(`
    ╔══════════════════════════════════════╗
    ║   DESCO CRM — Running on :${PORT}     ║
    ╚══════════════════════════════════════╝`);
 
-  // Run background initialization asynchronously
+  // Run background bootstrap asynchronously
   (async () => {
     try {
-      await runMigrations(prisma);
-      await ensureAuditTable();
-      await cleanupDuplicateTasks();
-      await ensureDefaultSeed();
+      await initializeDatabase();
+      startBackgroundJobs();
     } catch (err) {
-      console.error('[Background Init Warning]', err);
+      console.error('[Background Bootstrap Warning]', err);
     }
   })();
 });
 
-// Global xatoliklarni ushlab qolish (Crash larning oldini olish)
+// Global rejection & exception handlers
 process.on('unhandledRejection', (reason, promise) => {
   console.error('[Unhandled Rejection] at:', promise, 'reason:', reason);
-  // Dasturni to'xtatmaymiz (Railway'da 502 bo'lmasligi uchun)
 });
 
 process.on('uncaughtException', (error) => {
   console.error('[Uncaught Exception] Xatolik:', error);
-  // Tizim holatini tekshirib sekinlashtirish mumkin, lekin crash qildirmaymiz
 });
 
-// Automatic Static Uploads Storage Cleanup (Older than 15 days) to prevent server disk space leak
-function runUploadsCleanup() {
-  const uploadsDir = path.join(__dirname, '../public/uploads');
-  if (!fs.existsSync(uploadsDir)) return;
+// Graceful shutdown
+async function handleShutdown(signal) {
+  console.log(`\n[Shutdown] Received ${signal}. Starting graceful shutdown...`);
+  stopBackgroundJobs();
 
-  fs.readdir(uploadsDir, (err, files) => {
-    if (err) {
-      console.error('[Cleanup] Directory read error:', err);
-      return;
-    }
-
-    const now = Date.now();
-    const maxAge = 15 * 24 * 60 * 60 * 1000; // 15 days
-
-    files.forEach(file => {
-      if (file.startsWith('.')) return; // Skip dotfiles
-
-      const filePath = path.join(uploadsDir, file);
-      fs.stat(filePath, (err, stats) => {
-        if (err) return;
-
-        if (now - stats.mtimeMs > maxAge) {
-          fs.unlink(filePath, (err) => {
-            if (err) console.error(`[Cleanup] Failed to delete expired file ${file}:`, err);
-            else console.log(`[Cleanup] Deleted expired temporary file: ${file}`);
-          });
-        }
-      });
-    });
+  server.close(async () => {
+    console.log('[Shutdown] HTTP server closed.');
+    try {
+      await prisma.$disconnect();
+      console.log('[Shutdown] Database connection closed.');
+    } catch (e) {}
+    process.exit(0);
   });
+
+  // Force exit after 10s if hung
+  setTimeout(() => {
+    console.error('[Shutdown] Forced exit due to timeout.');
+    process.exit(1);
+  }, 10000);
 }
 
-// Automatic Wazzup CRM Webhook and Users Sync on Startup
-async function syncWazzupUsers() {
-  try {
-    const prisma = require('./config/database');
-    const DEFAULT_WAZZUP_KEY = process.env.WAZZUP_API_KEY || '5ac00cdba83342748b4396624d6c4a7e';
-    
-    // Auto-seed CompanySettings in DB with Wazzup API Key if missing or unconfigured
-    let settings = await prisma.companySettings.findFirst();
-    if (!settings) {
-      settings = await prisma.companySettings.create({
-        data: {
-          companyName: 'DESCO CRM',
-          wazzupApiKey: DEFAULT_WAZZUP_KEY,
-          instagramAccessToken: DEFAULT_WAZZUP_KEY,
-          instagramPageId: '17841472980151454'
-        }
-      }).catch(e => console.error('Error creating CompanySettings on startup:', e));
-    } else if (!settings.wazzupApiKey || settings.wazzupApiKey.length !== 32) {
-      settings = await prisma.companySettings.update({
-        where: { id: settings.id },
-        data: {
-          wazzupApiKey: DEFAULT_WAZZUP_KEY,
-          instagramAccessToken: DEFAULT_WAZZUP_KEY,
-          instagramPageId: '17841472980151454'
-        }
-      }).catch(e => console.error('Error updating CompanySettings on startup:', e));
-    }
-
-    const WAZZUP_API_KEY = process.env.WAZZUP_API_KEY || settings?.wazzupApiKey || DEFAULT_WAZZUP_KEY;
-
-    // 1. Sync Webhook URL
-    const domain = process.env.APP_URL || 'https://desco.up.railway.app';
-    const webhookUrl = `${domain}/api/instagram/webhook`;
-    const webhookRes = await fetch('https://api.wazzup24.com/v3/webhooks', {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${WAZZUP_API_KEY}`
-      },
-      body: JSON.stringify({
-        webhooksUri: webhookUrl,
-        subscriptions: {
-          messagesAndStatuses: true
-        }
-      })
-    });
-    if (webhookRes.ok) {
-      console.log('[Wazzup Auto-Sync] Webhook registered successfully:', webhookUrl);
-    } else {
-      console.error('[Wazzup Auto-Sync] Webhook registration failed:', webhookRes.status, await webhookRes.text());
-    }
-
-    // 2. Sync Users
-    const users = await prisma.user.findMany({ where: { isActive: true } });
-    if (!users.length) return;
-
-    const wazzupUsers = users.map(u => ({
-      id: u.id.toString(),
-      name: u.fullName || u.email,
-      phone: ''
-    }));
-
-    const res = await fetch('https://api.wazzup24.com/v3/users', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${WAZZUP_API_KEY}`
-      },
-      body: JSON.stringify(wazzupUsers)
-    });
-
-    if (res.ok) {
-      console.log('[Wazzup Auto-Sync] Sync successful for', users.length, 'users.');
-    } else {
-      console.error('[Wazzup Auto-Sync] Failed to sync users:', res.status, await res.text());
-    }
-  } catch (err) {
-    console.error('[Wazzup Auto-Sync] Error:', err.message);
-  }
-}
-
-// Fix stuck unread counts for Instagram and Telegram chats
-async function fixStuckUnreadCounts() {
-  try {
-    const prisma = require('./config/database');
-    console.log('[Unread Sync] Fixing stuck unread counts...');
-
-    // Reset unread counts for messages sent before last 24h or inactive
-    const thresholdDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
-
-    // 1. Reset counts for clients whose last Instagram message was outgoing (meaning we replied), before threshold, or have no messages or no Instagram ID
-    const igUnreadClients = await prisma.client.findMany({
-      where: { instagramUnreadCount: { gt: 0 } },
-      include: {
-        messages: {
-          orderBy: { timestamp: 'desc' },
-          take: 1
-        }
-      }
-    });
-
-    const igIdsToReset = [];
-    for (const client of igUnreadClients) {
-      const lastMsg = client.messages[0];
-      if (!client.instagramId || !lastMsg || lastMsg.isOutgoing || new Date(lastMsg.timestamp) < thresholdDate) {
-        igIdsToReset.push(client.id);
-      }
-    }
-
-    if (igIdsToReset.length > 0) {
-      await prisma.client.updateMany({
-        where: { id: { in: igIdsToReset } },
-        data: { instagramUnreadCount: 0 }
-      });
-    }
-
-    // 2. Reset counts for clients whose last Telegram message was outgoing (meaning we replied), before threshold, or have no messages or no Telegram ID
-    const tgUnreadClients = await prisma.client.findMany({
-      where: { telegramUnreadCount: { gt: 0 } },
-      include: {
-        telegramMessages: {
-          orderBy: { timestamp: 'desc' },
-          take: 1
-        }
-      }
-    });
-
-    const tgIdsToReset = [];
-    for (const client of tgUnreadClients) {
-      const lastMsg = client.telegramMessages[0];
-      if (!client.telegramId || !lastMsg || lastMsg.isOutgoing || new Date(lastMsg.timestamp) < thresholdDate) {
-        tgIdsToReset.push(client.id);
-      }
-    }
-
-    if (tgIdsToReset.length > 0) {
-      await prisma.client.updateMany({
-        where: { id: { in: tgIdsToReset } },
-        data: { telegramUnreadCount: 0 }
-      });
-    }
-
-    console.log(`[Unread Sync] Reset ${igIdsToReset.length} stuck Instagram counts and ${tgIdsToReset.length} stuck Telegram counts.`);
-  } catch (err) {
-    console.error('[Unread Sync] Error during cleanup:', err);
-  }
-}
-
-// Clean auto-generated lead metadata (Lead ID, Manba, Qabul qilingan vaqt) from deal notes
-async function cleanExistingLeadNotes() {
-  try {
-    const prisma = require('./config/database');
-    const dealsWithLeadNotes = await prisma.deal.findMany({
-      where: {
-        OR: [
-          { notes: { contains: 'Lead ID:' } },
-          { notes: { contains: 'Manba:' } },
-          { notes: { contains: 'Qabul qilingan vaqt:' } },
-          { notes: { contains: 'Meta LeadGen ID:' } }
-        ]
-      }
-    });
-
-    if (dealsWithLeadNotes.length > 0) {
-      console.log(`[Notes Cleaner] Cleaning ${dealsWithLeadNotes.length} deals with lead metadata notes...`);
-      for (const d of dealsWithLeadNotes) {
-        if (!d.notes) continue;
-        let clean = d.notes
-          .replace(/^Lead ID:[^\r\n]*/gim, '')
-          .replace(/^Manba:[^\r\n]*/gim, '')
-          .replace(/^Qabul qilingan vaqt:[^\r\n]*/gim, '')
-          .replace(/^Tafsilotlar:\s*/gim, '')
-          .replace(/^Meta LeadGen ID:[^\r\n]*/gim, '')
-          .replace(/^Form ID:[^\r\n]*/gim, '')
-          .replace(/^Ad ID:[^\r\n]*/gim, '')
-          .trim();
-
-        await prisma.deal.update({
-          where: { id: d.id },
-          data: { notes: clean || null }
-        });
-      }
-      console.log(`[Notes Cleaner] Done cleaning lead notes.`);
-    }
-  } catch (err) {
-    console.error('[Notes Cleaner] Error:', err);
-  }
-}
-
-// Clean auto driver expenses and seed single consolidated expense on startup if needed
-async function consolidateDriverExpenses() {
-  try {
-    const prisma = require('./config/database');
-    const existingTransport = await prisma.expense.findFirst({
-      where: { category: 'transport' }
-    });
-
-    if (!existingTransport) {
-      console.log('[Expense Sync] Creating default transport expense record...');
-      await prisma.expense.create({
-        data: {
-          description: 'Viloyatlararo transport va shopir yetkazib berish to\'lovlari',
-          amount: 10000000,
-          category: 'transport',
-          date: new Date('2026-08-01T00:00:00.000Z')
-        }
-      });
-      console.log('[Expense Sync] Default transport expense created successfully!');
-    }
-  } catch (err) {
-    console.error('[Expense Sync] Error:', err);
-  }
-}
-
-// Auto-migrate schema changes (ensure phone2 column exists in SQLite / PostgreSQL)
-async function autoMigrateDatabase() {
-  try {
-    const prisma = require('./config/database');
-    const isPostgres = process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith('postgres://') || process.env.DATABASE_URL.startsWith('postgresql://'));
-    if (!isPostgres) return;
-
-    const queries = [
-      'ALTER TABLE "Client" ADD COLUMN IF NOT EXISTS "phone2" TEXT;',
-      'ALTER TABLE "contacts" ADD COLUMN IF NOT EXISTS "phone2" TEXT;',
-      'ALTER TABLE "Deal" ADD COLUMN IF NOT EXISTS "contactPhone2" TEXT;',
-      'ALTER TABLE "Task" ADD COLUMN IF NOT EXISTS "boardId" INTEGER;',
-      'ALTER TABLE "Task" ADD COLUMN IF NOT EXISTS "columnId" INTEGER;',
-      'ALTER TABLE "Task" ADD COLUMN IF NOT EXISTS "order" INTEGER DEFAULT 0;',
-      'ALTER TABLE "Task" ADD COLUMN IF NOT EXISTS "isArchived" BOOLEAN DEFAULT false;',
-      'ALTER TABLE "Task" ADD COLUMN IF NOT EXISTS "reminderMinutes" INTEGER;',
-      'ALTER TABLE "Task" ADD COLUMN IF NOT EXISTS "reminderSent" BOOLEAN DEFAULT false;',
-      'ALTER TABLE "Task" ADD COLUMN IF NOT EXISTS "labels" TEXT;',
-      'ALTER TABLE "Task" ADD COLUMN IF NOT EXISTS "completedAt" TIMESTAMP;'
-    ];
-    for (const q of queries) {
-      try {
-        await prisma.$executeRawUnsafe(q);
-      } catch (_) {}
-    }
-    console.log('[Database] Auto-migration check completed.');
-  } catch (err) {
-    console.warn('[Database] Auto-migration warning:', err.message);
-  }
-}
-
-async function ensureDefaultTaskBoard() {
-  try {
-    const prisma = require('./config/database');
-    const boardCount = await prisma.taskBoard.count().catch(() => 0);
-    if (boardCount === 0) {
-      console.log('⚡ Seeding default Trello Task Board & Columns...');
-      const admin = await prisma.user.findFirst({ where: { role: 'admin' } });
-      const board = await prisma.taskBoard.create({
-        data: {
-          name: 'Asosiy Vazifalar',
-          description: 'Kompaniyaning asosiy vazifalari va eslatmalari',
-          color: '#007AFF',
-          icon: 'fa-clipboard-list',
-          isDefault: true,
-          createdById: admin ? admin.id : null,
-          columns: {
-            create: [
-              { name: 'Yangi', color: '#007AFF', icon: 'fa-inbox', order: 0 },
-              { name: 'Jarayonda', color: '#F59E0B', icon: 'fa-spinner', order: 1 },
-              { name: 'Kutilmoqda', color: '#8B5CF6', icon: 'fa-clock', order: 2 },
-              { name: 'Yakunlandi', color: '#10B981', icon: 'fa-check-circle', order: 3 }
-            ]
-          }
-        },
-        include: { columns: true }
-      }).catch(() => null);
-
-      if (board && board.columns.length > 0) {
-        const firstCol = board.columns[0];
-        await prisma.task.updateMany({
-          where: { boardId: null },
-          data: { boardId: board.id, columnId: firstCol.id }
-        }).catch(() => {});
-      }
-      console.log('✅ Default Trello Task Board & Columns seeded.');
-    }
-  } catch (err) {
-    console.warn('[Task Board Seed Notice]', err.message);
-  }
-}
-
-// Start cleanup check on startup
-autoMigrateDatabase();
-ensureDefaultTaskBoard();
-runUploadsCleanup();
-syncWazzupUsers();
-fixStuckUnreadCounts();
-cleanExistingLeadNotes();
-consolidateDriverExpenses();
-
-// Run cleanup check every 24 hours
-setInterval(runUploadsCleanup, 24 * 60 * 60 * 1000);
-// Run user sync check every 12 hours
-setInterval(syncWazzupUsers, 12 * 60 * 60 * 1000);
-// Run unread sync check every 12 hours
-setInterval(fixStuckUnreadCounts, 12 * 60 * 60 * 1000);
+process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+process.on('SIGINT', () => handleShutdown('SIGINT'));
 
 module.exports = { app, server };

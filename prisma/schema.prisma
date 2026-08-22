@@ -41,6 +41,7 @@ model User {
   taskComments          TaskComment[]
   taskAttachments       TaskAttachment[]
   taskActivities        TaskActivity[]
+  sessionLogs           UserSessionLog[]
 }
 
 model Client {
@@ -727,5 +728,93 @@ model PushSubscription {
   @@index([userId])
   @@map("push_subscriptions")
 }
+
+// ── MULTI-TENANT & SAAS BILLING ──
+model Tenant {
+  id           Int      @id @default(autoincrement())
+  name         String
+  slug         String   @unique
+  plan         String   @default("pro") // free | starter | pro | enterprise
+  status       String   @default("active") // active | trial | past_due | suspended
+  customDomain String?  @unique
+  logoUrl      String?
+  currency     String   @default("UZS")
+  maxUsers     Int      @default(10)
+  maxDeals     Int      @default(50000)
+  settings     String?  // JSON settings string
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  subscriptions Subscription[]
+  invoices      Invoice[]
+
+  @@index([slug])
+  @@index([status])
+  @@map("tenants")
+}
+
+model Subscription {
+  id          Int       @id @default(autoincrement())
+  tenantId    Int
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan        String    // free | starter | pro | enterprise
+  status      String    @default("active") // active | trialing | past_due | canceled | unpaid
+  startDate   DateTime  @default(now())
+  expiresAt   DateTime?
+  price       Float     @default(0)
+  currency    String    @default("UZS")
+  interval    String    @default("month") // month | year
+  autoRenew   Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+model Invoice {
+  id          Int       @id @default(autoincrement())
+  tenantId    Int
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoiceNo   String    @unique
+  amount      Float
+  currency    String    @default("UZS")
+  status      String    @default("paid") // draft | open | paid | uncollectible | void
+  provider    String?   @default("system") // stripe | payme | click | system
+  paidAt      DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("invoices")
+}
+
+model UserSessionLog {
+  id              Int       @id @default(autoincrement())
+  userId          Int
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date            String    // YYYY-MM-DD
+  firstLogin      DateTime  @default(now())
+  lastPing        DateTime  @default(now())
+  activeSeconds   Int       @default(0)
+  idleSeconds     Int       @default(0)
+  status          String    @default("active") // active | idle | offline
+  totalActions    Int       @default(0)
+  device          String?
+  ipAddress       String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+  @@index([lastPing])
+  @@map("user_session_logs")
+}
+
+
 
 

@@ -1249,134 +1249,13 @@ router.get('/unread-chats', protect, async (req, res) => {
   }
 });
 
-// GET /api/dashboard/operator-presence — Operatorlar online vaqt va faollik tahlili
-// Persistent in-memory daily presence store across page reloads
-if (!global._dailyPresenceStore) {
-  global._dailyPresenceStore = new Map();
-}
+const { getLiveOperatorPresence } = require('../services/activityService');
 
-// GET /api/dashboard/operator-presence — Operatorlar online vaqt va faollik tahlili
+// GET /api/dashboard/operator-presence — Operatorlar online vaqt va faollik tahlili (amoCRM / HubSpot Grade)
 router.get('/operator-presence', async (req, res) => {
   try {
-    const managers = await prisma.user.findMany({
-      where: { role: { not: 'admin' }, isActive: true },
-      select: { id: true, fullName: true, name: true, role: true, avatar: true, isActive: true, updatedAt: true, createdAt: true }
-    });
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const dateStr = today.toISOString().split('T')[0];
-
-    const [todayCalls, todayTasks, todayDeals, todayActivities] = await Promise.all([
-      prisma.callLog.findMany({ where: { createdAt: { gte: today } } }).catch(() => []),
-      prisma.task.findMany({ where: { updatedAt: { gte: today } } }).catch(() => []),
-      prisma.deal.findMany({ where: { updatedAt: { gte: today } } }).catch(() => []),
-      prisma.activityLog.findMany({ where: { createdAt: { gte: today } } }).catch(() => [])
-    ]);
-
-    const activityLogMap = {};
-    todayActivities.forEach(a => {
-      if (a.userId) {
-        if (!activityLogMap[a.userId]) {
-          activityLogMap[a.userId] = { firstLogin: a.createdAt, lastPing: a.createdAt, totalMin: 0 };
-        } else {
-          activityLogMap[a.userId].lastPing = a.createdAt;
-        }
-      }
-    });
-
-    const samplePresence = [
-      {
-        matchNames: ['абдумалик', 'сайдуллаев'],
-        status: 'online',
-        statusText: '🟢 Aktiv',
-        firstLoginTime: '09:14',
-        onlineSec: 27480, // 7 soat 38 daqiqa
-        idleSec: 2100,    // 35 daqiqa
-        activeWorkRatio: 93
-      },
-      {
-        matchNames: ['кодир', 'кадыр', 'qodir'],
-        status: 'online',
-        statusText: '🟢 Aktiv',
-        firstLoginTime: '09:20',
-        onlineSec: 26100, // 7 soat 15 daqiqa
-        idleSec: 2700,    // 45 daqiqa
-        activeWorkRatio: 91
-      },
-      {
-        matchNames: ['parvina', 'desco2'],
-        status: 'online',
-        statusText: '🟢 Aktiv',
-        firstLoginTime: '09:05',
-        onlineSec: 28200, // 7 soat 50 daqiqa
-        idleSec: 1500,    // 25 daqiqa
-        activeWorkRatio: 95
-      },
-      {
-        matchNames: ['ruxshona', 'desco3'],
-        status: 'idle',
-        statusText: '🟡 Tanaffusda',
-        firstLoginTime: '09:40',
-        onlineSec: 24300, // 6 soat 45 daqiqa
-        idleSec: 3000,    // 50 daqiqa
-        activeWorkRatio: 89
-      },
-      {
-        matchNames: ['mirabbos', 'ibrohim'],
-        status: 'online',
-        statusText: '🟢 Aktiv',
-        firstLoginTime: '09:30',
-        onlineSec: 25800, // 7 soat 10 daqiqa
-        idleSec: 2400,    // 40 daqiqa
-        activeWorkRatio: 91
-      }
-    ];
-
-    let totalActive = 0;
-    let totalIdle = 0;
-    let totalOffline = 0;
-    let totalOnlineSec = 0;
-
-    const operators = managers.map((m, idx) => {
-      const fallback = samplePresence.find(sp => sp.matchNames.some(kw => (m.fullName || m.name || m.email || '').toLowerCase().includes(kw))) || samplePresence[idx % samplePresence.length];
-
-      const status = fallback.status;
-      const statusText = fallback.statusText;
-      const firstLoginTimeStr = fallback.firstLoginTime;
-      const onlineSec = fallback.onlineSec;
-      const idleSec = fallback.idleSec;
-      const activeWorkRatio = fallback.activeWorkRatio;
-
-      if (status === 'online') totalActive++;
-      else if (status === 'idle') totalIdle++;
-      else totalOffline++;
-
-      totalOnlineSec += onlineSec;
-
-      return {
-        id: m.id,
-        name: m.fullName || m.name || 'Menejer',
-        role: 'Sotuv menejeri',
-        avatar: m.avatar,
-        status,
-        statusText,
-        firstLoginTime: firstLoginTimeStr,
-        onlineSec,
-        idleSec,
-        activeWorkRatio
-      };
-    });
-
-    res.json({
-      summary: {
-        totalActive: totalActive || 4,
-        totalIdle: totalIdle || 1,
-        totalOffline: totalOffline || 0,
-        totalOnlineSec
-      },
-      operators
-    });
+    const data = await getLiveOperatorPresence();
+    res.json(data);
   } catch (err) {
     console.error('Operator presence error:', err);
     res.status(500).json({ error: err.message });

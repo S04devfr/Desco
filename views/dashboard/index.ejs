@@ -323,43 +323,39 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════════
-     MENEJERLAR: OYLIK HISOB-KITOB & KPI (Full Width)
+     MENEJERLAR: OYLIK HISOB-KITOB & KPI (SaaS Streamlined)
      ════════════════════════════════════════════════════════ -->
 <div class="card mb-6" id="managerKpiSection">
-  <div class="card-header flex justify-between items-center" style="border-bottom: 1px solid var(--border);">
+  <div class="card-header flex justify-between items-center" style="border-bottom: 1px solid var(--border); padding: 16px 20px;">
     <div class="flex items-center" style="gap:10px;">
-      <h3 class="section-title"><i class="fas fa-users-cog text-brand"></i>Menejerlar — Savdo & Oylik/KPI</h3>
+      <h3 class="section-title" style="margin:0; font-size:16px; font-weight:700;">
+        <i class="fas fa-calculator text-brand" style="margin-right:8px;"></i>Menejerlar Savdosi va Oylik/KPI Hisob-Kitobi
+      </h3>
     </div>
-    <div class="mgr-formula-badge" style="background: var(--bg-tertiary); padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--text-secondary); border: 1px solid var(--border); display: flex; align-items: center; gap: 6px;">
-      <i class="fas fa-calculator" style="color: var(--brand);"></i>
-      Asosiy maosh &plus; (Won &times; 100 000) &minus; Jarima
+    <div class="mgr-formula-badge" style="background: var(--bg-tertiary); padding: 5px 12px; border-radius: 20px; font-size: 11.5px; font-weight: 600; color: var(--text-secondary); border: 1px solid var(--border); display: flex; align-items: center; gap: 6px;">
+      <i class="fas fa-info-circle" style="color: var(--brand);"></i>
+      Formula: Asosiy maosh + (Won &times; 100 000) &minus; Jarima
     </div>
   </div>
-  <div class="card-body" style="padding: 20px;">
-    <div class="mgr-table-panel" style="width: 100%; padding: 0;">
-      <div class="mgr-panel-label" style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-        <i class="fas fa-calculator" style="color: var(--brand);"></i> 
-        <span>Oylik hisob-kitob</span>
-      </div>
-      <div class="table-wrap">
-        <table class="deals-tbl mgr-kpi-tbl" style="width: 100%;">
-          <thead>
-            <tr>
-              <th>Menejer</th>
-              <th class="tc" style="width:100px;">Bugun</th>
-              <th class="tc" style="width:100px;">Won</th>
-              <th class="tc" style="width:100px;">Win%</th>
-              <th class="tr kpi-th-plus">+ Asosiy maosh</th>
-              <th class="tr kpi-th-plus">+ KPI bonus</th>
-              <th class="tc kpi-th-minus">− Jarima</th>
-              <th class="tr kpi-th-total" style="font-weight: 800;">= Jami to'lov</th>
-            </tr>
-          </thead>
-          <tbody id="managerKpiTableBody">
-            <tr><td colspan="8" class="tc kpi-empty"><div class="spinner" style="margin:auto;"></div></td></tr>
-          </tbody>
-        </table>
-      </div>
+  <div class="card-body" style="padding: 16px 20px 20px;">
+    <div class="table-wrap" style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--bg-primary);">
+      <table class="deals-tbl mgr-kpi-tbl" style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background: var(--bg-tertiary); border-bottom: 1px solid var(--border);">
+            <th style="padding: 12px 16px; text-align:left; font-size: 11.5px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Menejer</th>
+            <th class="tc" style="width:110px; padding: 12px 10px; font-size: 11.5px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Bugun</th>
+            <th class="tc" style="width:120px; padding: 12px 10px; font-size: 11.5px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Yutilgan (Won)</th>
+            <th class="tc" style="width:90px; padding: 12px 10px; font-size: 11.5px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Win %</th>
+            <th class="tr" style="width:140px; padding: 12px 14px; font-size: 11.5px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Asosiy Maosh</th>
+            <th class="tr" style="width:150px; padding: 12px 14px; font-size: 11.5px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">KPI Bonus</th>
+            <th class="tc" style="width:130px; padding: 12px 10px; font-size: 11.5px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Jarima</th>
+            <th class="tr" style="width:160px; padding: 12px 16px; font-size: 11.5px; font-weight: 800; color: var(--brand); text-transform: uppercase; letter-spacing: 0.5px;">Jami To'lov</th>
+          </tr>
+        </thead>
+        <tbody id="managerKpiTableBody">
+          <tr><td colspan="8" class="tc" style="padding:30px;"><div class="spinner" style="margin:auto;"></div></td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
@@ -847,79 +843,124 @@ document.addEventListener('click', function() {
   }
 });
 
+let _presenceOperators = [];
+let _presenceTickerInterval = null;
+
 function fmtDuration(sec) {
-  if (!sec) return '0m';
+  if (!sec || sec < 0) return '0m';
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60);
   if (h > 0) return `${h}s ${m}m`;
   return `${m}m`;
 }
 
+function renderOperatorPresenceDOM() {
+  const tbody = document.getElementById('operatorPresenceTableBody');
+  if (!tbody) return;
+
+  if (!_presenceOperators || !_presenceOperators.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="tc" style="padding:30px; color:var(--text-tertiary);">Ma\'lumotlar mavjud emas</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = _presenceOperators.map((op, idx) => {
+    const isOnline = op.status === 'active' || op.status === 'online';
+    const isIdle = op.status === 'idle';
+
+    const statusBadge = isOnline
+      ? '<span style="color:#10B981; font-weight:700; display:inline-flex; align-items:center; gap:5px;"><span style="width:8px; height:8px; border-radius:50%; background:#10B981; display:inline-block; box-shadow:0 0 6px rgba(16,185,129,0.6);"></span> Aktiv</span>'
+      : isIdle
+      ? '<span style="color:#D97706; font-weight:700; display:inline-flex; align-items:center; gap:5px;"><span style="width:8px; height:8px; border-radius:50%; background:#D97706; display:inline-block;"></span> Tanaffusda</span>'
+      : '<span style="color:var(--text-tertiary); display:inline-flex; align-items:center; gap:5px;"><span style="width:8px; height:8px; border-radius:50%; background:var(--text-tertiary); opacity:0.5; display:inline-block;"></span> Offline</span>';
+
+    const avatarHtml = op.avatar
+      ? `<img src="${escHtml(op.avatar)}" style="width:30px; height:30px; border-radius:50%; object-fit:cover;">`
+      : `<div style="width:30px; height:30px; border-radius:50%; background:var(--brand); color:#fff; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,122,255,0.25);">${escHtml((op.name || 'M').charAt(0).toUpperCase())}</div>`;
+
+    const ratioColor = op.activeWorkRatio >= 80 ? '#10B981' : op.activeWorkRatio >= 50 ? '#F59E0B' : '#EF4444';
+
+    return `
+      <tr style="border-bottom:1px solid var(--border); transition: background 0.2s;" id="presenceRow_${op.id}">
+        <td style="padding:12px 16px; font-weight:700;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            ${avatarHtml}
+            <div>
+              <div style="font-size:13px; color:var(--text-primary); font-weight:700;">${escHtml(op.name)}</div>
+              <div style="font-size:11px; color:var(--text-tertiary); font-weight:500;">${escHtml(op.role || 'Sotuv menejeri')}</div>
+            </div>
+          </div>
+        </td>
+        <td class="tc" style="padding:12px 14px;" id="presenceStatus_${op.id}">
+          ${statusBadge}
+        </td>
+        <td class="tc" style="padding:12px 14px; font-size:13px; font-weight:700; color:var(--text-primary);">
+          <i class="far fa-clock" style="color:var(--brand); font-size:11px; margin-right:4px;"></i>${escHtml(op.firstLoginTime || '—')}
+        </td>
+        <td class="tc" style="padding:12px 14px; font-size:13.5px; font-weight:800; color:#10B981;" id="presenceOnline_${op.id}">
+          ${fmtDuration(op.onlineSec)}
+        </td>
+        <td class="tc" style="padding:12px 14px; font-size:12.5px; font-weight:700; color:#D97706;" id="presenceIdle_${op.id}">
+          ${fmtDuration(op.idleSec)}
+        </td>
+        <td style="padding:12px 16px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="flex:1; height:6px; background:var(--bg-secondary); border-radius:3px; overflow:hidden; border:1px solid var(--border);">
+              <div id="presenceBar_${op.id}" style="width:${Math.max(5, op.activeWorkRatio || 0)}%; height:100%; background:${ratioColor}; border-radius:3px; transition:width 0.4s ease;"></div>
+            </div>
+            <span id="presenceRatio_${op.id}" style="font-size:12px; font-weight:800; color:var(--text-primary); min-width:32px; text-align:right;">${op.activeWorkRatio || 0}%</span>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function startLivePresenceTicker() {
+  if (_presenceTickerInterval) clearInterval(_presenceTickerInterval);
+
+  _presenceTickerInterval = setInterval(() => {
+    if (!_presenceOperators || !_presenceOperators.length) return;
+
+    _presenceOperators.forEach(op => {
+      if (op.status === 'active' || op.status === 'online') {
+        op.onlineSec = (op.onlineSec || 0) + 1;
+        const cell = document.getElementById(`presenceOnline_${op.id}`);
+        if (cell) cell.textContent = fmtDuration(op.onlineSec);
+      } else if (op.status === 'idle') {
+        op.onlineSec = (op.onlineSec || 0) + 1;
+        op.idleSec = (op.idleSec || 0) + 1;
+        const onlineCell = document.getElementById(`presenceOnline_${op.id}`);
+        const idleCell = document.getElementById(`presenceIdle_${op.id}`);
+        if (onlineCell) onlineCell.textContent = fmtDuration(op.onlineSec);
+        if (idleCell) idleCell.textContent = fmtDuration(op.idleSec);
+      }
+    });
+  }, 1000);
+}
+
 async function loadOperatorPresenceStats() {
   const tbody = document.getElementById('operatorPresenceTableBody');
   if (!tbody) return;
+
   try {
-    const res = await dashFetch('/api/dashboard/operator-presence').catch(() => ({ summary: {}, operators: [] }));
-    const summary = res.summary || {};
-    const operators = res.operators || [];
+    const res = await fetch('/api/dashboard/operator-presence');
+    if (!res.ok) return;
+    const data = await res.json();
+    const summary = data.summary || {};
+    _presenceOperators = data.operators || [];
 
     const bAct = document.getElementById('presenceBadgeActive');
     const bIdl = document.getElementById('presenceBadgeIdle');
     const bOff = document.getElementById('presenceBadgeOffline');
 
     if (bAct) bAct.textContent = `🟢 ${summary.totalActive || 0} Aktiv`;
-    if (bIdl) bIdl.textContent = `🟡 ${summary.totalIdle || 0} Tanaffusda (10m+)`;
+    if (bIdl) bIdl.textContent = `🟡 ${summary.totalIdle || 0} Tanaffusda`;
     if (bOff) bOff.textContent = `⚪ ${summary.totalOffline || 0} Offline`;
 
-    if (!operators.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="tc" style="padding:20px; color:var(--text-tertiary);">Ma\'lumotlar mavjud emas</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = operators.map(op => {
-      const isOnline = op.status === 'online';
-      const isBusy = op.status === 'busy';
-      const isIdle = op.status === 'idle';
-      const badgeCls = isBusy ? '#FF9500' : isIdle ? '#D97706' : isOnline ? '#10b981' : 'var(--text-tertiary)';
-
-      return `
-        <tr>
-          <td style="font-weight:700;">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <div style="width:28px; height:28px; border-radius:50%; background:var(--brand-soft); color:var(--brand); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700;">
-                ${escHtml(op.name.charAt(0).toUpperCase())}
-              </div>
-              <div>
-                <div>${escHtml(op.name)}</div>
-                <div style="font-size:10px; color:var(--text-tertiary); font-weight:600;">${escHtml(op.role)}</div>
-              </div>
-            </div>
-          </td>
-          <td class="tc" style="font-size:12px; font-weight:700; color:${badgeCls};">
-            ${escHtml(op.statusText)}
-          </td>
-          <td class="tc" style="font-size:12.5px; font-weight:700; color:var(--text-primary);">
-            <i class="far fa-clock" style="color:var(--primary); font-size:11px; margin-right:4px;"></i>${escHtml(op.firstLoginTime || '—')}
-          </td>
-          <td class="tc" style="font-size:13px; font-weight:800; color:#10b981;">
-            ${fmtDuration(op.onlineSec)}
-          </td>
-          <td class="tc" style="font-size:12px; font-weight:700; color:#FF9500;">
-            ${fmtDuration(op.idleSec)}
-          </td>
-          <td>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <div style="flex:1; height:6px; background:var(--bg-secondary); border-radius:3px; overflow:hidden;">
-                <div style="width:${op.activeWorkRatio}%; height:100%; background:${op.activeWorkRatio >= 80 ? '#10b981' : op.activeWorkRatio >= 50 ? '#FF9500' : '#ef4444'}; border-radius:3px;"></div>
-              </div>
-              <span style="font-size:11.5px; font-weight:800; color:var(--text-primary);">${op.activeWorkRatio}%</span>
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join('');
+    renderOperatorPresenceDOM();
+    startLivePresenceTicker();
   } catch (e) {
-    console.error('Operator presence load error:', e);
+    console.error('[Operator Presence Load Error]', e);
   }
 }
 
@@ -1466,44 +1507,66 @@ async function loadDashboard() {
           const totalPay    = baseSalary + kpiBonus - totalFines;
           const winRate     = (m.winRate || 0).toFixed(0);
           const initials    = (m.name||'?').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
-          const winBadge    = winRate >= 60 ? 'badge-success' : winRate >= 35 ? 'badge-warning' : 'badge-danger';
-          const perf        = winRate >= 60 ? 'high' : winRate >= 35 ? 'mid' : 'low';
+          const winColor    = winRate >= 50 ? '#10B981' : winRate >= 20 ? '#F59E0B' : 'var(--text-tertiary)';
           const finesDetail = (m.fines && m.fines.length)
-            ? m.fines.map(f => '<div class="kpi-fine-item">−'+fmtMoney(f.amount)+(f.reason ? ' · '+escHtml(f.reason) : '')+'</div>').join('')
+            ? m.fines.map(f => '<div style="font-size:10px; color:#EF4444;">−'+fmtMoney(f.amount)+(f.reason ? ' ('+escHtml(f.reason)+')' : '')+'</div>').join('')
             : '';
           const tCount = m.todayCount || 0;
           const tWon   = m.todayWonCount || 0;
           const todayCell = tCount > 0
-            ? '<div class="kpi-won" style="color:#10b981; font-weight:800;">'+tCount+' ta</div><div class="kpi-total-deals" style="color:var(--text-secondary);">'+(tWon > 0 ? tWon + ' sotuv' : 'buyurtma')+'</div>'
-            : '<span style="font-size:11px; font-weight:600; color:var(--text-muted);">—</span>';
+            ? '<span class="badge" style="background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25); padding:4px 8px; border-radius:6px; font-weight:700; font-size:11.5px;">'+tCount+' ta</span>'
+            : '<span style="font-size:12px; color:var(--text-tertiary);">—</span>';
+
           const editBtn = USER_ROLE === 'admin'
-            ? `<button class="btn btn-ghost btn-icon btn-sm text-brand" onclick="openEditManagerModal(${m.id}, '${escHtml(m.name)}', '${escHtml(m.email || '')}', '${m.role || 'manager'}', ${m.isActive !== false})" style="padding: 2px; margin-left: auto; display: inline-flex; border: none; background: transparent; cursor: pointer;" title="Tahrirlash"><i class="fas fa-edit" style="font-size: 11px;"></i></button>`
+            ? `<button class="btn btn-ghost btn-icon btn-sm" onclick="openEditManagerModal(${m.id}, '${escHtml(m.name)}', '${escHtml(m.email || '')}', '${m.role || 'manager'}', ${m.isActive !== false})" style="padding: 4px; margin-left: auto; border: none; background: transparent; cursor: pointer; color:var(--text-tertiary);" title="Tahrirlash"><i class="fas fa-pen" style="font-size: 11px;"></i></button>`
             : '';
-          return '<tr class="kpi-row" data-perf="'+perf+'">'
-            + '<td class="kpi-mgr-cell" style="display: flex; align-items: center; gap: 8px;">'
-            +   '<div class="kpi-avatar" style="flex-shrink:0;">'+initials+'</div>'
-            +   '<span class="kpi-mgr-name" style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">'+escHtml(m.name)+'</span>'
-            +   editBtn
-            + '</td>'
-            + '<td class="tc">' + todayCell + '</td>'
-            + '<td class="tc">'
-            +   '<div class="kpi-won">'+m.wonCount+'</div>'
-            +   '<div class="kpi-total-deals">/ '+m.totalCount+' jami</div>'
-            + '</td>'
-            + '<td class="tc"><span class="badge '+winBadge+' kpi-win-badge">'+winRate+'%</span></td>'
-            + '<td class="tr"><input type="number" class="calc-input" value="'+baseSalary+'" step="100000" onchange="saveBaseSalary('+m.id+', this.value)"></td>'
-            + '<td class="tr kpi-bonus-cell">'
-            +   '<div class="kpi-bonus-val">'+fmtMoney(kpiBonus)+'</div>'
-            +   '<div class="kpi-bonus-sub">'+m.wonCount+' × 100 000</div>'
-            + '</td>'
-            + '<td class="tc kpi-fine-cell">'
-            +   (totalFines > 0
-                  ? '<div class="kpi-fine-total">−'+fmtMoney(totalFines)+'</div>'+finesDetail
-                  : '<span class="kpi-no-fine">—</span>')
-            +   '<button class="kpi-add-fine" onclick="openFineModal('+m.id+',\''+escHtml(m.name)+'\')"><i class="fas fa-plus"></i> Jarima</button>'
-            + '</td>'
-            + '<td class="tr"><span class="kpi-payout" id="payout-'+m.id+'">'+fmtMoney(totalPay)+'</span></td>'
-            + '</tr>';
+
+          return `
+            <tr style="border-bottom: 1px solid var(--border); transition: background 0.15s ease;">
+              <td style="padding: 12px 16px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <div style="width:30px; height:30px; border-radius:50%; background:var(--brand); color:#fff; font-size:11.5px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 2px 5px rgba(0,122,255,0.2);">
+                    ${initials}
+                  </div>
+                  <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">
+                    <div style="font-size:13px; font-weight:700; color:var(--text-primary);">${escHtml(m.name)}</div>
+                    <div style="font-size:10.5px; color:var(--text-tertiary); font-weight:500;">Sotuv menejeri</div>
+                  </div>
+                  ${editBtn}
+                </div>
+              </td>
+              <td class="tc" style="padding: 12px 10px;">${todayCell}</td>
+              <td class="tc" style="padding: 12px 10px;">
+                <div style="font-size:14px; font-weight:800; color:var(--text-primary);">${m.wonCount}</div>
+                <div style="font-size:10.5px; color:var(--text-tertiary); font-weight:500;">/ ${m.totalCount} jami</div>
+              </td>
+              <td class="tc" style="padding: 12px 10px;">
+                <span style="font-size:12px; font-weight:800; color:${winColor}; background:rgba(0,0,0,0.04); padding:3px 8px; border-radius:12px; border:1px solid var(--border);">${winRate}%</span>
+              </td>
+              <td class="tr" style="padding: 12px 14px;">
+                <div style="display:flex; justify-content:flex-end;">
+                  <input type="number" class="form-control" value="${baseSalary}" step="100000" onchange="saveBaseSalary(${m.id}, this.value)" style="width:110px; height:32px; font-size:12px; font-weight:700; text-align:right; padding:4px 8px; border-radius:6px;" placeholder="0 UZS">
+                </div>
+              </td>
+              <td class="tr" style="padding: 12px 14px;">
+                <div style="font-size:13.5px; font-weight:800; color:#10B981;">+${fmtMoney(kpiBonus)}</div>
+                <div style="font-size:10.5px; color:var(--text-tertiary); font-weight:500;">${m.wonCount} &times; 100k</div>
+              </td>
+              <td class="tc" style="padding: 12px 10px;">
+                ${totalFines > 0
+                  ? '<div style="font-size:12.5px; font-weight:700; color:#EF4444;">−' + fmtMoney(totalFines) + '</div>' + finesDetail
+                  : '<span style="font-size:12px; color:var(--text-tertiary);">—</span>'}
+                <div>
+                  <button class="btn btn-ghost btn-sm" onclick="openFineModal(${m.id},'${escHtml(m.name)}')" style="font-size:10.5px; padding:2px 8px; margin-top:3px; color:var(--text-secondary); border:1px dashed var(--border); border-radius:4px; height:22px; cursor:pointer;">
+                    <i class="fas fa-plus" style="font-size:9px;"></i> Jarima
+                  </button>
+                </div>
+              </td>
+              <td class="tr" style="padding: 12px 16px;">
+                <span id="payout-${m.id}" style="font-size:14px; font-weight:900; color:var(--brand); letter-spacing:-0.2px;">${fmtMoney(totalPay)} UZS</span>
+              </td>
+            </tr>
+          `;
         });
 
         // Jami byudjet qatori
@@ -1513,11 +1576,20 @@ async function loadDashboard() {
           const fine = m.totalFines || 0;
           return s + base + kpi - fine;
         }, 0);
-        const totalRow = '<tr class="kpi-total-row">'
-          + '<td colspan="4" class="kpi-total-label"><i class="fas fa-wallet" style="margin-right:5px;color:var(--brand);"></i>Jami maosh byudjeti</td>'
-          + '<td colspan="3"></td>'
-          + '<td class="tr"><span class="kpi-payout">'+fmtMoney(grandTotal)+'</span></td>'
-          + '</tr>';
+
+        const totalRow = `
+          <tr style="background: var(--bg-tertiary); border-top: 2px solid var(--border);">
+            <td colspan="4" style="padding: 14px 16px; font-size: 12.5px; font-weight: 800; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">
+              <i class="fas fa-wallet" style="margin-right:8px; color:var(--brand);"></i>Jami Hisoblangan Maosh Byudjeti
+            </td>
+            <td colspan="3" style="padding: 14px 10px;"></td>
+            <td class="tr" style="padding: 14px 16px;">
+              <span style="font-size: 15px; font-weight: 900; color: #10B981; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.25); padding: 5px 12px; border-radius: 8px; display:inline-block;">
+                ${fmtMoney(grandTotal)} UZS
+              </span>
+            </td>
+          </tr>
+        `;
 
         kpiBody.innerHTML = rows.join('') + totalRow;
       }
@@ -3338,12 +3410,10 @@ async function loadOperatorPresence() {
   } catch(e) {
     console.error('[Presence Error]', e);
   }
-}
-window.loadOperatorPresence = loadOperatorPresence;
+window.loadOperatorPresence = loadOperatorPresenceStats;
 
 // Start & Real-Time Live Auto-Refresh
 loadDashboard();
-loadOperatorPresence();
 
 // Full Dashboard Refresh every 5 minutes (300,000 ms) so charts never flicker or jump
 if (!window._dashRealtimeTimer) {
@@ -3355,9 +3425,7 @@ if (!window._dashRealtimeTimer) {
 // Silent Operator Presence Update every 30 seconds (30,000 ms)
 if (!window._presenceRealtimeTimer) {
   window._presenceRealtimeTimer = setInterval(() => {
-    if (!document.hidden && typeof loadOperatorPresence === 'function') {
-      loadOperatorPresence();
-    }
+    if (!document.hidden) loadOperatorPresenceStats();
   }, 30 * 1000);
 }
 </script>
