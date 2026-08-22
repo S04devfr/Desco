@@ -2208,9 +2208,18 @@ a.quick-nav-card .card:hover {
   background: rgba(255,255,255,0.8) !important;
   outline: none !important;
 }
-[data-theme="dark"] .form-control:focus, [data-theme="dark"] input:focus {
-  background: rgba(255,255,255,0.12) !important;
+[data-theme="dark"] .form-control:focus, [data-theme="dark"] input:focus, [data-theme="dark"] select:focus, [data-theme="dark"] textarea:focus {
+  background: rgba(255,255,255,0.1) !important;
   box-shadow: 0 0 0 4px rgba(108,138,255,0.2) !important;
+}
+
+textarea.chat-input,
+textarea.chat-input:focus {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--text-primary) !important;
 }
 
 /* Refined Glass Tables */
