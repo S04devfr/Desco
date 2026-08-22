@@ -1045,7 +1045,7 @@ router.patch('/:id', async (req, res, next) => {
             data.status = 'lost';
           } else {
             const stageName = stage.name.toLowerCase();
-            if (stageName.includes('yutil') || stageName.includes('100%') || stageName.includes('olindi')) {
+            if (stageName.includes('yutil') || stageName.includes('100%') || stageName.includes('olindi') || stageName.includes('nasiya') || stageName.includes('shopir') || stageName.includes('klientda')) {
               data.status = 'won';
             } else if (stageName.includes('rad') || stageName.includes('otkaz') || stageName.includes('lost')) {
               data.status = 'lost';
@@ -1263,7 +1263,7 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
             finalStatus = 'lost';
           } else {
             const stageName = newStage.name.toLowerCase();
-            if (stageName.includes('yutil') || stageName.includes('100%') || stageName.includes('olindi')) {
+            if (stageName.includes('yutil') || stageName.includes('100%') || stageName.includes('olindi') || stageName.includes('nasiya') || stageName.includes('shopir') || stageName.includes('klientda')) {
               finalStatus = 'won';
             } else if (stageName.includes('rad') || stageName.includes('otkaz') || stageName.includes('lost')) {
               finalStatus = 'lost';
@@ -1294,13 +1294,15 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
           : `[Tizim] Bosqich yopilish sababi: ${reason}`;
       }
 
+      const finalOwnerId = txDeal.ownerId || finalManagerId || req.userId;
+
       const updated = await tx.deal.update({
         where: { id },
         data: {
           stageId: finalStageId,
           pipelineId: finalPipelineId,
           managerId: finalManagerId,
-          ownerId: finalManagerId,
+          ownerId: finalOwnerId,
           status: finalStatus,
           closedAt,
           notes: notesUpdate,
