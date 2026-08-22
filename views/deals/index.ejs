@@ -4474,72 +4474,99 @@ function renderTimelineAndTasks(deal) {
     `;
   }
 
-  // ── 2. IZOHLAR DAFTARI (Interactive Notebook Card for Manager Notes & Deals) ──
-  html += `
-    <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 16px; box-shadow: var(--shadow-sm); margin-bottom: 20px;">
-      <div style="font-size: 12px; font-weight: 800; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
-        <span style="display:flex; align-items:center; gap:6px;"><i class="fas fa-book-open" style="color: var(--brand);"></i> Izohlar Daftari</span>
-        <span style="font-size:11px; color:var(--brand); font-weight:700; background:rgba(0,122,255,0.12); padding:2px 10px; border-radius:12px; border:1px solid rgba(0,122,255,0.25);">${comments.length} ta izoh</span>
-      </div>
+  // ── 2. IZOHLAR DAFTARI (Unified Word-style Continuous Document Notepad) ──
+  let docContent = deal.notes || '';
+  if (!docContent && comments.length > 0) {
+    docContent = comments.map(c => `[${c.date.toLocaleString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} • ${c.author}]:\n${c.details}`).join('\n\n');
+  }
 
-      <!-- Interactive Inline Notebook Writer -->
-      <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 8px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);">
-        <textarea id="notebookInlineComment" class="form-control" style="background: transparent; border: none; color: var(--text-primary); font-size: 13px; resize: none; min-height: 48px; width: 100%; outline: none; padding: 0; line-height: 1.45;" placeholder="✍️ Yangi izoh yoki kelishuvni shu yerga yozing..." onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); submitNotebookInlineComment(); }"></textarea>
-        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border); padding-top: 8px;">
-          <span style="font-size: 11px; color: var(--text-tertiary);"><i class="fas fa-keyboard" style="margin-right:3px;"></i> Enter — saqlash, Shift+Enter — yangi qator</span>
-          <button type="button" class="btn btn-primary btn-sm" onclick="submitNotebookInlineComment()" style="background: var(--brand); border-color: var(--brand); font-size: 12px; font-weight: 700; padding: 5px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,122,255,0.2);">
+  html += `
+    <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 18px; box-shadow: var(--shadow-sm); margin-bottom: 20px;">
+      <!-- Word / Document Header Toolbar -->
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 14px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="width: 32px; height: 32px; border-radius: 8px; background: rgba(0, 122, 255, 0.12); color: var(--brand); display: flex; align-items: center; justify-content: center; font-size: 15px;">
+            <i class="fas fa-file-alt"></i>
+          </span>
+          <div>
+            <div style="font-size: 13px; font-weight: 800; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">Izohlar Daftari</div>
+            <div style="font-size: 11px; color: var(--text-tertiary); font-weight: 500;">Word / Hujjat rejimi &mdash; barcha izoh va kelishuvlarni bir joyda yozing</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span id="docSaveStatus" style="font-size: 11.5px; color: #10B981; font-weight: 700; display: none; align-items: center; gap: 4px;">
+            <i class="fas fa-check-circle"></i> Saqlandi
+          </span>
+          <button type="button" class="btn btn-primary btn-sm" onclick="saveNotebookDocument()" id="saveDocBtn" style="background: var(--brand); border-color: var(--brand); font-weight: 700; font-size: 12.5px; padding: 6px 16px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,122,255,0.25);">
             <i class="fas fa-save"></i> Saqlash
           </button>
         </div>
       </div>
 
-      <!-- Comments Stream -->
-      <div id="comments-document-flow" style="display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto; padding-right: 4px;">
-  `;
-
-  if (comments.length > 0) {
-    comments.forEach((c, idx) => {
-      html += `
-        <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; transition: border-color 0.2s;">
-          <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px;">
-            <span style="font-weight: 700; color: var(--brand); display:flex; align-items:center; gap:4px;"><i class="fas fa-user-edit" style="font-size:10px;"></i> ${c.author}</span>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span>${c.date.toLocaleString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-              <button onclick="deleteDealComment(${c.id})" style="background:none; border:none; color:var(--text-tertiary); cursor:pointer; font-size:11px; padding:2px;" title="Izohni o'chirish"><i class="fas fa-trash-alt"></i></button>
-            </div>
-          </div>
-          <div style="white-space: pre-wrap; font-size: 12.5px; color: var(--text-primary); line-height: 1.45;">${_esc(c.details)}</div>
+      <!-- Unified Word / Notepad Canvas -->
+      <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; position: relative;">
+        <textarea id="dealDocumentNotes" class="form-control" style="width: 100%; min-height: 240px; max-height: 480px; resize: vertical; background: transparent; border: none; outline: none; font-size: 13.5px; line-height: 1.6; color: var(--text-primary); padding: 0; box-shadow: none;" placeholder="📝 Mijoz bilan kelishuvlar, barcha izohlar va eslatmalarni xuddi Word daftaridek erkin yozing...">${_esc(docContent)}</textarea>
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border); margin-top: 12px; padding-top: 8px; font-size: 11px; color: var(--text-tertiary);">
+          <span><i class="fas fa-keyboard" style="margin-right:4px;"></i> Ctrl + S orqali ham saqlash mumkin</span>
+          <span id="docCharCount">${docContent.length} belgi</span>
         </div>
-      `;
-    });
-  } else {
-    html += `<div style="text-align: center; padding: 16px 10px; color: var(--text-tertiary); font-size: 12px; font-style: italic;">Hozircha izohlar yozilmagan. Yuqoridagi maydondan izoh qoldirishingiz mumkin.</div>`;
-  }
-  html += `</div></div>`;
+      </div>
+    </div>
+  `;
 
   timelineBody.innerHTML = html || '<div style="text-align:center; padding:40px; color:var(--text-tertiary);">Tarix bo\'sh</div>';
   document.getElementById('dw-participants-count').textContent = `Vazifalar: ${pendingTasks.length}`;
+
+  // Attach live char count and Ctrl+S handler
+  setTimeout(() => {
+    const textarea = document.getElementById('dealDocumentNotes');
+    if (textarea) {
+      textarea.addEventListener('input', function() {
+        const countEl = document.getElementById('docCharCount');
+        if (countEl) countEl.textContent = this.value.length + ' belgi';
+      });
+      textarea.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+          e.preventDefault();
+          window.saveNotebookDocument();
+        }
+      });
+    }
+  }, 50);
 }
 
-window.submitNotebookInlineComment = async function() {
-  const textarea = document.getElementById('notebookInlineComment');
-  if (!textarea) return;
-  const comment = textarea.value.trim();
-  if (!comment) {
-    if (typeof _toast === 'function') _toast("Izoh matnini yozing", "warning");
-    return;
+window.saveNotebookDocument = async function() {
+  const textarea = document.getElementById('dealDocumentNotes');
+  if (!textarea || !_detailId) return;
+  const text = textarea.value;
+  const saveBtn = document.getElementById('saveDocBtn');
+  const statusEl = document.getElementById('docSaveStatus');
+
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saqlanmoqda...';
   }
+
   try {
-    await apiFetch('/api/deals/' + _detailId + '/activity', {
-      method: 'POST',
+    await apiFetch('/api/deals/' + _detailId, {
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'Izoh qoldirildi', details: comment })
+      body: JSON.stringify({ notes: text })
     });
-    textarea.value = '';
-    if (typeof _toast === 'function') _toast("Izoh saqlandi", "success");
-    openDetail(_detailId); // Refresh timeline
+
+    if (typeof _toast === 'function') _toast("Daftar muvaffaqiyatli saqlandi", "success");
+    if (statusEl) {
+      statusEl.style.display = 'inline-flex';
+      setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
+    }
+    if (window._currentDeal) window._currentDeal.notes = text;
   } catch (e) {
-    if (typeof _toast === 'function') _toast(e.message, "error");
+    if (typeof _toast === 'function') _toast(e.message || "Saqlashda xato", "error");
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = '<i class="fas fa-save"></i> Saqlash';
+    }
   }
 };
 
