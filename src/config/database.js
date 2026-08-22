@@ -7,7 +7,8 @@ const EXPECTED_MODELS = [
   'activityLog', 'expense', 'task', 'companySettings',
   'installment', 'shopir', 'ishonchFilial',
   'company', 'contact', 'dealStageHistory', 'activity',
-  'tenant', 'subscription', 'invoice', 'userSessionLog'
+  'tenant', 'subscription', 'invoice', 'userSessionLog',
+  'taskBoard', 'taskColumn', 'taskChecklistItem', 'taskComment', 'taskAttachment', 'taskActivity', 'taskLabel'
 ];
 
 // Query methods we stub on a "broken" model delegate so any call site
