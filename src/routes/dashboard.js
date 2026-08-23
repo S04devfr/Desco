@@ -185,7 +185,41 @@ router.get('/kpis', async (req, res, next) => {
       select: { id: true }
     });
     const dlvPipelineId = dlvPipeline ? dlvPipeline.id : null;
-    const dlvDeals = dlvPipelineId ? deals.filter(d => d.stage?.pipelineId === dlvPipelineId) : [];
+
+    const allUsers = await prisma.user.findMany({
+      where: {
+        role: { in: ['manager', 'operator'] }
+      },
+      select: {
+        id: true,
+        fullName: true,
+        name: true,
+        email: true,
+        role: true,
+        isActive: true
+      }
+    });
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const managerPerformance = {};
+    allUsers.forEach(u => {
+      managerPerformance[u.id] = {
+        id: u.id,
+        name: u.fullName || u.email || 'Menejer',
+        email: u.email,
+        role: u.role,
+        isActive: u.isActive !== false,
+        totalCount: 0,
+        wonCount: 0,
+        wonValue: 0,
+        canceledCount: 0,
+        todayCount: 0,
+        todayWonCount: 0,
+        todayWonValue: 0
+      };
+    });
 
     // Helper to get start and end dates based on filter
     const getFilterDates = (filter, req) => {
@@ -224,52 +258,218 @@ router.get('/kpis', async (req, res, next) => {
     };
 
     const filterDates = getFilterDates(req.query.filter, req);
-    const dealsCreatedInPeriod = filterDates 
-      ? deals.filter(d => {
-          const cd = new Date(d.createdAt);
-          return cd >= filterDates.start && cd <= filterDates.end;
-        })
-      : deals;
 
-    const totalOrders = dlvDeals.length;
-    const totalLeads = dlvPipelineId 
-      ? dealsCreatedInPeriod.filter(d => d.stage?.pipelineId !== dlvPipelineId).length 
-      : dealsCreatedInPeriod.length;
+    // Initialize all metrics to compile in a single loop
+    let calculatedRevenue = 0;
+    let totalDebt = 0;
+    let won = 0;
+    let lost = 0;
+    let totalCostPrice = 0;
+    let totalCanceledCount = 0;
+    let totalCanceledValue = 0;
+    let totalOrders = 0;
+    let totalLeads = 0;
 
-    // ── Source Breakdown (target, instagram, telegram, phone, office) ──
-    const isTargetSource    = d => d.source === 'target' || d.client?.source === 'target';
-    const isInstagramSource = d => d.source === 'instagram' || d.client?.source === 'instagram';
-    const isTelegramSource  = d => d.source === 'telegram' || d.client?.source === 'telegram';
-    const isPhoneSource     = d => d.source === 'phone' || d.source === 'telefon' || d.client?.source === 'phone';
-    const isOfficeSource    = d => d.source === 'office' || d.client?.source === 'office';
+    let countNasiyaDesco = 0, amountNasiyaDesco = 0;
+    let countNasiyaIshonch = 0, amountNasiyaIshonch = 0;
+    let countNasiyaBaraka = 0, amountNasiyaBaraka = 0;
+    let countShopir = 0, amountShopir = 0;
+    let count100Zakaz = 0, amount100Zakaz = 0;
+    const shopirDeals = [];
+
+    const cityMap = {};
+    let pipelineForecastValue = 0;
 
     const sourceBreakdown = {
-      target: {
-        leads: dealsCreatedInPeriod.filter(isTargetSource).length,
-        wonCount: dealsCreatedInPeriod.filter(d => isTargetSource(d) && isWonDeal(d)).length,
-        wonAmount: dealsCreatedInPeriod.filter(d => isTargetSource(d) && isWonDeal(d)).reduce((s, d) => s + getEffectivePaid(d), 0)
-      },
-      instagram: {
-        leads: dealsCreatedInPeriod.filter(isInstagramSource).length,
-        wonCount: dealsCreatedInPeriod.filter(d => isInstagramSource(d) && isWonDeal(d)).length,
-        wonAmount: dealsCreatedInPeriod.filter(d => isInstagramSource(d) && isWonDeal(d)).reduce((s, d) => s + getEffectivePaid(d), 0)
-      },
-      telegram: {
-        leads: dealsCreatedInPeriod.filter(isTelegramSource).length,
-        wonCount: dealsCreatedInPeriod.filter(d => isTelegramSource(d) && isWonDeal(d)).length,
-        wonAmount: dealsCreatedInPeriod.filter(d => isTelegramSource(d) && isWonDeal(d)).reduce((s, d) => s + getEffectivePaid(d), 0)
-      },
-      phone: {
-        leads: dealsCreatedInPeriod.filter(isPhoneSource).length,
-        wonCount: dealsCreatedInPeriod.filter(d => isPhoneSource(d) && isWonDeal(d)).length,
-        wonAmount: dealsCreatedInPeriod.filter(d => isPhoneSource(d) && isWonDeal(d)).reduce((s, d) => s + getEffectivePaid(d), 0)
-      },
-      office: {
-        leads: dealsCreatedInPeriod.filter(isOfficeSource).length,
-        wonCount: dealsCreatedInPeriod.filter(d => isOfficeSource(d) && isWonDeal(d)).length,
-        wonAmount: dealsCreatedInPeriod.filter(d => isOfficeSource(d) && isWonDeal(d)).reduce((s, d) => s + getEffectivePaid(d), 0)
-      }
+      target: { leads: 0, wonCount: 0, wonAmount: 0 },
+      instagram: { leads: 0, wonCount: 0, wonAmount: 0 },
+      telegram: { leads: 0, wonCount: 0, wonAmount: 0 },
+      phone: { leads: 0, wonCount: 0, wonAmount: 0 },
+      office: { leads: 0, wonCount: 0, wonAmount: 0 }
     };
+
+    const funnelStages = {
+      yangi: 0,
+      qaytaAloqa: 0,
+      kotarilmadi: 0,
+      peregavor: 0,
+      won: 0,
+      lost: 0,
+      total: 0
+    };
+
+    // Single-pass optimization loop
+    for (let i = 0; i < deals.length; i++) {
+      const d = deals[i];
+      const stageName = (d.stage?.name || '').toLowerCase();
+      const isWon = isWonDeal(d);
+      const isLost = isDealCanceled(d);
+
+      const effectivePaid = isWon ? (d.amount || 0) : 0;
+      calculatedRevenue += effectivePaid;
+
+      const debtBalance = Math.max((d.amount || 0) - (d.paidAmount || 0), 0);
+      totalDebt += debtBalance;
+
+      if (isWon) {
+        won++;
+        if (isAdmin) {
+          totalCostPrice += (d.costPrice || 0);
+        }
+      }
+      if (isLost) {
+        lost++;
+      }
+
+      // Check if delivery pipeline
+      const isDlv = dlvPipelineId && d.stage?.pipelineId === dlvPipelineId;
+      if (isDlv) {
+        totalOrders++;
+        if (isLost) {
+          totalCanceledCount++;
+          totalCanceledValue += (d.amount || 0);
+        }
+      }
+
+      // Geografik Tahlil (Sales by City)
+      const city = d.client?.city || "Noma'lum";
+      if (!cityMap[city]) {
+        cityMap[city] = { count: 0, revenue: 0 };
+      }
+      cityMap[city].count += 1;
+      cityMap[city].revenue += effectivePaid;
+
+      // Salesforce Pipeline Forecast
+      let probability = 0.1;
+      if (stageName.includes('yangi')) probability = 0.15;
+      else if (stageName.includes('muzokara') || stageName.includes('peregovor') || stageName.includes('pereg')) probability = 0.35;
+      else if (stageName.includes('taklif')) probability = 0.6;
+      else if (stageName.includes('nasiya') || stageName.includes('shopir') || stageName.includes('yo\'lda')) probability = 0.85;
+      else if (stageName.includes('100%') || stageName.includes('yutil') || isWon) probability = 1.0;
+      else if (isLost) probability = 0.0;
+      pipelineForecastValue += (debtBalance * probability);
+
+      // Managers performance KPIs
+      if (d.managerId && managerPerformance[d.managerId]) {
+        const m = managerPerformance[d.managerId];
+        m.totalCount += 1;
+        if (isWon) {
+          m.wonCount += 1;
+          m.wonValue += (d.amount || 0);
+        }
+        if (isLost) {
+          m.canceledCount += 1;
+        }
+        const dealDate = d.createdAt ? new Date(d.createdAt) : null;
+        if (dealDate && dealDate >= todayStart) {
+          m.todayCount += 1;
+          if (isWon) {
+            m.todayWonCount += 1;
+            m.todayWonValue += (d.amount || 0);
+          }
+        }
+      }
+
+      // Nasiya Tariffs Breakdown
+      if (stageName.includes('desco')) {
+        countNasiyaDesco++;
+        amountNasiyaDesco += (d.amount || 0);
+      } else if (stageName.includes('ishonch')) {
+        countNasiyaIshonch++;
+        amountNasiyaIshonch += (d.amount || 0);
+      } else if (stageName.includes('baraka')) {
+        countNasiyaBaraka++;
+        amountNasiyaBaraka += (d.amount || 0);
+      } else if (stageName.includes('shopir')) {
+        countShopir++;
+        amountShopir += (d.amount || 0);
+        shopirDeals.push({
+          id: d.id,
+          productName: d.productName || 'Noma\'lum',
+          amount: d.amount || 0,
+          paidAmount: d.paidAmount || 0,
+          debt: debtBalance,
+          date: d.createdAt ? d.createdAt.toISOString().slice(0, 10) : '',
+          managerName: d.manager?.fullName || '—'
+        });
+      } else if (stageName.includes('100%')) {
+        count100Zakaz++;
+        amount100Zakaz += (d.amount || 0);
+      }
+
+      // Filter by period check
+      const dealDate = d.createdAt ? new Date(d.createdAt) : null;
+      const inPeriod = !filterDates || (dealDate && dealDate >= filterDates.start && dealDate <= filterDates.end);
+      
+      if (inPeriod) {
+        if (dlvPipelineId) {
+          if (!isDlv) totalLeads++;
+        } else {
+          totalLeads++;
+        }
+
+        // Source breakdown checks
+        const isTarget    = d.source === 'target' || d.client?.source === 'target';
+        const isInstagram = d.source === 'instagram' || d.client?.source === 'instagram';
+        const isTelegram  = d.source === 'telegram' || d.client?.source === 'telegram';
+        const isPhone     = d.source === 'phone' || d.source === 'telefon' || d.client?.source === 'phone';
+        const isOffice    = d.source === 'office' || d.client?.source === 'office';
+
+        if (isTarget) {
+          sourceBreakdown.target.leads++;
+          if (isWon) {
+            sourceBreakdown.target.wonCount++;
+            sourceBreakdown.target.wonAmount += effectivePaid;
+          }
+        }
+        if (isInstagram) {
+          sourceBreakdown.instagram.leads++;
+          if (isWon) {
+            sourceBreakdown.instagram.wonCount++;
+            sourceBreakdown.instagram.wonAmount += effectivePaid;
+          }
+        }
+        if (isTelegram) {
+          sourceBreakdown.telegram.leads++;
+          if (isWon) {
+            sourceBreakdown.telegram.wonCount++;
+            sourceBreakdown.telegram.wonAmount += effectivePaid;
+          }
+        }
+        if (isPhone) {
+          sourceBreakdown.phone.leads++;
+          if (isWon) {
+            sourceBreakdown.phone.wonCount++;
+            sourceBreakdown.phone.wonAmount += effectivePaid;
+          }
+        }
+        if (isOffice) {
+          sourceBreakdown.office.leads++;
+          if (isWon) {
+            sourceBreakdown.office.wonCount++;
+            sourceBreakdown.office.wonAmount += effectivePaid;
+          }
+        }
+
+        // Funnel stages
+        funnelStages.total++;
+        if (stageName.includes('yangi') || stageName.includes('new')) {
+          funnelStages.yangi++;
+        } else if (stageName.includes('qayta') || stageName.includes('aloqa') || stageName.includes('перезвон')) {
+          funnelStages.qaytaAloqa++;
+        } else if (stageName.includes('ko\'tarilmadi') || stageName.includes('kotarilmadi') || stageName.includes('otvet') || stageName.includes('javob ber')) {
+          funnelStages.kotarilmadi++;
+        } else if (stageName.includes('peregavor') || stageName.includes('peregovor') || stageName.includes('muzokara') || stageName.includes('taklif')) {
+          funnelStages.peregavor++;
+        }
+        if (isWon) {
+          funnelStages.won++;
+        }
+        if (isLost) {
+          funnelStages.lost++;
+        }
+      }
+    }
 
     const sourcesCount = {
       target: sourceBreakdown.target.leads,
@@ -279,22 +479,21 @@ router.get('/kpis', async (req, res, next) => {
       office: sourceBreakdown.office.leads
     };
 
-    const calculatedRevenue = deals.reduce((sum, d) => sum + getEffectivePaid(d), 0);
-    const totalRevenue = calculatedRevenue;
-    const totalDebt = deals.reduce((sum, d) => sum + Math.max((d.amount || 0) - (d.paidAmount || 0), 0), 0);
-    
-    const wonDeals = deals.filter(isWonDeal);
-    const won = wonDeals.length;
-    const lost = deals.filter(isDealCanceled).length;
+    const geographicSales = Object.entries(cityMap)
+      .map(([city, data]) => ({ city, count: data.count, revenue: data.revenue }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 10);
 
-    let totalExpenses = 0, totalCostPrice = 0, totalClientDebt = 0;
-    let manualDebt = 0, dealDebt = totalDebt;
+    const totalRevenue = calculatedRevenue;
+    const dealDebt = totalDebt;
+
+    let totalExpenses = 0, totalClientDebt = 0;
+    let manualDebt = 0;
     let totalMarketingExpenses = 0;
     let expenseByCategory = {};
 
     if (isAdmin) {
       totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-      totalCostPrice = wonDeals.reduce((sum, d) => sum + (d.costPrice || 0), 0);
       
       for (const exp of expenses) {
         const cat = exp.category || 'boshqa';
@@ -318,7 +517,6 @@ router.get('/kpis', async (req, res, next) => {
     const netProfit = totalRevenue - totalCostPrice - totalExpenses;
 
     // ── 1. Marketing Ads Spent, CPL, ROI ──
-    // CPL uchun to'g'ri denominator: marketing log'laridan leads summasi
     const mktLeadsWhere = {}
     if (where.createdAt) {
       mktLeadsWhere.date = where.createdAt
@@ -326,137 +524,12 @@ router.get('/kpis', async (req, res, next) => {
     let totalLeadsCreated = deals.length;
     try {
       const mktLeadsAgg = await prisma.marketingLog.aggregate({ _sum: { leads: true }, where: mktLeadsWhere });
-      totalLeadsCreated = mktLeadsAgg._sum.leads || deals.length; // fallback to deals count
-    } catch(e) {
-      // Table might not exist yet
-    }
+      totalLeadsCreated = mktLeadsAgg._sum.leads || deals.length;
+    } catch(e) {}
     const cpl = totalLeadsCreated > 0 ? (totalMarketingExpenses / totalLeadsCreated) : 0;
     const marketingRoi = totalMarketingExpenses > 0 ? ((netProfit / totalMarketingExpenses) * 100) : 0;
 
-    // ── 2. Cancellation (Otkaz) Metrics ──
-    const canceledDeals = dlvDeals.filter(isDealCanceled);
-    const totalCanceledCount = canceledDeals.length;
-    const totalCanceledValue = canceledDeals.reduce((sum, d) => sum + (d.amount || 0), 0);
     const cancellationRate = totalOrders > 0 ? ((totalCanceledCount / totalOrders) * 100) : 0;
-
-    // ── 3. Nasiya Tariffs Breakdown ──
-    const getDebtBalance = (d) => Math.max(0, (d.amount || 0) - (d.paidAmount || 0));
-
-    const countNasiyaDesco = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('desco')).length;
-    const amountNasiyaDesco = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('desco')).reduce((sum, d) => sum + (d.amount || 0), 0);
-    
-    const countNasiyaIshonch = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('ishonch')).length;
-    const amountNasiyaIshonch = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('ishonch')).reduce((sum, d) => sum + (d.amount || 0), 0);
-
-    const countNasiyaBaraka = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('baraka')).length;
-    const amountNasiyaBaraka = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('baraka')).reduce((sum, d) => sum + (d.amount || 0), 0);
-
-    const countShopir = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('shopir')).length;
-    const amountShopir = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('shopir')).reduce((sum, d) => sum + (d.amount || 0), 0);
-
-    const count100Zakaz = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('100%')).length;
-    const amount100Zakaz = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('100%')).reduce((sum, d) => sum + (d.amount || 0), 0);
-    const shopirDeals = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('shopir')).map(d => ({
-      id: d.id,
-      productName: d.productName || 'Noma\'lum',
-      amount: d.amount || 0,
-      paidAmount: d.paidAmount || 0,
-      debt: getDebtBalance(d),
-      date: d.createdAt ? d.createdAt.toISOString().slice(0, 10) : '',
-      managerName: d.manager?.fullName || '—'
-    }));
-
-    // ── 4. Geografik Tahlil (Sales by City) ──
-    const cityMap = {};
-    deals.forEach(d => {
-      const city = d.client?.city || "Noma'lum";
-      if (!cityMap[city]) {
-        cityMap[city] = { count: 0, revenue: 0 };
-      }
-      cityMap[city].count += 1;
-      cityMap[city].revenue += getEffectivePaid(d);
-    });
-    const geographicSales = Object.entries(cityMap)
-      .map(([city, data]) => ({ city, count: data.count, revenue: data.revenue }))
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 10);
-
-    // ── 5. Salesforce Pipeline Forecast ──
-    let pipelineForecastValue = 0;
-    deals.forEach(d => {
-      const stageName = (d.stage?.name || '').toLowerCase();
-      let probability = 0.1; // Default probability: 10%
-      if (stageName.includes('yangi')) probability = 0.15;
-      else if (stageName.includes('muzokara') || stageName.includes('peregovor') || stageName.includes('pereg')) probability = 0.35;
-      else if (stageName.includes('taklif')) probability = 0.6;
-      else if (stageName.includes('nasiya') || stageName.includes('shopir') || stageName.includes('yo\'lda')) probability = 0.85;
-      else if (stageName.includes('100%') || stageName.includes('yutil') || d.status === 'won') probability = 1.0;
-      else if (isDealCanceled(d)) probability = 0.0;
-
-      const remainingToCollect = Math.max((d.amount || 0) - (d.paidAmount || 0), 0);
-      pipelineForecastValue += (remainingToCollect * probability);
-    });
-
-    // ── 6. Managers Detailed Performance KPIs ──
-    const allUsers = await prisma.user.findMany({
-      where: {
-        role: { in: ['manager', 'operator'] }
-      },
-      select: {
-        id: true,
-        fullName: true,
-        name: true,
-        email: true,
-        role: true,
-        isActive: true
-      }
-    });
-
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-
-    const managerPerformance = {};
-    allUsers.forEach(u => {
-      managerPerformance[u.id] = {
-        id: u.id,
-        name: u.fullName || u.email || 'Menejer',
-        email: u.email,
-        role: u.role,
-        isActive: u.isActive !== false,
-        totalCount: 0,
-        wonCount: 0,
-        wonValue: 0,
-        canceledCount: 0,
-        todayCount: 0,
-        todayWonCount: 0,
-        todayWonValue: 0
-      };
-    });
-
-    deals.forEach(d => {
-      if (!d.managerId) return; // Skip unassigned
-      const m = managerPerformance[d.managerId];
-      if (m) {
-        m.totalCount += 1;
-        if (isWonDeal(d)) {
-          m.wonCount += 1;
-          m.wonValue += (d.amount || 0);
-        }
-        if (isDealCanceled(d)) {
-          m.canceledCount += 1;
-        }
-
-        // Calculate today's orders/deals count
-        const dealDate = d.createdAt ? new Date(d.createdAt) : null;
-        if (dealDate && dealDate >= todayStart) {
-          m.todayCount += 1;
-          if (isWonDeal(d)) {
-            m.todayWonCount += 1;
-            m.todayWonValue += (d.amount || 0);
-          }
-        }
-      }
-    });
 
     // ── Salary & Fines ──
     const currentMonth = new Date().toISOString().slice(0, 7);
@@ -464,7 +537,7 @@ router.get('/kpis', async (req, res, next) => {
     try {
       allSalaries = await prisma.managerSalary.findMany();
       allFines = await prisma.managerFine.findMany({ where: { month: currentMonth } });
-    } catch (_) { /* jadval hali yaratilmagan */ }
+    } catch (_) {}
 
     const managersList = Object.values(managerPerformance).map(m => {
       const winRate = m.totalCount > 0 ? ((m.wonCount / m.totalCount) * 100) : 0;
@@ -487,28 +560,6 @@ router.get('/kpis', async (req, res, next) => {
       };
     });
 
-    // ── 7. Funnel conversion stages (Real-Time Pipeline Tracking) ──
-    const funnelStages = {
-      yangi: dealsCreatedInPeriod.filter(d => {
-        const name = (d.stage?.name || '').toLowerCase();
-        return name.includes('yangi') || name.includes('new');
-      }).length,
-      qaytaAloqa: dealsCreatedInPeriod.filter(d => {
-        const name = (d.stage?.name || '').toLowerCase();
-        return name.includes('qayta') || name.includes('aloqa') || name.includes('перезвон');
-      }).length,
-      kotarilmadi: dealsCreatedInPeriod.filter(d => {
-        const name = (d.stage?.name || '').toLowerCase();
-        return name.includes('ko\'tarilmadi') || name.includes('kotarilmadi') || name.includes('otvet') || name.includes('javob ber');
-      }).length,
-      peregavor: dealsCreatedInPeriod.filter(d => {
-        const name = (d.stage?.name || '').toLowerCase();
-        return name.includes('peregavor') || name.includes('peregovor') || name.includes('muzokara') || name.includes('taklif');
-      }).length,
-      won: dealsCreatedInPeriod.filter(isWonDeal).length,
-      lost: dealsCreatedInPeriod.filter(isDealCanceled).length,
-      total: dealsCreatedInPeriod.length
-    };
 
     res.json({
       totalContacts,
