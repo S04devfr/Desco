@@ -343,7 +343,7 @@ router.post('/cleanup', async (req, res) => {
       return true;
     }).map(c => c.id);
 
-    await prisma.(async (tx) => {
+    await prisma.$transaction(async (tx) => {
       if (dealIds.length > 0) {
         await tx.task.deleteMany({ where: { dealId: { in: dealIds } } });
         await tx.callLog.updateMany({ where: { dealId: { in: dealIds } }, data: { dealId: null } });
