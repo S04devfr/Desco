@@ -204,7 +204,7 @@
   .kb-cards { flex:1; overflow-y:auto; padding:6px; min-height:120px; transition:background 0.12s; }
   .kb-cards::-webkit-scrollbar { width:3px; }
   .kb-cards::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
-  .kb-cards.drag-over { background:rgba(99,102,241,0.08); }
+  .kb-cards.drag-over { background: rgba(99,102,241,0.08) !important; outline: 2px dashed var(--accent) !important; outline-offset: -2px; border-radius: 10px; }
 
   .kb-empty { padding:20px; text-align:center; color:var(--text-tertiary); font-size:12px; font-style:italic; }
 
@@ -241,7 +241,7 @@
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.15) !important;
     border-color: #818CF8 !important;
   }
-  .dcard.dragging { opacity:0.4; transform:rotate(2deg) scale(1.04); box-shadow:var(--shadow-lg); }
+  .dcard.dragging { opacity: 0.45 !important; transform: scale(0.98) !important; box-shadow: var(--shadow-sm) !important; cursor: grabbing !important; }
   .dcard-badge { display:inline-block; padding:4px 8px; border-radius:6px; font-size:10px; font-weight:700;
   text-transform:uppercase; letter-spacing:0.5px; }
   .dcard-header { display:flex; justify-content:space-between; align-items: center; margin-bottom:0px; }
@@ -3095,76 +3095,60 @@ function clearFilters() {
   loadDeals();
 }
 
-// ── Drag & drop ────────────────────────────────────────────────
+// ── Smooth Senior-Level Drag & drop (Zero-Flicker & Zero Reflow Storms) ──
 function onDragStart(e, id) {
-  _dragId = id;
-  e.currentTarget.classList.add('dragging');
-  e.dataTransfer.effectAllowed = 'move';
-}
-function onDragEnd(e) {
-  e.currentTarget.classList.remove('dragging');
-  const ph = document.getElementById('kbDropPlaceholder');
-  if (ph) ph.remove();
-}
-
-// Finds the card the cursor is currently hovering above, so the drop
-// placeholder bounding box can be inserted at the exact intended position
-// within the column rather than always at the end.
-function _dragAfterElement(container, y) {
-  const cards = [...container.querySelectorAll('.dcard:not(.dragging)')];
-  return cards.reduce((closest, child) => {
-    const box = child.getBoundingClientRect();
-    const offset = y - box.top - box.height / 2;
-    if (offset < 0 && offset > closest.offset) return { offset, element: child };
-    return closest;
-  }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
-}
-
-function _ensureDropPlaceholder() {
-  let ph = document.getElementById('kbDropPlaceholder');
-  if (!ph) {
-    ph = document.createElement('div');
-    ph.id = 'kbDropPlaceholder';
-    ph.className = 'kb-drop-placeholder';
+  _dragId = Number(id);
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(id));
   }
-  return ph;
+  const el = e.currentTarget;
+  requestAnimationFrame(() => {
+    if (el) el.classList.add('dragging');
+  });
+}
+
+function onDragEnd(e) {
+  _dragId = null;
+  document.querySelectorAll('.dcard.dragging').forEach(c => c.classList.remove('dragging'));
+  document.querySelectorAll('.kb-cards.drag-over').forEach(c => c.classList.remove('drag-over'));
+  document.querySelectorAll('.rzone-over').forEach(c => c.classList.remove('rzone-over'));
 }
 
 function onDragOver(e) {
   e.preventDefault();
-  e.currentTarget.classList.add('drag-over');
-  const container = e.currentTarget;
-  const ph = _ensureDropPlaceholder();
-  const afterEl = _dragAfterElement(container, e.clientY);
-  if (afterEl) container.insertBefore(ph, afterEl);
-  else container.appendChild(ph);
-}
-function onDragLeave(e) {
-  e.currentTarget.classList.remove('drag-over');
-  // Only drop the placeholder once the cursor truly leaves this column
-  // (not just moving over a child card inside it).
-  if (!e.relatedTarget || !e.currentTarget.contains(e.relatedTarget)) {
-    const ph = document.getElementById('kbDropPlaceholder');
-    if (ph) ph.remove();
+  if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+  const colCards = e.currentTarget;
+  if (colCards && !colCards.classList.contains('drag-over')) {
+    document.querySelectorAll('.kb-cards.drag-over').forEach(c => {
+      if (c !== colCards) c.classList.remove('drag-over');
+    });
+    colCards.classList.add('drag-over');
   }
 }
+
+function onDragLeave(e) {
+  if (!e.relatedTarget || !e.currentTarget.contains(e.relatedTarget)) {
+    e.currentTarget.classList.remove('drag-over');
+  }
+}
+
 async function onDrop(e, stageId) {
   e.preventDefault();
-  e.currentTarget.classList.remove('drag-over');
-  const ph = document.getElementById('kbDropPlaceholder');
-  if (ph) ph.remove();
-  if (!_dragId) return;
-  const dealId = _dragId;
+  e.stopPropagation();
+  
+  document.querySelectorAll('.kb-cards.drag-over').forEach(c => c.classList.remove('drag-over'));
+  document.querySelectorAll('.dcard.dragging').forEach(c => c.classList.remove('dragging'));
+
+  const dealId = _dragId || Number(e.dataTransfer?.getData('text/plain'));
   _dragId = null;
+  if (!dealId) return;
 
   const deal = _deals.find(d => d.id === dealId);
   if (!deal) return;
-  const newStageId = stageId || null;
+  const newStageId = stageId ? Number(stageId) : null;
   if (deal.stageId === newStageId) return;
 
-  // Mock columns (negative ids) are a rendering-only placeholder — there
-  // is no real PipelineStage row to move into, so block the drop before
-  // ever touching local state or the network.
   if (_usingMockStages && newStageId !== null && newStageId < 0) {
     _toast("Bu namuna bosqich — avval voronkani sozlang", 'error');
     return;
@@ -3182,27 +3166,30 @@ async function onDrop(e, stageId) {
     return;
   }
 
-  // Optimistic UI update for smooth UX
+  // 1. Instant optimistic local update with single render
   deal.stageId = newStageId;
+  window._justMovedDealId = dealId;
   renderKanban();
 
   try {
     const updated = await apiFetch('/api/deals/' + dealId + '/stage', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ stageId: Number(newStageId), reason: null })
+      body: JSON.stringify({ stageId: newStageId, reason: null })
     });
     _toast("Bosqich o'zgartirildi", "success");
     if (updated && updated.id) {
       const idx = _deals.findIndex(d => d.id === dealId);
-      if (idx >= 0) _deals[idx] = updated;
+      if (idx >= 0) {
+        _deals[idx] = Object.assign(_deals[idx], updated);
+      }
     }
-    renderKanban();
-    await loadDeals();
   } catch (err) {
     deal.stageId = previousStageId;
     renderKanban();
     _toast(err.message || "Bosqichni o'zgartirishda xatolik yuz berdi", "error");
+  } finally {
+    setTimeout(() => { window._justMovedDealId = null; }, 1500);
   }
 }
 
@@ -3216,18 +3203,17 @@ function onZoneDragLeave(e) {
 }
 async function onZoneDrop(e, outcome) {
   e.preventDefault();
+  e.stopPropagation();
   e.currentTarget.classList.remove('rzone-over');
-  if (!_dragId) return;
-  const dealId = _dragId;
+  document.querySelectorAll('.dcard.dragging').forEach(c => c.classList.remove('dragging'));
+
+  const dealId = _dragId || Number(e.dataTransfer?.getData('text/plain'));
   _dragId = null;
+  if (!dealId) return;
 
   const deal = _deals.find(d => d.id === dealId);
   if (!deal) return;
 
-  // If a real stage matching this outcome exists in the active pipeline
-  // (e.g. "Yutilgan" / "Yo'qotilgan"), move the card there too — otherwise
-  // just clear the stage. Either way the source column's count/total
-  // recompute immediately since the card leaves it.
   const matchNames = outcome === 'won'
     ? ['yutilgan', "g'olib", 'won', 'muvaffaqiyat']
     : ["yo'qotilgan", 'yoqotilgan', 'lost', 'real emas'];
@@ -3239,6 +3225,7 @@ async function onZoneDrop(e, outcome) {
   const previousStatus = deal.status;
   deal.status = outcome;
   deal.stageId = newStageId;
+  window._justMovedDealId = dealId;
   renderKanban();
 
   try {
@@ -3247,13 +3234,16 @@ async function onZoneDrop(e, outcome) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: outcome, stageId: newStageId })
     });
-    Object.assign(deal, updated);
+    const idx = _deals.findIndex(d => d.id === dealId);
+    if (idx >= 0 && updated) _deals[idx] = Object.assign(_deals[idx], updated);
     _toast(outcome === 'won' ? 'Sdelka muvaffaqiyatli yopildi' : 'Sdelka real emas deb belgilandi', 'success');
   } catch (err) {
     deal.stageId = previousStageId;
     deal.status = previousStatus;
     renderKanban();
     _toast(err.message, 'error');
+  } finally {
+    setTimeout(() => { window._justMovedDealId = null; }, 1500);
   }
 }
 
@@ -5553,6 +5543,13 @@ ws.onmessage = async (event) => {
     
     if ((data.type === 'deal_updated' || data.type === 'deal_created') && data.deal) {
       const updatedDeal = data.deal;
+      
+      // If we just moved this deal locally in the last 1.5s, update state silently without screen flashing
+      if (window._justMovedDealId && window._justMovedDealId === updatedDeal.id) {
+        const idx = _deals.findIndex(d => d.id === updatedDeal.id);
+        if (idx >= 0) _deals[idx] = Object.assign(_deals[idx], updatedDeal);
+        return;
+      }
       
       // If the deal's local updatedAt matches the incoming one exactly, we can skip UI flash if we initiated it.
       // But it's safer to just overwrite and re-render the specific item without network calls.
