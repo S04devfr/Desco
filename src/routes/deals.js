@@ -906,6 +906,7 @@ router.patch('/bulk/stage', requireRole('admin', 'manager'), async (req, res, ne
 // Update deal
 router.patch('/:id', async (req, res, next) => {
   try {
+    const data = {};
     const valError = await validateMandatoryFields(req, req.body, true);
     if (valError) return res.status(400).json({ message: valError });
 

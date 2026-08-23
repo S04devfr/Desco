@@ -3681,7 +3681,7 @@ function openDealModal(defaultStageId, editId) {
     const currentStage = _stages?.find(s => s.id === deal?.stageId);
     const isYangiStage = currentStage && currentStage.name.toLowerCase().includes('yangi');
 
-    if (isYangiStage && _userRole !== 'admin') {
+    if (isYangiStage && USER_ROLE !== 'admin') {
       if (banner) banner.classList.remove('hidden');
       inputsToLock.forEach(id => {
         const el = document.getElementById(id);
