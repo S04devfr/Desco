@@ -166,6 +166,16 @@
         <label class="form-label">Sarlavha *</label>
         <input type="text" id="t-title" class="form-control" placeholder="Vazifa sarlavhasi">
       </div>
+      <!-- Quick Date Presets in amoCRM style -->
+      <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center; background:rgba(99,102,241,0.06); padding:8px 10px; border-radius:8px; border:1px solid rgba(99,102,241,0.2); margin-bottom:12px;">
+        <span style="font-size:11px; font-weight:800; color:#6366f1; display:flex; align-items:center; gap:4px; margin-right:2px;">
+          <i class="fas fa-bolt"></i> Tezkor sana:
+        </span>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="setModalTaskPreset('today')" style="font-size:11px; padding:3px 8px; border-radius:6px; background:#fff; border:1px solid #cbd5e1; color:#1e293b; font-weight:700; cursor:pointer;">⚡ Bugun (18:00)</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="setModalTaskPreset('tomorrow')" style="font-size:11px; padding:3px 8px; border-radius:6px; background:#fff; border:1px solid #cbd5e1; color:#1e293b; font-weight:700; cursor:pointer;">🌅 Ertaga (10:00)</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="setModalTaskPreset('in2days')" style="font-size:11px; padding:3px 8px; border-radius:6px; background:#fff; border:1px solid #cbd5e1; color:#1e293b; font-weight:700; cursor:pointer;">📅 +2 kun</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="setModalTaskPreset('in1week')" style="font-size:11px; padding:3px 8px; border-radius:6px; background:#fff; border:1px solid #cbd5e1; color:#1e293b; font-weight:700; cursor:pointer;">📆 +1 hafta</button>
+      </div>
       <div class="form-group">
         <label class="form-label">Vazifa turi</label>
         <select id="t-actionType" class="form-control">
@@ -211,11 +221,21 @@
         </select>
       </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeTaskModal()">Bekor qilish</button>
-      <button class="btn btn-primary" id="taskSaveBtn" onclick="saveTask()">
-        <i class="fas fa-save"></i> Saqlash
-      </button>
+    <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+      <div id="modalTaskExtraActions" style="display:flex; gap:6px;">
+        <button type="button" class="btn btn-ghost btn-sm" id="btnModalOpenDeal" style="display:none; color:var(--accent); font-weight:700; border:1px solid var(--border);" onclick="openAssociatedDealFromModal()">
+          <i class="fas fa-external-link-alt" style="margin-right:4px;"></i> Sdelkada ochish
+        </button>
+        <button type="button" class="btn btn-sm" id="btnModalToggleComplete" style="display:none; background:rgba(16,185,129,0.15); color:#10b981; font-weight:700; border:none;" onclick="toggleCompleteFromModal()">
+          <i class="fas fa-check" style="margin-right:4px;"></i> Bajarildi deb belgilash
+        </button>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-secondary" onclick="closeTaskModal()">Bekor qilish</button>
+        <button class="btn btn-primary" id="taskSaveBtn" onclick="saveTask()">
+          <i class="fas fa-save"></i> Saqlash
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -572,7 +592,7 @@ function renderSingleTaskRowHtml(t) {
   const titleStyle = t.completed ? 'text-decoration: line-through; color: var(--text-tertiary);' : 'font-weight:600; color: var(--text-primary);';
 
   return `
-    <div class="task-card-row ${t.completed ? 'completed-task' : ''}" id="task-${t.id}" ${t.dealId ? `onclick="window.location.href='/deals?openDealId=${t.dealId}'"` : ''} style="cursor:${t.dealId ? 'pointer' : 'default'};">
+    <div class="task-card-row ${t.completed ? 'completed-task' : ''}" id="task-${t.id}" onclick="openTaskModal(${t.id})" style="cursor:pointer;">
       <div style="position:absolute; left:0; top:12px; bottom:12px; width:4px; border-radius:0 4px 4px 0; background: ${isOverdue ? '#ef4444' : t.completed ? '#10b981' : 'var(--accent)'}"></div>
 
       <div style="display: flex; justify-content: center; align-items: center;">
@@ -597,7 +617,7 @@ function renderSingleTaskRowHtml(t) {
           <button class="task-action-btn" onclick="event.stopPropagation(); toggleTaskStatus(${t.id})" title="${t.completed ? 'Qaytarish' : 'Bajarildi deb belgilash'}" style="background:${t.completed ? 'rgba(245,158,11,0.12)' : 'rgba(16,185,129,0.15)'}; color:${t.completed ? '#f59e0b' : '#10b981'}; width:auto; padding:0 10px; border-radius:6px; font-size:11.5px; font-weight:700; height:28px;">
             <i class="fas fa-${t.completed ? 'undo' : 'check'}" style="margin-right:4px;"></i> ${t.completed ? 'Qaytarish' : 'Bajarildi'}
           </button>
-          <button class="task-action-btn" onclick="event.stopPropagation(); viewTaskDetails(${t.id})" title="Ko'rish" style="background:var(--accent-soft); color:var(--accent);"><i class="fas fa-eye" style="font-size:11.5px;"></i></button>
+          <button class="task-action-btn" onclick="event.stopPropagation(); openTaskModal(${t.id})" title="Tahrirlash / Ko'rish" style="background:var(--accent-soft); color:var(--accent);"><i class="fas fa-edit" style="font-size:11.5px;"></i></button>
           ${t.dealId ? `<button class="task-action-btn" onclick="event.stopPropagation(); window.location.href='/deals?openDealId=${t.dealId}'" title="Sdelkaga o'tish" style="background:rgba(14,165,233,0.1); color:#0ea5e9;"><i class="fas fa-arrow-right" style="font-size:11.5px;"></i></button>` : ''}
           <button class="task-action-btn" onclick="event.stopPropagation(); deleteTaskRow(${t.id})" title="O'chirish" style="background:rgba(239,68,68,0.1); color:#ef4444;"><i class="fas fa-trash-alt" style="font-size:11px;"></i></button>
         </div>
@@ -631,7 +651,7 @@ function renderSingleTaskCardHtml(t) {
   const dealName = t.deal ? _esc(t.deal.productName) : '<span style="color:var(--text-tertiary)">—</span>';
   const dealLink = t.dealId ? `<a href="/deals?openDealId=${t.dealId}" onclick="event.stopPropagation();" style="color:var(--accent); text-decoration:none; font-weight:600;">${dealName}</a>` : dealName;
 
-  const cardClickAction = t.dealId ? `onclick="window.location.href='/deals?openDealId=${t.dealId}'"` : '';
+  const cardClickAction = `onclick="openTaskModal(${t.id})"`;
 
   return `
     <div class="task-item" id="task-${t.id}" ${cardClickAction} style="padding: 14px; border: 1px solid var(--border); border-left: 4px solid ${isOverdue ? '#ef4444' : t.completed ? '#10b981' : 'var(--accent)'}; border-radius: 10px; background: var(--bg-secondary); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; gap: 8px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='none'; this.style.boxShadow='none'">
@@ -967,6 +987,19 @@ async function openTaskModal(id, dealId, clientId, dealTitle) {
         pipelineId = t.deal.pipelineId;
         currentStageId = t.deal.stageId || (t.deal.stage ? t.deal.stage.id : null);
       }
+
+      // Show action buttons in footer
+      const btnDeal = document.getElementById('btnModalOpenDeal');
+      const btnComp = document.getElementById('btnModalToggleComplete');
+      if (btnDeal) {
+        btnDeal.style.display = t.dealId ? 'inline-flex' : 'none';
+      }
+      if (btnComp) {
+        btnComp.style.display = 'inline-flex';
+        btnComp.innerHTML = t.completed 
+          ? '<i class="fas fa-undo" style="margin-right:4px;"></i> Qaytarish' 
+          : '<i class="fas fa-check" style="margin-right:4px;"></i> Bajarildi deb belgilash';
+      }
     } catch(e) {}
   } else {
     if (dealTitle) {
@@ -1011,6 +1044,47 @@ async function openTaskModal(id, dealId, clientId, dealTitle) {
 
 function closeTaskModal() {
   document.getElementById('taskModal').classList.add('hidden');
+}
+
+function setModalTaskPreset(preset) {
+  const dateInput = document.getElementById('t-dueDate');
+  const timeInput = document.getElementById('t-dueTime');
+  if (!dateInput || !timeInput) return;
+
+  const now = new Date();
+  let targetDate = new Date();
+
+  if (preset === 'today') {
+    targetDate = now;
+    timeInput.value = '18:00';
+  } else if (preset === 'tomorrow') {
+    targetDate.setDate(now.getDate() + 1);
+    timeInput.value = '10:00';
+  } else if (preset === 'in2days') {
+    targetDate.setDate(now.getDate() + 2);
+    timeInput.value = '10:00';
+  } else if (preset === 'in1week') {
+    targetDate.setDate(now.getDate() + 7);
+    timeInput.value = '10:00';
+  }
+
+  const pad = n => String(n).padStart(2, '0');
+  dateInput.value = `${targetDate.getFullYear()}-${pad(targetDate.getMonth() + 1)}-${pad(targetDate.getDate())}`;
+}
+
+function openAssociatedDealFromModal() {
+  const dealId = document.getElementById('t-dealId')?.value;
+  if (dealId) {
+    window.open('/deals?openDealId=' + dealId, '_blank');
+  }
+}
+
+async function toggleCompleteFromModal() {
+  const taskId = document.getElementById('taskId')?.value;
+  if (taskId) {
+    await toggleTaskStatus(Number(taskId));
+    closeTaskModal();
+  }
 }
 
 async function saveTask() {
