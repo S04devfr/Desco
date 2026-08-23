@@ -12,6 +12,7 @@ const http = require('http');
 const { WebSocketServer } = require('ws');
 
 dotenv.config();
+const prisma = require("./config/database");
 
 // TLS Security Configuration (defaults to strict verification)
 if (process.env.ALLOW_INSECURE_TLS === 'true') {
