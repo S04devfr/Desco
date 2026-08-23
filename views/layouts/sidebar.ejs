@@ -47,9 +47,9 @@
       <span id="sidebar-task-badge" class="nav-badge hidden">0</span>
     </a>
 
-    <a href="/kanban" class="<%= activePage === 'kanban' ? 'active' : '' %>">
-      <span class="nav-icon"><i class="fas fa-columns" style="color:var(--brand);"></i></span>
-      <span class="nav-label">Kanban Doska</span>
+    <a href="/trello" class="<%= (activePage === 'trello' || activePage === 'kanban') ? 'active' : '' %>">
+      <span class="nav-icon"><i class="fab fa-trello" style="color:#0079bf;"></i></span>
+      <span class="nav-label">Trello</span>
     </a>
 
     <a href="/expenses" class="<%= activePage === 'expenses' ? 'active' : '' %>">
