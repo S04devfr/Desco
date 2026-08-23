@@ -240,4 +240,136 @@ router.post('/restore-seed', async (req, res) => {
   }
 });
 
+
+// 7. CLEANUP DATABASE (DELETE OLD CLOSED DEALS AND INACTIVE CLIENTS)
+router.get('/cleanup-stats', async (req, res) => {
+  try {
+    const { date } = req.query;
+    if (!date) {
+      return res.status(400).json({ error: "Sana parametrini ko'rsatish majburiy" });
+    }
+    const threshold = new Date(date);
+    if (isNaN(threshold.getTime())) {
+      return res.status(400).json({ error: "Noto'g'ri sana formati" });
+    }
+
+    // Closed deals (won or lost status) created before threshold date
+    const dealsBeforeDate = await prisma.deal.findMany({
+      where: { createdAt: { lt: threshold } },
+      select: { id: true, status: true }
+    });
+
+    const closedDeals = dealsBeforeDate.filter(d => d.status === 'won' || d.status === 'lost');
+    const activeDeals = dealsBeforeDate.filter(d => d.status !== 'won' && d.status !== 'lost');
+
+    const closedDealIds = closedDeals.map(d => d.id);
+
+    // Clients created before threshold date who have no active deals and no debt
+    const clientsBeforeDate = await prisma.client.findMany({
+      where: { createdAt: { lt: threshold } },
+      select: {
+        id: true,
+        debt: true,
+        deals: { select: { id: true, status: true } }
+      }
+    });
+
+    const clientsToDelete = clientsBeforeDate.filter(c => {
+      if (c.debt > 0) return false;
+      const hasActiveDeals = c.deals.some(d => d.status !== 'won' && d.status !== 'lost');
+      if (hasActiveDeals) return false;
+      return true;
+    });
+
+    res.json({
+      thresholdDate: date,
+      deals: {
+        totalBeforeDate: dealsBeforeDate.length,
+        closedBeforeDate: closedDeals.length,
+        activeBeforeDate: activeDeals.length,
+        toDelete: closedDeals.length
+      },
+      clients: {
+        totalBeforeDate: clientsBeforeDate.length,
+        inactiveBeforeDate: clientsToDelete.length,
+        activeOrWithDebtBeforeDate: clientsBeforeDate.length - clientsToDelete.length,
+        toDelete: clientsToDelete.length
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/cleanup', async (req, res) => {
+  try {
+    const { date } = req.body;
+    if (!date) {
+      return res.status(400).json({ error: "Sana parametrini ko'rsatish majburiy" });
+    }
+    const threshold = new Date(date);
+    if (isNaN(threshold.getTime())) {
+      return res.status(400).json({ error: "Noto'g'ri sana formati" });
+    }
+
+    // 1. Find all closed deals to delete
+    const dealsToDelete = await prisma.deal.findMany({
+      where: {
+        createdAt: { lt: threshold },
+        status: { in: ['won', 'lost'] }
+      },
+      select: { id: true }
+    });
+    const dealIds = dealsToDelete.map(d => d.id);
+
+    // 2. Find clients to delete (created before date, debt === 0, no active deals, all their deals are being deleted)
+    const clientsBeforeDate = await prisma.client.findMany({
+      where: { createdAt: { lt: threshold } },
+      select: {
+        id: true,
+        debt: true,
+        deals: { select: { id: true, status: true } }
+      }
+    });
+
+    const clientIds = clientsBeforeDate.filter(c => {
+      if (c.debt > 0) return false;
+      const hasActiveDeals = c.deals.some(d => d.status !== 'won' && d.status !== 'lost');
+      if (hasActiveDeals) return false;
+      
+      const allDealsWillBeDeleted = c.deals.every(d => dealIds.includes(d.id));
+      if (!allDealsWillBeDeleted) return false;
+      
+      return true;
+    }).map(c => c.id);
+
+    await prisma.(async (tx) => {
+      if (dealIds.length > 0) {
+        await tx.task.deleteMany({ where: { dealId: { in: dealIds } } });
+        await tx.callLog.updateMany({ where: { dealId: { in: dealIds } }, data: { dealId: null } });
+        await tx.deal.deleteMany({ where: { id: { in: dealIds } } });
+      }
+
+      if (clientIds.length > 0) {
+        await tx.task.deleteMany({ where: { clientId: { in: clientIds } } });
+        await tx.callLog.updateMany({ where: { clientId: { in: clientIds } }, data: { clientId: null } });
+        try {
+          await tx.instagramMessage.deleteMany({ where: { clientId: { in: clientIds } } });
+        } catch (e) {}
+        await tx.client.deleteMany({ where: { id: { in: clientIds } } });
+      }
+    });
+
+    logAudit('DATABASE_CLEANUP', `Tizim tozalandi. Tanlangan sana: ${date}. O'chirilgan sdelkalar: ${dealIds.length} ta, o'chirilgan mijozlar: ${clientIds.length} ta.`, req.userId, req.user?.email, req.ip);
+
+    res.json({
+      success: true,
+      message: `Tizim muvaffaqiyatli tozalandi! ${dealIds.length} ta yopilgan sdelka va ${clientIds.length} ta faol bo'lmagan mijoz bazadan o'chirildi.`
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 module.exports = router;
