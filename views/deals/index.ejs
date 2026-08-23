@@ -3944,9 +3944,11 @@ async function openDetail(id) {
         const color = st.color || '#007AFF';
         const classes = `progress-segment${isActive ? ' active' : passed ? ' passed' : ''}`;
         
-        progressBar.innerHTML += `
-          <div class="${classes}" style="--_sc: ${color}; cursor:pointer;" onclick="changeDrawerStage(${st.id})" title="${_esc(st.name)}"></div>
-        `;
+        if (progressBar) {
+          progressBar.innerHTML += `
+            <div class="${classes}" style="--_sc: ${color}; cursor:pointer;" onclick="changeDrawerStage(${st.id})" title="${_esc(st.name)}"></div>
+          `;
+        }
         if (isActive) passed = false;
       });
     }
