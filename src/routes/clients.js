@@ -1,6 +1,7 @@
 const express = require('express');
 const prisma = require('../config/database');
 const { protect, requireRole } = require('../middleware/auth');
+const { normalizePhone, extractLast9, getPhoneSearchFilter } = require('../utils/phone');
 
 const router = express.Router();
 router.use(protect);
@@ -15,15 +16,19 @@ router.get('/', async (req, res, next) => {
     const where = { AND: [] };
 
     if (q) {
-      where.AND.push({
-        OR: [
-          { name: { contains: q, mode: 'insensitive' } },
-          { phone: { contains: q } },
-          { phone2: { contains: q } },
-          { email: { contains: q, mode: 'insensitive' } },
-          { city: { contains: q, mode: 'insensitive' } }
-        ]
-      });
+      const last9 = extractLast9(q);
+      const searchOr = [
+        { name: { contains: q, mode: 'insensitive' } },
+        { phone: { contains: q } },
+        { phone2: { contains: q } },
+        { email: { contains: q, mode: 'insensitive' } },
+        { city: { contains: q, mode: 'insensitive' } }
+      ];
+      if (last9 && last9.length >= 7) {
+        searchOr.push({ phone: { contains: last9 } });
+        searchOr.push({ phone2: { contains: last9 } });
+      }
+      where.AND.push({ OR: searchOr });
     }
 
     if (ownerId) {
@@ -91,21 +96,30 @@ router.post('/', requireRole('admin', 'manager'), async (req, res, next) => {
     const { name, phone, phone2, email, notes, city, debt, debtDate, debtNotes } = req.body;
     if (!name) return res.status(400).json({ message: 'Mijoz ismi majburiy' });
 
-    // Duplicate check by phone
-    if (phone) {
-      const existing = await prisma.client.findFirst({
-        where: { OR: [{ phone: phone.trim() }, { phone2: phone.trim() }] }
-      });
-      if (existing) {
-        return res.status(400).json({ message: 'Ushbu telefon raqamiga ega mijoz allaqachon mavjud!' });
+    const cleanPhone = normalizePhone(phone);
+    const cleanPhone2 = normalizePhone(phone2);
+
+    // Duplicate check by normalized phone
+    if (cleanPhone || cleanPhone2) {
+      const searchOr = [
+        ...getPhoneSearchFilter(cleanPhone),
+        ...getPhoneSearchFilter(cleanPhone2)
+      ];
+      if (searchOr.length > 0) {
+        const existing = await prisma.client.findFirst({
+          where: { OR: searchOr }
+        });
+        if (existing) {
+          return res.status(400).json({ message: 'Ushbu telefon raqamiga ega mijoz allaqachon mavjud!' });
+        }
       }
     }
 
     const client = await prisma.client.create({
       data: {
         name: name.trim(),
-        phone: phone ? phone.trim() : null,
-        phone2: phone2 ? phone2.trim() : null,
+        phone: cleanPhone || null,
+        phone2: cleanPhone2 || null,
         email: email ? email.trim().toLowerCase() : null,
         notes: notes || null,
         city: city || null,
@@ -131,23 +145,32 @@ router.patch('/:id', requireRole('admin', 'manager'), async (req, res, next) => 
     const { name, phone, phone2, email, notes, city, debt, debtDate, debtNotes } = req.body;
     const clientId = Number(req.params.id);
 
+    const cleanPhone = phone !== undefined ? normalizePhone(phone) : undefined;
+    const cleanPhone2 = phone2 !== undefined ? normalizePhone(phone2) : undefined;
+
     // Duplicate check if phone changes
-    if (phone) {
-      const existing = await prisma.client.findFirst({
-        where: {
-          OR: [{ phone: phone.trim() }, { phone2: phone.trim() }],
-          id: { not: clientId }
+    if (cleanPhone || cleanPhone2) {
+      const searchOr = [
+        ...(cleanPhone ? getPhoneSearchFilter(cleanPhone) : []),
+        ...(cleanPhone2 ? getPhoneSearchFilter(cleanPhone2) : [])
+      ];
+      if (searchOr.length > 0) {
+        const existing = await prisma.client.findFirst({
+          where: {
+            OR: searchOr,
+            id: { not: clientId }
+          }
+        });
+        if (existing) {
+          return res.status(400).json({ message: 'Ushbu telefon raqami boshqa mijozga tegishli!' });
         }
-      });
-      if (existing) {
-        return res.status(400).json({ message: 'Ushbu telefon raqami boshqa mijozga tegishli!' });
       }
     }
 
     const data = {};
     if (name !== undefined) data.name = name.trim();
-    if (phone !== undefined) data.phone = phone ? phone.trim() : null;
-    if (phone2 !== undefined) data.phone2 = phone2 ? phone2.trim() : null;
+    if (phone !== undefined) data.phone = cleanPhone || null;
+    if (phone2 !== undefined) data.phone2 = cleanPhone2 || null;
     if (email !== undefined) data.email = email ? email.trim().toLowerCase() : null;
     if (notes !== undefined) data.notes = notes || null;
     if (city !== undefined) data.city = city || null;

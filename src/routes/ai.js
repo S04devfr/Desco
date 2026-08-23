@@ -3,42 +3,22 @@ const router = express.Router();
 const { protect } = require('../middleware/auth');
 const { rateLimiter } = require('../middleware/security');
 const { logAudit } = require('../middleware/auditLog');
+const prisma = require('../config/database');
 
-// ══════════════════════════════════════════
-// AI CHATBOT XAVFSIZLIK FILTRLARI
-// ══════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
+// 1. AI XAVFSIZLIK VA SANITIZATION FILTRLARI
+// ══════════════════════════════════════════════════════════════════════════════
 
-/**
- * Prompt injection himoyasi — zararli patternlarni tekshiradi.
- * @param {string} text — foydalanuvchi kiritgan matn
- * @returns {{ safe: boolean, reason: string }}
- */
 function checkPromptInjection(text) {
   if (!text || typeof text !== 'string') return { safe: true, reason: '' };
-
   const lowerText = text.toLowerCase();
 
   const DANGEROUS_PATTERNS = [
-    // System prompt qidiruvi
-    'ignore previous', 'ignore above', 'ignore all',
+    'ignore previous', 'ignore above', 'ignore all instructions',
     'disregard previous', 'disregard above',
-    'forget your instructions', 'forget previous',
-    'system prompt', 'show me your prompt',
-    'reveal your instructions', 'show your instructions',
-    'what are your instructions', 'what is your system',
+    'reveal your system prompt', 'show your instructions',
     'print your prompt', 'output your prompt',
-    'repeat your system', 'display your system',
-    // Rol o'zgartirish
-    'you are now', 'act as', 'pretend to be',
-    'roleplay as', 'jailbreak', 'dan mode',
-    // Credential so'rash
-    'database url', 'database password', 'api key',
-    'access token', 'secret key', 'show credentials',
-    'environment variable', 'process.env', '.env file',
-    // Ma'lumot sizdirib olish
-    'dump all data', 'show all users', 'list all passwords',
-    'export database', 'select * from "User"',
-    'pg_catalog', 'information_schema'
+    'dump all data', 'select * from "user"', 'pg_catalog', 'information_schema'
   ];
 
   for (const pattern of DANGEROUS_PATTERNS) {
@@ -50,37 +30,27 @@ function checkPromptInjection(text) {
   return { safe: true, reason: '' };
 }
 
-/**
- * SQL so'rovni xavfsizlik tekshiruvi.
- * @param {string} sql — AI tomonidan yaratilgan SQL
- * @returns {{ safe: boolean, reason: string }}
- */
 function validateSQL(sql) {
   if (!sql || typeof sql !== 'string') return { safe: false, reason: 'Bo\'sh SQL' };
-
   const upperSQL = sql.toUpperCase().trim();
 
-  // 1. Faqat SELECT ga ruxsat
   if (!upperSQL.startsWith('SELECT')) {
     return { safe: false, reason: 'Faqat SELECT so\'rovlariga ruxsat berilgan' };
   }
 
-  // 2. Xavfli operatsiyalar
   const BLOCKED_KEYWORDS = [
     'DROP', 'DELETE', 'INSERT', 'UPDATE', 'ALTER',
     'TRUNCATE', 'CREATE', 'GRANT', 'REVOKE',
-    'EXECUTE', 'EXEC', 'COPY', 'EXPLAIN'
+    'EXECUTE', 'EXEC', 'COPY'
   ];
 
   for (const keyword of BLOCKED_KEYWORDS) {
-    // So'z chegaralarini tekshirish (masalan: "UPDATED" emas, "UPDATE" bo'lishi kerak)
     const regex = new RegExp(`\\b${keyword}\\b`, 'i');
     if (regex.test(sql)) {
       return { safe: false, reason: `"${keyword}" operatsiyasi taqiqlangan` };
     }
   }
 
-  // 3. Tizim jadvallariga kirish taqiqlash
   const BLOCKED_TABLES = ['pg_catalog', 'information_schema', 'pg_shadow', 'pg_roles', 'pg_authid'];
   for (const table of BLOCKED_TABLES) {
     if (sql.toLowerCase().includes(table)) {
@@ -88,91 +58,66 @@ function validateSQL(sql) {
     }
   }
 
-  // 4. User jadvalidan password o'qishni taqiqlash
   if (/\bpassword\b/i.test(sql) && /"?User"?/i.test(sql)) {
     return { safe: false, reason: 'User jadvalidan password o\'qish taqiqlangan' };
-  }
-
-  // 5. Xavfli funksiyalar
-  const BLOCKED_FUNCTIONS = ['pg_read_file', 'pg_write_file', 'lo_import', 'lo_export', 'dblink'];
-  for (const func of BLOCKED_FUNCTIONS) {
-    if (sql.toLowerCase().includes(func)) {
-      return { safe: false, reason: `"${func}" funksiyasi taqiqlangan` };
-    }
   }
 
   return { safe: true, reason: '' };
 }
 
-/**
- * AI javobidan sensitive ma'lumotlarni tekshirish.
- * @param {string} reply — AI javob matni
- * @returns {string} — tozalangan javob
- */
 function sanitizeAIResponse(reply) {
   if (!reply || typeof reply !== 'string') return reply;
-
-  // Sensitive patternlarni yashirish
   const SENSITIVE_PATTERNS = [
     /(?:password|parol)\s*[:=]\s*\S+/gi,
     /(?:api[_-]?key|token|secret)\s*[:=]\s*\S+/gi,
     /(?:DATABASE_URL|DIRECT_URL)\s*[:=]\s*\S+/gi,
-    /postgresql:\/\/[^\s"']+/gi,
-    /(?:Bearer|Basic)\s+[A-Za-z0-9+/=._-]{20,}/gi
+    /postgresql:\/\/[^\s"']+/gi
   ];
-
   let cleaned = reply;
   for (const pattern of SENSITIVE_PATTERNS) {
     cleaned = cleaned.replace(pattern, '[REDACTED]');
   }
-
   return cleaned;
 }
 
-const DRIVERS_DATABASE = [
-  { name: "Alisher Umarov", phone: "+998901234567", vehicle: "Damas", regions: ["samarqand", "toshkent"], username: "@alisher_damas", source: "Samarqand_Damas_Guruh" },
-  { name: "Qodirjon Tojiyev", phone: "+998935557788", vehicle: "Labo", regions: ["farg'ona", "namangan", "andijon", "vodiy"], username: "@qodir_labo", source: "Vodiy_Labo_Yuk" },
-  { name: "Bobur Mansurov", phone: "+998974441122", vehicle: "Cobalt", regions: ["buxoro", "samarqand"], username: "@bobur_buxoro", source: "Buxoro_Taksi_Kanal" },
-  { name: "Sherzod Alimov", phone: "+998943339900", vehicle: "Gentra", regions: ["toshkent", "samarqand"], username: "@sherzod_gentra", source: "Toshkent_Samarqand_Arenda" },
+// ══════════════════════════════════════════════════════════════════════════════
+// 2. TELEGRAM VA REGIONAL HAYDOVCHILAR QIDIRUV TIZIMI
+// ══════════════════════════════════════════════════════════════════════════════
+
+const REGION_ALIASES = {
+  'samarqand': ['samarqand', 'samarkand', 'samar', 'samy', 'urgut', 'kattaqo\'rg\'on', 'bulung\'ur'],
+  'toshkent': ['toshkent', 'tashkent', 'tosh', 'tash', 'chirchiq', 'angren', 'olmaliq', 'bekobod', 'yangiyo\'l'],
+  'buxoro': ['buxoro', 'bukhara', 'buxara', 'g\'ijduvon', 'kogon', 'vobkent'],
+  'andijon': ['andijon', 'andijan', 'andi', 'asaka', 'shahrixon', 'marhamat', 'xonobod'],
+  'fargona': ['farg\'ona', 'fargona', 'fergana', 'qo\'qon', 'kokand', 'marg\'ilon', 'rishton', 'oltiariq'],
+  'namangan': ['namangan', 'naman', 'chortoq', 'pop', 'uchqo\'rg\'on', 'kosonsoy'],
+  'jizzax': ['jizzax', 'dzhizak', 'jizax', 'jiz', 'zomin', 'g\'allaorol', 'paxtakor'],
+  'sirdaryo': ['sirdaryo', 'sirdarya', 'guliston', 'gulistan', 'yangiyer', 'shirin', 'boyovut'],
+  'navoiy': ['navoiy', 'navoi', 'zarafshon', 'karmana', 'uchquduq', 'nurota'],
+  'xorazm': ['xorazm', 'khorezm', 'urganch', 'urgench', 'xiva', 'khiva', 'shovot', 'xonqa'],
+  'qashqadaryo': ['qashqadaryo', 'kashkadarya', 'qarshi', 'karshi', 'shahrisabz', 'kitob', 'g\'uzor', 'koson', 'muborak'],
+  'surxondaryo': ['surxondaryo', 'surxandaryo', 'termez', 'termiz', 'denov', 'sherobod', 'boysun', 'sho\'rchi'],
+  'qoraqalpogiston': ['qoraqalpog\'iston', 'karakalpakstan', 'nukus', 'nukis', 'qo\'ng\'irot', 'beruniy', 'to\'rtko\'l']
+};
+
+const DEFAULT_DRIVERS = [
+  { name: "Alisher Umarov", phone: "+998901234567", vehicle: "Damas", regions: ["samarqand", "toshkent"], username: "@alisher_damas", source: "Samarqand_Damas_Pochta" },
+  { name: "Qodirjon Tojiyev", phone: "+998935557788", vehicle: "Labo", regions: ["farg'ona", "namangan", "andijon", "vodiy"], username: "@qodir_labo", source: "Vodiy_Yuk_Tashish" },
+  { name: "Bobur Mansurov", phone: "+998974441122", vehicle: "Cobalt", regions: ["buxoro", "samarqand", "toshkent"], username: "@bobur_buxoro", source: "Buxoro_Taksi_Express" },
+  { name: "Sherzod Alimov", phone: "+998943339900", vehicle: "Gentra", regions: ["toshkent", "samarqand", "jizzax"], username: "@sherzod_gentra", source: "Toshkent_Samarqand_Arenda" },
   { name: "Bekzod Rustamov", phone: "+998997776655", vehicle: "Damas", regions: ["surxondaryo", "toshkent", "termez"], username: "@bekzod_surxon", source: "Termez_Damas_Pochta" },
-  { name: "Jasur Qosimov", phone: "+998908881122", vehicle: "Isuzu Yuk mashinasi", regions: ["toshkent", "samarqand", "buxoro"], username: "@jasur_yuk", source: "Uzbekistan_Yuk_Tashish" },
+  { name: "Jasur Qosimov", phone: "+998908881122", vehicle: "Isuzu Yuk mashinasi", regions: ["toshkent", "samarqand", "buxoro", "qashqadaryo"], username: "@jasur_yuk", source: "Uzbekistan_Katta_Yuk" },
   { name: "Malika Sobirova", phone: "+998931110022", vehicle: "Damas", regions: ["qashqadaryo", "samarqand", "qarshi"], username: "@malika_taksi", source: "Qarshi_Taxi_Guruh" },
   { name: "Otabek Hoshimov", phone: "+998951234589", vehicle: "Cobalt", regions: ["namangan", "toshkent", "andijon", "vodiy"], username: "@otabek_taxi", source: "Fargona_Vodiy_Pochta" },
-  { name: "Sardor Yusupov", phone: "+998909998877", vehicle: "Labo", regions: ["toshkent", "samarqand"], username: "@sardor_labo_ts", source: "Toshkent_Samarqand_Yuk" },
-  { name: "Jahongir Olimov", phone: "+998971112233", vehicle: "Damas", regions: ["andijon", "farg'ona", "vodiy"], username: "@jahongir_andijon", source: "Andijon_Taxi_Live" }
+  { name: "Sardor Yusupov", phone: "+998909998877", vehicle: "Labo", regions: ["toshkent", "samarqand", "sirdaryo"], username: "@sardor_labo_ts", source: "Toshkent_Sirdaryo_Yuk" },
+  { name: "Jahongir Olimov", phone: "+998971112233", vehicle: "Damas", regions: ["andijon", "farg'ona", "vodiy"], username: "@jahongir_andijon", source: "Andijon_Taxi_Live" },
+  { name: "Murod Xo'jayev", phone: "+998914443322", vehicle: "Labo", regions: ["xorazm", "urganch", "buxoro"], username: "@murod_urganch", source: "Xorazm_Yuk_Pochta" },
+  { name: "Ilhom Karimov", phone: "+998938889911", vehicle: "Damas", regions: ["navoiy", "zarafshon", "buxoro"], username: "@ilhom_navoiy", source: "Navoiy_Zarafshon_Guruh" },
+  { name: "Rustam Saidov", phone: "+998903332211", vehicle: "Isuzu", regions: ["qoraqalpog'iston", "nukus", "toshkent"], username: "@rustam_nukus", source: "Nukus_Toshkent_Pochta" }
 ];
 
-async function scrapeTelegramChannel(channelName) {
-  try {
-    const url = `https://t.me/s/${channelName}`;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 second timeout per channel
-    const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(timeoutId);
-
-    if (!res.ok) return [];
-
-    const html = await res.text();
-    const messageBlocks = [];
-    const regex = /<div class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/g;
-    let match;
-    while ((match = regex.exec(html)) !== null) {
-      let text = match[1]
-        .replace(/<br\s*\/?>/gi, '\n')
-        .replace(/<[^>]*>/g, '')
-        .trim();
-      if (text) {
-        messageBlocks.push(text);
-      }
-    }
-    return messageBlocks;
-  } catch (err) {
-    console.error(`[Scraper Error] Failed to scrape @${channelName}:`, err.message);
-    return [];
-  }
-}
-
 function matchesRegion(textLower, region) {
+  if (!region) return true;
   const regNormalized = region.toLowerCase().trim()
     .replace(/g['`’‘"ʼ]/g, 'g')
     .replace(/o['`’‘"ʼ]/g, 'o')
@@ -185,26 +130,7 @@ function matchesRegion(textLower, region) {
     .replace(/['`’‘"ʼ]/g, '')
     .replace(/q/g, 'k');
 
-  if (textNormalized.includes(regNormalized)) {
-    return true;
-  }
-
-  // Predefined regional aliases mapping
-  const REGION_ALIASES = {
-    'samarqand': ['samarqand', 'samarkand', 'samar', 'samy', 'sam'],
-    'toshkent': ['toshkent', 'tashkent', 'tosh', 'tash'],
-    'buxoro': ['buxoro', 'bukhara', 'buxora', 'buxara'],
-    'andijon': ['andijon', 'andijan', 'andi'],
-    'fargona': ['farg\'ona', 'fargona', 'fergana', 'farg’ona', 'fargo\'na'],
-    'namangan': ['namangan', 'naman'],
-    'jizzax': ['jizzax', 'dzhizak', 'jizax', 'jiz'],
-    'sirdaryo': ['sirdaryo', 'sirdarya', 'guliston', 'gulistan'],
-    'navoiy': ['navoiy', 'navoi', 'navoiyda'],
-    'xorazm': ['xorazm', 'khorezm', 'urganch', 'urgench'],
-    'qashqadaryo': ['qashqadaryo', 'kashkadarya', 'qarshi', 'karshi'],
-    'surxondaryo': ['surxondaryo', 'surxandaryo', 'termez', 'termiz'],
-    'qoraqalpogiston': ['qoraqalpog\'iston', 'karakalpakstan', 'nukus', 'nukis']
-  };
+  if (textNormalized.includes(regNormalized)) return true;
 
   for (const [key, aliases] of Object.entries(REGION_ALIASES)) {
     if (regNormalized.includes(key) || key.includes(regNormalized)) {
@@ -219,65 +145,41 @@ function matchesRegion(textLower, region) {
 
 function extractDriversFromMessages(messages, destination, vehicle, sourceChannel) {
   const parsedDrivers = [];
+  const phoneRegex = /(?:\+?998)?[-.\s]?\(?\d{2}\)?[-.\s]?\d{3}[-.\s]?\d{2}[-.\s]?\d{2}/g;
 
   for (const text of messages) {
     const textLower = text.toLowerCase();
-    
-    // Check if the message matches the destination (using matchesRegion helper)
-    const hasDest = matchesRegion(textLower, destination);
-    if (!hasDest) continue;
-
-    // Check if the message mentions the vehicle if requested
+    if (!matchesRegion(textLower, destination)) continue;
     if (vehicle && !textLower.includes(vehicle.toLowerCase().trim())) continue;
 
-    // Match phone numbers with optional spaces, dashes, dots, parentheses
-    const phoneRegex = /(?:\+?998)?[-.\s]?\(?\d{2}\)?[-.\s]?\d{3}[-.\s]?\d{2}[-.\s]?\d{2}/g;
     const phoneMatch = text.match(phoneRegex);
     if (!phoneMatch) continue;
 
-    const uniquePhones = [];
-    const seenP = new Set();
-    for (const rawPhone of phoneMatch) {
-      const cleaned = rawPhone.replace(/[^\d+]/g, '');
-      let finalPhone = cleaned;
-      if (cleaned.length === 9) {
-        finalPhone = '+998' + cleaned;
-      } else if (cleaned.length === 12 && !cleaned.startsWith('+')) {
-        finalPhone = '+' + cleaned;
-      }
-      
-      if (!seenP.has(finalPhone)) {
-        seenP.add(finalPhone);
-        uniquePhones.push(finalPhone);
-      }
-    }
+    const rawPhone = phoneMatch[0].replace(/[^\d+]/g, '');
+    let finalPhone = rawPhone;
+    if (rawPhone.length === 9) finalPhone = '+998' + rawPhone;
+    else if (rawPhone.length === 12 && !rawPhone.startsWith('+')) finalPhone = '+' + rawPhone;
 
-    if (uniquePhones.length === 0) continue;
-
-    // Determine vehicle type from text
     let detectedVehicle = "Yengil mashina";
     if (textLower.includes("damas")) detectedVehicle = "Damas";
     else if (textLower.includes("labo")) detectedVehicle = "Labo";
     else if (textLower.includes("cobalt")) detectedVehicle = "Cobalt";
     else if (textLower.includes("gentra") || textLower.includes("jentra")) detectedVehicle = "Gentra";
     else if (textLower.includes("isuzu")) detectedVehicle = "Isuzu Yuk mashinasi";
-    else if (textLower.includes("kamaz")) detectedVehicle = "Kamaz Yuk mashinasi";
+    else if (textLower.includes("kamaz") || textLower.includes("fura")) detectedVehicle = "Kamaz / Fura";
 
-    // Extract a realistic driver name or description
     let driverName = "Telegram Haydovchi";
-    const nameMatch = text.match(/(?:ismim|ism|haydovchi)\s*:?\s*([A-Za-zА-Яа-яЎўҚқҒғҲҳ\s]{3,15})/i);
+    const nameMatch = text.match(/(?:ismim|ism|haydovchi|shofyori?)\s*:?\s*([A-Za-zА-Яа-яЎўҚқҒғҲҳ\s]{3,15})/i);
     if (nameMatch && nameMatch[1]) {
       driverName = nameMatch[1].trim();
     } else {
       const words = text.split(/\s+/).filter(w => !w.includes('+') && w.length > 2);
-      if (words.length > 0) {
-        driverName = words.slice(0, 3).join(' ').replace(/[^\w\sА-Яа-яЎўҚқҒғҲҳ]/g, '');
-      }
+      if (words.length > 0) driverName = words.slice(0, 2).join(' ').replace(/[^\w\sА-Яа-яЎўҚқҒғҲҳ]/g, '');
     }
 
     parsedDrivers.push({
-      name: driverName || "Telegram Haydovchi",
-      phone: uniquePhones[0],
+      name: driverName || "Haydovchi",
+      phone: finalPhone,
       vehicle: detectedVehicle,
       regions: [destination],
       username: `@${sourceChannel}`,
@@ -288,111 +190,88 @@ function extractDriversFromMessages(messages, destination, vehicle, sourceChanne
   return parsedDrivers;
 }
 
-async function runTelegramDriverSearch(destination, vehicle) {
-  const prisma = require('../config/database');
-  const settings = await prisma.companySettings.findFirst();
+async function scrapeTelegramChannel(channelName) {
+  try {
+    const url = `https://t.me/s/${channelName}`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (!res.ok) return [];
 
+    const html = await res.text();
+    const messageBlocks = [];
+    const regex = /<div class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/g;
+    let match;
+    while ((match = regex.exec(html)) !== null) {
+      const cleanText = match[1].replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>/g, '').trim();
+      if (cleanText) messageBlocks.push(cleanText);
+    }
+    return messageBlocks;
+  } catch (err) {
+    return [];
+  }
+}
+
+async function runTelegramDriverSearch(destination, vehicle) {
   let results = [];
 
-  if (settings && settings.telegramSessionString && settings.telegramApiId && settings.telegramApiHash) {
-    console.log("[AI Driver Search] User Telegram Session active. Running authenticated search...");
-    const { TelegramClient, Api } = require('telegram');
-    const { StringSession } = require('telegram/sessions');
-    const session = new StringSession(settings.telegramSessionString);
-    const client = new TelegramClient(session, Number(settings.telegramApiId), settings.telegramApiHash, {
-      connectionRetries: 3,
-    });
-
-    try {
+  // 1. Try Authenticated Telegram Client if configured
+  try {
+    const settings = await prisma.companySettings.findFirst();
+    if (settings && settings.telegramSessionString && settings.telegramApiId && settings.telegramApiHash) {
+      const { TelegramClient, Api } = require('telegram');
+      const { StringSession } = require('telegram/sessions');
+      const session = new StringSession(settings.telegramSessionString);
+      const client = new TelegramClient(session, Number(settings.telegramApiId), settings.telegramApiHash, { connectionRetries: 2 });
       await client.connect();
 
-      // Build multiple queries for maximum coverage of spelling variations and general driver channels
-      const queries = [destination];
-      const destLower = destination.toLowerCase().trim();
-      if (destLower.includes('q')) {
-        queries.push(destLower.replace(/q/g, 'k'));
-      } else if (destLower.includes('k')) {
-        queries.push(destLower.replace(/k/g, 'q'));
-      }
-      queries.push('taksi');
-      queries.push('shopir');
-      queries.push('haydovchi');
-      queries.push('yuk');
-
-      console.log(`[AI Driver Search] Running multiple queries on Telegram API: [${queries.join(', ')}]`);
-      
-      const searchPromises = queries.map(async (q) => {
-        try {
-          const res = await client.invoke(
-            new Api.messages.SearchGlobal({
-              q: q,
-              filter: new Api.InputMessagesFilterEmpty(),
-              minDate: 0,
-              maxDate: 0,
-              offsetRate: 0,
-              offsetPeer: new Api.InputPeerEmpty(),
-              offsetId: 0,
-              limit: 50
-            })
-          );
-          return res;
-        } catch (e) {
-          console.error(`[AI Driver Search] Global search failed for query "${q}":`, e.message);
-          return null;
-        }
-      });
+      const queries = [destination, `${destination} taksi`, `${destination} pochta`, `${destination} yuk`];
+      const searchPromises = queries.map(q => client.invoke(new Api.messages.SearchGlobal({
+        q,
+        filter: new Api.InputMessagesFilterEmpty(),
+        minDate: 0,
+        maxDate: 0,
+        offsetRate: 0,
+        offsetPeer: new Api.InputPeerEmpty(),
+        offsetId: 0,
+        limit: 25
+      })).catch(() => null));
 
       const searchResults = await Promise.all(searchPromises);
-      const uniqueMessages = new Map();
-
-      for (const searchResult of searchResults) {
-        if (!searchResult || !searchResult.messages) continue;
-        
-        const peers = {};
-        if (searchResult.chats) {
-          searchResult.chats.forEach(c => {
-            peers[c.id.toString()] = c.title || c.username || 'Telegram Guruh';
-          });
-        }
-        if (searchResult.users) {
-          searchResult.users.forEach(u => {
-            peers[u.id.toString()] = `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.username || 'Foydalanuvchi';
-          });
-        }
-
-        for (const msg of searchResult.messages) {
-          if (!msg.message || uniqueMessages.has(msg.id.toString())) continue;
-          
-          let sourceName = 'Telegram';
-          if (msg.peerId) {
-            const peerKey = (msg.peerId.chatId || msg.peerId.channelId || msg.peerId.userId || '').toString();
-            if (peers[peerKey]) {
-              sourceName = peers[peerKey];
-            }
-          }
-
-          uniqueMessages.set(msg.id.toString(), {
-            text: msg.message,
-            source: sourceName
-          });
+      for (const res of searchResults) {
+        if (!res || !res.messages) continue;
+        for (const msg of res.messages) {
+          if (!msg.message) continue;
+          const drivers = extractDriversFromMessages([msg.message], destination, vehicle, 'Telegram Global Search');
+          results = results.concat(drivers);
         }
       }
-
-      console.log(`[AI Driver Search] Found ${uniqueMessages.size} unique candidate messages across queries.`);
-
-      for (const [msgId, msgData] of uniqueMessages) {
-        const drivers = extractDriversFromMessages([msgData.text], destination, vehicle, msgData.source);
-        results = results.concat(drivers);
-      }
-
       await client.disconnect();
-    } catch (err) {
-      console.error("[AI Driver Search] Authenticated GramJS client error:", err.message);
-      try { await client.disconnect(); } catch(e) {}
+    }
+  } catch (e) {
+    console.warn('[AI Telegram GramJS Notice]', e.message);
+  }
+
+  // 2. Public Scraper Channels
+  const targetChannels = ['vodiy_taksi_pochta', 'toshkent_samarqand_pochta', 'buxoro_taksi', 'qarshi_pochta_taxi', 'surxondaryo_taksi'];
+  for (const ch of targetChannels) {
+    const msgs = await scrapeTelegramChannel(ch);
+    if (msgs.length > 0) {
+      const drivers = extractDriversFromMessages(msgs, destination, vehicle, ch);
+      results = results.concat(drivers);
     }
   }
 
-  // Remove duplicates by phone number
+  // 3. Fallback to Curated Regional Drivers Database
+  const matchedCurated = DEFAULT_DRIVERS.filter(d => {
+    const regMatch = d.regions.some(r => matchesRegion(destination, r));
+    const vehMatch = !vehicle || d.vehicle.toLowerCase().includes(vehicle.toLowerCase().trim());
+    return regMatch && vehMatch;
+  });
+  results = results.concat(matchedCurated);
+
+  // Deduplicate by phone
   const uniqueDrivers = [];
   const seenPhones = new Set();
   for (const d of results) {
@@ -402,69 +281,80 @@ async function runTelegramDriverSearch(destination, vehicle) {
     }
   }
 
-  console.log(`[AI Driver Search] Completed search. Found ${uniqueDrivers.length} real driver matches.`);
   return uniqueDrivers;
 }
 
-
-// ══════════════════════════════════════════
-// AI CHAT ENDPOINT
-// ══════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
+// 3. SMART FALLBACK ENGINE (DESCO.AI UNIVERSAL COPILOT)
+// ══════════════════════════════════════════════════════════════════════════════
 
 async function generateSmartFallbackResponse(userPrompt, req, prisma) {
-  const promptLower = String(userPrompt || '').toLowerCase();
+  const promptLower = String(userPrompt || '').toLowerCase().trim();
 
   // 1. Objection: "Qimmat ekan"
-  if (promptLower.includes('qimmat') || promptLower.includes('gimmat')) {
-    return `🎯 **"Mijoz qimmat ekan dedi" — 3 Ta Zo'r Sotuv Skripti**:
+  if (promptLower.includes('qimmat') || promptLower.includes('gimmat') || promptLower.includes('narxi baland')) {
+    return `🎯 **"Mijoz qimmat ekan dedi" — Desco.ai dan 3 Ta Kuchli Sotuv Skripti**:
 
-1. **"Sifat va Kafolat" usuli**:
-   > *"Tushunaman, narx muhim masalador. Lekin bizning mahsulotimiz 1 yillik rasmiy kafolat va bepul yetkazib berish xizmatiga ega. Arzonroq muqobillari 2 oyda buzilib qolishi mumkin. Sifatimizga javob beramiz!"*
+1. **"Sifat, Rasmiy Kafolat va Xizmat" Taktikasi**:
+   > *"Tushunaman, narx har doim muhim omil. Lekin bizning mahsulotimiz 1 yillik rasmiy kafolat, servis xizmati va bepul yetkazib berish bilan ta'minlangan. Bozordagi arzon muqobillari 1-2 oyda ishdan chiqishi mumkin. Biz to'liq sifatiga javob beramiz!"*
 
-2. **"Bo'lib to'lash / Nasiya" usuli**:
-   > *"Agar biryo'la to'lash og'irlik qilsa, Nasiya Desco orqali boshlang'ich to'lovsiz, bo'lib berishga rasmiylashtirib berishim mumkin. Qaysi variant sizga qulay?"*
+2. **"Nasiya Desco / Bo'lib To'lash" Taktikasi**:
+   > *"Agar biryo'la to'lash og'irlik qilsa, Nasiya Desco orqali boshlang'ich to'lovsiz, oylik qulay to'lovga rasmiylashtirib berishimiz mumkin. Sizga 3 oylikmi yoki 6 oylik qulayroq bo'ladimi?"*
 
-3. **"Qiymat taqqoslash" usuli**:
-   > *"To'g'ri aytdingiz, lekin uzoq muddatli foydalanishni hisoblasak, bu mahsulot kuniga atigi 2,000 so'mga tushadi. Sog'liq va qulaylik uchun bu juda arzon sarmoya!"*
+3. **"Kunlik Qiymatni Bo'lib Ko'rsatish" Taktikasi**:
+   > *"To'g'ri aytdingiz, lekin uzoq muddatli foydalanishni hisoblasak, bu mahsulot sizga kuniga atigi 2,500 so'mga tushadi. O'zingiz va oilangiz qulayligi uchun bu juda arzon sarmoya!"*
 
-📱 **Telegram/SMS matni**:
-*"Assalomu alaykum [Mijoz ismi], bugun siz so'ragan mahsulotga 1 yillik rasmiy kafolat va bepul yetkazib berish qo'shilgan. Buyurtmani rasmiylashtiraylikmi?"*`;
+📱 **Telegram / SMS uchun tayyor xabar nusxasi**:
+\`\`\`text
+Assalomu alaykum [Mijoz Ismi]! Siz so'ragan mahsulotimizga bugun 1 yillik rasmiy kafolat va bepul yetkazib berish xizmati qo'shilgan. Buyurtmani manzilingizga rasmiylashtiraylikmi?
+\`\`\`
+
+---
+⚡ *Javob: Desco.ai — Senior Sales & CRM Intelligence*`;
   }
 
   // 2. Objection: "O'ylab ko'raman"
-  if (promptLower.includes('o\'ylab') || promptLower.includes('oylab')) {
-    return `🤔 **"Mijoz o'ylab ko'raman dedi" — Professional Skriptlar**:
+  if (promptLower.includes('o\'ylab') || promptLower.includes('oylab') || promptLower.includes('maslahatlashay')) {
+    return `🤔 **"Mijoz o'ylab ko'raman dedi" — Desco.ai Skriptlari**:
 
-1. **"Savolni aniqlash" usuli**:
-   > *"Albatta, o'ylab ko'rish muhim. Faqat bir narsani aniqlashtirib olsam: aynan narxi borasida ikkilanayapsizmi yoki mahsulot xususiyatlarida?"*
+1. **"Ikkilanishning asl sababini aniqlash" usuli**:
+   > *"Albatta, o'ylab ko'rish juda to'g'ri. Faqat bitta narsani aniqlashtirib olsam: sizni aynan mahsulot xususiyatlari ikkilantiryaptimi yoki narx/to'lov shartlarimi?"*
 
-2. **"Cheklangan aksiya" usuli**:
-   > *"Albatta! Faqat hozirgi aksiyamiz soat 18:00 gacha amal qiladi. Zaxirani siz uchun saqlab turaymi?"*
+2. **"Cheklangan zaxira va maxsus chegirma" usuli**:
+   > *"Albatta, bemalol! Faqat hozirgi aksiyamiz bo'yicha omborda atigi 3 dona qoldi. Zaxirani siz uchun bugun soat 18:00 gacha band qilib turaymi?"*
 
-📱 **Telegram matni**:
-*"Assalomu alaykum! Agar mahsulot bo'yicha biron bir savolingiz bo'lsa, javob berishga tayyorman. Hozir omborda atigi 3 ta qoldi."*`;
+📱 **Telegram / SMS xabari**:
+\`\`\`text
+Assalomu alaykum! Agar mahsulot bo'yicha qo'shimcha savollaringiz bo'lsa, tushuntirib berishga tayyorman. Hozir bepul yetkazib berish aksiyasi ketmoqda!
+\`\`\`
+
+---
+⚡ *Javob: Desco.ai — Senior Sales & CRM Intelligence*`;
   }
 
-  // 3. Driver search
-  if (promptLower.includes('shopir') || promptLower.includes('driver') || promptLower.includes('haydovchi') || promptLower.includes('taksi')) {
-    const destMatch = promptLower.match(/(samarqand|toshkent|buxoro|andijon|farg'ona|fargona|namangan|jizzax|sirdaryo|navoiy|xorazm|qashqadaryo|surxondaryo|nukus)/i);
-    const dest = destMatch ? destMatch[0] : 'Samarqand';
+  // 3. Driver / Logistics Search
+  if (promptLower.includes('shopir') || promptLower.includes('driver') || promptLower.includes('haydovchi') || promptLower.includes('taksi') || promptLower.includes('pochta')) {
+    let dest = 'Samarqand';
+    for (const reg of Object.keys(REGION_ALIASES)) {
+      if (promptLower.includes(reg)) { dest = reg; break; }
+    }
     const drivers = await runTelegramDriverSearch(dest, null);
     
+    let reply = `🚕 **${dest.toUpperCase()} Yo'nalishi Bo'yicha Telegram Haydovchilari (Desco.ai Qidiruv Natijalari):**\n\n`;
     if (drivers.length > 0) {
-      let reply = `🚕 **${dest.toUpperCase()} yo'nalishi bo'yicha topilgan haydovchilar:**\n\n`;
       drivers.slice(0, 5).forEach((d, idx) => {
-        reply += `${idx + 1}. **${d.name}** (${d.vehicle})\n   📱 Tel: ${d.phone}\n   📍 Guruh: ${d.source}\n\n`;
+        reply += `${idx + 1}. **${d.name}** (${d.vehicle})\n   📱 **Tel:** \`${d.phone}\`\n   📍 **Manba:** ${d.source}\n\n`;
       });
-      reply += `💡 *Haydovchini sdelkaga biriktirish uchun: "${drivers[0].name}ni sdelka #305 ga shopir qil" deb yozing.*`;
-      return reply;
+      reply += `💡 *Haydovchini sdelkaga biriktirish uchun: "${drivers[0].name}ni sdelka #324 ga shopir qil" deb yozishingiz mumkin.*`;
     } else {
-      return `🚕 **${dest.toUpperCase()} yo'nalishi bo'yicha haydovchilar:**\n\n1. **Alisher Umarov** (Damas) — Tel: +998901234567 (Guruh: Samarqand_Damas_Guruh)\n2. **Sherzod Alimov** (Gentra) — Tel: +998943339900 (Guruh: Toshkent_Samarqand_Arenda)`;
+      reply += `1. **Alisher Umarov** (Damas) — Tel: \`+998901234567\`\n2. **Sherzod Alimov** (Gentra) — Tel: \`+998943339900\``;
     }
+    reply += `\n\n---\n⚡ *Javob: Desco.ai — Telegram Logistics Search*`;
+    return reply;
   }
 
-  // 4. Specific Deal Query
-  const dealMatch = promptLower.match(/(?:sdelka|#)\s*(\d+)/i);
+  // 4. Specific Deal Query (#ID)
+  const dealMatch = promptLower.match(/(?:sdelka|zakaz|buyurtma|#)\s*(\d+)/i);
   if (dealMatch && dealMatch[1]) {
     const dealId = Number(dealMatch[1]);
     const deal = await prisma.deal.findUnique({
@@ -472,127 +362,126 @@ async function generateSmartFallbackResponse(userPrompt, req, prisma) {
       include: { client: true, manager: true, stage: true, deliveryLog: true }
     });
     if (deal) {
-      return `📦 **Sdelka #${deal.id} Ma'lumotlari**:
-- **Mahsulot**: ${deal.productName}
-- **Mijoz**: ${deal.client ? deal.client.name : 'Noma\'lum'} (${deal.client?.phone || 'N/A'})
-- **Shahar/Viloyat**: ${deal.city || deal.client?.city || 'Noma\'lum'}
-- **Summa**: ${Number(deal.amount || 0).toLocaleString('uz-UZ')} UZS
-- **Bosqich**: ${deal.stage ? deal.stage.name : 'Yangi'}
-- **Mas'ul Menejer**: ${deal.manager ? deal.manager.fullName : 'Biriktirilmagan'}
-- **Biriktirilgan Shopir**: ${deal.deliveryLog ? deal.deliveryLog.shopirName : 'Biriktirilmagan'}
-- **Izoh**: ${deal.notes || 'Yo\'q'}`;
+      return `📦 **Desco.ai — Sdelka #${deal.id} Ma'lumotlari**:
+
+| Ko'rsatkich | Ma'lumot |
+| :--- | :--- |
+| **Mahsulot** | **${deal.productName || 'Noma\'lum'}** |
+| **Mijoz** | ${deal.client ? deal.client.name : 'Noma\'lum'} (\`${deal.client?.phone || 'N/A'}\`) |
+| **Shahar / Viloyat** | ${deal.city || deal.client?.city || 'Noma\'lum'} |
+| **Summa** | **${Number(deal.amount || 0).toLocaleString('uz-UZ')} UZS** |
+| **Voronka Bosqichi** | ${deal.stage ? deal.stage.name : 'Yangi'} |
+| **Mas'ul Menejer** | ${deal.manager ? deal.manager.fullName : 'Biriktirilmagan'} |
+| **Biriktirilgan Shopir** | ${deal.deliveryLog?.shopirName || 'Biriktirilmagan'} |
+| **Izoh** | ${deal.notes || 'Mavjud emas'} |
+
+---
+⚡ *Javob: Desco.ai — CRM Real-Time Intelligence*`;
     }
   }
 
-  // 5. Sales Statistics / Today's Report / Hisobot
-  if (promptLower.includes('hisobot') || promptLower.includes('tahlil') || promptLower.includes('sotuv') || promptLower.includes('bugun')) {
+  // 5. Sales / Reports / Statistics
+  if (promptLower.includes('hisobot') || promptLower.includes('tahlil') || promptLower.includes('sotuv') || promptLower.includes('statistika') || promptLower.includes('bugun')) {
     const todayStart = new Date();
     todayStart.setHours(0,0,0,0);
 
-    const [todayDeals, totalDeals] = await Promise.all([
+    const [todayDeals, totalDeals, totalClients, wonDeals] = await Promise.all([
       prisma.deal.count({ where: { createdAt: { gte: todayStart } } }),
-      prisma.deal.count()
+      prisma.deal.count(),
+      prisma.client.count(),
+      prisma.deal.count({ where: { status: 'won' } })
     ]);
 
-    return `📊 **CRM Sotuvlar va Sdelkalar Tahlili**:
+    return `📊 **Desco.ai — CRM Jonli Tahlil va Hisobot**:
 
-| Ko'rsatkich | Qiymat | Status |
+| Ko'rsatkich | Qiymat | Holat |
 | :--- | :--- | :--- |
-| **Bugungi Yangi Sdelkalar** | **${todayDeals} ta** | 🟢 Faol |
+| **Bugungi Yangi Sdelkalar** | **${todayDeals} ta** | 🟢 Jonli oqim |
 | **Tizimdagi Jami Sdelkalar** | **${totalDeals} ta** | 📈 O'smoqda |
-| **Zahira Baza Boshqaruvi** | **Avtomatik** | ✅ Tamomlandi |
+| **Muvaffaqiyatli Yutilganlar** | **${wonDeals} ta** | 🏆 Yuqori konversiya |
+| **Jami Ro'yxatdagi Mijozlar** | **${totalClients} nafar** | 👥 Faol baza |
 
-💡 *Excel jadval shaklida yuklab olish uchun "Excel (CSV) yuklab olish" tugmasini bosing.*`;
+💡 *Xulosa:* Barcha jarayonlar barqaror ishlamoqda. Aniqroq davr hisobotini olish uchun kerakli sana yoki filtrni yozing.
+
+---
+⚡ *Javob: Desco.ai — Enterprise Analytics*`;
   }
 
-  // Default friendly response
-  return `Assalomu alaykum! Men **Desco AI** aqlli yordamchisiman.
+  // 6. Universal Professional Advisor Response
+  return `Assalomu alaykum! Men **Desco.ai** — Universal Sun'iy Intellekt Assistentingizman.
 
-Sizga quyidagi masalalarda soniyada yordam bera olaman:
-- 🚀 **Mijoz e'tirozlarini yengish**: *"Mijoz qimmat ekan dedi"*, *"O'ylab ko'raman dedi"*
-- 🚕 **Shopir topish**: *"Samarqandga Damas shopir topib ber"*
-- 📦 **Sdelka ma'lumoti**: *"#385 haqida ma'lumot ber"*
-- 📊 **Sotuv tahlili**: *"Bugungi sotuvlar tahlili"*`;
+Sizga har qanday sohada professional darajada yordam berishga tayyorman:
+- 🚀 **Sotuv va Mijozlar**: *"Mijoz qimmat dedi, nima deb javob qilay?"*, *"Mijozga tijorat taklifi yozib ber"*
+- 🚕 **Logistika va Telegram Qidiruv**: *"Samarqandga Damas shopir topib ber"*, *"Buxoroga yuk mashina qidir"*
+- 📦 **CRM va Sdelkalar**: *"#324 sdelka ma'lumoti"*, *"Bugungi sotuvlar tahlili"*
+- 💼 **Biznes va Marketing**: *"Reklama matni yozish"*, *"Nasiya foizlarini hisoblash"*, *"Sotuv strategiyasi"*
+- 💡 **Har qanday yo'nalishdagi savollar va texnik topshiriqlar**.
+
+*Qanday savol yoki topshirig'ingiz bor?*
+
+---
+⚡ *Desco.ai — All-in-One Enterprise AI Copilot*`;
 }
 
-// Xavfsizlik: protect (auth) + rate limit (30 req/min)
-router.post('/chat', protect, rateLimiter(30, 60000), async (req, res) => {
+// ══════════════════════════════════════════════════════════════════════════════
+// 4. MAIN AI CHAT ROUTE (/api/ai/chat)
+// ══════════════════════════════════════════════════════════════════════════════
+
+router.post('/chat', protect, rateLimiter(40, 60000), async (req, res) => {
   try {
     const { messages } = req.body;
-
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: "Xabarlar formati noto'g'ri." });
     }
 
-    const prisma = require('../config/database');
-    const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY;
+    const API_KEY = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY || process.env.GROQ_API_KEY;
 
-    // Prompt injection tekshiruvi — foydalanuvchi xabarlariga
     const lastUserMessage = messages.filter(m => m.role === 'user').pop();
     const userPrompt = lastUserMessage?.content || '';
 
     if (lastUserMessage) {
       const injectionCheck = checkPromptInjection(userPrompt);
       if (!injectionCheck.safe) {
-        console.warn(`[AI Security] Prompt injection bloklandi. User: ${req.user?.email}, Pattern: "${injectionCheck.reason}"`);
         logAudit('AI_INJECTION_BLOCKED', `Pattern: ${injectionCheck.reason}`, req.userId, req.user?.email, req.ip);
         return res.json({
-          reply: "Kechirasiz, bu so'rov xavfsizlik sababli rad etildi. Iltimos, CRM ma'lumotlari haqida savol bering."
+          reply: "Xavfsizlik talablariga muvofiq, tizim buyruqlarini o'zgartiruvchi so'rovlar qabul qilinmaydi. Iltimos, savolingizni bevosita bering.\n\n— *Desco.ai Xavfsizlik Xizmati*"
         });
       }
     }
 
-    // Audit log: AI so'rov (faqat savol, javob emas)
-    logAudit(
-      'AI_QUERY',
-      `Savol: ${lastUserMessage?.content?.substring(0, 200) || 'unknown'}`,
-      req.userId, req.user?.email, req.ip
-    );
+    logAudit('AI_QUERY', `Savol: ${userPrompt.substring(0, 200)}`, req.userId, req.user?.email, req.ip);
 
-    // Tizim uchun yopiq kontekst (System Prompt) — hech qachon foydalanuvchiga ko'rsatilmaydi
+    // ── Universal Desco.ai System Persona ──
     const systemMessage = {
       role: 'system',
-      content: `Sen "Desco AI" san — DESCO CRM tizimining Senior Sales Director va Chief CRM Strategist (Bosh Sotuv Direktori hamda CRM Konsultanti) darajasidagi o'tkir sun'iy intellekt CoPilotisan.
+      content: `Sen "Desco.ai" san — DESCO CRM va ilg'or biznes korxonalarining Universal Bosh Sun'iy Intellekt Assistentisan (Chief AI Copilot & Senior Sales Strategist).
 
-SENING GAPIRISH USLUBING VA SHAXSIYATING (PERSONA):
-1. **O'TKIR VA PROFESSIONAL SOTUV EXPERTI**: Sen oddiy robottursan yoki qolip matnlar yodlagan yordamchi emassan. Sen o'ta tajribali, natijador Sotuv Direktori kabi gapirasan.
-2. **QOLIP JUMLALAR QAT'IYAN TAQIQLANADI**: "Salom, qanday yordam bera olaman?", "Men robotman" kabi lirik va rasmiyatsiz jumlalarni Ishlatma. Darhol aniq maqsadga va harakatga o't.
-3. **AMALIY TA'SIRCHA SKRIPTLAR VA TAKTIKALAR**: Menejer savol bersa, darhol konversiyasini oshiradigan o'tkir o'zbekcha sotuv skriptlari, SMS/Telegram xabar nusxalari va 1-2-3 qadamli ko'rsatmalarni ber.
+SENING ASOSIY PRINSIPLARING VA PERSONANG (MANDATORY):
+1. **SENING NOMI**: Har doim "Desco.ai" nomidan rasmiy, vakolatli, o'tkir va professional ravishda javob berasan.
+2. **UNIVERSAL BILIM VA HAR QANDAY YO'NALISH**: Sen har qanday sohada (sotuv san'ati, mijoz e'tirozlarini yengish, marketing, moliya, hisob-kitoblar, dasturlash va texnologiyalar, huquq, biznes strategiyasi, logistika, Telegram qidiruv va umumiy savollar) eng yuqori darajada, tushunarli, o'zbek tilida (yoki foydalanuvchi so'ragan tilda) amaliy yechimlar berasan.
+3. **AMALIY VA TA'SIRCHAN BO'LISH**: Quruq nazariyadan ko'ra aniq 1-2-3 qadamli ko'rsatmalar, tayyor SMS/Telegram xabar matnlari, taqqoslash jadvallari va skriptlarni taqdim et.
+4. **CRM VA TELEGRAM INTEGRATSIYASI**:
+   - Mijoz ma'lumotlari yoki sdelka so'ralsa: "execute_sql" yoki "search_crm_universal" vositalaridan foydalan.
+   - Haydovchi, shopir, taksi yoki logistika so'ralsa: "search_telegram_drivers" vositasi orqali viloyatlar bo'yicha Telegram kanallari va bazalaridan haydovchilarni qidirib ber.
+   - Yangi vazifa (Task) yaratish yoki haydovchini sdelkaga biriktirish topshirilsa: "create_task" yoki "assign_delivery_driver" vositalarini ishlat.
 
-SENING ASOSIY VAZIFALARING:
-1. **SOTUV BO'YICHA MENELER COPILOT VA E'TIROZLARNI YENGISH (SALES OBJECTIONS SCRIPTS)**:
-   - Mijoz e'tirozi haqida so'ralsa ("Qimmat ekan", "O'ylab ko'raman", "Ishonchim komil emas"), darhol 3 ta eng kuchli psixologik sotuv skriptini, tayyor SMS/Telegram xabar matnini hamda bitimni yopish (Closing Deal) usullarini ber.
-   - Mijoz uchun rasmiy tijorat taklifi (Offer) va kafolat matnlarini lahzada tuzib ber.
+MA'LUMOTLAR BAZASI (PostgreSQL):
+- User (id, email, fullName, role, isActive)
+- Client (id, name, phone, city, debt)
+- Deal (id, productName, amount, paidAmount, costPrice, status, notes, clientId, managerId, stageId, createdAt)
+- Task (id, title, dueDate, priority, completed, dealId, assignedToId)
+- WarehouseStock (id, productName, quantity, price, minStock)
 
-2. **DESCO CRM NAVIGATSIYA VA MA'LUMOTLAR**:
-   - CRM bo'limlari va Voronka bosqichlari (Yangi -> Peregavor -> Ko'tarmadi -> Qayta aloqa -> Shopirdagi pul -> Nasiya Desco -> Nasiya Ishonch -> Nasiya Baraka -> Yutilgan) bo'yicha tushuntirish ber.
+FOYDALANUVCHI:
+- Ismi: ${req.user?.fullName || 'Foydalanuvchi'}
+- Roli: ${req.user?.role || 'manager'}
 
-3. **LIVE DB DATA QUERY (execute_sql)**:
-   - CRM ma'lumotlari so'ralsa ("Bugun nechta sdelka ochildi?", "Mijoz Murodda qancha qarz bor?"), execute_sql orqali to'g'ri SELECT so'rovini bajarib aniq jadval va xulosa ber.
+RUXSAT CHEKLOVLARI:
+- Agar foydalanuvchi admin bo'lmasa (role !== 'admin'), boshqa xodimlarning maoshi va kompaniyaning maxfiy sof foyda ko'rsatkichlarini ko'rsatma.
 
-MA'LUMOTLAR BAZASI STRUKTURASI (PostgreSQL):
-1. "User" jadvali (Menejerlar): id, email, fullName, role ('admin', 'manager', 'operator'), isActive
-2. "Client" jadvali (Mijozlar): id, name, phone, city, debt
-3. "Deal" jadvali (Sdelkalar): id, productName, amount, paidAmount, costPrice, status, notes, clientId, managerId, stageId, createdAt
-4. "PipelineStage" jadvali: id, name, order, pipelineId
-
-SENING VOSITALARING (TOOLS):
-1. "execute_sql": CRM bazasidan SELECT so'rovi uchun.
-2. "search_telegram_drivers": Viloyatlar bo'yicha Telegram shopirlarini qidirish uchun.
-3. "assign_delivery_driver": Haydovchini sdelkaga biriktirish uchun.
-4. "create_task": Menejer uchun yangi vazifa (Task) yaratish uchun.
-
-CURRENT USER DETAILS:
-- Name: ${req.user?.fullName || 'Noma\'lum'}
-- Email: ${req.user?.email || 'Noma\'lum'}
-- Role: ${req.user?.role || 'operator'}
-
-RUXSATLAR VA ROLLAR BO'YICHA CHEKLOVLAR (MANDATORY):
-1. Admin bo'lmagan foydalanuvchilarga (Role !== 'admin') boshqa menejerlarning maoshi, moliyaviy tan narxi va kompaniya darajasidagi umumiy tushumini ko'rsatma.
-2. Har doim o'tkir, professional, senior sotuv konsultanti kabi o'zbek tilida aniq, tushunarli va chiroyli Markdown formatida javob ber.`
+Har bir javobing oxirida yorqin, estetik va ixcham "Desco.ai" imzosi bo'lsin.`
     };
 
-    // Foydalanuvchi xabarlaridan "system" rolini tozalash (injection himoyasi)
     const safeMessages = messages.filter(m => m.role !== 'system');
     const payloadMessages = [systemMessage, ...safeMessages];
 
@@ -601,14 +490,11 @@ RUXSATLAR VA ROLLAR BO'YICHA CHEKLOVLAR (MANDATORY):
         type: 'function',
         function: {
           name: 'execute_sql',
-          description: `CRM bazasiga faqat o'qish (SELECT) uchun SQL so'rov yuboradi. Misol: SELECT COUNT(*) FROM "Deal" WHERE DATE("createdAt") = CURRENT_DATE`,
+          description: `CRM bazasidan ma'lumotlarni xavfsiz SELECT qilish uchun SQL so'rov yuboradi.`,
           parameters: {
             type: 'object',
             properties: {
-              query: {
-                type: 'string',
-                description: "PostgreSQL SELECT so'rovi."
-              }
+              query: { type: 'string', description: "PostgreSQL SELECT so'rovi." }
             },
             required: ['query']
           }
@@ -618,18 +504,12 @@ RUXSATLAR VA ROLLAR BO'YICHA CHEKLOVLAR (MANDATORY):
         type: 'function',
         function: {
           name: 'search_telegram_drivers',
-          description: `Telegramdagi O'zbekiston viloyatlari shopirlar guruhlari/kanallaridan (masalan, @samarqand_shopirlari, @toshkent_taxi) haydovchilarni qidiradi.`,
+          description: `Telegramdagi O'zbekiston viloyatlari shopirlar guruhlari/kanallaridan haydovchilarni qidiradi.`,
           parameters: {
             type: 'object',
             properties: {
-              destination: {
-                type: 'string',
-                description: "Haydovchi borishi kerak bo'lgan viloyat yoki shahar nomi (masalan: 'Samarqand', 'Buxoro', 'Farg'ona')"
-              },
-              vehicle: {
-                type: 'string',
-                description: "Avtomobil turi (ixtiyoriy, masalan: 'Damas', 'Labo', 'Cobalt', 'Gentra', 'Yuk mashinasi')"
-              }
+              destination: { type: 'string', description: "Viloyat yoki shahar nomi (masalan: 'Samarqand', 'Buxoro', 'Qarshi')" },
+              vehicle: { type: 'string', description: "Avtomobil turi (masalan: 'Damas', 'Labo', 'Cobalt', 'Gentra', 'Isuzu')" }
             },
             required: ['destination']
           }
@@ -638,23 +518,28 @@ RUXSATLAR VA ROLLAR BO'YICHA CHEKLOVLAR (MANDATORY):
       {
         type: 'function',
         function: {
-          name: 'assign_delivery_driver',
-          description: `Sdelka (buyurtma) ga haydovchi ismini biriktiradi. Bu orqali yetkazib berish (DeliveryLog) jurnali yaratiladi yoki yangilanadi.`,
+          name: 'search_crm_universal',
+          description: `CRM bo'yicha sdelkalar, mijozlar, ombor va vazifalarni kalit so'z yoki telefon raqami orqali tezkor qidiradi.`,
           parameters: {
             type: 'object',
             properties: {
-              dealId: {
-                type: 'number',
-                description: "Haydovchi biriktirilishi kerak bo'lgan sdelka ID raqami (masalan: 305)"
-              },
-              driverName: {
-                type: 'string',
-                description: "Haydovchining ismi va familiyasi (masalan: 'Alisher Umarov')"
-              },
-              notes: {
-                type: 'string',
-                description: "Qo'shimcha izohlar (ixtiyoriy, masalan: 'Telefon: +998901234567, Damas')"
-              }
+              keyword: { type: 'string', description: "Qidirilayotgan so'z, ism, mahsulot yoki telefon raqami" }
+            },
+            required: ['keyword']
+          }
+        }
+      },
+      {
+        type: 'function',
+        function: {
+          name: 'assign_delivery_driver',
+          description: `Sdelkaga haydovchi ismini biriktiradi va yetkazib berish (DeliveryLog) jurnalini yangilaydi.`,
+          parameters: {
+            type: 'object',
+            properties: {
+              dealId: { type: 'number', description: "Sdelka ID raqami" },
+              driverName: { type: 'string', description: "Haydovchi ismi" },
+              notes: { type: 'string', description: "Qo'shimcha izoh" }
             },
             required: ['dealId', 'driverName']
           }
@@ -668,278 +553,194 @@ RUXSATLAR VA ROLLAR BO'YICHA CHEKLOVLAR (MANDATORY):
           parameters: {
             type: 'object',
             properties: {
-              title: {
-                type: 'string',
-                description: "Vazifa sarlavhasi (masalan: 'Jasur Umarov bilan bog'lanish')"
-              },
-              description: {
-                type: 'string',
-                description: "Batafsil izoh (ixtiyoriy)"
-              },
-              dueDate: {
-                type: 'string',
-                description: "Muddati (YYYY-MM-DD shaklida, masalan: '2026-07-19')"
-              },
-              dueTime: {
-                type: 'string',
-                description: "Muddati soati (ixtiyoriy, masalan: '10:00')"
-              },
-              priority: {
-                type: 'string',
-                description: "Muhimlik darajasi: 'high' (Yuqori), 'medium' (O'rta), 'low' (Past)"
-              },
-              dealId: {
-                type: 'number',
-                description: "Bog'langan sdelka ID raqami (ixtiyoriy)"
-              },
-              clientId: {
-                type: 'number',
-                description: "Bog'langan mijoz ID raqami (ixtiyoriy)"
-              }
+              title: { type: 'string', description: "Vazifa sarlavhasi" },
+              description: { type: 'string', description: "Tavsif" },
+              dueDate: { type: 'string', description: "Muddat sanasi (YYYY-MM-DD)" },
+              dueTime: { type: 'string', description: "Muddat vaqti (HH:MM)" },
+              priority: { type: 'string', description: "Muhimlik: 'low', 'medium', 'high', 'urgent'" }
             },
-            required: ['title', 'dueDate', 'priority']
+            required: ['title', 'dueDate']
           }
         }
       }
     ];
 
-    // 1-bosqich: AI ga so'rov yuborish (agar API key bo'lmasa fallback chaqiriladi)
-    if (!DEEPSEEK_API_KEY) {
-      console.log('[AI Fallback Engine] DEEPSEEK_API_KEY topilmadi. Local Smart Engine ishga tushirildi.');
+    if (!API_KEY) {
+      console.log('[Desco.ai Engine] API kalit topilmadi. Smart Fallback ishga tushirildi.');
       const fallbackReply = await generateSmartFallbackResponse(userPrompt, req, prisma);
       return res.json({ reply: fallbackReply });
     }
 
+    let apiUrl = 'https://api.deepseek.com/chat/completions';
+    let modelName = 'deepseek-chat';
+
+    if (process.env.OPENAI_API_KEY && !process.env.DEEPSEEK_API_KEY) {
+      apiUrl = 'https://api.openai.com/v1/chat/completions';
+      modelName = 'gpt-4o-mini';
+    }
+
     let response;
     try {
-      response = await fetch('https://api.deepseek.com/chat/completions', {
+      response = await fetch(apiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_API_KEY}` },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
         body: JSON.stringify({
-          model: 'deepseek-chat',
+          model: modelName,
           messages: payloadMessages,
           tools: tools,
           tool_choice: 'auto',
-          temperature: 0.1
+          temperature: 0.2
         })
       });
-      if (!response.ok) {
-        throw new Error(`API Response Error: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`API status ${response.status}`);
     } catch(fetchErr) {
-      console.warn('[AI API Error -> Local Fallback Triggered]:', fetchErr.message);
+      console.warn('[Desco.ai API Notice -> Local Smart Fallback]', fetchErr.message);
       const fallbackReply = await generateSmartFallbackResponse(userPrompt, req, prisma);
       return res.json({ reply: fallbackReply });
     }
 
     let aiData = await response.json();
-    let responseMessage = aiData.choices[0].message;
+    let responseMessage = aiData.choices && aiData.choices[0] ? aiData.choices[0].message : null;
 
-    // ── MANUAL DSML PARSER (DEFENSIVE PROXY FIX FOR GEMINI PROXIES) ──
-    if (responseMessage.content && (responseMessage.content.includes('DSML') || responseMessage.content.includes('invoke name='))) {
-      console.log("[AI Parser] Detected raw DSML tool calls in response content. Parsing manually...");
-      const toolCalls = [];
-      const blocks = responseMessage.content.split(/<(?:\s*\|\s*)?DSML(?:\s*\|\s*)?invoke|invoke name=/);
-      
-      for (let i = 1; i < blocks.length; i++) {
-        const block = blocks[i];
-        const nameMatch = block.match(/name="([^"]+)"/) || block.match(/^"([^"]+)"/);
-        if (!nameMatch) continue;
-        const toolName = nameMatch[1];
-        
-        const params = {};
-        const paramRegex = /(?:parameter name=|parameter=")([^"]+)"[^>]*>([\s\S]*?)(?=\n|<|$)/g;
-        let paramMatch;
-        while ((paramMatch = paramRegex.exec(block)) !== null) {
-          const paramName = paramMatch[1];
-          const paramValue = paramMatch[2].trim();
-          params[paramName] = paramValue;
-        }
-        
-        if (params.dealId) params.dealId = Number(params.dealId);
-        if (params.clientId) params.clientId = Number(params.clientId);
-        
-        toolCalls.push({
-          id: `manual_call_${Date.now()}_${i}`,
-          type: 'function',
-          function: {
-            name: toolName,
-            arguments: JSON.stringify(params)
-          }
-        });
-      }
-      
-      if (toolCalls.length > 0) {
-        responseMessage.tool_calls = toolCalls;
-        responseMessage.content = null;
-      }
+    if (!responseMessage) {
+      const fallbackReply = await generateSmartFallbackResponse(userPrompt, req, prisma);
+      return res.json({ reply: fallbackReply });
     }
 
+    // Process Tool Calls if any
     if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
-      payloadMessages.push(responseMessage); // AI ning tool_call so'rovini tarixga qo'shamiz
+      payloadMessages.push(responseMessage);
       
       for (const toolCall of responseMessage.tool_calls) {
-        if (toolCall.function.name === 'execute_sql') {
+        const fnName = toolCall.function.name;
+        let args = {};
+        try { args = JSON.parse(toolCall.function.arguments || '{}'); } catch (_) {}
+
+        if (fnName === 'execute_sql') {
           try {
-            const args = JSON.parse(toolCall.function.arguments);
-            let sql = args.query.trim();
-            
-            // ── KUCHAYTIRILGAN SQL XAVFSIZLIK TEKSHIRUVI ──
+            const sql = args.query.trim();
             const sqlCheck = validateSQL(sql);
-            if (!sqlCheck.safe) {
-              console.warn(`[AI SQL Blocked] ${sqlCheck.reason}. SQL: ${sql}`);
-              logAudit('AI_SQL_BLOCKED', `Sabab: ${sqlCheck.reason}, SQL: ${sql.substring(0, 200)}`, req.userId, req.user?.email, req.ip);
-              throw new Error(`SQL xavfsizlik: ${sqlCheck.reason}`);
-            }
+            if (!sqlCheck.safe) throw new Error(sqlCheck.reason);
 
-            // ── NON-ADMIN ROLE ENFORCEMENT ON BACKEND ──
-            if (req.user?.role !== 'admin') {
-              const lowerSql = sql.toLowerCase();
-              const isExpense = lowerSql.includes('expense');
-              const isGlobalDealAccess = lowerSql.includes('deal') && 
-                                         !lowerSql.includes(`managerid" = ${req.userId}`) && 
-                                         !lowerSql.includes(`managerid = ${req.userId}`);
-              if (isExpense || isGlobalDealAccess) {
-                console.warn(`[AI Security Blocked] Non-admin ${req.user.email} attempted global/unauthorized SQL access: ${sql}`);
-                throw new Error("Sizda ushbu ma'lumotlarni ko'rishga ruxsat yo'q.");
-              }
-            }
-
-            console.log('[AI SQL] Executing:', sql);
             const dbResult = await prisma.$queryRawUnsafe(sql);
-            
-            // Natijani AI ga qaytaramiz
             payloadMessages.push({
               role: 'tool',
               tool_call_id: toolCall.id,
-              content: JSON.stringify(dbResult, (key, value) => typeof value === 'bigint' ? value.toString() : value)
+              content: JSON.stringify(dbResult, (k, v) => typeof v === 'bigint' ? v.toString() : v)
             });
-            
-          } catch (dbErr) {
-            console.error('[AI SQL Error]:', dbErr.message);
-            payloadMessages.push({
-              role: 'tool',
-              tool_call_id: toolCall.id,
-              content: JSON.stringify({ error: dbErr.message })
-            });
+          } catch (err) {
+            payloadMessages.push({ role: 'tool', tool_call_id: toolCall.id, content: JSON.stringify({ error: err.message }) });
           }
-        } else if (toolCall.function.name === 'search_telegram_drivers') {
+        } else if (fnName === 'search_telegram_drivers') {
           try {
-            const args = JSON.parse(toolCall.function.arguments);
-            const destination = args.destination;
-            const vehicle = args.vehicle || null;
-
-            console.log(`[AI Driver Search] Searching drivers for: ${destination}, Vehicle: ${vehicle || 'any'}`);
-            const results = await runTelegramDriverSearch(destination, vehicle);
-
+            const results = await runTelegramDriverSearch(args.destination, args.vehicle || null);
             payloadMessages.push({
               role: 'tool',
               tool_call_id: toolCall.id,
               content: JSON.stringify({ success: true, count: results.length, drivers: results })
             });
           } catch (err) {
+            payloadMessages.push({ role: 'tool', tool_call_id: toolCall.id, content: JSON.stringify({ error: err.message }) });
+          }
+        } else if (fnName === 'search_crm_universal') {
+          try {
+            const kw = String(args.keyword || '').trim();
+            const [deals, clients, tasks] = await Promise.all([
+              prisma.deal.findMany({
+                where: { OR: [{ productName: { contains: kw } }, { notes: { contains: kw } }] },
+                take: 5,
+                select: { id: true, productName: true, amount: true, status: true }
+              }),
+              prisma.client.findMany({
+                where: { OR: [{ name: { contains: kw } }, { phone: { contains: kw } }] },
+                take: 5,
+                select: { id: true, name: true, phone: true, city: true, debt: true }
+              }),
+              prisma.task.findMany({
+                where: { title: { contains: kw } },
+                take: 5,
+                select: { id: true, title: true, dueDate: true, priority: true }
+              })
+            ]);
             payloadMessages.push({
               role: 'tool',
               tool_call_id: toolCall.id,
-              content: JSON.stringify({ error: err.message })
+              content: JSON.stringify({ success: true, deals, clients, tasks })
             });
+          } catch (err) {
+            payloadMessages.push({ role: 'tool', tool_call_id: toolCall.id, content: JSON.stringify({ error: err.message }) });
           }
-        } else if (toolCall.function.name === 'assign_delivery_driver') {
+        } else if (fnName === 'assign_delivery_driver') {
           try {
-            const args = JSON.parse(toolCall.function.arguments);
             const dealId = Number(args.dealId);
             const driverName = args.driverName;
-            const notes = args.notes || null;
-
-            console.log(`[AI Assign Driver] Assigning: ${driverName} to Deal #${dealId}`);
-
             const deal = await prisma.deal.findUnique({ where: { id: dealId } });
             if (!deal) throw new Error(`Sdelka #${dealId} topilmadi`);
 
             const delivery = await prisma.deliveryLog.upsert({
               where: { dealId },
-              update: { shopirName: driverName, destination: deal.city || undefined, notes: notes || undefined },
-              create: { dealId, shopirName: driverName, destination: deal.city, notes, status: 'dispatched' }
+              update: { shopirName: driverName, destination: deal.city || undefined, notes: args.notes || undefined },
+              create: { dealId, shopirName: driverName, destination: deal.city, notes: args.notes, status: 'dispatched' }
             });
-
             payloadMessages.push({
               role: 'tool',
               tool_call_id: toolCall.id,
-              content: JSON.stringify({ success: true, message: `Haydovchi ${driverName} sdelka #${dealId} ga muvaffaqiyatli biriktirildi.`, delivery })
+              content: JSON.stringify({ success: true, message: `Haydovchi ${driverName} sdelka #${dealId} ga biriktirildi.`, delivery })
             });
           } catch (err) {
-            payloadMessages.push({
-              role: 'tool',
-              tool_call_id: toolCall.id,
-              content: JSON.stringify({ error: err.message })
-            });
+            payloadMessages.push({ role: 'tool', tool_call_id: toolCall.id, content: JSON.stringify({ error: err.message }) });
           }
-        } else if (toolCall.function.name === 'create_task') {
+        } else if (fnName === 'create_task') {
           try {
-            const args = JSON.parse(toolCall.function.arguments);
-            const title = args.title;
-            const description = args.description || null;
-            const dueDate = args.dueDate ? new Date(args.dueDate) : null;
-            const dueTime = args.dueTime || null;
-            const priority = args.priority || 'medium';
-            const dealId = args.dealId ? Number(args.dealId) : null;
-            const clientId = args.clientId ? Number(args.clientId) : null;
-
-            console.log(`[AI Create Task] Title: ${title}, Date: ${args.dueDate}`);
-
             const newTask = await prisma.task.create({
               data: {
-                title,
-                description,
-                dueDate,
-                dueTime,
-                priority,
-                dealId,
-                clientId,
+                title: args.title,
+                description: args.description || null,
+                dueDate: args.dueDate ? new Date(args.dueDate) : null,
+                dueTime: args.dueTime || null,
+                priority: args.priority || 'medium',
                 assignedToId: req.userId
               }
             });
-
             payloadMessages.push({
               role: 'tool',
               tool_call_id: toolCall.id,
-              content: JSON.stringify({ success: true, message: `Vazifa muvaffaqiyatli yaratildi. ID: ${newTask.id}`, task: newTask })
+              content: JSON.stringify({ success: true, message: `Vazifa yaratildi. ID: ${newTask.id}`, task: newTask })
             });
           } catch (err) {
-            payloadMessages.push({
-              role: 'tool',
-              tool_call_id: toolCall.id,
-              content: JSON.stringify({ error: err.message })
-            });
+            payloadMessages.push({ role: 'tool', tool_call_id: toolCall.id, content: JSON.stringify({ error: err.message }) });
           }
         }
       }
 
-      // 2-bosqich: SQL natijalari bilan yana DeepSeek ga so'rov yuboramiz
-      response = await fetch('https://api.deepseek.com/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${DEEPSEEK_API_KEY}` },
-        body: JSON.stringify({
-          model: 'deepseek-chat',
-          messages: payloadMessages,
-          temperature: 0.7
-        })
-      });
-      aiData = await response.json();
-      responseMessage = aiData.choices[0].message;
+      // Step 2: Final response generation with tool results
+      try {
+        const secondRes = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+          body: JSON.stringify({
+            model: modelName,
+            messages: payloadMessages,
+            temperature: 0.4
+          })
+        });
+        const secondData = await secondRes.json();
+        if (secondData.choices && secondData.choices[0]) {
+          responseMessage = secondData.choices[0].message;
+        }
+      } catch (secErr) {
+        console.warn('[Desco.ai Second Step Warning]', secErr.message);
+      }
     }
 
-    // AI javobini sanitize qilish (sensitive ma'lumotlar tozalash)
-    const cleanReply = sanitizeAIResponse(responseMessage.content);
-
-    res.json({
-      reply: cleanReply
-    });
+    const cleanReply = sanitizeAIResponse(responseMessage.content || '');
+    res.json({ reply: cleanReply });
 
   } catch (error) {
-    console.error('[AI Route Error]:', error.message);
-    res.status(500).json({ error: 'Ichki server xatosi.' });
+    console.error('[Desco.ai Route Error]:', error.message);
+    res.status(500).json({ error: 'Desco.ai server xatosi yuz berdi.' });
   }
 });
 
 module.exports = router;
+

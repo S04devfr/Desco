@@ -6,10 +6,13 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
+    "test": "node tests/run_all.js",
     "db:init": "prisma migrate dev --name init",
     "db:seed": "node prisma/seed.js",
     "db:reset": "prisma migrate reset",
     "db:studio": "prisma studio",
+    "db:backup": "node scripts/backup_database.js",
+    "db:restore": "node scripts/restore_database.js",
     "build": "node scripts/prisma-generate.js",
     "prestart": "node scripts/prisma-generate.js --push && node prisma/seed.js",
     "postinstall": "node scripts/prisma-generate.js"

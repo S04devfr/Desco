@@ -47,11 +47,6 @@ router.get('/messages/:clientId', protect, async (req, res) => {
 
 // POST /api/telegram/messages - Send Telegram reply
 router.post('/messages', protect, async (req, res) => {
-  return res.status(400).json({ error: 'Telegram ulanishi vaqtincha o\'chirilgan.' });
-});
-
-// Disabled original logic below
-const disabledSendRoute = async (req, res) => {
   try {
     const { clientId, text, attachmentUrl, attachmentType } = req.body;
     
@@ -241,7 +236,7 @@ const disabledSendRoute = async (req, res) => {
     console.error('Error sending telegram message:', error);
     res.status(500).json({ error: 'Failed to send telegram message' });
   }
-};
+});
 
 // POST /api/telegram/update-client
 router.post('/update-client', protect, async (req, res) => {

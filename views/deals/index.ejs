@@ -973,6 +973,74 @@
     color: #fbbf24;
   }
 
+  /* ── Stage Custom Dropdown in Drawer (100% Solid Backdrop) ── */
+  .stage-custom-dropdown {
+    position: relative;
+    z-index: 1050;
+  }
+  .stage-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 999999 !important;
+    background: #1e293b !important;
+    background-color: #1e293b !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5) !important;
+    min-width: 240px;
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 6px !important;
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    opacity: 1 !important;
+  }
+  [data-theme="light"] .stage-dropdown-menu {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #1e293b !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.16) !important;
+  }
+  .stage-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: #e2e8f0;
+    transition: all 0.15s ease;
+    background: transparent;
+    user-select: none;
+  }
+  [data-theme="light"] .stage-dropdown-item {
+    color: #1e293b !important;
+  }
+  .stage-dropdown-item:hover {
+    background: #334155 !important;
+    color: #ffffff !important;
+  }
+  [data-theme="light"] .stage-dropdown-item:hover {
+    background: #f1f5f9 !important;
+    color: #007AFF !important;
+  }
+  .stage-dropdown-item.active {
+    background: rgba(0, 122, 255, 0.18) !important;
+    color: #38bdf8 !important;
+    font-weight: 700;
+  }
+  [data-theme="light"] .stage-dropdown-item.active {
+    background: rgba(0, 122, 255, 0.12) !important;
+    color: #007AFF !important;
+  }
+
   /* Timeline Collapsible */
   .timeline-fold {
     display: flex;
@@ -1214,7 +1282,7 @@
     <div class="deals-filter">
       <div class="filter-search-wrap">
         <i class="fas fa-search"></i>
-        <input type="text" id="filterSearch" placeholder="Mijoz, sdelka, telefon..." style="width:240px" oninput="loadDeals()" autocomplete="off">
+        <input type="text" id="filterSearch" placeholder="Mijoz, sdelka, telefon..." style="width:240px" autocomplete="off">
       </div>
       <% if (typeof user !== 'undefined' && user && user.role === 'admin') { %>
         <select id="filterStage" class="filter-select" style="width:160px" onchange="loadDeals()">
@@ -1512,15 +1580,17 @@
         </div>
 
         <!-- General Tab Content -->
-        <div class="drawer-tab-content active" id="tab-main" style="padding-left: 22px;">
-          <div class="drawer-inline-row">
-            <span class="drawer-inline-label">Mas'ul</span>
-            <div class="drawer-inline-value">
-              <select id="dw-managerId" class="drawer-inline-select">
-                <option value="">— Menejersiz —</option>
-              </select>
+        <div class="drawer-tab-content active" id="tab-main" style="padding-left: 22px; padding-right: 16px;">
+          <!-- Responsibility & Deal Amount Card -->
+          <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+              <span style="font-size: 12px; font-weight: 700; color: var(--text-secondary);"><i class="fas fa-user-tie" style="color: var(--brand); margin-right: 6px;"></i>Mas'ul Menejer</span>
+              <div style="flex: 1; max-width: 220px;">
+                <select id="dw-managerId" class="form-control" style="font-size: 12.5px; height: 32px; padding: 4px 8px; font-weight: 600;">
+                  <option value="">— Menejersiz —</option>
+                </select>
+              </div>
             </div>
-          </div>
           <div class="drawer-inline-row" style="padding: 10px 4px;">
             <span class="drawer-inline-label" style="font-weight:700; color:var(--text-primary);">Summa / Narxi</span>
             <div class="drawer-inline-value" style="display:flex; align-items:center; gap:8px;">
@@ -1528,49 +1598,68 @@
               <span style="font-size:12.5px; color:var(--text-secondary); font-weight:700;">so'm</span>
             </div>
           </div>
+            </div>
+          </div>
 
-          <!-- Main Fields Section (amoCRM style simplified client info) -->
-          <div style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 20px;">
-            <div style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-tertiary); margin-bottom: 12px;">Mijoz Ma'lumotlari</div>
+          <!-- Main Client Fields Section (Sleek Modern Card) -->
+          <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px;">
+            <div style="font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--brand); margin-bottom: 14px; display: flex; align-items: center; gap: 6px;">
+              <i class="fas fa-id-card"></i> Mijoz Ma'lumotlari
+            </div>
             
-            <div class="drawer-inline-row">
-              <span class="drawer-inline-label">Mahsulot nomi</span>
-              <div class="drawer-inline-value">
-                <input type="text" id="dw-productName" class="drawer-inline-input" placeholder="Mahsulot nomi...">
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div>
+                <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Mahsulot nomi</label>
+                <div style="position: relative;">
+                  <input type="text" id="dw-productName" class="form-control" placeholder="Mahsulot nomi..." style="font-size: 13px; height: 36px; padding-left: 38px !important;">
+                  <i class="fas fa-box" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--text-tertiary); pointer-events: none;"></i>
+                </div>
               </div>
-            </div>
 
-            <div class="drawer-inline-row">
-              <span class="drawer-inline-label">Ismi</span>
-              <div class="drawer-inline-value">
-                <input type="text" id="dw-contactName" class="drawer-inline-input" placeholder="Mijoz ismi...">
+              <div>
+                <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Mijoz Ismi</label>
+                <div style="position: relative;">
+                  <input type="text" id="dw-contactName" class="form-control" placeholder="Mijoz ismi..." style="font-size: 13px; height: 36px; padding-left: 38px !important; font-weight: 600;">
+                  <i class="fas fa-user" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--text-tertiary); pointer-events: none;"></i>
+                </div>
               </div>
-            </div>
 
-            <div class="drawer-inline-row">
-              <span class="drawer-inline-label">1-chi raqam</span>
-              <div class="drawer-inline-value" style="display:flex; align-items:center; gap:6px;">
-                <input type="text" id="dw-contactPhone" class="drawer-inline-input" placeholder="1-chi telefon raqami...">
-                <button class="drawer-inline-dial-btn" onclick="dialNumber(document.getElementById('dw-contactPhone').value)" title="Qo'ng'iroq" style="background: none; border: none; color: var(--primary); cursor: pointer; padding: 4px;"><i class="fas fa-phone-alt"></i></button>
+              <div>
+                <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">1-chi Telefon Raqami</label>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <div style="position: relative; flex: 1;">
+                    <input type="text" id="dw-contactPhone" class="form-control" placeholder="+998 90 123 45 67" style="font-size: 13.5px; height: 36px; padding-left: 38px !important; font-weight: 700; letter-spacing: 0.2px;">
+                    <i class="fas fa-phone-alt" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--text-tertiary); pointer-events: none;"></i>
+                  </div>
+                  <button type="button" class="btn btn-sm" onclick="dialNumber(document.getElementById('dw-contactPhone').value)" title="Qo'ng'iroq qilish" style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; background: rgba(16,185,129,0.15); color: #10B981; border: 1px solid rgba(16,185,129,0.3); cursor: pointer; flex-shrink: 0; transition: all 0.2s;">
+                    <i class="fas fa-phone"></i>
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <div class="drawer-inline-row">
-              <span class="drawer-inline-label">2-chi raqam</span>
-              <div class="drawer-inline-value" style="display:flex; align-items:center; gap:6px;">
-                <input type="text" id="dw-contactPhone2" class="drawer-inline-input" placeholder="2-chi telefon raqami...">
-                <button class="drawer-inline-dial-btn" onclick="dialNumber(document.getElementById('dw-contactPhone2').value)" title="Qo'ng'iroq" style="background: none; border: none; color: var(--primary); cursor: pointer; padding: 4px;"><i class="fas fa-phone-alt"></i></button>
+              <div>
+                <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">2-chi Telefon Raqami</label>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <div style="position: relative; flex: 1;">
+                    <input type="text" id="dw-contactPhone2" class="form-control" placeholder="2-chi telefon raqami..." style="font-size: 13.5px; height: 36px; padding-left: 38px !important; font-weight: 700; letter-spacing: 0.2px;">
+                    <i class="fas fa-phone-alt" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--text-tertiary); pointer-events: none;"></i>
+                  </div>
+                  <button type="button" class="btn btn-sm" onclick="dialNumber(document.getElementById('dw-contactPhone2').value)" title="Qo'ng'iroq qilish" style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; background: rgba(0,122,255,0.15); color: var(--brand); border: 1px solid rgba(0,122,255,0.3); cursor: pointer; flex-shrink: 0; transition: all 0.2s;">
+                    <i class="fas fa-phone"></i>
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <div class="drawer-inline-row">
-              <span class="drawer-inline-label">Manzili</span>
-              <div class="drawer-inline-value">
-                <input type="text" id="dw-contactCity" class="drawer-inline-input" placeholder="Shahar / manzil...">
+              <div>
+                <label style="font-size: 11px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Manzili (Shahar / Viloyat)</label>
+                <div style="position: relative;">
+                  <input type="text" id="dw-contactCity" class="form-control" placeholder="Shahar / manzil..." style="font-size: 13px; height: 36px; padding-left: 38px !important;">
+                  <i class="fas fa-map-marker-alt" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--text-tertiary); pointer-events: none;"></i>
+                </div>
               </div>
-            </div>
 
-            <input type="hidden" id="dw-notes">
+              <input type="hidden" id="dw-notes">
+            </div>
           </div>
 
           <!-- ── NASIYA DESCO CALCULATOR & PLAN GENERATOR IN DEAL DRAWER ── -->
@@ -2223,8 +2312,15 @@ async function loadManagers() {
     const userList = Array.isArray(data) ? data : [];
     _managers = userList.filter(u => u.role !== 'admin');
     const sel = document.getElementById('filterManager');
-    sel.innerHTML = '<option value="">Barcha manager</option>' +
-      _managers.map(u => `<option value="${u.id}">${_esc(u.fullName||u.email)}</option>`).join('');
+    if (sel) {
+      sel.innerHTML = '<option value="">Barcha manager</option>' +
+        _managers.map(u => `<option value="${u.id}">${_esc(u.fullName||u.email)}</option>`).join('');
+    }
+    const taskAssignee = document.getElementById('tl-task-assignee');
+    if (taskAssignee) {
+      taskAssignee.innerHTML = '<option value="">— O\'zim —</option>' +
+        _managers.map(u => `<option value="${u.id}">${_esc(u.fullName||u.email)}</option>`).join('');
+    }
   } catch(e) { /* managers not critical */ }
 }
 
@@ -2871,6 +2967,11 @@ function dcardHtml(d) {
     return `<span class="badge" style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background: rgba(0, 122, 255, 0.1); color: var(--accent); font-weight: 600; margin-right: 4px; margin-bottom: 2px; display: inline-block;">${_esc(cleanTag)}</span>`;
   }).join('');
 
+  const stageObj = _stages.find(s => s.id === d.stageId);
+  const stageColor = stageObj ? (stageObj.color || '#6366f1') : '#6366f1';
+  const stageNameLower = (stageObj?.name || '').toLowerCase();
+  const isKotarmadiStage = stageNameLower.includes('kotarmadi') || stageNameLower.includes("ko'tarmadi");
+
   let taskHtml = '';
   const allTasks = d.tasks || [];
   const pendingTasks = allTasks.filter(t => !t.completed);
@@ -2879,16 +2980,8 @@ function dcardHtml(d) {
   const tomorrowStart = todayStart + (24 * 60 * 60 * 1000);
   const pad = n => String(n).padStart(2, '0');
 
-  if (pendingTasks.length === 0) {
-    if (d.status === 'won') {
-      taskHtml = `<div style="display:inline-flex; align-items:center; gap:4px; font-size:10px; color:#10b981; font-weight:700; background:rgba(16,185,129,0.1); padding:2px 6px; border-radius:4px;"><i class="fas fa-check-circle"></i> Yutilgan</div>`;
-    } else if (d.status === 'lost') {
-      taskHtml = `<div style="display:inline-flex; align-items:center; gap:4px; font-size:10px; color:#64748b; font-weight:700; background:rgba(100,116,139,0.1); padding:2px 6px; border-radius:4px;"><i class="fas fa-times-circle"></i> Yo'qotilgan</div>`;
-    } else if (allTasks.length > 0) {
-      taskHtml = `<div style="display:inline-flex; align-items:center; gap:4px; font-size:10px; color:#10b981; font-weight:700; background:rgba(16,185,129,0.1); padding:2px 6px; border-radius:4px;" title="Barcha vazifalar bajarilgan"><i class="fas fa-check-double"></i> Vazifalar bajarildi</div>`;
-    } else {
-      taskHtml = `<div style="display:inline-flex; align-items:center; gap:4px; font-size:10px; color:var(--text-tertiary); font-weight:600; background:var(--bg-secondary); padding:2px 6px; border-radius:4px; border:1px dashed var(--border);" title="Ushbu sdelkaga vazifa belgilanmagan"><i class="far fa-bell-slash"></i> Vazifa yo'q</div>`;
-    }
+  if (isKotarmadiStage || pendingTasks.length === 0) {
+    taskHtml = '';
   } else {
     pendingTasks.sort((a, b) => new Date(a.dueDate || a.createdAt) - new Date(b.dueDate || b.createdAt));
     const nextTask = pendingTasks[0];
@@ -2949,12 +3042,9 @@ function dcardHtml(d) {
     ? clientName.split(' ').slice(0,2).map(w => w.charAt(0).toUpperCase()).join('')
     : '?';
 
-  const stageObj = _stages.find(s => s.id === d.stageId);
-  const stageColor = stageObj ? (stageObj.color || '#6366f1') : '#6366f1';
-
   const callbackT = (d.tasks || []).find(t => !t.completed && (t.actionType === 'Qayta aloqa' || (t.title || '').toLowerCase().includes('qayta aloqa')));
   let callbackHtml = '';
-  if (callbackT) {
+  if (callbackT && !isKotarmadiStage) {
     let cbDateObj = new Date(callbackT.dueDate || callbackT.createdAt);
     let cbTimeFmt = callbackT.dueTime;
     if (!cbTimeFmt || cbTimeFmt === 'null') {
@@ -3864,8 +3954,17 @@ async function openDetail(id) {
 
     // Populate managers dropdown
     const managerSelect = document.getElementById('dw-managerId');
-    managerSelect.innerHTML = '<option value="">— Menejersiz —</option>' +
-      _managers.map(u => `<option value="${u.id}" ${u.id===deal.managerId?'selected':''}>${_esc(u.fullName||u.email)}</option>`).join('');
+    if (managerSelect) {
+      managerSelect.innerHTML = '<option value="">— Menejersiz —</option>' +
+        _managers.map(u => `<option value="${u.id}" ${u.id===deal.managerId?'selected':''}>${_esc(u.fullName||u.email)}</option>`).join('');
+    }
+
+    // Populate timeline task assignee select
+    const taskAssigneeSelect = document.getElementById('tl-task-assignee');
+    if (taskAssigneeSelect) {
+      taskAssigneeSelect.innerHTML = '<option value="">— O\'zim —</option>' +
+        _managers.map(u => `<option value="${u.id}" ${u.id===deal.managerId?'selected':''}>${_esc(u.fullName||u.email)}</option>`).join('');
+    }
 
     // Amount
     document.getElementById('dw-amount').value = deal.amount || 0;
@@ -3917,7 +4016,7 @@ async function openDetail(id) {
     window._drawerNasiyaForceEdit = false;
     renderDrawerNasiyaSection(deal);
 
-    // Apply role-based permissions (Managers read-only, Admin full edit)
+    // Apply role-based permissions (Admins and Operators have full edit rights on accessible deals)
     applyDrawerPermissions();
 
     // Trigger pending stage change from Drag & Drop if any
@@ -3938,14 +4037,21 @@ async function openDetail(id) {
 }
 
 function applyDrawerPermissions() {
-  const isAdmin = typeof user !== 'undefined' && user && user.role === 'admin';
+  const isAdmin = window.USER_ROLE === 'admin';
+  const isOperator = window.USER_ROLE === 'operator';
+  const myId = window.CURRENT_USER_ID;
+  const currentDeal = window._currentDeal;
+  
+  // All authenticated users with deal access (Admin, Operator, Manager) can freely edit client and deal fields
+  const canEditDeal = true;
 
   // 1. Manager dropdown (Mas'ul)
   const managerSelect = document.getElementById('dw-managerId');
   if (managerSelect) {
-    managerSelect.disabled = !isAdmin;
-    managerSelect.style.cursor = isAdmin ? 'pointer' : 'not-allowed';
-    managerSelect.style.opacity = isAdmin ? '1' : '0.85';
+    managerSelect.removeAttribute('disabled');
+    managerSelect.disabled = false;
+    managerSelect.style.cursor = 'pointer';
+    managerSelect.style.opacity = '1';
   }
 
   // 2. All main editable inputs in drawer
@@ -3962,50 +4068,35 @@ function applyDrawerPermissions() {
     'dw-companyPhone',
     'dw-companyEmail',
     'dw-companyWebsite',
-    'dw-companyAddress'
+    'dw-companyAddress',
+    'dw-notes'
   ];
 
   inputsToToggle.forEach(id => {
     const input = document.getElementById(id);
     if (input) {
-      if (isAdmin) {
-        input.removeAttribute('readonly');
-        input.style.cursor = 'text';
-      } else {
-        input.setAttribute('readonly', 'readonly');
-        input.style.cursor = 'not-allowed';
-      }
+      input.removeAttribute('readonly');
+      input.removeAttribute('disabled');
+      input.style.cursor = 'text';
+      input.style.opacity = '1';
     }
   });
 
   // 3. Header Action Buttons (Edit pencil & Delete trash icon)
   const editTitleBtn = document.querySelector('.drawer-header-inline .fa-edit')?.parentElement;
   const deleteDealBtn = document.querySelector('.drawer-header-inline .fa-trash')?.parentElement;
-  if (editTitleBtn) editTitleBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+  if (editTitleBtn) editTitleBtn.style.display = 'inline-flex';
   if (deleteDealBtn) deleteDealBtn.style.display = isAdmin ? 'inline-flex' : 'none';
 
   // 4. Floating Save Button in header / footer
-  const saveBtns = document.querySelectorAll('button[onclick*="saveAllDrawerFieldsAndClose"]');
+  const saveBtns = document.querySelectorAll('button[onclick*="saveAllDrawerFields"]');
   saveBtns.forEach(btn => {
-    btn.style.display = isAdmin ? 'inline-flex' : 'none';
+    btn.style.display = 'inline-flex';
   });
 
-  // 5. Add "Faqat ko'rish" badge for managers
-  let viewOnlyBadge = document.getElementById('dw-view-only-badge');
-  if (!isAdmin) {
-    if (!viewOnlyBadge) {
-      const container = document.getElementById('drawerDealId')?.parentElement;
-      if (container) {
-        viewOnlyBadge = document.createElement('span');
-        viewOnlyBadge.id = 'dw-view-only-badge';
-        viewOnlyBadge.style.cssText = "font-size:10px; font-weight:700; color:var(--text-tertiary); background:rgba(255,255,255,0.06); padding:2px 8px; border-radius:4px; border:1px solid var(--border); margin-left:4px;";
-        viewOnlyBadge.innerHTML = '<i class="fas fa-eye"></i> Faqat ko\'rish rejimida';
-        container.appendChild(viewOnlyBadge);
-      }
-    } else {
-      viewOnlyBadge.style.display = 'inline-block';
-    }
-  } else if (viewOnlyBadge) {
+  // 5. Hide "Faqat ko'rish" badge since editing is enabled
+  const viewOnlyBadge = document.getElementById('dw-view-only-badge');
+  if (viewOnlyBadge) {
     viewOnlyBadge.style.display = 'none';
   }
 }
@@ -4024,6 +4115,9 @@ function renderDrawerNasiyaSection(deal) {
   }
 
   block.style.display = 'block';
+
+  const curStageObj = _stages.find(s => s.id === deal.stageId);
+  const nasiyaTitle = (curStageObj && curStageObj.name) ? curStageObj.name : 'Nasiya';
 
   const insts = deal.installments || [];
   const hasPlan = insts.length > 0;
@@ -4045,7 +4139,7 @@ function renderDrawerNasiyaSection(deal) {
 
     block.innerHTML = `
       <div style="font-size: 11.5px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
-        <span><i class="fas fa-file-invoice-dollar" style="margin-right: 6px;"></i> Nasiya Desco — To'lov Qismi</span>
+        <span><i class="fas fa-file-invoice-dollar" style="margin-right: 6px;"></i> ${nasiyaTitle} — To'lov Qismi</span>
         <button type="button" class="btn btn-ghost btn-sm" onclick="window._drawerNasiyaForceEdit=true; renderDrawerNasiyaSection(window._currentDeal);" style="font-size:11px; padding:2px 8px; color:var(--text-secondary); font-weight:600;"><i class="fas fa-edit"></i> Planni Tahrirlash</button>
       </div>
 
@@ -4089,7 +4183,7 @@ function renderDrawerNasiyaSection(deal) {
   // Otherwise render setup form
   block.innerHTML = `
     <div style="font-size: 11.5px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
-      <span><i class="fas fa-calculator" style="margin-right: 6px;"></i> Nasiya Desco — Muddatli To'lov Kalkulyatori</span>
+      <span><i class="fas fa-calculator" style="margin-right: 6px;"></i> ${nasiyaTitle} — Muddatli To'lov Kalkulyatori</span>
       ${hasPlan ? `<button type="button" class="btn btn-ghost btn-sm" onclick="window._drawerNasiyaForceEdit=false; renderDrawerNasiyaSection(window._currentDeal);" style="font-size:11px; padding:2px 8px; color:var(--text-secondary);"><i class="fas fa-arrow-left"></i> Bekor qilish</button>` : `<span class="badge" style="background: rgba(0, 122, 255, 0.12); color: #007AFF; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight:700;">Smart Calculator</span>`}
     </div>
 
@@ -4297,29 +4391,29 @@ function renderTimelineAndTasks(deal) {
           <span style="font-size:12px; font-weight:800; color:${headerColor}; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:6px;">
             <i class="fas fa-clock"></i> ${headerText}
           </span>
-          <span style="font-size:11px; font-weight:700; color:${headerColor}; background:rgba(255,255,255,0.8); padding:2px 8px; border-radius:12px; border:1px solid ${headerColor}33;">${isoDate} ${isoTime}</span>
+          <span style="font-size:11px; font-weight:700; color:${headerColor}; background:var(--bg-secondary); padding:2px 8px; border-radius:12px; border:1px solid ${headerColor}44;">${isoDate} ${isoTime}</span>
         </div>
         
-        <div style="font-size:14px; font-weight:700; color:#1e293b; margin-bottom:4px;">${_esc(mostUrgent.actionType)}: ${_esc(mostUrgent.title)}</div>
-        ${mostUrgent.description ? `<div style="font-size:12.5px; color:#475569; margin-bottom:10px;">${_esc(mostUrgent.description)}</div>` : ''}
+        <div style="font-size:14px; font-weight:700; color:var(--text-primary); margin-bottom:4px;">${_esc(mostUrgent.actionType)}: ${_esc(mostUrgent.title)}</div>
+        ${mostUrgent.description ? `<div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:10px;">${_esc(mostUrgent.description)}</div>` : ''}
 
         <!-- Quick Action Controls -->
         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:10px; border-top:1px dashed ${headerColor}44; padding-top:10px;">
-          <input type="text" id="task-res-${mostUrgent.id}" class="form-control" style="font-size:12px; height:32px; flex:1; min-width:130px; background:#fff;" placeholder="Natijani yozing (masalan: gaplashdik)...">
+          <input type="text" id="task-res-${mostUrgent.id}" class="form-control" style="font-size:12px; height:32px; flex:1; min-width:130px;" placeholder="Natijani yozing (masalan: gaplashdik)...">
           <button class="btn btn-sm" onclick="completeTimelineTask(${mostUrgent.id})" style="background:${headerColor}; color:#fff; font-weight:700; font-size:12px; height:32px; padding:0 14px; border:none; border-radius:6px; cursor:pointer;">
             <i class="fas fa-check-circle"></i> Bajarildi
           </button>
-          <button class="btn btn-ghost btn-sm" onclick="quickRescheduleTask(${mostUrgent.id}, 'tomorrow')" style="font-size:11.5px; height:32px; padding:0 10px; color:#475569; background:#fff; border:1px solid #cbd5e1; border-radius:6px; cursor:pointer;" title="Ertagaga surish">
+          <button class="btn btn-ghost btn-sm" onclick="quickRescheduleTask(${mostUrgent.id}, 'tomorrow')" style="font-size:11.5px; height:32px; padding:0 10px; border:1px solid var(--border); border-radius:6px; cursor:pointer;" title="Ertagaga surish">
             <i class="fas fa-arrow-right"></i> Ertaga
           </button>
-          <button class="btn btn-ghost btn-sm" onclick="toggleRescheduleForm(${mostUrgent.id})" style="font-size:11.5px; height:32px; padding:0 10px; color:#475569; background:#fff; border:1px solid #cbd5e1; border-radius:6px; cursor:pointer;">
+          <button class="btn btn-ghost btn-sm" onclick="toggleRescheduleForm(${mostUrgent.id})" style="font-size:11.5px; height:32px; padding:0 10px; border:1px solid var(--border); border-radius:6px; cursor:pointer;">
             <i class="fas fa-pencil-alt"></i> Tahrirlash
           </button>
         </div>
 
         <!-- Inline Reschedule Form -->
-        <div id="reschedule-form-${mostUrgent.id}" class="hidden" style="display:none; margin-top:10px; padding:10px; background:#fff; border-radius:8px; border:1px solid #cbd5e1;">
-          <div style="font-size:11px; font-weight:700; color:#475569; margin-bottom:6px;">Vazifa vaqtini tahrirlash:</div>
+        <div id="reschedule-form-${mostUrgent.id}" class="hidden" style="display:none; margin-top:10px; padding:10px; background:var(--bg-secondary); border-radius:8px; border:1px solid var(--border);">
+          <div style="font-size:11px; font-weight:700; color:var(--text-secondary); margin-bottom:6px;">Vazifa vaqtini tahrirlash:</div>
           <div style="display:flex; gap:6px; margin-bottom:8px;">
             <input type="date" id="reschedule-date-${mostUrgent.id}" class="form-control" style="font-size:12px; height:30px;" value="${isoDate}">
             <input type="time" id="reschedule-time-${mostUrgent.id}" class="form-control" style="font-size:12px; height:30px; width:80px;" value="${isoTime}">
@@ -4333,41 +4427,131 @@ function renderTimelineAndTasks(deal) {
     `;
   }
 
-  // ── 2. IZOHLAR DAFTARI (Notebook Card for Real Manager Comments) ──
-  html += `
-    <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); margin-bottom: 20px;">
-      <div style="font-size: 12px; font-weight: 800; color: #1e293b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
-        <span style="display:flex; align-items:center; gap:6px;"><i class="fas fa-file-alt" style="color: #6366f1;"></i> Izohlar Daftari</span>
-        <span style="font-size:10.5px; color:#6366f1; font-weight:700; background:rgba(99,102,241,0.08); padding:2px 8px; border-radius:10px;">${comments.length} ta izoh</span>
-      </div>
-      <div id="comments-document-flow" style="display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto; padding-right: 4px;">
-  `;
-
-  if (comments.length > 0) {
-    comments.forEach((c, idx) => {
-      const isLast = idx === comments.length - 1;
-      const borderStyle = isLast ? '' : 'border-bottom: 1px dashed #e2e8f0; padding-bottom: 10px;';
-      html += `
-        <div style="${borderStyle}">
-          <div style="display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; margin-bottom: 3px;">
-            <span style="font-weight: 700; color: #6366f1;">✍️ ${c.author}</span>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span>${c.date.toLocaleString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-              <button onclick="deleteDealComment(${c.id})" style="background:none; border:none; color:#cbd5e1; cursor:pointer; font-size:11px; padding:0;" title="Izohni o'chirish"><i class="fas fa-trash-alt"></i></button>
-            </div>
-          </div>
-          <div style="white-space: pre-wrap; font-size: 12.5px; color: #334155; line-height: 1.4;">${_esc(c.details)}</div>
-        </div>
-      `;
+  // ── 2. IZOHLAR DAFTARI (Unified Word-style Continuous Document Notepad) ──
+  function filterLeadFormBoilerplate(rawText) {
+    if (!rawText) return '';
+    const lines = rawText.split('\n');
+    const filtered = lines.filter(line => {
+      const trimmed = line.trim();
+      if (!trimmed) return false;
+      const lower = trimmed.toLowerCase();
+      // Remove repetitive customer demographics already shown on the left panel
+      if (lower.startsWith('ismi:') || 
+          lower.startsWith('mahsulot:') || 
+          lower.startsWith('mahsulot nomi:') || 
+          lower.startsWith('telefon') || 
+          lower.startsWith('1-chi raqam') || 
+          lower.startsWith('2-chi raqam') || 
+          lower.startsWith('qayerga') || 
+          lower.startsWith('manzil') || 
+          lower.startsWith('shahri') || 
+          lower.startsWith('qaysi reklama') || 
+          lower.startsWith('kim uchun') || 
+          lower.startsWith('[tizim]')) {
+        return false;
+      }
+      return true;
     });
-  } else {
-    html += `<div style="text-align: center; padding: 16px 10px; color: #94a3b8; font-size: 12px; font-style: italic;">Hozircha izohlar yozilmagan.</div>`;
+    return filtered.join('\n').trim();
   }
-  html += `</div></div>`;
+
+  let docContent = filterLeadFormBoilerplate(deal.notes || '');
+  if (!docContent && comments.length > 0) {
+    const realComments = comments.filter(c => !c.details.includes('[Tizim]') && !c.details.startsWith('Ismi:'));
+    if (realComments.length > 0) {
+      docContent = realComments.map(c => c.details.trim()).filter(Boolean).join('\n\n');
+    }
+  }
+
+  html += `
+    <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 18px; box-shadow: var(--shadow-sm); margin-bottom: 20px;">
+      <!-- Word / Document Header Toolbar -->
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 14px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="width: 32px; height: 32px; border-radius: 8px; background: rgba(0, 122, 255, 0.12); color: var(--brand); display: flex; align-items: center; justify-content: center; font-size: 15px;">
+            <i class="fas fa-file-alt"></i>
+          </span>
+          <div>
+            <div style="font-size: 13px; font-weight: 800; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">Izohlar Daftari</div>
+            <div style="font-size: 11px; color: var(--text-tertiary); font-weight: 500;">Word / Hujjat rejimi &mdash; barcha izoh va kelishuvlarni bir joyda yozing</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span id="docSaveStatus" style="font-size: 11.5px; color: #10B981; font-weight: 700; display: none; align-items: center; gap: 4px;">
+            <i class="fas fa-check-circle"></i> Saqlandi
+          </span>
+          <button type="button" class="btn btn-primary btn-sm" onclick="saveNotebookDocument()" id="saveDocBtn" style="background: var(--brand); border-color: var(--brand); font-weight: 700; font-size: 12.5px; padding: 6px 16px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,122,255,0.25);">
+            <i class="fas fa-save"></i> Saqlash
+          </button>
+        </div>
+      </div>
+
+      <!-- Unified Word / Notepad Canvas -->
+      <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; position: relative;">
+        <textarea id="dealDocumentNotes" class="form-control" style="width: 100%; min-height: 240px; max-height: 480px; resize: vertical; background: transparent; border: none; outline: none; font-size: 13.5px; line-height: 1.6; color: var(--text-primary); padding: 0; box-shadow: none;" placeholder="📝 Mijoz bilan kelishuvlar, barcha izohlar va eslatmalarni xuddi Word daftaridek erkin yozing...">${_esc(docContent)}</textarea>
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border); margin-top: 12px; padding-top: 8px; font-size: 11px; color: var(--text-tertiary);">
+          <span><i class="fas fa-keyboard" style="margin-right:4px;"></i> Ctrl + S orqali ham saqlash mumkin</span>
+          <span id="docCharCount">${docContent.length} belgi</span>
+        </div>
+      </div>
+    </div>
+  `;
 
   timelineBody.innerHTML = html || '<div style="text-align:center; padding:40px; color:var(--text-tertiary);">Tarix bo\'sh</div>';
   document.getElementById('dw-participants-count').textContent = `Vazifalar: ${pendingTasks.length}`;
+
+  // Attach live char count and Ctrl+S handler
+  setTimeout(() => {
+    const textarea = document.getElementById('dealDocumentNotes');
+    if (textarea) {
+      textarea.addEventListener('input', function() {
+        const countEl = document.getElementById('docCharCount');
+        if (countEl) countEl.textContent = this.value.length + ' belgi';
+      });
+      textarea.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+          e.preventDefault();
+          window.saveNotebookDocument();
+        }
+      });
+    }
+  }, 50);
 }
+
+window.saveNotebookDocument = async function() {
+  const textarea = document.getElementById('dealDocumentNotes');
+  if (!textarea || !_detailId) return;
+  const text = textarea.value;
+  const saveBtn = document.getElementById('saveDocBtn');
+  const statusEl = document.getElementById('docSaveStatus');
+
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saqlanmoqda...';
+  }
+
+  try {
+    await apiFetch('/api/deals/' + _detailId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ notes: text })
+    });
+
+    if (typeof _toast === 'function') _toast("Daftar muvaffaqiyatli saqlandi", "success");
+    if (statusEl) {
+      statusEl.style.display = 'inline-flex';
+      setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
+    }
+    if (window._currentDeal) window._currentDeal.notes = text;
+  } catch (e) {
+    if (typeof _toast === 'function') _toast(e.message || "Saqlashda xato", "error");
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = '<i class="fas fa-save"></i> Saqlash';
+    }
+  }
+};
 
 function closeDetail() {
   document.body.classList.remove('detail-modal-open');
@@ -6010,7 +6194,172 @@ document.addEventListener('click', (e) => {
     closeStageDropdown();
   }
 });
+
+// ── Quick Task Modal & WebSocket Sync ──
+function openQuickTaskModal(dealId) {
+  const deal = (_deals || []).find(d => d.id === dealId);
+  if (!deal) return;
+  document.getElementById('qtModalDealId').value = dealId;
+  document.getElementById('qtModalDealTitle').textContent = '#' + deal.id + ' — ' + (deal.productName || deal.name || 'Sdelka');
+  
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const pad = n => String(n).padStart(2, '0');
+  document.getElementById('qt-date').value = `${tomorrow.getFullYear()}-${pad(tomorrow.getMonth()+1)}-${pad(tomorrow.getDate())}`;
+  document.getElementById('qt-time').value = '10:00';
+  document.getElementById('qt-actionType').value = 'Qo\'ng\'iroq qilish';
+  document.getElementById('qt-desc').value = '';
+  const modal = document.getElementById('quickTaskModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+  }
+  setTimeout(() => document.getElementById('qt-desc').focus(), 80);
+}
+
+function closeQuickTaskModal() {
+  const modal = document.getElementById('quickTaskModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+  }
+}
+
+async function saveQuickTask() {
+  const dealId = Number(document.getElementById('qtModalDealId').value);
+  const dueDate = document.getElementById('qt-date').value;
+  const dueTime = document.getElementById('qt-time').value || '10:00';
+  const actionType = document.getElementById('qt-actionType').value;
+  const description = document.getElementById('qt-desc').value.trim() || `${actionType}`;
+
+  if (!dealId || !dueDate) {
+    _toast('Sana tanlanishi shart', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('qtSaveBtn');
+  if (btn) btn.disabled = true;
+
+  try {
+    const r = await fetch('/api/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        dealId,
+        title: description,
+        description,
+        dueDate,
+        dueTime,
+        actionType
+      })
+    });
+    if (!r.ok) throw new Error((await r.json()).message || 'Xatolik');
+    _toast('Vazifa rejalashtirildi!', 'success');
+    closeQuickTaskModal();
+    await loadDeals();
+  } catch (err) {
+    _toast(err.message || 'Xatolik', 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+// ── REAL-TIME WEBSOCKET BROADCAST SYNC ──
+function initDealsWebSocket() {
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = `${protocol}//${window.location.host}`;
+  
+  let ws = null;
+  function connect() {
+    try {
+      ws = new WebSocket(wsUrl);
+      ws.onopen = () => {
+        console.log('[WS] Connected to live CRM updates');
+      };
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'deal_updated' || data.type === 'deal:updated' || data.type === 'deal:stage_changed' || data.type === 'deal_created') {
+            const updatedDeal = data.deal;
+            if (updatedDeal && Array.isArray(_deals)) {
+              const idx = _deals.findIndex(d => d.id === updatedDeal.id);
+              if (idx >= 0) {
+                _deals[idx] = { ..._deals[idx], ...updatedDeal };
+              } else if (data.type === 'deal_created') {
+                _deals.unshift(updatedDeal);
+              }
+              renderKanban();
+            }
+          }
+        } catch (e) {}
+      };
+      ws.onclose = () => {
+        setTimeout(connect, 3000);
+      };
+      ws.onerror = () => {
+        try { ws.close(); } catch(e) {}
+      };
+    } catch(e) {}
+  }
+  connect();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initDealsWebSocket();
+});
 </script>
+
+<!-- Quick Task Modal (AmoCRM Style) -->
+<div id="quickTaskModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeQuickTaskModal()">
+  <div class="modal-dialog" style="max-width:460px;">
+    <div class="modal-header">
+      <h3 class="modal-title"><i class="fas fa-calendar-plus text-primary"></i> Keyingi Vazifani Belgilash</h3>
+      <button class="modal-close" onclick="closeQuickTaskModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" style="padding:20px; display:flex; flex-direction:column; gap:12px;">
+      <input type="hidden" id="qtModalDealId">
+      
+      <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:10px 12px; font-weight:700; font-size:13px; color:var(--text-primary);" id="qtModalDealTitle">
+        #0 — Sdelka
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Vazifa turi</label>
+        <select id="qt-actionType" class="form-control">
+          <option value="Qo'ng'iroq qilish">📞 Qo'ng'iroq qilish</option>
+          <option value="Qayta aloqa">🔄 Qayta aloqa</option>
+          <option value="Uchrashuv">🤝 Uchrashuv</option>
+          <option value="Taklif yuborish">📄 Taklif yuborish</option>
+          <option value="To'lovni kutish">💳 To'lovni kutish</option>
+          <option value="Boshqa">📌 Boshqa vazifa</option>
+        </select>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div class="form-group">
+          <label class="form-label">Sana *</label>
+          <input type="date" id="qt-date" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Vaqt</label>
+          <input type="time" id="qt-time" class="form-control" value="10:00">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Qisqacha izoh / vazifa tavsifi</label>
+        <textarea id="qt-desc" class="form-control" rows="2" placeholder="Masalan: Mijoz bilan yakuniy narxni kelishish..."></textarea>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:6px;">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="closeQuickTaskModal()">Bekor qilish</button>
+        <button type="button" class="btn btn-primary btn-sm" id="qtSaveBtn" onclick="saveQuickTask()">
+          <i class="fas fa-check"></i> Vazifani Saqlash
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Nasiya Desco Modal -->
 <div id="ndModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeNdModal()">

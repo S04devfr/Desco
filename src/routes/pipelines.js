@@ -47,11 +47,11 @@ router.post('/', requireRole('admin'), async (req, res, next) => {
     })
     await prisma.pipelineStage.createMany({
       data: [
-        { name: 'Yangi',         color: '#1565C0', order: 1, isDefault: true,  pipelineId: p.id },
-        { name: 'Muzokaralar',   color: '#F57F17', order: 2, isDefault: false, pipelineId: p.id },
-        { name: 'Taklif',        color: '#512DA8', order: 3, isDefault: false, pipelineId: p.id },
-        { name: 'Yutilgan',      color: '#2E7D32', order: 4, isDefault: false, pipelineId: p.id },
-        { name: "Yo'qotilgan",   color: '#C62828', order: 5, isDefault: false, pipelineId: p.id },
+        { name: 'Yangi',         color: '#1565C0', order: 1, isDefault: true,  pipelineId: p.id, statusType: 'open', isWon: false, isLost: false },
+        { name: 'Muzokaralar',   color: '#F57F17', order: 2, isDefault: false, pipelineId: p.id, statusType: 'open', isWon: false, isLost: false },
+        { name: 'Taklif',        color: '#512DA8', order: 3, isDefault: false, pipelineId: p.id, statusType: 'open', isWon: false, isLost: false },
+        { name: 'Yutilgan',      color: '#2E7D32', order: 4, isDefault: false, pipelineId: p.id, statusType: 'won',  isWon: true,  isLost: false },
+        { name: "Yo'qotilgan",   color: '#C62828', order: 5, isDefault: false, pipelineId: p.id, statusType: 'lost', isWon: false, isLost: true },
       ]
     })
     const full = await prisma.pipeline.findUnique({
@@ -123,9 +123,19 @@ router.post('/:id/stages', async (req, res, next) => {
     const pid = Number(req.params.id)
     const { name, color, statusType } = req.body
     if (!name || !name.trim()) return res.status(400).json({ message: 'Bosqich nomi majburiy' })
+    const finalStatusType = (statusType === 'won' || statusType === 'lost') ? statusType : 'open'
     const agg = await prisma.pipelineStage.aggregate({ _max: { order: true }, where: { pipelineId: pid } })
     const stage = await prisma.pipelineStage.create({
-      data: { name: name.trim(), color: color || '#007AFF', order: (agg._max.order || 0) + 1, isDefault: false, pipelineId: pid, statusType: statusType || 'new' }
+      data: {
+        name: name.trim(),
+        color: color || '#007AFF',
+        order: (agg._max.order || 0) + 1,
+        isDefault: false,
+        pipelineId: pid,
+        statusType: finalStatusType,
+        isWon: finalStatusType === 'won',
+        isLost: finalStatusType === 'lost'
+      }
     })
     res.status(201).json(stage)
   } catch (err) { next(err) }
@@ -139,7 +149,12 @@ router.patch('/:pipelineId/stages/:stageId', async (req, res, next) => {
     if (name  !== undefined) data.name  = name.trim()
     if (color !== undefined) data.color = color
     if (order !== undefined) data.order = Number(order)
-    if (statusType !== undefined) data.statusType = statusType
+    if (statusType !== undefined) {
+      const finalStatusType = (statusType === 'won' || statusType === 'lost') ? statusType : 'open'
+      data.statusType = finalStatusType
+      data.isWon = finalStatusType === 'won'
+      data.isLost = finalStatusType === 'lost'
+    }
     if (!Object.keys(data).length) return res.status(400).json({ message: "Hech narsa o'zgartirilmadi" })
     const stage = await prisma.pipelineStage.update({ where: { id }, data })
     res.json(stage)
@@ -160,9 +175,14 @@ router.post('/:id/stages/reorder', async (req, res, next) => {
   try {
     const { ids } = req.body
     if (!Array.isArray(ids)) return res.status(400).json({ message: 'ids kerak' })
-    await Promise.all(ids.map((id, i) =>
-      prisma.pipelineStage.update({ where: { id: Number(id) }, data: { order: i + 1 } })
-    ))
+    await prisma.$transaction(
+      ids.map((id, i) =>
+        prisma.pipelineStage.update({
+          where: { id: Number(id) },
+          data: { order: i + 1 }
+        })
+      )
+    )
     const stages = await prisma.pipelineStage.findMany({
       where: { pipelineId: Number(req.params.id) },
       orderBy: { order: 'asc' }

@@ -119,9 +119,9 @@ body.dark-mode .ai-page {
 .msg.assistant .msg-time { text-align: left; }
 
 .chat-input-area {
-  padding: 20px 24px;
+  padding: 14px 20px;
   background: var(--bg-primary);
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--border);
 }
 
 .chat-input-wrapper {
@@ -129,39 +129,66 @@ body.dark-mode .ai-page {
   align-items: flex-end;
   gap: 10px;
   background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 24px;
-  padding: 6px 6px 6px 20px;
-  transition: border-color 0.2s;
+  border: 1.5px solid var(--border);
+  border-radius: 28px;
+  padding: 4px 6px 4px 18px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
 }
 
 .chat-input-wrapper:focus-within {
-  border-color: var(--accent);
+  border-color: var(--brand) !important;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2) !important;
 }
 
 .chat-input {
   flex: 1;
-  background: transparent;
-  border: none;
-  color: var(--text-primary);
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--text-primary) !important;
   font-size: 14px;
-  padding: 10px 0;
+  padding: 9px 0;
   max-height: 120px;
   resize: none;
   font-family: inherit;
-  outline: none;
-  line-height: 1.4;
+  outline: none !important;
+  line-height: 1.45;
 }
 
 .chat-input::placeholder {
-  color: var(--text-tertiary);
+  color: var(--text-tertiary) !important;
+  opacity: 0.85;
+}
+
+.quick-prompt-btn {
+  white-space: nowrap;
+  border: 1px solid var(--border);
+  font-size: 12px;
+  border-radius: 20px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-weight: 600;
+  padding: 6px 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.18s ease;
+}
+.quick-prompt-btn:hover {
+  background: var(--brand-soft, rgba(0,122,255,0.12));
+  border-color: var(--brand);
+  color: var(--brand);
+  transform: translateY(-1px);
 }
 
 .chat-send-btn {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--brand);
   color: white;
   border: none;
   display: flex;
@@ -170,11 +197,12 @@ body.dark-mode .ai-page {
   cursor: pointer;
   transition: all 0.2s;
   flex-shrink: 0;
+  margin-bottom: 2px;
 }
 
 .chat-send-btn:hover {
   transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+  box-shadow: 0 4px 12px rgba(0,122,255,0.35);
 }
 
 .chat-send-btn:disabled {
@@ -192,7 +220,7 @@ body.dark-mode .ai-page {
   padding: 12px 16px;
   border-radius: 16px;
   border-bottom-left-radius: 4px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   gap: 4px;
   align-items: center;
 }
@@ -216,33 +244,59 @@ body.dark-mode .ai-page {
 /* Scrollbar styling for chat */
 .chat-box::-webkit-scrollbar { width: 6px; }
 .chat-box::-webkit-scrollbar-track { background: transparent; }
-.chat-box::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
+.chat-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 .chat-box::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
 
 </style>
 
 <div class="ai-page">
-  <div class="ai-header">
-    <div class="ai-header-icon"><i class="fas fa-robot"></i></div>
-    <div class="ai-header-text">
-      <h2>Desco AI</h2>
-      <p>Sotuv va CRM bo'yicha aqlli Senior CoPilot</p>
+  <div class="ai-header" style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; align-items:center; gap:14px;">
+      <div class="ai-header-icon" style="background: linear-gradient(135deg, #007AFF 0%, #6366F1 100%); width: 44px; height: 44px; border-radius: 12px; font-size: 20px; box-shadow: 0 4px 14px rgba(0,122,255,0.3);">
+        <i class="fas fa-brain"></i>
+      </div>
+      <div class="ai-header-text">
+        <h2 style="font-size: 17px; font-weight: 800; display:flex; align-items:center; gap:8px; margin:0;">
+          Desco.ai
+          <span style="font-size: 10.5px; font-weight: 700; background: rgba(16,185,129,0.15); color: #10B981; border: 1px solid rgba(16,185,129,0.3); padding: 2px 8px; border-radius: 20px;">
+            ● Online · Universal Copilot
+          </span>
+        </h2>
+        <p style="margin:2px 0 0 0; font-size:12px; color:var(--text-tertiary);">Biznes, sotuv strategiyasi, CRM tahlili va Telegram qidiruv bo'yicha sun'iy intellekt</p>
+      </div>
+    </div>
+    <div>
+      <button class="btn btn-ghost btn-sm" onclick="clearChatHistory()" style="font-size:12px; border-radius:8px;" title="Chatni tozalash">
+        <i class="fas fa-trash-alt" style="margin-right:4px;"></i> Tozalash
+      </button>
     </div>
   </div>
 
   <div class="chat-box" id="chatBox">
     <div class="msg assistant">
-      <div class="msg-bubble">🚀 <b>DESCO AI — Senior Sales Director & CRM CoPilot</b> faol, <b><%= user ? user.fullName : '' %></b>.<br>
-Muzokaralarda mijoz konversiyasini oshirish, e'tirozlarni yengish skriptlari va sdelkalar tahlili bo'yicha darhol topshiriq bering.<br><br>
-<b>⚡ Tezkor Topshiriqlar:</b>
-<ul style="margin: 8px 0; padding-left: 20px; line-height: 1.6; font-size: 13px;">
-  <li><code>Mijoz qimmat ekan dedi</code> — Bitimni yopadigan 3 ta zo'r sotuv skripti va Telegram/SMS matnini tayyorlayman.</li>
-  <li><code>Samarqandga Damas shopir topib ber</code> — Telegram guruh va kanallaridan viloyatlararo yuk tashuvchi haydovchilarni izlayman.</li>
-  <li><code>#385 haqida ma'lumot ber</code> — Sdelka ID raqami bo'yicha mijoz, telefon, viloyat, bosqich va izohlarni tahlil qilaman.</li>
-  <li><code>Ertaga soat 10:00 ga vazifa yaratib ber</code> — CRM da avtomatik yangi vazifa (Task) rasmiylashtiraman.</li>
-  <li><code>Hisobot chiqarib ber</code> — Sotuvlar bo'yicha Excel (CSV) faylni yuklab olish tugmasi bilan beraman.</li>
-</ul></div>
-      <div class="msg-time">Senior CoPilot Engine</div>
+      <div class="msg-bubble">⚡ <b>Assalomu alaykum, <%= user ? user.fullName : '' %>!</b><br>
+Men <b>Desco.ai</b> — DESCO CRM va biznes jarayonlaringiz uchun universal sun'iy intellekt assistentingizman.<br><br>
+Men sizga <b>har qanday yo'nalishda</b> (sotuv san'ati, mijoz e'tirozlarini yengish, sdelkalar va ombor tahlili, logistika va Telegram haydovchilar qidiruvi, marketing hamda umumiy biznes masalalari) eng yuqori darajada yordam bera olaman.<br><br>
+<b>🎯 Top Savollar va Harakatlar:</b>
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:8px; margin-top:10px;">
+  <div style="background:var(--bg-primary); border:1px solid var(--border); border-radius:10px; padding:10px; cursor:pointer; transition:all 0.15s;" onclick="sendPrompt('Mijoz qimmat ekan dedi. Shunga e\'tirozni yengish uchun 3 ta zo\'r sotuv skripti va SMS xabar tayyorlab ber')" onmouseover="this.style.borderColor='var(--brand)'" onmouseout="this.style.borderColor='var(--border)'">
+    <div style="font-weight:700; font-size:12.5px; color:var(--brand);"><i class="fas fa-bullseye"></i> E'tiroz: "Qimmat ekan"</div>
+    <div style="font-size:11px; color:var(--text-secondary); margin-top:2px;">3 ta kuchli sotuv skripti va SMS matni</div>
+  </div>
+  <div style="background:var(--bg-primary); border:1px solid var(--border); border-radius:10px; padding:10px; cursor:pointer; transition:all 0.15s;" onclick="sendPrompt('Mijoz o\'ylab ko\'raman dedi. Bunga qanday professional javob qaytaray?')" onmouseover="this.style.borderColor='var(--brand)'" onmouseout="this.style.borderColor='var(--border)'">
+    <div style="font-weight:700; font-size:12.5px; color:#F59E0B;"><i class="fas fa-question-circle"></i> E'tiroz: "O'ylab ko'raman"</div>
+    <div style="font-size:11px; color:var(--text-secondary); margin-top:2px;">Ikkilanishni yechuvchi javoblar</div>
+  </div>
+  <div style="background:var(--bg-primary); border:1px solid var(--border); border-radius:10px; padding:10px; cursor:pointer; transition:all 0.15s;" onclick="sendPrompt('Samarqandga Damas yoki Labo shopir topib ber')" onmouseover="this.style.borderColor='var(--brand)'" onmouseout="this.style.borderColor='var(--border)'">
+    <div style="font-weight:700; font-size:12.5px; color:#10B981;"><i class="fas fa-taxi"></i> Samarqandga Shopir</div>
+    <div style="font-size:11px; color:var(--text-secondary); margin-top:2px;">Telegram bazasidan haydovchilar</div>
+  </div>
+  <div style="background:var(--bg-primary); border:1px solid var(--border); border-radius:10px; padding:10px; cursor:pointer; transition:all 0.15s;" onclick="sendPrompt('Bugungi sotuvlar va sdelkalar tahlili haqida hisobot ber')" onmouseover="this.style.borderColor='var(--brand)'" onmouseout="this.style.borderColor='var(--border)'">
+    <div style="font-weight:700; font-size:12.5px; color:#8B5CF6;"><i class="fas fa-chart-line"></i> Bugungi Savdo Tahlili</div>
+    <div style="font-size:11px; color:var(--text-secondary); margin-top:2px;">Jonli sdelkalar statistikasi</div>
+  </div>
+</div></div>
+      <div class="msg-time">Desco.ai Engine</div>
     </div>
     
     <!-- Typing indicator placeholder -->
@@ -253,31 +307,37 @@ Muzokaralarda mijoz konversiyasini oshirish, e'tirozlarni yengish skriptlari va 
     </div>
   </div>
 
-  <!-- Quick Action Chips Bar (Bitrix24 CoPilot Style) -->
+  <!-- Quick Action Chips Bar (Top Savollar) -->
   <div style="padding: 10px 16px; background: var(--bg-secondary); border-top: 1px solid var(--border); display: flex; gap: 8px; overflow-x: auto; flex-shrink: 0; scrollbar-width: none;">
-    <button type="button" class="btn btn-ghost btn-sm" onclick="sendPrompt('Mijoz qimmat ekan dedi. Shunga e\'tirozni yengish uchun 3 ta zo\'r skript va javob tayyorlab ber')" style="white-space:nowrap; border:1px solid var(--border); font-size:12px; border-radius:20px; color:var(--brand); font-weight:600;">
-      🚀 E'tiroz: "Qimmat ekan"
+    <button type="button" class="quick-prompt-btn" onclick="sendPrompt('Mijoz qimmat ekan dedi. Shunga e\'tirozni yengish uchun 3 ta zo\'r sotuv skripti va SMS xabar tayyorlab ber')">
+      🎯 <span style="color:var(--brand)">"Qimmat ekan"</span>
     </button>
-    <button type="button" class="btn btn-ghost btn-sm" onclick="sendPrompt('Mijoz o\'ylab ko\'raman dedi. Bunga qanday professional javob qaytaray?')" style="white-space:nowrap; border:1px solid var(--border); font-size:12px; border-radius:20px; color:var(--text-primary);">
-      🤔 E'tiroz: "O'ylab ko'raman"
+    <button type="button" class="quick-prompt-btn" onclick="sendPrompt('Mijoz o\'ylab ko\'raman dedi. Bunga qanday professional javob qaytaray?')">
+      🤔 <span style="color:#F59E0B">"O'ylab ko'raman"</span>
     </button>
-    <button type="button" class="btn btn-ghost btn-sm" onclick="sendPrompt('Bugungi sotuvlar va sdelkalar tahlili haqida ma\'lumot ber')" style="white-space:nowrap; border:1px solid var(--border); font-size:12px; border-radius:20px; color:var(--text-primary);">
-      📈 Bugungi sotuv tahlili
+    <button type="button" class="quick-prompt-btn" onclick="sendPrompt('Samarqandga Damas shopir topib ber')">
+      🚕 <span style="color:#10B981">Samarqand Shopir</span>
     </button>
-    <button type="button" class="btn btn-ghost btn-sm" onclick="sendPrompt('Mijoz uchun massajor va hadyalar bo\'yicha rasmiy tijorat taklifi (Offer) va kafolat matnini yozib ber')" style="white-space:nowrap; border:1px solid var(--border); font-size:12px; border-radius:20px; color:var(--text-primary);">
-      ✍️ Tijorat taklifi (Offer)
+    <button type="button" class="quick-prompt-btn" onclick="sendPrompt('Vodiyga Labo yoki Damas haydovchi topib ber')">
+      🚚 <span style="color:#10B981">Vodiyga Yuk Shopir</span>
     </button>
-    <button type="button" class="btn btn-ghost btn-sm" onclick="sendPrompt('Ombordagi zaxiralar va mahsulot variantlari haqida ma\'lumot ber')" style="white-space:nowrap; border:1px solid var(--border); font-size:12px; border-radius:20px; color:var(--text-primary);">
-      📦 Ombor zaxiralari
+    <button type="button" class="quick-prompt-btn" onclick="sendPrompt('Bugungi sotuvlar va sdelkalar tahlili haqida hisobot ber')">
+      📈 <span>Bugungi Savdo</span>
     </button>
-    <button type="button" class="btn btn-ghost btn-sm" onclick="sendPrompt('Samarqandga Damas shopir topib ber')" style="white-space:nowrap; border:1px solid var(--border); font-size:12px; border-radius:20px; color:var(--text-primary);">
-      🚕 Shopir qidirish
+    <button type="button" class="quick-prompt-btn" onclick="sendPrompt('Mijoz uchun rasmiy tijorat taklifi (Offer) va kafolat matnini yozib ber')">
+      ✍️ <span>Tijorat taklifi</span>
+    </button>
+    <button type="button" class="quick-prompt-btn" onclick="sendPrompt('Ombordagi zaxiralar va mahsulotlar qoldig\'i haqida ma\'lumot ber')">
+      📦 <span>Ombor zaxirasi</span>
+    </button>
+    <button type="button" class="quick-prompt-btn" onclick="sendPrompt('Sotuv konversiyasini 2 barobar oshirish bo\'yicha amaliy master-reja ber')">
+      💡 <span>Sotuvni oshirish</span>
     </button>
   </div>
 
   <div class="chat-input-area">
     <div class="chat-input-wrapper">
-      <textarea id="chatInput" class="chat-input" placeholder="Xabar yozing (masalan, 'Mijoz qimmat ekan dedi, nima deb javob qilay?')" rows="1" oninput="autoResize(this)" onkeydown="handleEnter(event)"></textarea>
+      <textarea id="chatInput" class="chat-input" placeholder="Desco.ai ga savol yoki topshiriq bering... (Enter: Jo'natish, Shift+Enter: Yangi qator)" rows="1" oninput="autoResize(this)" onkeydown="handleEnter(event)"></textarea>
       <button class="chat-send-btn" id="sendBtn" onclick="sendMessage()">
         <i class="fas fa-paper-plane" style="margin-left:-2px; margin-top: 2px;"></i>
       </button>
@@ -369,22 +429,50 @@ function parseMarkdown(text) {
     tableHtml += '</div>';
     return tableHtml;
   });
+
+  // 3. Parse Code blocks (e.g. ```text ... ```)
+  html = html.replace(/```(?:[a-zA-Z]*)\n([\s\S]*?)```/g, (match, code) => {
+    return `<div style="position:relative; margin:10px 0; background:rgba(0,0,0,0.3); border:1px solid var(--border); border-radius:8px; padding:12px 14px; font-family:monospace; font-size:12.5px; line-height:1.4; overflow-x:auto;"><button onclick="copyToClipboard(this)" style="position:absolute; right:8px; top:8px; background:var(--surface-card); border:1px solid var(--border); color:var(--text-secondary); padding:3px 8px; border-radius:4px; font-size:11px; cursor:pointer;" title="Nusxalash"><i class="far fa-copy"></i></button><code>${code.trim()}</code></div>`;
+  });
   
-  // 3. Bold styling
+  // 4. Bold and Inline code styling
   html = html.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+  html = html.replace(/`([^`]+)`/g, '<code style="background:rgba(0,122,255,0.12); color:var(--brand); padding:2px 6px; border-radius:4px; font-size:12px;">$1</code>');
   
-  // 4. Linebreaks outside of parsed tables
+  // 5. Linebreaks
   html = html.replace(/\n/g, '<br>');
   
   return html;
 }
+
+window.copyToClipboard = function(btn) {
+  const codeEl = btn.parentElement.querySelector('code');
+  if (codeEl) {
+    navigator.clipboard.writeText(codeEl.innerText).then(() => {
+      const orig = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-check" style="color:#10B981;"></i>';
+      setTimeout(() => { btn.innerHTML = orig; }, 1500);
+    });
+  }
+};
+
+window.clearChatHistory = function() {
+  if (confirm("Chat tarixini tozalashni xohlaysizmi?")) {
+    chatHistory = [];
+    const chatBoxEl = document.getElementById('chatBox');
+    const firstMsg = chatBoxEl.querySelector('.msg.assistant');
+    chatBoxEl.innerHTML = '';
+    if (firstMsg) chatBoxEl.appendChild(firstMsg);
+    chatBoxEl.appendChild(typingIndicator);
+  }
+};
 
 function downloadTableAsCSV(button) {
   const container = button.closest('.table-container');
   const table = container.querySelector('table');
   if (!table) return;
   
-  let csvContent = "\uFEFF"; // UTF-8 BOM for Excel compatibility with Uzbek/Cyrillic characters
+  let csvContent = "\uFEFF";
   const rows = table.querySelectorAll('tr');
   
   rows.forEach(row => {
@@ -423,7 +511,6 @@ function appendMessage(role, content) {
   msgDiv.appendChild(bubble);
   msgDiv.appendChild(time);
   
-  // Insert before typing indicator
   chatBox.insertBefore(msgDiv, typingIndicator);
   chatBox.scrollTop = chatBox.scrollHeight;
 }
@@ -432,17 +519,12 @@ async function sendMessage() {
   const text = chatInput.value.trim();
   if (!text) return;
 
-  // Add user message to UI
   appendMessage('user', text);
-  
-  // Add to history
   chatHistory.push({ role: 'user', content: text });
   
-  // Clear input
   chatInput.value = '';
   chatInput.style.height = 'auto';
   
-  // Show loading state
   sendBtn.disabled = true;
   chatInput.disabled = true;
   typingIndicator.style.display = 'flex';
@@ -456,21 +538,14 @@ async function sendMessage() {
     });
 
     const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Serverda xatolik yuz berdi');
 
-    if (!res.ok) {
-      throw new Error(data.error || 'Serverda xatolik yuz berdi');
-    }
-
-    // Add AI response to UI
     appendMessage('assistant', data.reply);
-    
-    // Add to history
     chatHistory.push({ role: 'assistant', content: data.reply });
 
   } catch (err) {
     appendMessage('assistant', '<span style="color:var(--danger)">Xatolik yuz berdi: ' + err.message + '</span>');
   } finally {
-    // Hide loading state
     sendBtn.disabled = false;
     chatInput.disabled = false;
     typingIndicator.style.display = 'none';

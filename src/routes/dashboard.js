@@ -279,54 +279,43 @@ router.get('/kpis', async (req, res, next) => {
       office: sourceBreakdown.office.leads
     };
 
-    const totalRevenue = deals.reduce((sum, d) => sum + getEffectivePaid(d), 0);
+    const calculatedRevenue = deals.reduce((sum, d) => sum + getEffectivePaid(d), 0);
+    const totalRevenue = calculatedRevenue;
     const totalDebt = deals.reduce((sum, d) => sum + Math.max((d.amount || 0) - (d.paidAmount || 0), 0), 0);
     
-    let totalExpenses = 0, totalCostPrice = 0, netProfit = 0, totalClientDebt = 0;
-    let manualDebt = 0, dealDebt = 0;
+    const wonDeals = deals.filter(isWonDeal);
+    const won = wonDeals.length;
+    const lost = deals.filter(isDealCanceled).length;
+
+    let totalExpenses = 0, totalCostPrice = 0, totalClientDebt = 0;
+    let manualDebt = 0, dealDebt = totalDebt;
     let totalMarketingExpenses = 0;
     let expenseByCategory = {};
-    
+
     if (isAdmin) {
-      totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
-      totalMarketingExpenses = expenses.filter(e => e.category === 'marketing').reduce((sum, e) => sum + e.amount, 0);
-      // Kategoriyalar bo'yicha xarajat breakdown
-      expenses.forEach(e => {
-        const cat = e.category || 'other';
-        expenseByCategory[cat] = (expenseByCategory[cat] || 0) + e.amount;
-      });
-      
-      // Cost price faqat yopilgan (won) deals uchun hisoblanadi
-      const wonDeals = deals.filter(isWonDeal);
+      totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
       totalCostPrice = wonDeals.reduce((sum, d) => sum + (d.costPrice || 0), 0);
       
-      netProfit = totalRevenue - totalCostPrice - totalExpenses;
-      
-      const clientsAgg = await prisma.client.aggregate({
-        _sum: { debt: true },
-        where: { debt: { gt: 0 } }
-      });
-      const manualDebt = clientsAgg._sum.debt || 0;
-
-      let dealDebt = 0;
-      try {
-        const isPostgres = process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith('postgres://') || process.env.DATABASE_URL.startsWith('postgresql://'));
-        if (isPostgres) {
-          const res = await prisma.$queryRaw`SELECT SUM(COALESCE(amount, 0) - COALESCE("paidAmount", 0)) as "sum" FROM "Deal" WHERE amount > "paidAmount"`;
-          dealDebt = Number(res[0]?.sum || 0);
-        } else {
-          const res = await prisma.$queryRaw`SELECT SUM(COALESCE(amount, 0) - COALESCE(paidAmount, 0)) as "sum" FROM "Deal" WHERE amount > paidAmount`;
-          dealDebt = Number(res[0]?.sum || 0);
+      for (const exp of expenses) {
+        const cat = exp.category || 'boshqa';
+        expenseByCategory[cat] = (expenseByCategory[cat] || 0) + (exp.amount || 0);
+        if (cat === 'marketing' || cat === 'reklama') {
+          totalMarketingExpenses += (exp.amount || 0);
         }
-      } catch (e) {
-        const allDeals = await prisma.deal.findMany({ select: { amount: true, paidAmount: true } });
-        dealDebt = allDeals.reduce((sum, d) => sum + Math.max((d.amount || 0) - (d.paidAmount || 0), 0), 0);
       }
-      totalClientDebt = manualDebt + dealDebt;
+
+      try {
+        const clientDebtAgg = await prisma.client.aggregate({
+          _sum: { debt: true },
+          where: { debt: { gt: 0 } }
+        });
+        manualDebt = clientDebtAgg._sum.debt || 0;
+      } catch(e) {}
+
+      totalClientDebt = manualDebt > 0 ? manualDebt : dealDebt;
     }
 
-    const won = deals.filter(isWonDeal).length;
-    const lost = deals.filter(isDealCanceled).length;
+    const netProfit = totalRevenue - totalCostPrice - totalExpenses;
 
     // ── 1. Marketing Ads Spent, CPL, ROI ──
     // CPL uchun to'g'ri denominator: marketing log'laridan leads summasi
@@ -353,21 +342,21 @@ router.get('/kpis', async (req, res, next) => {
     // ── 3. Nasiya Tariffs Breakdown ──
     const getDebtBalance = (d) => Math.max(0, (d.amount || 0) - (d.paidAmount || 0));
 
-    const countNasiyaDesco = deals.filter(d => d.stage?.name.toLowerCase().includes('desco')).length;
-    const amountNasiyaDesco = deals.filter(d => d.stage?.name.toLowerCase().includes('desco')).reduce((sum, d) => sum + (d.amount || 0), 0);
+    const countNasiyaDesco = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('desco')).length;
+    const amountNasiyaDesco = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('desco')).reduce((sum, d) => sum + (d.amount || 0), 0);
     
-    const countNasiyaIshonch = deals.filter(d => d.stage?.name.toLowerCase().includes('ishonch')).length;
-    const amountNasiyaIshonch = deals.filter(d => d.stage?.name.toLowerCase().includes('ishonch')).reduce((sum, d) => sum + (d.amount || 0), 0);
+    const countNasiyaIshonch = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('ishonch')).length;
+    const amountNasiyaIshonch = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('ishonch')).reduce((sum, d) => sum + (d.amount || 0), 0);
 
-    const countNasiyaBaraka = deals.filter(d => d.stage?.name.toLowerCase().includes('baraka')).length;
-    const amountNasiyaBaraka = deals.filter(d => d.stage?.name.toLowerCase().includes('baraka')).reduce((sum, d) => sum + (d.amount || 0), 0);
+    const countNasiyaBaraka = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('baraka')).length;
+    const amountNasiyaBaraka = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('baraka')).reduce((sum, d) => sum + (d.amount || 0), 0);
 
-    const countShopir = deals.filter(d => d.stage?.name.toLowerCase().includes('shopir')).length;
-    const amountShopir = deals.filter(d => d.stage?.name.toLowerCase().includes('shopir')).reduce((sum, d) => sum + (d.amount || 0), 0);
+    const countShopir = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('shopir')).length;
+    const amountShopir = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('shopir')).reduce((sum, d) => sum + (d.amount || 0), 0);
 
-    const count100Zakaz = deals.filter(d => d.stage?.name.toLowerCase().includes('100%') || d.stage?.name.toLowerCase().includes('100')).length;
-    const amount100Zakaz = deals.filter(d => d.stage?.name.toLowerCase().includes('100%') || d.stage?.name.toLowerCase().includes('100')).reduce((sum, d) => sum + (d.amount || 0), 0);
-    const shopirDeals = deals.filter(d => d.stage?.name.toLowerCase().includes('shopir')).map(d => ({
+    const count100Zakaz = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('100%')).length;
+    const amount100Zakaz = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('100%')).reduce((sum, d) => sum + (d.amount || 0), 0);
+    const shopirDeals = deals.filter(d => (d.stage?.name || '').toLowerCase().includes('shopir')).map(d => ({
       id: d.id,
       productName: d.productName || 'Noma\'lum',
       amount: d.amount || 0,
@@ -628,10 +617,6 @@ router.get('/sales-by-manager', async (req, res, next) => {
       endDate = new Date(req.query.endDate);
     } else if (req.query.filter === 'week') {
       startDate = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000);
-      endDate = new Date();
-    } else if (req.query.filter === 'yesterday') {
-      startDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      endDate = new Date();
     } else if (req.query.filter === 'today') {
       startDate = new Date();
       endDate = new Date();
@@ -655,9 +640,9 @@ router.get('/sales-by-manager', async (req, res, next) => {
       const dateStr = new Date(d.createdAt).toISOString().slice(0, 10);
       if (dailyData[dateStr]) {
         const stageName = (d.stage?.name || '').toLowerCase();
-        const isWon = d.status === 'won' || stageName.includes('100%') || stageName.includes('yutil') || stageName.includes('won');
+        const isWon = d.status === 'won' || stageName.includes('100%') || stageName.includes('yutil') || stageName.includes('won') || stageName.includes('desco') || stageName.includes('ishonch') || stageName.includes('baraka') || stageName.includes('shopir');
         if (isWon) {
-          dailyData[dateStr].sales += d.amount || 0;
+          dailyData[dateStr].sales += (d.amount || 0);
           dailyData[dateStr].debt += Math.max(0, (d.amount || 0) - (d.paidAmount || 0));
         }
       }
@@ -672,9 +657,7 @@ router.get('/sales-by-manager', async (req, res, next) => {
 
 // Helper to parse product name and extract quantity (e.g., "6-funksiyalik 2ta" -> name: "6-funksiyalik", qty: 2)
 function parseProduct(productName) {
-  if (!productName) {
-    return { name: "Noma'lum", qty: 1 };
-  }
+  if (!productName || typeof productName !== 'string') return { name: "Noma'lum", qty: 1 };
   
   // Extract quantity if present at the end (e.g. "2ta", "3 ta", "5 dona", "2 шт")
   const match = productName.match(/(\d+)\s*(?:ta|dona|sht|pcs|штук|шт)\s*$/i);
@@ -690,13 +673,15 @@ function parseProduct(productName) {
   const lower = baseName.toLowerCase();
   
   if (/6-funksiyalik|6-funksiya|6 talik|6-talik|6 lik|6lik|6 ta|olti talik|6-ta|massajor 6|е6/i.test(lower)) {
-    normalized = '6-funksiyalik';
+    normalized = '6-funksiyalik massajor';
   } else if (/3-funksiyalik|3-funkiyalik|3-funksiya|3 talik|3-talik|3 lik|3lik|3 ta|uch talik|3-ta/i.test(lower)) {
-    normalized = '3-funksiyalik';
+    normalized = '3-funksiyalik massajor';
   } else if (/oyoq|nog|stup|tavon/i.test(lower)) {
     normalized = 'Oyoq massajor';
-  } else if (/hadiya|hadya|sovg'a|sovga|toplam|to'plam|хадия|хадя|совға|совга/i.test(lower)) {
-    normalized = 'Хадия';
+  } else if (/hadiya|hadya|sovg'a|sovga|toplam|to'plam|хадия|хадя|совға|совga/i.test(lower)) {
+    normalized = 'hadiya';
+  } else if (/boyin|bo'yin|bo`yin/i.test(lower)) {
+    normalized = "bo'yin massajor";
   } else {
     // Default fallback to trimmed version of the base name
     normalized = baseName.trim();
@@ -729,38 +714,17 @@ router.get('/product-popularity', async (req, res, next) => {
       select: { productName: true, amount: true }
     });
 
-    const normalizeToCatalog = (name) => {
-      const lower = name.toLowerCase();
-      if (lower.includes('3-funksiyalik') || lower.includes('3 funksiyalik') || lower.includes('3-funksiya')) {
-        return '3-funksiyalik massajor';
-      }
-      if (lower.includes('6-funksiyalik') || lower.includes('6 funksiyalik') || lower.includes('6-funksiya')) {
-        return '6-funksiyalik massajor';
-      }
-      if (lower.includes('hadiya') || lower.includes('hadya') || lower.includes('хадия') || lower.includes('хадя')) {
-        return 'hadiya';
-      }
-      if (lower.includes('boyin') || lower.includes("bo'yin") || lower.includes('bo`yin')) {
-        return "bo'yin massajor";
-      }
-      if (lower.includes('shashlik')) {
-        return 'shashlik nabor';
-      }
-      return null;
-    };
-
-    const map = {}
+    const map = {};
     for (const d of deals) {
       const { name, qty } = parseProduct(d.productName);
-      const catalogName = normalizeToCatalog(name);
-      if (!catalogName) continue;
+      if (!name) continue;
 
-      if (!map[catalogName]) map[catalogName] = { count: 0, totalAmount: 0 }
-      map[catalogName].count += qty
-      map[catalogName].totalAmount += d.amount || 0
+      if (!map[name]) map[name] = { count: 0, totalAmount: 0 };
+      map[name].count += qty;
+      map[name].totalAmount += d.amount || 0;
     }
 
-    const totalQty = Object.values(map).reduce((s, v) => s + v.count, 0)
+    const totalQty = Object.values(map).reduce((s, v) => s + v.count, 0);
     const result = Object.entries(map)
       .map(([product, v]) => ({
         product,
@@ -768,14 +732,14 @@ router.get('/product-popularity', async (req, res, next) => {
         totalAmount: v.totalAmount,
         pct: totalQty > 0 ? Math.round((v.count / totalQty) * 100) : 0
       }))
-      .sort((a, b) => b.count - a.count)
+      .sort((a, b) => b.count - a.count);
 
-    res.json(result)
+    res.json(result);
   } catch (error) {
     console.error('Product Error:', error);
     return res.status(200).json([]);
   }
-})
+});
 
 // Today's tasks
 router.get('/today-tasks', async (req, res, next) => {
@@ -1285,120 +1249,13 @@ router.get('/unread-chats', protect, async (req, res) => {
   }
 });
 
-// GET /api/dashboard/operator-presence — Operatorlar online vaqt va faollik tahlili
-// Persistent in-memory daily presence store across page reloads
-if (!global._dailyPresenceStore) {
-  global._dailyPresenceStore = new Map();
-}
+const { getLiveOperatorPresence } = require('../services/activityService');
 
-// GET /api/dashboard/operator-presence — Operatorlar online vaqt va faollik tahlili
+// GET /api/dashboard/operator-presence — Operatorlar online vaqt va faollik tahlili (amoCRM / HubSpot Grade)
 router.get('/operator-presence', async (req, res) => {
   try {
-    const managers = await prisma.user.findMany({
-      where: { role: { not: 'admin' }, isActive: true },
-      select: { id: true, fullName: true, name: true, role: true, avatar: true, isActive: true, updatedAt: true, createdAt: true }
-    });
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const dateStr = today.toISOString().split('T')[0];
-
-    const [todayCalls, todayTasks, todayDeals, todayActivities] = await Promise.all([
-      prisma.callLog.findMany({ where: { createdAt: { gte: today } } }).catch(() => []),
-      prisma.task.findMany({ where: { updatedAt: { gte: today } } }).catch(() => []),
-      prisma.deal.findMany({ where: { updatedAt: { gte: today } } }).catch(() => []),
-      prisma.activityLog.findMany({ where: { createdAt: { gte: today } } }).catch(() => [])
-    ]);
-
-    const activityLogMap = {};
-    todayActivities.forEach(a => {
-      if (a.userId) {
-        if (!activityLogMap[a.userId]) {
-          activityLogMap[a.userId] = { firstLogin: a.createdAt, lastPing: a.createdAt, totalMin: 0 };
-        } else {
-          activityLogMap[a.userId].lastPing = a.createdAt;
-        }
-      }
-    });
-
-    const now = new Date();
-    let totalActive = 0;
-    let totalIdle = 0;
-    let totalOffline = 0;
-    let totalOnlineSec = 0;
-
-    const operators = managers.map((m) => {
-      const mCalls = todayCalls.filter(l => l.managerId === m.id);
-      const mTasks = todayTasks.filter(t => t.assignedToId === m.id);
-      const mDeals = todayDeals.filter(d => d.managerId === m.id);
-      const mActs = todayActivities.filter(a => a.userId === m.id);
-
-      const dbActivityCount = mCalls.length + mTasks.length + mDeals.length + mActs.length;
-      const callDuration = mCalls.reduce((sum, c) => sum + (c.duration || 0), 0);
-
-      const userLog = activityLogMap[m.id];
-      
-      // First Login Time: strictly from authenticated UserActivityLog sessionStart
-      let firstLoginTimeStr = '—';
-      if (userLog && userLog.firstLogin) {
-        firstLoginTimeStr = new Date(userLog.firstLogin).toLocaleTimeString('uz-UZ', { timeZone: 'Asia/Tashkent', hour: '2-digit', minute: '2-digit', hour12: false });
-      }
-
-      // Online status calculation: strictly based on real lastPing heartbeat
-      let secondsSincePing = 999999;
-      if (userLog && userLog.lastPing) {
-        secondsSincePing = Math.round((now.getTime() - new Date(userLog.lastPing).getTime()) / 1000);
-      }
-
-      let status = 'offline';
-      if (secondsSincePing <= 180) { // Active within 3 minutes = online
-        status = 'online';
-      } else if (secondsSincePing <= 600) { // Active within 10 minutes = idle
-        status = 'idle';
-      }
-
-      const isOnline = status === 'online';
-      const isIdle = status === 'idle';
-
-      if (isOnline) totalActive++;
-      else if (isIdle) totalIdle++;
-      else totalOffline++;
-
-      // Real active work duration (strictly 0 if user never opened CRM today)
-      let onlineSec = 0;
-      if (userLog && userLog.totalMin) {
-        onlineSec = Math.max(0, Number(userLog.totalMin) * 60);
-      }
-      
-      let idleSec = isIdle ? 300 : 0;
-      totalOnlineSec += onlineSec;
-
-      const totalSec = onlineSec + idleSec;
-      const activeWorkRatio = totalSec > 0 ? Math.min(100, Math.round((onlineSec / totalSec) * 100)) : 0;
-
-      return {
-        id: m.id,
-        name: m.fullName || m.name || 'Manager',
-        role: m.role,
-        avatar: m.avatar,
-        status,
-        statusText: isIdle ? '🟡 Tanaffusda' : isOnline ? '🟢 Aktiv' : '⚪ Offline',
-        firstLoginTime: firstLoginTimeStr,
-        onlineSec,
-        idleSec,
-        activeWorkRatio
-      };
-    });
-
-    res.json({
-      summary: {
-        totalActive,
-        totalIdle,
-        totalOffline,
-        totalOnlineSec
-      },
-      operators
-    });
+    const data = await getLiveOperatorPresence();
+    res.json(data);
   } catch (err) {
     console.error('Operator presence error:', err);
     res.status(500).json({ error: err.message });
@@ -1406,3 +1263,4 @@ router.get('/operator-presence', async (req, res) => {
 });
 
 module.exports = router;
+

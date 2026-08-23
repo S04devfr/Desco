@@ -150,6 +150,36 @@ const swatchHtml = colorSwatches.map(c =>
 .ios-switch input:checked + .ios-slider:before {
   transform: translateX(20px);
 }
+
+/* Status indicators & badges */
+.badge-status {
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  display: inline-block;
+}
+.badge-status-active {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10B981;
+}
+.badge-status-inactive {
+  background: rgba(239, 68, 68, 0.1);
+  color: #EF4444;
+}
+.status-indicator-circle {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background-color 0.3s;
+}
+.status-indicator-circle.status-green {
+  background-color: #10B981;
+}
+.status-indicator-circle.status-red {
+  background-color: #EF4444;
+}
 </style>
 
 <div class="page-header">
@@ -343,33 +373,33 @@ const swatchHtml = colorSwatches.map(c =>
           <% if ((pipelinesList || []).length) { %>
             <% (pipelinesList || []).forEach(p => { %>
             <div class="pipeline-card" id="pc-<%= p.id %>">
-              <div class="pipeline-card-hdr" onclick="togglePipeline(<%= p.id %>)">
-                <div class="p-dot" style="background:<%= p.color %>"></div>
+              <div class="pipeline-card-hdr" data-id="<%= p.id %>" onclick="togglePipeline(this.dataset.id)">
+                <div class="p-dot" style="background-color:<%= p.color %>;"></div>
                 <div class="pipeline-card-title"><%= escHtml(p.name) %> <%- p.isDefault?'<span class="badge badge-blue" style="font-size:9px;padding:1px 6px">Default</span>':'' %></div>
                 <div class="pipeline-card-meta"><%= (p.stages||[]).length %> bosqich</div>
                 <div style="display:flex;gap:4px">
-                  <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();openPipelineModal(<%= p.id %>)" title="Tahrirlash"><i class="fas fa-edit"></i></button>
-                  <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="event.stopPropagation();deletePipeline(<%= p.id %>)" title="O'chirish"><i class="fas fa-trash"></i></button>
+                  <button class="btn btn-ghost btn-icon btn-sm" data-id="<%= p.id %>" onclick="event.stopPropagation();openPipelineModal(this.dataset.id)" title="Tahrirlash"><i class="fas fa-edit"></i></button>
+                  <button class="btn btn-ghost btn-icon btn-sm text-danger" data-id="<%= p.id %>" onclick="event.stopPropagation();deletePipeline(this.dataset.id)" title="O'chirish"><i class="fas fa-trash"></i></button>
                 </div>
                 <i class="fas fa-chevron-down" id="pch-<%= p.id %>" style="font-size:11px;color:var(--text-tertiary);transition:transform 0.2s"></i>
               </div>
               <div class="pipeline-card-body" id="pb-<%= p.id %>">
                 <% if ((p.stages||[]).length) { %>
                   <% p.stages.forEach(s => { %>
-                  <div class="stage-row" id="sr-<%= s.id %>" draggable="true" ondragstart="onStageDragStart(event, <%= s.id %>)" ondragover="onStageDragOver(event)" ondrop="onStageDrop(event, <%= s.id %>, <%= p.id %>)" ondragend="this.style.opacity='1'" style="cursor: move; display:flex; align-items:center; padding:8px 12px; border:1px solid var(--border); border-radius:6px; margin-bottom:6px; background:var(--bg-secondary);">
-                    <div class="stage-color" style="background:<%= s.color %>; width:12px; height:12px; border-radius:50%; margin-right:12px;"></div>
+                  <div class="stage-row" id="sr-<%= s.id %>" draggable="true" data-sid="<%= s.id %>" data-pid="<%= p.id %>" ondragstart="onStageDragStartFromEl(event, this)" ondragover="onStageDragOver(event)" ondrop="onStageDropFromEl(event, this)" ondragend="this.style.opacity='1'" style="cursor: move; display:flex; align-items:center; padding:8px 12px; border:1px solid var(--border); border-radius:6px; margin-bottom:6px; background:var(--bg-secondary);">
+                    <div class="stage-color" style="background-color:<%= s.color %>; width:12px; height:12px; border-radius:50%; margin-right:12px;"></div>
                     <div class="stage-name-txt" style="flex-grow:1; font-weight:600; color:var(--text-primary);"><%= escHtml(s.name) %> <span style="font-size:11px; color:var(--text-tertiary); font-weight:normal;">(<%= s.statusType === 'won' ? 'Победа' : s.statusType === 'lost' ? 'Провал' : 'Стандарт' %>)</span></div>
                     <div class="stage-order" style="font-size:12px; color:var(--text-tertiary); margin-right:12px;">#<%= s.order %></div>
                     <div style="display:flex;gap:3px">
-                      <button class="btn btn-ghost btn-icon btn-sm" onclick="openStageModal(<%= p.id %>,<%= s.id %>,'<%= escHtml(s.name) %>','<%= s.color %>','<%= s.statusType %>')" title="Tahrirlash"><i class="fas fa-edit"></i></button>
-                      <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="deleteStage(<%= p.id %>,<%= s.id %>)" title="O'chirish"><i class="fas fa-trash"></i></button>
+                      <button class="btn btn-ghost btn-icon btn-sm" data-pid="<%= p.id %>" data-sid="<%= s.id %>" data-name="<%= escHtml(s.name) %>" data-color="<%= s.color %>" data-statustype="<%= s.statusType %>" onclick="openStageModalFromBtn(this)" title="Tahrirlash"><i class="fas fa-edit"></i></button>
+                      <button class="btn btn-ghost btn-icon btn-sm text-danger" data-pid="<%= p.id %>" data-sid="<%= s.id %>" onclick="deleteStageFromBtn(this)" title="O'chirish"><i class="fas fa-trash"></i></button>
                     </div>
                   </div>
                   <% }) %>
                 <% } else { %>
                   <div style="color:var(--text-tertiary);font-size:13px;padding:8px 0">Hech qanday bosqich topilmadi</div>
                 <% } %>
-                <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="openStageModal(<%= p.id %>)">
+                <button class="btn btn-ghost btn-sm" style="margin-top:8px" data-pid="<%= p.id %>" onclick="openStageModal(this.dataset.pid)">
                   <i class="fas fa-plus"></i> Bosqich qo'shish
                 </button>
               </div>
@@ -411,11 +441,11 @@ const swatchHtml = colorSwatches.map(c =>
                     <td style="padding:12px 16px; font-size:14px; color:var(--text-primary); font-weight:500;"><%= escHtml(u.fullName||'—') %></td>
                     <td style="padding:12px 16px; font-size:13px; color:var(--text-primary);"><%= escHtml(u.email) %></td>
                     <td style="padding:12px 16px; font-size:13px;"><span class="badge <%= u.role==='admin'?'badge-purple':u.role==='operator'?'badge-gray':'badge-blue' %>" style="font-weight:600;"><%= u.role==='admin'?'Admin':u.role==='operator'?'Operator':'Manager' %></span></td>
-                    <td style="padding:12px 16px; font-size:13px;"><span style="font-weight:600; padding:2px 8px; border-radius:4px; font-size:12px; <%= u.isActive ? 'background:rgba(16,185,129,0.1);color:#10B981;' : 'background:rgba(239,68,68,0.1);color:#EF4444;' %>"><%= u.isActive?'Faol':'Bloklangan' %></span></td>
+                    <td style="padding:12px 16px; font-size:13px;"><span class="badge-status <%= u.isActive ? 'badge-status-active' : 'badge-status-inactive' %>"><%= u.isActive?'Faol':'Bloklangan' %></span></td>
                     <td style="padding:12px 16px; font-size:13px; color:var(--text-secondary);"><%= new Date(u.createdAt).toLocaleDateString('uz-UZ') %></td>
                     <td style="padding:12px 16px; text-align:right;">
-                      <button class="btn btn-ghost btn-icon btn-sm text-primary" onclick="openUserModal(<%= u.id %>, '<%= escHtml(u.fullName||'') %>', '<%= escHtml(u.email) %>', '<%= u.role %>', <%= u.isActive %>)" title="Tahrirlash"><i class="fas fa-edit"></i></button>
-                      <button class="btn btn-ghost btn-icon btn-sm text-danger" onclick="deleteUser(<%= u.id %>)" title="O'chirish"><i class="fas fa-trash"></i></button>
+                      <button class="btn btn-ghost btn-icon btn-sm text-primary" data-id="<%= u.id %>" data-fullname="<%= escHtml(u.fullName||'') %>" data-email="<%= escHtml(u.email) %>" data-role="<%= u.role %>" data-isactive="<%= u.isActive %>" onclick="openUserModalFromBtn(this)" title="Tahrirlash"><i class="fas fa-edit"></i></button>
+                      <button class="btn btn-ghost btn-icon btn-sm text-danger" data-id="<%= u.id %>" onclick="deleteUser(this.dataset.id)" title="O'chirish"><i class="fas fa-trash"></i></button>
                     </td>
                   </tr>
                   <% }) %>
@@ -475,7 +505,7 @@ const swatchHtml = colorSwatches.map(c =>
           </p>
 
           <div id="tg-status-card" style="margin-bottom: 20px; padding: 16px; border-radius: 12px; border: 1px solid var(--border); display: flex; align-items: center; gap: 12px; background: var(--bg-tertiary);">
-            <div id="tg-status-icon" style="width: 12px; height: 12px; border-radius: 50%; background: var(--danger); transition: background-color 0.3s;"></div>
+            <div id="tg-status-icon" class="status-indicator-circle status-red"></div>
             <div>
               <strong id="tg-status-text" style="font-size: 14px; color: var(--text-primary);">Telegram bog'lanmagan</strong>
               <p id="tg-status-desc" style="font-size: 12px; color: var(--text-tertiary); margin: 4px 0 0 0;">AI faqat jamoat preview guruhlari bilan cheklangan.</p>
@@ -556,7 +586,7 @@ const swatchHtml = colorSwatches.map(c =>
           </div>
 
           <div id="ig-status-card" style="margin-bottom: 20px; padding: 16px; border-radius: 12px; border: 1px solid var(--border); display: flex; align-items: center; gap: 12px; background: var(--bg-tertiary);">
-            <div id="ig-status-icon" style="width: 12px; height: 12px; border-radius: 50%; background: <%= company && company.instagramAccessToken ? 'var(--success)' : 'var(--danger)' %>; transition: background-color 0.3s;"></div>
+            <div id="ig-status-icon" class="status-indicator-circle <%= company && company.instagramAccessToken ? 'status-green' : 'status-red' %>"></div>
             <div>
               <strong id="ig-status-text" style="font-size: 14px; color: var(--text-primary);"><%= company && company.instagramAccessToken ? 'Instagram faol' : 'Instagram ulanmagan' %></strong>
               <p id="ig-status-desc" style="font-size: 12px; color: var(--text-tertiary); margin: 4px 0 0 0;"><%= company && company.instagramAccessToken ? 'Messenger API orqali xabarlar sinxronlanmoqda.' : 'Sozlamalarni kiritib, integratsiyani faollashtiring.' %></p>
@@ -848,7 +878,26 @@ async function deletePipeline(id) {
 }
 
 // ── STAGE CRUD ──
-// ── STAGE CRUD ──
+function openStageModalFromBtn(btn) {
+  openStageModal(btn.dataset.pid, btn.dataset.sid, btn.dataset.name, btn.dataset.color, btn.dataset.statustype);
+}
+
+function deleteStageFromBtn(btn) {
+  deleteStage(btn.dataset.pid, btn.dataset.sid);
+}
+
+function onStageDragStartFromEl(e, el) {
+  onStageDragStart(e, Number(el.dataset.sid));
+}
+
+function onStageDropFromEl(e, el) {
+  onStageDrop(e, Number(el.dataset.sid), Number(el.dataset.pid));
+}
+
+function openUserModalFromBtn(btn) {
+  openUserModal(btn.dataset.id, btn.dataset.fullname, btn.dataset.email, btn.dataset.role, btn.dataset.isactive === 'true');
+}
+
 function openStageModal(pipelineId, stageId, name, color, statusType) {
   document.getElementById('stagePipelineId').value = pipelineId || '';
   document.getElementById('stageId').value = stageId || '';

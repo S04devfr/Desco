@@ -42,5 +42,6 @@ fix_backticks.js
 fix_quotes.js
 cleanup.js
 .agents/
-
+backups/
+scratch/
 

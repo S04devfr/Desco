@@ -1,187 +1,81 @@
 /**
- * Menejer faollik / online vaqt kuzatuvi
- * POST /api/activity/ping   — heartbeat (har 2 daqiqada)
- * GET  /api/activity/stats  — bugun + hafta statistikasi (admin)
- * GET  /api/activity/online — hozir kim online (lastPing < 5 min)
+ * Enterprise Activity & Operator Presence API Router
  */
-const router  = require('express').Router()
-const prisma  = require('../config/database')
-const { protect, requireRole } = require('../middleware/auth')
+const express = require('express');
+const router = express.Router();
+const prisma = require('../config/database');
+const { protect, requireRole } = require('../middleware/auth');
+const { recordHeartbeat, getLiveOperatorPresence } = require('../services/activityService');
+const { apiSuccess, apiError } = require('../utils/response');
 
-router.use(protect)
+router.use(protect);
 
-// ── helpers ──────────────────────────────────────────────────────────────────
-function toUzDate(d) {
-  return new Date(d).toISOString().slice(0, 10)   // "YYYY-MM-DD"
-}
-function nowISO() {
-  return new Date().toISOString()
-}
-// minutes between two ISO strings
-function minDiff(a, b) {
-  return Math.round((new Date(b) - new Date(a)) / 60000)
-}
-
-// ── POST /ping ────────────────────────────────────────────────────────────────
-// Frontend every 2 min → keeps session alive; gaps > 8 min = new session
+/**
+ * @route POST /api/activity/ping
+ * @desc Heartbeat ping from client (active / idle status)
+ */
 router.post('/ping', async (req, res) => {
   try {
-    const userId = req.userId
-    const today  = toUzDate(new Date())
-    const now    = nowISO()
-    const GAP    = 8 * 60 * 1000   // 8 min gap = new session
+    const userId = req.userId || req.session?.userId || req.user?.id;
+    const { isIdle = false, action = null } = req.body || {};
+    const ipAddress = req.ip || req.connection?.remoteAddress || '';
+    const device = req.headers['user-agent'] ? req.headers['user-agent'].substring(0, 255) : null;
+    const broadcast = req.app.get('broadcast');
 
-    // Find most recent active session for today
-    const rows = await prisma.$queryRaw`
-      SELECT * FROM "UserActivityLog"
-      WHERE "userId" = ${userId} AND "date" = ${today} AND "isActive" = 1
-      ORDER BY "lastPing" DESC LIMIT 1
-    `
-    const session = rows[0]
+    const session = await recordHeartbeat({
+      userId,
+      isIdle: Boolean(isIdle),
+      action,
+      ipAddress,
+      device,
+      broadcast
+    });
 
-    if (session && (Date.now() - new Date(session.lastPing).getTime()) < GAP) {
-      // Extend existing session
-      const dur = minDiff(session.sessionStart, now)
-      await prisma.$executeRaw`
-        UPDATE "UserActivityLog"
-        SET "lastPing" = CAST(${now} AS timestamp), "durationMin" = ${dur}, "updatedAt" = CAST(${now} AS timestamp)
-        WHERE "id" = ${session.id}
-      `
-    } else {
-      // Close old session if exists
-      if (session) {
-        const dur = minDiff(session.sessionStart, session.lastPing)
-        await prisma.$executeRaw`
-          UPDATE "UserActivityLog"
-          SET "isActive" = 0, "durationMin" = ${dur}, "updatedAt" = CAST(${now} AS timestamp)
-          WHERE "id" = ${session.id}
-        `
-      }
-      // Start fresh session
-      await prisma.$executeRaw`
-        INSERT INTO "UserActivityLog"
-        ("userId", "date", "sessionStart", "lastPing", "durationMin", "isActive", "createdAt", "updatedAt")
-        VALUES (${userId}, ${today}, CAST(${now} AS timestamp), CAST(${now} AS timestamp), 0, 1, CAST(${now} AS timestamp), CAST(${now} AS timestamp))
-      `
-    }
-
-    res.json({ ok: true, ts: now })
+    return apiSuccess(res, { ok: true, status: session?.status || 'active', ts: new Date().toISOString() });
   } catch (err) {
-    console.error('[activity/ping]', err.message)
-    res.json({ ok: false })   // never 500 — client ignores errors silently
+    console.error('[Activity Ping Error]', err.message);
+    return apiSuccess(res, { ok: false }); // Always return 200 to not block client execution
   }
-})
+});
 
-// ── GET /online ───────────────────────────────────────────────────────────────
-// Returns array of userIds who pinged in last 5 minutes
+/**
+ * @route GET /api/activity/presence
+ * @desc Live real-time operator presence list (Admin, Manager, Operator)
+ */
+router.get('/presence', async (req, res) => {
+  try {
+    const data = await getLiveOperatorPresence();
+    return apiSuccess(res, data);
+  } catch (err) {
+    return apiError(res, err.message, 500);
+  }
+});
+
+/**
+ * @route GET /api/activity/online
+ * @desc Quick list of currently active user IDs
+ */
 router.get('/online', async (req, res) => {
   try {
-    const cutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString()
-    const rows = await prisma.$queryRaw`
-      SELECT DISTINCT u.id, u.fullName, u.email, u.role
-      FROM "UserActivityLog" a
-      JOIN "User" u ON u.id = a."userId"
-      WHERE a."lastPing" >= CAST(${cutoff} AS timestamp) AND a."isActive" = 1
-    `
-    res.json(rows)
+    const data = await getLiveOperatorPresence();
+    const onlineUsers = data.operators.filter(o => o.status === 'active' || o.status === 'idle');
+    return apiSuccess(res, onlineUsers);
   } catch (err) {
-    res.json([])
+    return apiSuccess(res, []);
   }
-})
+});
 
-// ── GET /stats ────────────────────────────────────────────────────────────────
-// Per-manager breakdown: today + last 7 days total minutes
+/**
+ * @route GET /api/activity/stats
+ * @desc Admin operator presence stats
+ */
 router.get('/stats', requireRole('admin'), async (req, res) => {
   try {
-    const today      = toUzDate(new Date())
-    const weekAgo    = toUzDate(new Date(Date.now() - 6 * 24 * 60 * 60 * 1000))
-    const cutoff5min = new Date(Date.now() - 5 * 60 * 1000).toISOString()
-
-    // Today minutes per user
-    const todayRows = await prisma.$queryRaw`
-      SELECT "userId",
-             SUM("durationMin") AS "todayMin",
-             MAX("lastPing")    AS "lastSeen"
-      FROM   "UserActivityLog"
-      WHERE  "date" = ${today}
-      GROUP BY "userId"
-    `
-
-    // Week total per user
-    const weekRows = await prisma.$queryRaw`
-      SELECT "userId",
-             SUM("durationMin") AS "weekMin"
-      FROM   "UserActivityLog"
-      WHERE  "date" >= ${weekAgo}
-      GROUP BY "userId"
-    `
-
-    // Online now
-    const onlineRows = await prisma.$queryRaw`
-      SELECT DISTINCT "userId"
-      FROM "UserActivityLog"
-      WHERE "lastPing" >= CAST(${cutoff5min} AS timestamp) AND "isActive" = 1
-    `
-
-    const todayMap  = {}
-    const weekMap   = {}
-    const onlineSet = new Set()
-
-    todayRows.forEach(r => { todayMap[r.userId]  = { min: Number(r.todayMin || 0), lastSeen: r.lastSeen } })
-    weekRows.forEach(r  => { weekMap[r.userId]   = Number(r.weekMin || 0) })
-    onlineRows.forEach(r => onlineSet.add(Number(r.userId)))
-
-    // All managers (using standard database-agnostic Prisma Client instead of raw SQL)
-    const users = await prisma.user.findMany({
-      where: {
-        isActive: true,
-        role: { in: ['admin', 'manager'] }
-      },
-      select: {
-        id: true,
-        fullName: true,
-        email: true,
-        role: true
-      },
-      orderBy: {
-        fullName: 'asc'
-      }
-    })
-
-    const result = users.map(u => {
-      const uid      = Number(u.id)
-      const todayMin = todayMap[uid]?.min  || 0
-      const weekMin  = weekMap[uid]        || 0
-      const lastSeen = todayMap[uid]?.lastSeen || null
-      const online   = onlineSet.has(uid)
-      return {
-        userId:   uid,
-        name:     u.fullName || u.email,
-        email:    u.email,
-        role:     u.role,
-        online,
-        todayMin,
-        todayHours: (todayMin / 60).toFixed(1),
-        weekMin,
-        weekHours:  (weekMin / 60).toFixed(1),
-        lastSeen,
-      }
-    })
-
-    // Also return a daily breakdown for charting (last 7 days)
-    const dailyRows = await prisma.$queryRaw`
-      SELECT "userId", "date", SUM("durationMin") AS "totalMin"
-      FROM   "UserActivityLog"
-      WHERE  "date" >= ${weekAgo}
-      GROUP BY "userId", "date"
-      ORDER BY "date"
-    `
-
-    res.json({ managers: result, daily: dailyRows })
+    const data = await getLiveOperatorPresence();
+    return apiSuccess(res, data);
   } catch (err) {
-    console.error('[activity/stats]', err.message)
-    res.json({ managers: [], daily: [] })
+    return apiError(res, err.message, 500);
   }
-})
+});
 
-module.exports = router
+module.exports = router;

@@ -1,6 +1,7 @@
 const express = require('express') // v2 fixed
 const prisma = require('../config/database')
 const { protect, requireRole } = require('../middleware/auth')
+const { normalizePhone, extractLast9, getPhoneSearchFilter } = require('../utils/phone')
 
 const router = express.Router()
 
@@ -22,17 +23,24 @@ async function validateMandatoryFields(req, body, isUpdate = false) {
       source: 'Sdelka manbasi'
     };
 
+    let client = null;
+    if (body.clientId) {
+      client = await prisma.client.findUnique({ where: { id: Number(body.clientId) } }).catch(() => null);
+    }
+
     for (const field of fields) {
       let value = body[field];
-      if (field === 'contactPhone') value = body.contactPhone || body.phone;
-      if (field === 'contactName') value = body.contactName || body.name;
+      if (field === 'contactPhone') value = body.contactPhone || body.phone || client?.phone;
+      if (field === 'contactName') value = body.contactName || body.name || client?.name;
+      if (field === 'city') value = body.city || client?.city;
+      if (field === 'source') value = body.source || client?.source || 'oddiy';
 
       const isFieldPassed = req.body[field] !== undefined ||
-        (field === 'contactPhone' && (req.body.contactPhone !== undefined || req.body.phone !== undefined)) ||
-        (field === 'contactName' && (req.body.contactName !== undefined || req.body.name !== undefined));
+        (field === 'contactPhone' && (req.body.contactPhone !== undefined || req.body.phone !== undefined || client?.phone)) ||
+        (field === 'contactName' && (req.body.contactName !== undefined || req.body.name !== undefined || client?.name));
 
       if (!isUpdate || isFieldPassed) {
-        if (value === undefined || value === null || String(value).trim() === '' || (field === 'amount' && Number(value) <= 0)) {
+        if (value === undefined || value === null || String(value).trim() === '' || (field === 'amount' && isNaN(Number(value)))) {
           return `${labels[field] || field} to'ldirilishi majburiy`;
         }
       }
@@ -347,15 +355,27 @@ router.post('/', async (req, res, next) => {
       productColor, driverPhone, tags, ownerId, currency, probability, expectedCloseDate, source
     } = req.body
     if (!productName) return res.status(400).json({ message: 'Mahsulot nomi majburiy' })
-    if (!source || String(source).trim() === '' || source === 'null' || source === 'undefined') {
-      return res.status(400).json({ message: "Sdelka manbasi (source) to'ldirilishi majburiy!" });
-    }
+
+    const effectiveSource = (source && String(source).trim() !== '' && source !== 'null' && source !== 'undefined')
+      ? String(source).trim()
+      : 'oddiy';
 
     let resolvedClientId = clientId ? Number(clientId) : null
-    let resolvedContactId = contactId ? Number(contactId) : (clientId ? Number(clientId) : null)
+    let resolvedContactId = contactId ? Number(contactId) : null
     let resolvedCompanyId = companyId ? Number(companyId) : null
 
-    if (!resolvedContactId) {
+    // Verify contactId existence to prevent PostgreSQL foreign key constraint violation
+    if (resolvedContactId) {
+      const cExists = await prisma.contact.findUnique({ where: { id: resolvedContactId } });
+      if (!cExists) resolvedContactId = null;
+    }
+    // Verify clientId existence
+    if (resolvedClientId) {
+      const clExists = await prisma.client.findUnique({ where: { id: resolvedClientId } });
+      if (!clExists) resolvedClientId = null;
+    }
+
+    if (!resolvedContactId && !resolvedClientId) {
       const hasQuickAddFields = [contactName, contactPhone, contactPhone2, contactEmail, companyName, companyAddress, city, req.body.companyPhone, req.body.companyEmail, req.body.companyWebsite]
         .some(v => v !== undefined && v !== null && String(v).trim() !== '')
 
@@ -375,20 +395,15 @@ router.post('/', async (req, res, next) => {
         }
 
         const cName = contactName ? contactName.trim() : "Noma'lum Mijoz";
-        const cleanPhone = contactPhone ? contactPhone.replace(/[\s-]/g, '') : null;
-        const cleanPhone2 = contactPhone2 ? contactPhone2.replace(/[\s-]/g, '') : (req.body.phone2 ? req.body.phone2.replace(/[\s-]/g, '') : null);
+        const cleanPhone = normalizePhone(contactPhone);
+        const cleanPhone2 = normalizePhone(contactPhone2 || req.body.phone2);
 
         // 1. Find or create Client
         let client = null;
-        const clientSearchOr = [];
-        if (cleanPhone) {
-          clientSearchOr.push({ phone: { contains: cleanPhone } });
-          clientSearchOr.push({ phone2: { contains: cleanPhone } });
-        }
-        if (cleanPhone2) {
-          clientSearchOr.push({ phone: { contains: cleanPhone2 } });
-          clientSearchOr.push({ phone2: { contains: cleanPhone2 } });
-        }
+        const clientSearchOr = [
+          ...getPhoneSearchFilter(cleanPhone),
+          ...getPhoneSearchFilter(cleanPhone2)
+        ];
 
         if (clientSearchOr.length > 0) {
           client = await prisma.client.findFirst({
@@ -398,9 +413,9 @@ router.post('/', async (req, res, next) => {
 
         if (client) {
           const updateData = {};
-          if (cName && cName !== "Noma'lum Mijoz" && cName !== client.name) updateData.name = cName;
-          if (city && city !== client.city) updateData.city = city;
-          if (contactEmail && contactEmail !== client.email) updateData.email = contactEmail;
+          if (cName && cName !== "Noma'lum Mijoz" && (!client.name || client.name === "Noma'lum Mijoz")) updateData.name = cName;
+          if (city && !client.city) updateData.city = city;
+          if (contactEmail && !client.email) updateData.email = contactEmail;
           if (cleanPhone2 && !client.phone2 && client.phone !== cleanPhone2) updateData.phone2 = cleanPhone2;
           if (cleanPhone && !client.phone && client.phone2 !== cleanPhone) updateData.phone = cleanPhone;
 
@@ -467,7 +482,7 @@ router.post('/', async (req, res, next) => {
         }
         resolvedContactId = contact.id;
       }
-    } else {
+    } else if (resolvedContactId) {
       // If contactId is provided, ensure resolvedClientId matches that contact's client or find/create a Client with same phone
       const contactObj = await prisma.contact.findUnique({
         where: { id: resolvedContactId }
@@ -915,47 +930,57 @@ router.patch('/:id', async (req, res, next) => {
       return res.status(403).json({ message: "Boshqa menejer sdelkasini o'zgartira olmaysiz" })
     }
 
-    // 🔒 YANGI LEAD MUZLATISH QOIDASI:
-    const isYangiStage = existing.stage && existing.stage.name.toLowerCase().includes('yangi');
-    const newStageIdNum = stageId ? Number(stageId) : null;
-    
-    if (isYangiStage && req.user?.role !== 'admin') {
-      if (!newStageIdNum || newStageIdNum === existing.stageId) {
-        return res.status(403).json({
-          message: "Yangi bosqichdagi sdelka ma'lumotlarini tahrirlash taqiqlangan. Menejer bo'lib biriktirilish uchun sdelka bosqichini o'zgartiring!"
-        });
-      }
+    // 🔒 UNASSIGNED LEAD AUTO-CLAIM ON FIRST TOUCH:
+    if (!existing.managerId && req.userId && req.user?.role !== 'admin') {
+      data.managerId = req.userId;
+      data.ownerId = existing.ownerId || req.userId;
     }
+
+    const cleanContactPhone = normalizePhone(contactPhone);
+    const cleanContactPhone2 = normalizePhone(clientPhone2Val);
 
     let resolvedClientId = clientId !== undefined ? (clientId ? Number(clientId) : null) : existing.clientId;
 
     if (!resolvedClientId) {
-      const hasQuickAddFields = [contactName, contactPhone, clientPhone2Val, city, req.body.companyName, req.body.companyAddress, req.body.companyPhone, req.body.companyEmail, req.body.companyWebsite]
+      const hasQuickAddFields = [contactName, cleanContactPhone, cleanContactPhone2, city, req.body.companyName, req.body.companyAddress, req.body.companyPhone, req.body.companyEmail, req.body.companyWebsite]
         .some(v => v !== undefined && v !== null && String(v).trim() !== '')
 
       if (hasQuickAddFields) {
-        const newClient = await prisma.client.create({
-          data: {
-            name: (contactName && contactName.trim()) || req.body.companyName || "Noma'lum mijoz",
-            phone: contactPhone || null,
-            phone2: clientPhone2Val || null,
-            city: city || null,
-            company: req.body.companyName || null,
-            companyAddress: req.body.companyAddress || null,
-            companyPhone: req.body.companyPhone || null,
-            companyEmail: req.body.companyEmail || null,
-            companyWebsite: req.body.companyWebsite || null,
-            ownerId: req.userId
-          }
-        });
-        resolvedClientId = newClient.id;
+        const clientSearchOr = [
+          ...getPhoneSearchFilter(cleanContactPhone),
+          ...getPhoneSearchFilter(cleanContactPhone2)
+        ];
+        let foundClient = null;
+        if (clientSearchOr.length > 0) {
+          foundClient = await prisma.client.findFirst({ where: { OR: clientSearchOr } });
+        }
+
+        if (foundClient) {
+          resolvedClientId = foundClient.id;
+        } else {
+          const newClient = await prisma.client.create({
+            data: {
+              name: (contactName && contactName.trim()) || req.body.companyName || "Noma'lum mijoz",
+              phone: cleanContactPhone || null,
+              phone2: cleanContactPhone2 || null,
+              city: city || null,
+              company: req.body.companyName || null,
+              companyAddress: req.body.companyAddress || null,
+              companyPhone: req.body.companyPhone || null,
+              companyEmail: req.body.companyEmail || null,
+              companyWebsite: req.body.companyWebsite || null,
+              ownerId: req.userId
+            }
+          });
+          resolvedClientId = newClient.id;
+        }
       }
     } else {
       // Update existing client
       const clientUpdateData = {};
       if (contactName !== undefined && contactName !== null) clientUpdateData.name = contactName.trim();
-      if (contactPhone !== undefined && contactPhone !== null) clientUpdateData.phone = contactPhone.trim();
-      if (clientPhone2Val !== undefined && clientPhone2Val !== null) clientUpdateData.phone2 = clientPhone2Val.trim();
+      if (contactPhone !== undefined && contactPhone !== null) clientUpdateData.phone = cleanContactPhone;
+      if (clientPhone2Val !== undefined && clientPhone2Val !== null) clientUpdateData.phone2 = cleanContactPhone2;
       if (city !== undefined && city !== null) clientUpdateData.city = city.trim();
       if (req.body.companyPhone !== undefined) clientUpdateData.companyPhone = req.body.companyPhone;
       if (req.body.companyEmail !== undefined) clientUpdateData.companyEmail = req.body.companyEmail;
@@ -979,8 +1004,8 @@ router.patch('/:id', async (req, res, next) => {
           contactUpdateData.firstName = nameParts[0] || "Nomsiz";
           contactUpdateData.lastName = nameParts.slice(1).join(' ') || null;
         }
-        if (contactPhone !== undefined && contactPhone !== null) contactUpdateData.phone = contactPhone.trim();
-        if (clientPhone2Val !== undefined && clientPhone2Val !== null) contactUpdateData.phone2 = clientPhone2Val.trim();
+        if (contactPhone !== undefined && contactPhone !== null) contactUpdateData.phone = cleanContactPhone;
+        if (clientPhone2Val !== undefined && clientPhone2Val !== null) contactUpdateData.phone2 = cleanContactPhone2;
         if (city !== undefined && city !== null) contactUpdateData.city = city.trim();
 
         if (Object.keys(contactUpdateData).length > 0) {
@@ -992,7 +1017,6 @@ router.patch('/:id', async (req, res, next) => {
       }
     }
 
-    const data = {}
     if (productName !== undefined) data.productName = productName
     if (amount !== undefined) data.amount = Number(amount)
     if (paidAmount !== undefined) data.paidAmount = Number(paidAmount)
@@ -1020,19 +1044,15 @@ router.patch('/:id', async (req, res, next) => {
         }
         const stage = await prisma.pipelineStage.findUnique({ where: { id: Number(stageId) } })
         if (stage) {
-          if (stage.statusType === 'won') {
+          if (stage.statusType === 'won' || stage.isWon) {
             data.status = 'won';
-          } else if (stage.statusType === 'lost') {
+            data.closedAt = new Date();
+          } else if (stage.statusType === 'lost' || stage.isLost) {
             data.status = 'lost';
+            data.closedAt = new Date();
           } else {
-            const stageName = stage.name.toLowerCase();
-            if (stageName.includes('yutil') || stageName.includes('100%') || stageName.includes('olindi')) {
-              data.status = 'won';
-            } else if (stageName.includes('rad') || stageName.includes('otkaz') || stageName.includes('lost')) {
-              data.status = 'lost';
-            } else {
-              data.status = 'new';
-            }
+            data.status = 'new';
+            data.closedAt = null;
           }
         }
       }
@@ -1236,21 +1256,14 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
           finalManagerId = req.userId;
         }
 
-        let finalStatus = txDeal.status;
+        let finalStatus = 'new';
         if (newStage) {
-          if (newStage.statusType === 'won') {
+          if (newStage.statusType === 'won' || newStage.isWon) {
             finalStatus = 'won';
-          } else if (newStage.statusType === 'lost') {
+          } else if (newStage.statusType === 'lost' || newStage.isLost) {
             finalStatus = 'lost';
           } else {
-            const stageName = newStage.name.toLowerCase();
-            if (stageName.includes('yutil') || stageName.includes('100%') || stageName.includes('olindi')) {
-              finalStatus = 'won';
-            } else if (stageName.includes('rad') || stageName.includes('otkaz') || stageName.includes('lost')) {
-              finalStatus = 'lost';
-            } else {
-              finalStatus = 'new';
-            }
+            finalStatus = 'new';
           }
         }
 
@@ -1275,13 +1288,15 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
           : `[Tizim] Bosqich yopilish sababi: ${reason}`;
       }
 
+      const finalOwnerId = txDeal.ownerId || finalManagerId || req.userId;
+
       const updated = await tx.deal.update({
         where: { id },
         data: {
           stageId: finalStageId,
           pipelineId: finalPipelineId,
           managerId: finalManagerId,
-          ownerId: finalManagerId,
+          ownerId: finalOwnerId,
           status: finalStatus,
           closedAt,
           notes: notesUpdate,
@@ -1347,12 +1362,11 @@ router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, nex
             }
           });
         }
-      } else {
-        // Sdelka qayta aloqa/ko'tarmadi bosqichidan boshqa ixtiyoriy bosqichga (Peregovor, Tayyorlash, Dastavka, Yutilgan, Yo'qotilgan) o'tkazilganda:
-        // Mijoz bilan aloqa o'rnatilgan / ish keyingi bosqichga o'tgan deb hisoblanadi va eski ochiq vazifalar avtomatik yopiladi
+      } else if (isClosedStage) {
+        // Faqat sdelka to'liq yopilgandagina (Yutilgan yoki Yo'qotilgan) ochiq vazifalar avtomatik yopiladi
         await tx.task.updateMany({
           where: { dealId: id, completed: false },
-          data: { completed: true, status: 'completed', result: `Avtomatik yopildi: Bosqich "${updated.stage?.name || 'Yangi bosqich'}"ga o'zgartirildi` }
+          data: { completed: true, status: 'completed', result: `Avtomatik yopildi: Sdelka "${updated.stage?.name || 'Yakuniy bosqich'}"ga o'zgartirildi` }
         });
       }
 
@@ -1478,7 +1492,6 @@ router.post('/:id/activity', requireRole('admin', 'manager'), async (req, res, n
     })
     
 // Active tasks are preserved when posting a note/comment
-    
     res.status(201).json(activity)
   } catch (error) { next(error) }
 })

@@ -27,7 +27,7 @@
       </div>
       <div class="sidebar-submenu-items">
         <a href="/nasiya/list?stage=desco" class="sub-item <%= activePage === 'nasiya-desco' ? 'active' : '' %>">
-          <span class="sub-dot" style="background:#10B981"></span> Nasiya Desco
+          <span class="sub-dot" style="background:#10B981"></span> Nasiya Baraka
         </a>
         <a href="/nasiya/list?stage=ishonch" class="sub-item <%= activePage === 'nasiya-ishonch' ? 'active' : '' %>">
           <span class="sub-dot" style="background:#F59E0B"></span> Nasiya Ishonch
@@ -51,7 +51,6 @@
       <span class="nav-icon"><i class="fab fa-trello" style="color:#0079bf;"></i></span>
       <span class="nav-label">Trello</span>
     </a>
-
     <a href="/expenses" class="<%= activePage === 'expenses' ? 'active' : '' %>">
       <span class="nav-icon"><i class="fas fa-receipt"></i></span>
       <span class="nav-label">Xarajatlar</span>
@@ -97,14 +96,17 @@
       <span class="nav-label">Telefoniya</span>
     </a>
 
-    <!-- Qo'shimcha Submenu (Mijozlar, Rejalar, Shopirlar, Ishonch filiallari) -->
+    <!-- Qo'shimcha Submenu (Mijozlar, Rejalar, Shopirlar, Ishonch filiallari, Kanban) -->
     <div class="sidebar-submenu-container">
-      <div class="sidebar-submenu-header <%= (activePage.startsWith('extra') || activePage === 'clients' || activePage === 'plans') ? 'active' : '' %>" onclick="toggleSubmenu(this)">
+      <div class="sidebar-submenu-header <%= (activePage.startsWith('extra') || activePage === 'clients' || activePage === 'plans' || activePage === 'kanban') ? 'active' : '' %>" onclick="toggleSubmenu(this)">
         <span class="nav-icon"><i class="fas fa-plus-circle"></i></span>
         <span class="nav-label">Qo'shimcha</span>
         <i class="fas fa-chevron-right arrow-icon"></i>
       </div>
       <div class="sidebar-submenu-items">
+        <a href="/kanban" class="sub-item <%= activePage === 'kanban' ? 'active' : '' %>">
+          <span class="sub-dot" style="background:#007AFF"></span> Trello
+        </a>
         <a href="/clients" class="sub-item <%= activePage === 'clients' ? 'active' : '' %>">
           <span class="sub-dot" style="background:#10B981"></span> Mijozlar
         </a>
