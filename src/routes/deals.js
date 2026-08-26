@@ -63,7 +63,6 @@ const stageSelect = { select: { id: true, name: true, color: true, order: true, 
 function canAccessDeal(deal, userId, role) {
   if (!deal) return false;
   if (role === 'admin') return true;
-  if (role === 'manager') return true;  // Menejer barcha sdelkalarni o'zgartira oladi
   if (deal.managerId === null) return true;
   if (deal.managerId === userId) return true;
   if (deal.ownerId === userId) return true;
@@ -145,8 +144,8 @@ router.get('/', async (req, res, next) => {
       } catch(e) { /* ignore, show all */ }
     }
 
-    // Admin va Manager barcha sdelkalarni ko'ra oladi. Operator faqat o'ziga tegishli yoki unassigned(bo'sh) sdelkalarni.
-    if (req.user?.role === 'operator') {
+    // Admin barcha sdelkalarni ko'ra oladi. Manager va Operator faqat o'ziga tegishli yoki unassigned(bo'sh) sdelkalarni.
+    if (req.user?.role !== 'admin') {
       const userCond = [
         { managerId: null },
         { managerId: req.userId },
