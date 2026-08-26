@@ -241,7 +241,21 @@
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.15) !important;
     border-color: #818CF8 !important;
   }
-  .dcard.dragging { opacity: 0.45 !important; transform: scale(0.98) !important; box-shadow: var(--shadow-sm) !important; cursor: grabbing !important; }
+  /* Drag paytida hover effektni to'liq o'chirish — silkish oldini olish */
+  body.is-dragging .dcard:hover {
+    transform: none !important;
+    box-shadow: 0 4px 16px rgba(31, 38, 135, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.9) !important;
+    border-color: var(--border) !important;
+  }
+  .dcard.dragging {
+    opacity: 0.45 !important;
+    transform: scale(0.97) rotate(-1deg) !important;
+    box-shadow: 0 8px 32px rgba(99,102,241,0.18) !important;
+    cursor: grabbing !important;
+    transition: none !important;
+    will-change: transform;
+    pointer-events: none;
+  }
   .dcard-badge { display:inline-block; padding:4px 8px; border-radius:6px; font-size:10px; font-weight:700;
   text-transform:uppercase; letter-spacing:0.5px; }
   .dcard-header { display:flex; justify-content:space-between; align-items: center; margin-bottom:0px; }
@@ -3192,6 +3206,7 @@ function onDragStart(e, id) {
     e.dataTransfer.setData('text/plain', String(id));
   }
   const el = e.currentTarget;
+  document.body.classList.add('is-dragging');
   requestAnimationFrame(() => {
     if (el) el.classList.add('dragging');
   });
@@ -3199,6 +3214,7 @@ function onDragStart(e, id) {
 
 function onDragEnd(e) {
   _dragId = null;
+  document.body.classList.remove('is-dragging');
   document.querySelectorAll('.dcard.dragging').forEach(c => c.classList.remove('dragging'));
   document.querySelectorAll('.kb-cards.drag-over').forEach(c => c.classList.remove('drag-over'));
   document.querySelectorAll('.rzone-over').forEach(c => c.classList.remove('rzone-over'));
@@ -5480,15 +5496,22 @@ async function moveDeal(dealId, stageId) {
     return;
   }
 
+  // Optimistic local update — oldindan render qilamiz
+  const deal = _deals.find(d => d.id === dealId);
+  const previousStageId = deal ? deal.stageId : null;
+  if (deal) {
+    deal.stageId = stageId ? Number(stageId) : null;
+    renderKanban();
+  }
+
   try {
     const updated = await apiFetch('/api/deals/' + dealId + '/stage', {
       method:'PATCH', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ stageId })
     });
     
-    // Optimistic UI update instead of reloading everything
-    const deal = _deals.find(d => d.id === dealId);
-    if (deal) {
+    // Server javobini qo'llaymiz
+    if (deal && updated) {
       Object.assign(deal, updated);
       renderKanban();
     }
@@ -5498,12 +5521,18 @@ async function moveDeal(dealId, stageId) {
     // Nasiya Desco: muddatli to'lov modal
     const tStage = _stages.find(s => s.id === Number(stageId));
     if (tStage && /nasiya.?desco/i.test(tStage.name)) {
-      const deal = _deals.find(d => d.id === dealId);
-      if (deal) openNasiyaDescoModal(deal);
+      const dealRef = _deals.find(d => d.id === dealId);
+      if (dealRef) openNasiyaDescoModal(dealRef);
     }
 
-    await loadDeals();
-  } catch(e) { _toast(e.message, 'error'); }
+  } catch(e) {
+    // Rollback — avvalgi holatga qaytaramiz
+    if (deal) {
+      deal.stageId = previousStageId;
+      renderKanban();
+    }
+    _toast(e.message || "Bosqichni o'zgartirishda xatolik", 'error');
+  }
 }
 
 // ── Pipeline Manager ───────────────────────────────────────────

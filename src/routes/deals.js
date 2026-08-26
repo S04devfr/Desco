@@ -63,6 +63,7 @@ const stageSelect = { select: { id: true, name: true, color: true, order: true, 
 function canAccessDeal(deal, userId, role) {
   if (!deal) return false;
   if (role === 'admin') return true;
+  if (role === 'manager') return true;  // Menejer barcha sdelkalarni o'zgartira oladi
   if (deal.managerId === null) return true;
   if (deal.managerId === userId) return true;
   if (deal.ownerId === userId) return true;
@@ -144,8 +145,8 @@ router.get('/', async (req, res, next) => {
       } catch(e) { /* ignore, show all */ }
     }
 
-    // Admin barcha sdelkalarni ko'ra oladi. Manager va Operator faqat o'ziga tegishli yoki unassigned(bo'sh) sdelkalarni.
-    if (req.user?.role !== 'admin') {
+    // Admin va Manager barcha sdelkalarni ko'ra oladi. Operator faqat o'ziga tegishli yoki unassigned(bo'sh) sdelkalarni.
+    if (req.user?.role === 'operator') {
       const userCond = [
         { managerId: null },
         { managerId: req.userId },
@@ -713,7 +714,7 @@ router.post('/:id/claim', requireRole('admin', 'manager'), async (req, res, next
 })
 
 // Bulk update deal stage and/or status
-router.patch('/bulk/stage', requireRole('admin', 'manager'), async (req, res, next) => {
+router.patch('/bulk/stage', requireRole('admin', 'manager', 'operator'), async (req, res, next) => {
   try {
     const { ids, stageId, status } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) {
@@ -1185,7 +1186,7 @@ router.patch('/:id', async (req, res, next) => {
 // Strict validation + atomic transaction: if the activity-log write fails,
 // the stage change is rolled back automatically by Prisma's $transaction —
 // the deal never ends up "half moved".
-router.patch('/:id/stage', requireRole('admin', 'manager'), async (req, res, next) => {
+router.patch('/:id/stage', requireRole('admin', 'manager', 'operator'), async (req, res, next) => {
   try {
     const id = Number(req.params.id)
     if (!Number.isInteger(id) || id <= 0) {
